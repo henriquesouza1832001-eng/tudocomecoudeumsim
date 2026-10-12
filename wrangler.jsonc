@@ -6,7 +6,8 @@
                          {
                              "binding":  "DB",
                              "database_name":  "tudocomecoudeumsim-db",
-                             "database_id":  "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555"
+                         "database_id":  "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555",
+                         "migrations_dir":  "migrations"
                          }
                      ]
 }

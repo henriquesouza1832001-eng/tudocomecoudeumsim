@@ -259,6 +259,18 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Jogo: ligar ou desligar, perguntas personalizadas, ranking.
 - Personalização do site com pré-visualização ao vivo.
 
+### 8.1 Perfis e áreas de acesso
+
+- Superadmin: administração global de contas, casamentos, status, políticas de taxa e auditoria. A área exige login com senha e segundo fator TOTP. A autorização é validada no servidor em toda operação; esconder uma rota no frontend não é controle de acesso.
+- Noivos: administradores do próprio casamento, com acesso aos convidados, RSVP, presentes, convites e personalização daquele casamento.
+- Convidados: acesso somente ao convite individual, eventos autorizados, RSVP, presentes e recursos habilitados pelos noivos.
+- Padrinhos: não têm acesso à lista de convidados. A área individual pode mostrar apenas eventos, orientações e tarefas atribuídas ao próprio padrinho.
+- Equipe do evento: acesso restrito aos eventos atribuídos. Pode consultar e exportar em PDF a lista necessária para o evento, sem acesso amplo a contatos ou dados de outros casamentos. O PDF do site público usa apenas conteúdo publicado.
+- Equipe de entrada: permissão separada para check-in do evento, sem acesso às configurações financeiras ou de personalização.
+- Todas as consultas e mutações de dados verificam conta, papel, casamento e evento no servidor. O cliente nunca escolhe livremente o identificador do casamento autorizado.
+- A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando registros financeiros e trilha de auditoria. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
+- A política de taxa pode estar desligada. Quando ligada, percentual, mínimo, máximo e pagador são configuráveis; não fixar valores de negócio no código.
+
 ## 9. Notificações push (VAPID)
 
 - Web Push padrão, com chaves VAPID geradas uma vez e guardadas como secrets.
@@ -396,3 +408,4 @@ Stripe
 - Modo B: confirmar a exigência de cartão cadastrado pelos noivos para cobrar a taxa acumulada.
 - Idiomas finais: pt-BR, en e es.
 - Referências próprias do dono do projeto, a enviar.
+- Serviço de e-mail transacional para verificação de conta e recuperação de senha.
