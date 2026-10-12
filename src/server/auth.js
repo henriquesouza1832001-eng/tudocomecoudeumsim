@@ -120,6 +120,21 @@ async function verifyTotp(ciphertext, key, code) {
   return match
 }
 
+export async function verifyRecentTotp(context, accountId, code) {
+  const row = await context.env.DB.prepare('SELECT totp_secret_ciphertext, enabled_at, last_totp_counter FROM account_mfa WHERE account_id = ?').bind(accountId).first()
+  if (!row?.enabled_at || !row.totp_secret_ciphertext) return false
+  let matchedCounter
+  try {
+    matchedCounter = await verifyTotp(row.totp_secret_ciphertext, context.env.MFA_ENCRYPTION_KEY, code)
+  } catch {
+    return false
+  }
+  if (matchedCounter === false || matchedCounter <= row.last_totp_counter) return false
+  const result = await context.env.DB.prepare('UPDATE account_mfa SET last_totp_counter = ?, updated_at = CURRENT_TIMESTAMP WHERE account_id = ? AND last_totp_counter < ?')
+    .bind(matchedCounter, accountId, matchedCounter).run()
+  return result.meta.changes === 1
+}
+
 function getCookie(request, name) {
   const cookies = request.headers.get('Cookie') || ''
   for (const part of cookies.split(';')) {

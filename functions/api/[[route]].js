@@ -11,6 +11,7 @@ import {
   loadSession,
   recordLoginFailure,
   startTotpEnrollment,
+  verifyRecentTotp,
 } from '../../src/server/auth.js'
 
 const app = new Hono()
@@ -27,7 +28,7 @@ function validOrigin(context) {
 async function requireSession(context, next) {
   const session = await loadSession(context)
   if (!session) return jsonError(context, 401, 'authentication_required')
-  const setupAllowed = ['/api/auth/session', '/api/auth/logout', '/api/auth/mfa/enroll', '/api/auth/mfa/confirm', '/api/superadmin/mfa/enroll', '/api/superadmin/mfa/confirm']
+  const setupAllowed = ['/api/auth/session', '/api/auth/logout', '/api/auth/mfa/enroll', '/api/auth/mfa/confirm', '/api/auth/mfa/reauth', '/api/superadmin/mfa/enroll', '/api/superadmin/mfa/confirm']
   if (!session.mfa_verified_at && !setupAllowed.includes(context.req.path)) return jsonError(context, 403, session.mfa_enabled_at ? 'mfa_verification_required' : 'mfa_setup_required')
   context.set('session', session)
   return next()
@@ -247,6 +248,28 @@ app.post('/api/auth/mfa/confirm', requireSession, async (context) => {
       VALUES (?, ?, 'account_mfa_enabled', 'account', ?, '{}')`).bind(crypto.randomUUID(), session.account_id, session.account_id),
   ])
   return context.json({ mfaEnabled: true })
+})
+
+app.post('/api/auth/mfa/reauth', requireSession, async (context) => {
+  const session = context.get('session')
+  const body = await context.req.json().catch(() => null)
+  if (!body || typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) return jsonError(context, 400, 'invalid_mfa_code')
+  const retryAfter = await checkLoginLimit(context, session.email)
+  if (retryAfter) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': String(retryAfter), 'Cache-Control': 'no-store' })
+  const verified = await verifyRecentTotp(context, session.account_id, body.code)
+  if (!verified) {
+    const limit = await recordLoginFailure(context, session.email)
+    if (limit.blocked) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
+    return jsonError(context, 403, 'invalid_mfa_code')
+  }
+  await clearLoginFailures(context, session.email)
+  const verifiedAt = new Date().toISOString()
+  await context.env.DB.batch([
+    context.env.DB.prepare('UPDATE auth_sessions SET mfa_verified_at = ? WHERE id = ? AND revoked_at IS NULL').bind(verifiedAt, session.id),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, 'account_mfa_reauthenticated', 'account', ?, '{}')`).bind(crypto.randomUUID(), session.account_id, session.account_id),
+  ])
+  return context.json({ mfaVerified: true, verifiedAt })
 })
 
 app.post('/api/auth/team-invitation-preview', async (context) => {
@@ -922,6 +945,8 @@ app.patch('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, asy
 })
 
 app.delete('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, async (context) => {
+  const session = context.get('session')
+  if (Date.now() - Date.parse(session.mfa_verified_at) > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const weddingId = context.req.param('weddingId')
   const guestId = context.req.param('guestId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])

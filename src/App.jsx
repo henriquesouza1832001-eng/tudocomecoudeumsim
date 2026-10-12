@@ -184,6 +184,18 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`
 }
 
+async function requestWithRecentMfa(request, path, options) {
+  try {
+    return await request(path, options)
+  } catch (cause) {
+    if (cause.message !== 'recent_mfa_required') throw cause
+    const code = window.prompt('Confirme a operacao com o codigo de seis digitos do autenticador.')
+    if (!code) throw new Error('mfa_reauthentication_cancelled')
+    await request('/api/auth/mfa/reauth', { method: 'POST', body: JSON.stringify({ code }) })
+    return request(path, options)
+  }
+}
+
 function parseBrlCents(value) {
   const source = String(value ?? '').trim()
   const normalized = source.includes(',') ? source.replace(/\./g, '').replace(',', '.') : source
@@ -841,12 +853,13 @@ function CouplePanel({ notify, setView }) {
     setBusy(true)
     setError('')
     try {
-      await request(`/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
+      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
       setEditingGuest(null)
       setShare(null)
       await loadWeddingData(weddingId)
       notify('Dados pessoais removidos; histórico de RSVP e entrada preservado')
-    } catch {
+    } catch (cause) {
+      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
       setError('Não foi possível remover este convidado.')
     } finally {
       setBusy(false)
@@ -2150,12 +2163,13 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await request(`/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) })
+      await requestWithRecentMfa(request, `/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) })
       setPurgeTarget(null)
       setConfirmation('')
       await refresh()
       notify('Dados pessoais anonimizados; auditoria preservada')
     } catch (cause) {
+      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de continuar.' : 'N\u00e3o foi poss\u00edvel anonimizar os dados.')
       setError(cause.message === 'recent_mfa_required' ? 'Para essa ação, entre novamente e conclua o segundo fator antes de confirmar.' : 'Não foi possível anonimizar os dados.')
     } finally {
       setBusy(false)
@@ -2171,7 +2185,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">CONTAS E SITES</span><h2>Casamentos cadastrados</h2></div><span className="task-count">{data.weddings.total || 0} registros</span></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>CASAL</th><th>SLUG</th><th>RESPONSÁVEL</th><th>CONVIDADOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>{weddings.map((item) => <tr key={item.id}><td><strong>{item.partner_one_name} & {item.partner_two_name}</strong><small>{item.event_date || 'Data não definida'}</small></td><td>{item.slug}</td><td>{item.owner_email}</td><td>{item.guest_count}</td><td><span className={`admin-state ${item.status === 'active' ? 'admin-state-active' : ''}`}>{item.status}</span></td><td><div className="admin-row-actions"><button onClick={() => changeWeddingStatus(item)}>{item.status === 'active' ? 'Suspender' : 'Ativar'}</button><button onClick={() => { setPurgeTarget(item); setConfirmation('') }}><Trash2 size={14} /> Limpar dados</button></div></td></tr>)}</tbody></table></div><div className="admin-pagination"><span>Página {weddingsPage}</span><div><button className="button-outline" type="button" disabled={weddingsPage === 1 || busy} onClick={() => setWeddingsPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!weddingsHasMore || busy} onClick={() => setWeddingsPage((page) => page + 1)}>Próxima</button></div></div>{purgeTarget && <div className="purge-confirm"><div><span className="eyebrow">LIMPEZA IRREVERSÍVEL DE DADOS</span><p>Remove convidados, respostas, tarefas, check-ins e eventos operacionais. Preserva o extrato financeiro e a auditoria. Exige MFA recente.</p></div><label>Digite ANONIMIZAR {purgeTarget.id}<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label><div className="admin-row-actions"><button onClick={() => setPurgeTarget(null)}>Cancelar</button><button disabled={busy || confirmation !== `ANONIMIZAR ${purgeTarget.id}`} onClick={anonymizeWedding}>Confirmar limpeza e anonimização</button></div></div>}</section>
     <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO À PLATAFORMA</span><h2>Contas cadastradas</h2></div><span className="task-count">{data.accounts.total || 0} contas</span></div><div className="superadmin-table-wrap"><table className="superadmin-table accounts-table"><thead><tr><th>E-MAIL</th><th>CASAMENTOS</th><th>STATUS</th><th>AÇÃO</th></tr></thead><tbody>{accounts.map((item) => <tr key={item.id}><td><strong>{item.email}</strong><small>{item.email_verified_at ? 'E-mail verificado' : 'E-mail pendente'}</small><small>Criada {new Date(item.created_at).toLocaleDateString('pt-BR')}</small><small>Ultimo acesso: {item.last_login_at ? new Date(item.last_login_at).toLocaleString('pt-BR') : 'nunca'}</small></td><td>{item.wedding_count}</td><td><span className={`admin-state ${item.status === 'active' ? 'admin-state-active' : ''}`}>{item.status}</span></td><td><button className="account-status-action" disabled={item.id === account?.id && item.status === 'active'} onClick={() => changeAccountStatus(item)}>{item.status === 'active' ? 'Suspender' : 'Ativar'}</button></td></tr>)}</tbody></table></div><div className="admin-pagination"><span>Página {accountsPage}</span><div><button className="button-outline" type="button" disabled={accountsPage === 1 || busy} onClick={() => setAccountsPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!accountsHasMore || busy} onClick={() => setAccountsPage((page) => page + 1)}>Próxima</button></div></div></section>
     <section className="role-card fee-admin-card"><div className="role-card-heading"><div><span className="eyebrow">REGRAS COMERCIAIS</span><h2>Taxas por presente</h2></div><span className={`fee-switch-label ${policy.enabled ? 'fee-active' : ''}`}>{policy.enabled ? 'Taxa ativada' : 'Sem taxas'}</span></div><form className="fee-form" onSubmit={savePolicy}><label className="fee-toggle"><input type="checkbox" checked={policy.enabled} onChange={(event) => setPolicy((current) => ({ ...current, enabled: event.target.checked }))} /><span>Ativar taxa para presentes</span></label><div className="fee-fields"><label>Percentual (%)<input type="number" min="0" max="100" step="0.01" value={policy.rate} onChange={(event) => setPolicy((current) => ({ ...current, rate: event.target.value }))} disabled={!policy.enabled} /></label><label>Mínimo (R$)<input type="number" min="0" step="0.01" value={policy.min} onChange={(event) => setPolicy((current) => ({ ...current, min: event.target.value }))} disabled={!policy.enabled} /></label><label>Máximo (R$)<input type="number" min="0" step="0.01" value={policy.max} onChange={(event) => setPolicy((current) => ({ ...current, max: event.target.value }))} disabled={!policy.enabled} placeholder="Sem limite" /></label><label>Quem paga<select value={policy.paidBy} onChange={(event) => setPolicy((current) => ({ ...current, paidBy: event.target.value }))} disabled={!policy.enabled}><option value="couple">Noivos</option><option value="guest">Convidado</option></select></label></div><div className="fee-form-footer"><p>Alterações são salvas no D1 e registradas na trilha de auditoria.</p><button className="button-primary" type="submit" disabled={busy}>Salvar política <Check size={15} /></button></div></form></section>
-    <section className="role-card audit-card"><div className="role-card-heading"><div><span className="eyebrow">SEGURANÇA</span><h2>Atividade administrativa</h2></div><span><LockKeyhole size={15} /> {data.auditTotal} registros</span></div>{data.audit.length ? <div className="audit-list">{data.audit.map((item, index) => <div key={`${item.target_id}-${item.created_at}-${index}`}><span>{item.action}</span><strong>{item.target_type} · {item.target_id || '—'}</strong><small>{item.actor_email || 'Conta de sistema'} {' \u00b7 '} {new Date(item.created_at).toLocaleString('pt-BR')}</small></div>)}</div> : <p className="buffet-empty">Ainda não há ações administrativas registradas.</p>}<div className="admin-pagination"><span>Pagina {data.auditPage} de {Math.max(1, Math.ceil(data.auditTotal / 20))}</span><div><button className="button-outline" type="button" disabled={auditPage === 1 || busy} onClick={() => setAuditPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!auditHasMore || busy} onClick={() => setAuditPage((page) => page + 1)}>Pr?xima</button></div></div></section>
+    <section className="role-card audit-card"><div className="role-card-heading"><div><span className="eyebrow">SEGURANÇA</span><h2>Atividade administrativa</h2></div><span><LockKeyhole size={15} /> {data.auditTotal} registros</span></div>{data.audit.length ? <div className="audit-list">{data.audit.map((item, index) => <div key={`${item.target_id}-${item.created_at}-${index}`}><span>{item.action}</span><strong>{item.target_type} · {item.target_id || '—'}</strong><small>{item.actor_email || 'Conta de sistema'} {' \u00b7 '} {new Date(item.created_at).toLocaleString('pt-BR')}</small></div>)}</div> : <p className="buffet-empty">Ainda não há ações administrativas registradas.</p>}<div className="admin-pagination"><span>Pagina {data.auditPage} de {Math.max(1, Math.ceil(data.auditTotal / 20))}</span><div><button className="button-outline" type="button" disabled={auditPage === 1 || busy} onClick={() => setAuditPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!auditHasMore || busy} onClick={() => setAuditPage((page) => page + 1)}>Proxima</button></div></div></section>
     <div className="admin-security-note"><Shield size={16} /><span>Cloudflare Access, sessão com MFA e papel superadmin são verificados antes das operações. A anonimização preserva registros de auditoria e financeiros.</span></div>
   </main><footer className="role-footer"><span>Administração da plataforma</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
