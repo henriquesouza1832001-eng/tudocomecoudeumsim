@@ -1234,7 +1234,11 @@ app.post('/api/superadmin/mfa/confirm', requireSession, requireSuperadminIdentit
 })
 
 app.get('/api/superadmin/overview', requireSession, requireSuperadmin, async (context) => {
-  const [accounts, weddings, guests, fees, financials, audit] = await Promise.all([
+  const auditPage = Number(context.req.query('auditPage') || 1)
+  if (!Number.isSafeInteger(auditPage) || auditPage < 1 || auditPage > 10000) return jsonError(context, 400, 'invalid_page')
+  const auditLimit = 20
+  const auditOffset = (auditPage - 1) * auditLimit
+  const [accounts, weddings, guests, fees, financials, audit, auditCount] = await Promise.all([
     context.env.DB.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM accounts WHERE status != 'deleted'").first(),
     context.env.DB.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM weddings WHERE status != 'deleted'").first(),
     context.env.DB.prepare('SELECT COUNT(*) AS total FROM guests WHERE deleted_at IS NULL').first(),
@@ -1247,10 +1251,11 @@ app.get('/api/superadmin/overview', requireSession, requireSuperadmin, async (co
     context.env.DB.prepare(`
       SELECT l.action, l.target_type, l.target_id, l.created_at, a.email AS actor_email
       FROM audit_logs l LEFT JOIN accounts a ON a.id = l.actor_account_id
-      ORDER BY l.created_at DESC LIMIT 20
-    `).all(),
+      ORDER BY l.created_at DESC, l.id DESC LIMIT ? OFFSET ?
+    `).bind(auditLimit, auditOffset).all(),
+    context.env.DB.prepare('SELECT COUNT(*) AS total FROM audit_logs').first(),
   ])
-  return context.json({ accounts, weddings, guests, fees, financials, audit: audit.results })
+  return context.json({ accounts, weddings, guests, fees, financials, audit: audit.results, auditPage, auditTotal: auditCount.total, auditHasMore: auditCount.total > auditOffset + audit.results.length })
 })
 
 app.get('/api/superadmin/accounts', requireSession, requireSuperadmin, async (context) => {
