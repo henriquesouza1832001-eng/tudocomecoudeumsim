@@ -922,3 +922,191 @@ img { display: block; max-width: 100%; }
   .walkin-form { grid-template-columns: 1fr .65fr; }
   .walkin-count { font-size: 9px; }
 }
+
+.role-page { min-height: calc(100vh - 48px); display: flex; flex-direction: column; color: var(--ink); background: #f5f3ed; }
+.role-header { min-height: 67px; padding: 0 5.5%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(48,55,47,.1); background: #faf9f5; }
+.role-brand { display: flex; align-items: center; gap: 11px; }
+.role-brand > span { width: 37px; height: 37px; display: grid; place-items: center; border: 1px solid rgba(64,84,71,.23); border-radius: 50%; color: var(--forest); font-family: var(--serif); font-size: 16px; }
+.role-brand > span > span { color: var(--accent); font-style: italic; }
+.role-brand strong { color: var(--forest); font-family: var(--serif); font-size: 14px; font-weight: 400; }
+.role-preview { display: flex; align-items: center; gap: 7px; color: #8a887f; font-size: 8px; letter-spacing: .1em; }
+.role-preview i { width: 6px; height: 6px; border-radius: 50%; background: #c29263; }
+.role-main { width: min(920px, 90%); margin: 0 auto; padding: 40px 0 54px; flex: 1; }
+.role-intro { margin: 0 auto 26px; max-width: 590px; text-align: center; }
+.role-icon { width: 42px; height: 42px; margin: 0 auto 12px; display: grid; place-items: center; border: 1px solid rgba(64,84,71,.17); border-radius: 50%; color: var(--forest); background: rgba(255,255,255,.45); }
+.role-intro .eyebrow { color: var(--accent); }
+.role-intro h1 { margin: 9px 0; color: var(--ink); font-family: var(--serif); font-size: clamp(30px, 4vw, 43px); font-weight: 400; line-height: 1.1; }
+.role-intro p { max-width: 500px; margin: 0 auto; color: #77796f; font-size: 11px; line-height: 1.7; }
+.role-card { min-width: 0; padding: 20px; border: 1px solid rgba(48,55,47,.1); background: #fbfaf7; box-shadow: 0 8px 25px rgba(47,53,47,.025); }
+.role-card + .role-card { margin-top: 15px; }
+.role-card h2 { margin: 7px 0 11px; color: var(--ink); font-family: var(--serif); font-size: 21px; font-weight: 400; }
+.role-card p { color: #77796f; font-size: 10px; line-height: 1.7; }
+.role-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.role-card-heading .eyebrow, .role-card > .eyebrow, .walkin-staff-card .eyebrow { color: var(--accent); }
+.role-grid { display: grid; gap: 14px; }
+.role-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.role-actions { margin-top: 17px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.role-actions .button-primary, .role-card .button-primary { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.role-card .button-outline, .role-actions .button-outline { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 10px; }
+.guest-pass-card { position: relative; overflow: hidden; }
+.guest-pass-details { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 9px 20px; }
+.guest-pass-details > span { display: inline-flex; align-items: center; gap: 7px; color: #686e65; font-size: 10px; }
+.guest-pass-details svg { color: var(--forest); }
+.guest-pass-qr { width: 98px; min-height: 103px; margin: 18px 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--forest); }
+.guest-pass-qr span { color: #7a7d73; font-size: 8px; text-align: center; }
+.calendar-select { min-height: 40px; padding: 0 10px; display: flex; align-items: center; gap: 8px; position: relative; border: 1px solid rgba(48,55,47,.2); color: #646a60; font-size: 9px; }
+.calendar-select select { max-width: 150px; padding: 7px 17px 7px 5px; appearance: none; border: 0; outline: 0; color: var(--forest); background: transparent; font-size: 9px; }
+.calendar-select > svg { position: absolute; right: 8px; pointer-events: none; }
+.role-card .text-arrow { margin-top: 13px; display: inline-flex; align-items: center; gap: 6px; color: var(--forest); font-size: 10px; }
+.dress-swatches { margin-top: 16px; display: flex; gap: 7px; }
+.dress-swatches i { width: 23px; height: 23px; border-radius: 50%; background: #89947a; }
+.dress-swatches i:nth-child(2) { background: #bdab91; }
+.dress-swatches i:nth-child(3) { background: #a96f56; }
+.dress-swatches i:nth-child(4) { background: #e1dbcd; }
+.godparent-detail { margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #646a60; font-size: 10px; }
+.godparent-detail svg { color: var(--forest); }
+.task-card { margin-top: 15px; }
+.task-count { color: #818276; font-size: 9px; }
+.task-list { margin-top: 10px; }
+.task-row { width: 100%; min-height: 55px; padding: 8px 0; display: flex; align-items: center; gap: 10px; border: 0; border-top: 1px solid rgba(48,55,47,.09); background: transparent; text-align: left; }
+.task-row > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.task-row strong { color: #444b43; font-size: 10px; font-weight: 500; }
+.task-row small { color: #8a8b81; font-size: 8px; }
+.task-row > svg { color: #999b91; }
+.task-check { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #c9c9be; border-radius: 50%; color: transparent; }
+.task-row.done .task-check { border-color: var(--forest); color: #fff; background: var(--forest); }
+.task-row.done strong { color: #8b8e84; text-decoration: line-through; }
+.godparent-privacy { margin: 12px 0 0; display: flex; align-items: center; gap: 7px; color: #83867c !important; font-size: 9px !important; }
+.role-demo-note { margin-top: 16px; padding: 10px 12px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #84857d; font-size: 8px; line-height: 1.5; text-align: center; }
+.role-demo-note svg { flex: 0 0 auto; }
+.role-footer { min-height: 47px; padding: 0 5.5%; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(48,55,47,.1); color: #8b8d84; font-size: 8px; }
+.role-footer > span:first-child { color: var(--forest); font-family: var(--serif); font-size: 10px; }
+.role-footer > span:first-child span { color: var(--accent); font-style: italic; }
+.role-footer a { color: var(--forest); }
+.role-stat-grid { margin-bottom: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.role-stat { min-height: 77px; padding: 13px 15px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(48,55,47,.1); background: #fbfaf7; }
+.role-stat > span { color: #7f8177; font-size: 9px; }
+.role-stat strong { color: var(--forest); font-family: var(--serif); font-size: 22px; font-weight: 400; }
+.staff-list-card .role-card-heading { margin-bottom: 12px; }
+.staff-list-card .search-field { width: 100%; max-width: 340px; margin-bottom: 9px; }
+.staff-guest-row { min-height: 57px; padding: 8px 0; display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(48,55,47,.09); }
+.staff-guest-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.staff-guest-copy strong { color: #454c44; font-size: 10px; font-weight: 600; }
+.staff-guest-copy strong span { margin-left: 5px; color: #a77e57; font-size: 8px; font-weight: 400; }
+.staff-guest-copy small { color: #898a81; font-size: 8px; }
+.checkin-toggle { min-width: 112px; min-height: 32px; border: 1px solid rgba(64,84,71,.28); color: var(--forest); background: transparent; font-size: 8px; }
+.checkin-toggle.arrived { border-color: #d6e1cd; color: #4b6748; background: #edf2e9; }
+.walkin-entry { padding-left: 9px; padding-right: 9px; background: #f5f3ed; }
+.walkin-entry .status-pill { font-size: 8px; }
+.walkin-staff-card { display: grid; grid-template-columns: 1fr; gap: 3px; }
+.walkin-staff-card h2 { margin-bottom: 3px; }
+.walkin-staff-card p { margin-top: 4px; }
+.staff-walkin-form { grid-template-columns: 1fr .5fr auto; align-items: end; }
+.staff-walkin-form label { color: #77796f; }
+.staff-walkin-form input { color: var(--ink); background: #fff; }
+.staff-walkin-form > button { min-width: 100px; grid-column: auto; }
+.print-site-button { justify-self: start; margin-top: 8px; }
+.print-mockups { display: none; }
+.mockup-print-grid { margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; }
+.mockup-print-card { min-height: 190px; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(48,55,47,.1); color: var(--ink); background: #f7f4ef; text-align: center; }
+.mockup-print-card > span { color: var(--forest); font-family: var(--serif); font-size: 19px; }
+.mockup-print-card > span > span { color: var(--accent); font-style: italic; }
+.mockup-print-card h3 { margin: 8px 0 2px; font-family: var(--serif); font-size: 21px; font-weight: 400; }
+.mockup-print-card p { margin: 0 0 7px; color: #73756c; font-family: var(--serif); font-size: 10px; }
+.mockup-print-card small { color: #77796f; font-size: 8px; }
+.mockup-print-card > div { margin-top: 11px; display: flex; gap: 5px; }
+.mockup-print-card > div i { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,.08); }
+.mockup-print-editorial { --forest: #4e5b51; --accent: #c98f78; background: #f7f4ef; }
+.mockup-print-minimal { --forest: #586575; --accent: #d7a7a0; background: #f5f4f1; }
+.mockup-print-floral { --forest: #765965; --accent: #c88d9c; background: #f8f3f3; }
+.mockup-print-rustic { --forest: #754f3e; --accent: #bd8b56; background: #f6f0e7; }
+.mockup-print-beach { --forest: #3d6970; --accent: #c68e68; background: #f4f7f4; }
+.mockup-print-tropical { --forest: #637455; --accent: #d38a68; background: #f5f3e9; }
+.mockup-print-night { --forest: #38424c; --accent: #d1a96a; background: #f3f1ec; }
+.superadmin-card .role-card-heading, .fee-admin-card .role-card-heading, .audit-card .role-card-heading { margin-bottom: 13px; }
+.superadmin-table-wrap { overflow-x: auto; }
+.superadmin-table { width: 100%; border-collapse: collapse; text-align: left; }
+.superadmin-table th { padding: 9px 8px; border-bottom: 1px solid rgba(48,55,47,.12); color: #85877d; font-size: 7px; letter-spacing: .08em; white-space: nowrap; }
+.superadmin-table td { padding: 10px 8px; border-bottom: 1px solid rgba(48,55,47,.08); color: #62665d; font-size: 9px; white-space: nowrap; }
+.superadmin-table td:first-child { display: flex; flex-direction: column; gap: 4px; }
+.superadmin-table td:first-child strong { color: #434b43; font-size: 10px; }
+.superadmin-table td:first-child small { color: #929389; font-size: 7px; }
+.admin-state { padding: 4px 7px; border-radius: 99px; color: #8b7760; background: #f0e9df; font-size: 8px; }
+.admin-state-active { color: #4d7049; background: #eaf0e5; }
+.admin-row-actions { display: flex; align-items: center; gap: 6px; }
+.admin-row-actions button { min-height: 27px; padding: 4px 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(48,55,47,.17); color: #62665d; background: transparent; font-size: 7px; }
+.admin-row-actions button:disabled { opacity: .4; cursor: not-allowed; }
+.purge-confirm { margin-top: 13px; padding: 13px; display: grid; gap: 9px; border: 1px solid #d8b7a5; background: #fcf7f2; }
+.purge-confirm p { margin: 5px 0 0; color: #77796f; font-size: 9px; line-height: 1.55; }
+.purge-confirm label { display: flex; flex-direction: column; gap: 5px; color: #77796f; font-size: 8px; }
+.purge-confirm input { max-width: 260px; min-height: 33px; padding: 0 8px; border: 1px solid rgba(48,55,47,.19); background: white; font-size: 10px; }
+.fee-switch-label { padding: 6px 9px; border-radius: 99px; color: #4e7049; background: #eaf0e5; font-size: 8px; }
+.fee-switch-label:not(.fee-active) { color: #77796f; background: #eeede7; }
+.fee-form { display: grid; gap: 13px; }
+.fee-toggle { display: flex; align-items: center; gap: 8px; color: #555c52; font-size: 10px; }
+.fee-toggle input { accent-color: var(--forest); }
+.fee-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.fee-fields label { display: flex; flex-direction: column; gap: 5px; color: #77796f; font-size: 8px; }
+.fee-fields input, .fee-fields select { width: 100%; min-height: 35px; padding: 0 8px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font-size: 10px; }
+.fee-fields input:disabled, .fee-fields select:disabled { color: #a4a59d; background: #f0efea; }
+.fee-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fee-form-footer p { max-width: 440px; margin: 0; font-size: 8px; }
+.fee-form-footer .button-primary { white-space: nowrap; }
+.audit-card .role-card-heading > span { display: inline-flex; align-items: center; gap: 5px; color: #82847a; font-size: 8px; }
+.audit-list > div { min-height: 37px; display: grid; grid-template-columns: 1.5fr 1fr auto; align-items: center; gap: 8px; border-top: 1px solid rgba(48,55,47,.08); color: #6e7066; font-size: 8px; }
+.audit-list strong { color: #444b43; font-size: 8px; font-weight: 500; }
+.audit-list small { color: #929389; font-size: 7px; }
+.admin-security-note { margin-top: 13px; padding: 12px; display: flex; align-items: flex-start; gap: 9px; color: #77796f; background: #ece9df; font-size: 8px; line-height: 1.6; }
+.admin-security-note svg { flex: 0 0 auto; color: var(--forest); }
+@media (max-width: 1050px) {
+  .prototype-switch { max-width: min(70vw, 660px); overflow-x: auto; }
+  .prototype-switch button { flex-shrink: 0; padding: 7px 8px; font-size: 9px; }
+}
+@media (max-width: 700px) {
+  .role-main { width: min(94%, 560px); padding: 27px 0 38px; }
+  .role-grid.two { grid-template-columns: 1fr; }
+  .role-card { padding: 15px; }
+  .role-header { padding: 0 4%; }
+  .role-preview { max-width: 150px; font-size: 6px; text-align: right; }
+  .role-stat-grid { gap: 6px; }
+  .role-stat { min-height: 68px; padding: 10px 9px; }
+  .role-stat > span { font-size: 7px; }
+  .role-stat strong { font-size: 19px; }
+  .fee-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-walkin-form { grid-template-columns: 1fr .55fr; }
+  .staff-walkin-form > button { grid-column: 1 / -1; }
+  .superadmin-table { min-width: 690px; }
+  .fee-form-footer { align-items: flex-start; flex-direction: column; }
+  .role-actions { align-items: stretch; flex-direction: column; }
+  .role-actions > * { width: 100%; }
+}
+@media (max-width: 480px) {
+  .role-intro h1 { font-size: 31px; }
+  .role-intro p { font-size: 10px; }
+  .role-card-heading { align-items: flex-start; }
+  .role-card-heading .status-pill { max-width: 125px; font-size: 7px; }
+  .role-footer { padding: 0 4%; }
+  .prototype-bar { overflow: hidden; }
+  .prototype-switch { width: 100%; max-width: 100%; justify-content: flex-start; border-radius: 7px; }
+  .prototype-switch button { padding: 7px 9px; font-size: 8px; }
+  .prototype-switch::-webkit-scrollbar { display: none; }
+  .walkin-entry .status-pill { padding: 5px; font-size: 6px; }
+  .staff-guest-row { align-items: flex-start; flex-direction: column; }
+  .staff-guest-row .checkin-toggle { align-self: stretch; }
+  .staff-guest-row.walkin-entry { flex-direction: row; }
+  .staff-guest-row.walkin-entry .status-pill { align-self: center; }
+  .audit-list > div { grid-template-columns: 1fr auto; }
+  .audit-list small { grid-column: 1 / -1; }
+  .mockup-print-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  body * { visibility: hidden !important; }
+  .staff-print-list .print-list, .staff-print-list .print-list * { visibility: visible !important; }
+  .staff-print-list .print-list { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; box-shadow: none; }
+  .staff-print-list .print-button, .staff-print-list .role-card-heading .button-outline { display: none !important; }
+  .staff-print-list .staff-guest-row { min-height: 38px; }
+  .staff-print-mockups .print-mockups, .staff-print-mockups .print-mockups * { visibility: visible !important; }
+  .staff-print-mockups .print-mockups { position: absolute; inset: 0 auto auto 0; width: 100%; display: block; padding: 20px; }
+  .staff-print-mockups .mockup-print-grid { grid-template-columns: repeat(2, 1fr); }
+  .staff-print-mockups .mockup-print-card { break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bell,
   CalendarDays,
+  CalendarCheck,
   Camera,
   Check,
   ChevronDown,
@@ -15,19 +16,25 @@ import {
   Heart,
   House,
   Image,
+  ListChecks,
+  LockKeyhole,
   Link,
   MapPin,
   Menu,
   Monitor,
   MessageCircle,
   Paintbrush,
+  Printer,
   QrCode,
   Search,
+  Shield,
   Settings2,
   Sparkles,
   Smartphone,
   Tablet,
+  Trash2,
   Users,
+  UserRound,
   Wallet,
   X,
 } from 'lucide-react'
@@ -96,6 +103,10 @@ function App() {
         <div className="prototype-switch" role="tablist" aria-label="Demonstrações do mockup">
           <button className={view === 'guest' ? 'selected' : ''} onClick={() => setView('guest')}><Heart size={15} /> Site do casal</button>
           <button className={view === 'dashboard' ? 'selected' : ''} onClick={() => setView('dashboard')}><Settings2 size={15} /> Painel dos noivos</button>
+          <button className={view === 'guest-portal' ? 'selected' : ''} onClick={() => setView('guest-portal')}><UserRound size={15} /> Convidado</button>
+          <button className={view === 'godparent' ? 'selected' : ''} onClick={() => setView('godparent')}><Heart size={15} /> Padrinhos</button>
+          <button className={view === 'event-staff' ? 'selected' : ''} onClick={() => setView('event-staff')}><ListChecks size={15} /> Equipe</button>
+          <button className={view === 'superadmin' ? 'selected' : ''} onClick={() => setView('superadmin')}><Shield size={15} /> Superadmin</button>
           <button className={view === 'checkin' ? 'selected' : ''} onClick={() => setView('checkin')}><QrCode size={15} /> Entrada</button>
         </div>
         <span className="prototype-badge">Demonstração</span>
@@ -103,6 +114,10 @@ function App() {
 
       {view === 'guest' && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
       {view === 'dashboard' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} />}
+      {view === 'guest-portal' && <GuestPortal notify={notify} />}
+      {view === 'godparent' && <GodparentPortal notify={notify} />}
+      {view === 'event-staff' && <EventStaffPanel notify={notify} />}
+      {view === 'superadmin' && <SuperAdminPanel notify={notify} />}
       {view === 'checkin' && <CheckIn notify={notify} />}
       {toast && <div className="toast" role="status"><Check size={16} /> {toast}</div>}
     </main>
@@ -364,6 +379,103 @@ function Customize({ theme, setTheme, enabledSections, toggleSection, notify }) 
 
 function GameManager({ enabled, setEnabled, notify }) {
   return <div className="game-layout"><section className="dash-card game-settings"><div className="card-heading"><div><span className="eyebrow">BRINCADEIRA OPCIONAL</span><h3>Quiz dos noivos</h3></div><span className={`game-state ${enabled ? 'enabled' : ''}`}>{enabled ? 'Ativo na prévia' : 'Desativado'}</span></div><p>Uma partida com cinco perguntas por dia, ranking entre convidados e uma nova chance amanhã. Só aparece no convite quando vocês ativarem.</p><div className="game-toggle-card"><span className="game-sparkle"><Sparkles size={21} /></span><span><strong>Mostrar o jogo no site</strong><small>{enabled ? 'O quiz aparece no convite demonstrativo.' : 'O menu do jogo fica oculto para os convidados.'}</small></span><button className={`toggle-switch ${enabled ? 'on' : ''}`} aria-label={enabled ? 'Desativar jogo' : 'Ativar jogo'} onClick={() => setEnabled(!enabled)}><i /></button></div><div className="game-details"><div><small>PARTIDAS</small><strong>5 perguntas por dia</strong></div><div><small>RANKING</small><strong>Semanal e geral</strong></div><div><small>PRIVACIDADE</small><strong>Apelido ou oculto</strong></div></div><button className="button-outline full-width" onClick={() => notify('Perguntas personalizadas serão configuradas na fase do jogo')}>Editar perguntas <ArrowRight size={14} /></button></section><section className="game-preview-card"><div className="quiz-top"><span className="quiz-mark"><Sparkles size={20} /></span><span className="quiz-day">QUIZ DO DIA · PRÉVIA</span><h3>Quem disse<br />“eu te amo” primeiro?</h3><p>Escolha uma resposta para ver como o jogo pode funcionar.</p></div><div className="quiz-options"><button onClick={() => notify('Resposta de demonstração selecionada')}>Elisa <span>A</span></button><button onClick={() => notify('Resposta de demonstração selecionada')}>Tomás <span>B</span></button></div><div className="quiz-footer"><span>01 / 05</span><span>Uma tentativa por dia</span></div></section></div>
+}
+
+function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '' }) {
+  return <div className={`role-page ${className}`}><header className="role-header"><a className="role-brand" href="#inicio"><span>e<span>&</span>t</span><strong>Elisa & Tomás</strong></a><span className="role-preview"><i /> PRÉVIA INTERATIVA · DADOS FICTÍCIOS</span></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}<div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div></main><footer className="role-footer"><span>e<span>&</span>t · celebração em 18.09.2027</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+}
+
+function GuestPortal({ notify }) {
+  const [rsvp, setRsvp] = useState('Confirmar presença')
+  const [calendar, setCalendar] = useState('')
+  return <RoleFrame icon={UserRound} eyebrow="ÁREA DO CONVIDADO" title="Seu convite, em um só lugar." description="Consulte os detalhes do evento, confirme sua presença e guarde o convite no celular.">
+    <section className="role-card guest-pass-card"><div className="role-card-heading"><div><span className="eyebrow">CONVITE INDIVIDUAL</span><h2>Olá, Ana Beatriz</h2></div><span className="status-pill confirmed"><i /> Convite ativo</span></div><div className="guest-pass-details"><span><CalendarDays size={16} /> 18 de setembro de 2027 · 16h</span><span><MapPin size={16} /> Casa das Palmeiras · São Paulo, SP</span><span><Users size={16} /> Convite para 2 pessoas</span></div><div className="guest-pass-qr"><QrCode size={61} strokeWidth={1.1} /><span>Apresente este convite na entrada</span></div><div className="role-actions"><button className="button-primary" onClick={() => { setRsvp(rsvp === 'Confirmar presença' ? 'Presença confirmada' : 'Confirmar presença'); notify(rsvp === 'Confirmar presença' ? 'Presença confirmada nesta demonstração' : 'Confirmação alterada') }}>{rsvp} <Check size={15} /></button><label className="calendar-select">Adicionar à agenda<select value={calendar} onChange={(event) => { setCalendar(event.target.value); if (event.target.value) notify(`Prévia de integração com ${event.target.value}`) }}><option value="">Escolha seu calendário</option><option>Google Calendar</option><option>Outlook</option><option>Apple Calendar</option></select><ChevronDown size={14} /></label></div></section>
+    <div className="role-grid two"><section className="role-card"><span className="eyebrow">SEU EVENTO</span><h2>Recepção e festa</h2><p>Após a cerimônia, vamos celebrar juntos até a noite.</p><a className="text-arrow" href="#local">Ver local e como chegar <ArrowRight size={14} /></a></section><section className="role-card"><span className="eyebrow">PRESENTES</span><h2>Um carinho para os noivos</h2><p>Acesse a lista de presentes e escolha como deseja participar.</p><button className="button-outline" onClick={() => notify('Lista de presentes demonstrativa')}>Ver lista <Gift size={15} /></button></section></div>
+  </RoleFrame>
+}
+
+function GodparentPortal({ notify }) {
+  const [tasks, setTasks] = usePersistentState('demo-godparent-tasks', [
+    { id: 'look', title: 'Confirmar traje com os noivos', due: 'Até 1º de setembro', done: false },
+    { id: 'ceremony', title: 'Chegar 45 minutos antes da cerimônia', due: '18 de setembro · 15h15', done: false },
+    { id: 'speech', title: 'Combinar a surpresa com a cerimonialista', due: 'Até 12 de setembro', done: true },
+  ])
+  const toggleTask = (id) => { setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task)); notify('Tarefa atualizada na demonstração') }
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS PADRINHOS" title="Sua participação faz parte da história." description="Aqui ficam os detalhes e combinados enviados pelos noivos para você.">
+    <div className="role-grid two"><section className="role-card godparent-event"><span className="eyebrow">PRÓXIMO COMPROMISSO</span><h2>Ensaio da cerimônia</h2><div className="godparent-detail"><CalendarCheck size={16} /><span>17 de setembro · 17h30</span></div><div className="godparent-detail"><MapPin size={16} /><span>Capela das Palmeiras</span></div><button className="button-outline" onClick={() => notify('Orientação de rota demonstrativa')}>Como chegar <ArrowRight size={14} /></button></section><section className="role-card"><span className="eyebrow">ORIENTAÇÃO DOS NOIVOS</span><h2>Traje sugerido</h2><p>Traje social em tons de verde, areia ou terracota. Evite branco e estampas muito chamativas.</p><div className="dress-swatches"><i /><i /><i /><i /></div></section></div>
+    <section className="role-card task-card"><div className="role-card-heading"><div><span className="eyebrow">SUA LISTA</span><h2>Combinados importantes</h2></div><span className="task-count">{tasks.filter((task) => task.done).length}/{tasks.length} concluídos</span></div><div className="task-list">{tasks.map((task) => <button className={`task-row ${task.done ? 'done' : ''}`} key={task.id} onClick={() => toggleTask(task.id)}><span className="task-check"><Check size={14} /></span><span><strong>{task.title}</strong><small>{task.due}</small></span><ChevronRight size={15} /></button>)}</div><p className="godparent-privacy"><LockKeyhole size={14} /> Área individual. A lista de convidados não fica disponível neste perfil.</p></section>
+  </RoleFrame>
+}
+
+const STAFF_GUESTS = [
+  { id: 'g1', name: 'Ana Beatriz Costa', group: 'Família da noiva', guests: 2, rsvp: 'Confirmado', dietary: 'Vegetariana' },
+  { id: 'g2', name: 'Bruno e Camila Alves', group: 'Amigos', guests: 2, rsvp: 'Confirmado', dietary: 'Sem restrições' },
+  { id: 'g3', name: 'Carolina Mendes', group: 'Família do noivo', guests: 1, rsvp: 'Confirmado', dietary: 'Sem glúten' },
+  { id: 'g4', name: 'Daniel Ferreira', group: 'Trabalho', guests: 1, rsvp: 'Aguardando', dietary: 'Sem restrições' },
+  { id: 'g5', name: 'Eduarda e família', group: 'Família da noiva', guests: 3, rsvp: 'Confirmado', dietary: '2 vegetarianos' },
+]
+
+function EventStaffPanel({ notify }) {
+  const [checkins, setCheckins] = usePersistentState('demo-staff-checkins', [])
+  const [walkIns, setWalkIns] = usePersistentState('demo-staff-walkins', [])
+  const [query, setQuery] = useState('')
+  const [walkInName, setWalkInName] = useState('')
+  const [walkInParty, setWalkInParty] = useState('1')
+  const [printMode, setPrintMode] = useState('')
+  const visibleGuests = STAFF_GUESTS.filter((guest) => `${guest.name} ${guest.group}`.toLowerCase().includes(query.toLowerCase()))
+  const peopleCount = STAFF_GUESTS.filter((guest) => guest.rsvp === 'Confirmado').reduce((total, guest) => total + guest.guests, 0) + walkIns.reduce((total, guest) => total + guest.party, 0)
+  const printReport = (mode) => { setPrintMode(mode); window.setTimeout(() => { window.print(); setPrintMode('') }, 120) }
+  const addWalkIn = (event) => { event.preventDefault(); const name = walkInName.trim(); const party = Number(walkInParty); if (!name || !Number.isInteger(party) || party < 1) return; setWalkIns((current) => [...current, { id: crypto.randomUUID(), name, party }]); setWalkInName(''); setWalkInParty('1'); notify('Entrada de última hora incluída no total do buffet') }
+  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Lista do evento, com acesso controlado." description="Acesso de demonstração ao casamento Elisa & Tomás · Recepção. A equipe vê somente as informações necessárias para este evento." className={`staff-print-${printMode}`}>
+    <div className="role-stat-grid"><div className="role-stat"><span>Confirmados neste evento</span><strong>{STAFF_GUESTS.filter((guest) => guest.rsvp === 'Confirmado').length}</strong></div><div className="role-stat"><span>Pessoas previstas no buffet</span><strong>{peopleCount}</strong></div><div className="role-stat"><span>Entradas registradas</span><strong>{checkins.length + walkIns.reduce((total, guest) => total + guest.party, 0)}</strong></div></div>
+    <section className="role-card staff-list-card print-list"><div className="role-card-heading"><div><span className="eyebrow">18 SET 2027 · 16H</span><h2>Lista de entrada</h2></div><button className="button-outline print-button" onClick={() => printReport('list')}><Printer size={15} /> Exportar PDF</button></div><label className="search-field"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome ou grupo" /></label><div className="staff-guest-list">{visibleGuests.map((guest) => <div className="staff-guest-row" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name}</strong><small>{guest.group} · {guest.guests} {guest.guests === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary}</small></div><button className={`checkin-toggle ${checkins.includes(guest.id) ? 'arrived' : ''}`} onClick={() => { setCheckins((current) => current.includes(guest.id) ? current.filter((id) => id !== guest.id) : [...current, guest.id]); notify('Entrada atualizada na demonstração') }}>{checkins.includes(guest.id) ? 'Entrada registrada' : 'Registrar entrada'}</button></div>)}</div>{walkIns.map((guest) => <div className="staff-guest-row walkin-entry" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name} <span>Entrada manual</span></strong><small>Incluído agora · {guest.party} {guest.party === 1 ? 'pessoa' : 'pessoas'}</small></div><span className="status-pill confirmed"><i /> Buffet atualizado</span></div>)}</section>
+    <section className="role-card walkin-staff-card"><div><span className="eyebrow">CHEGADA SEM QR CODE</span><h2>Adicionar convidado de última hora</h2><p>O total de pessoas é atualizado para o buffet.</p></div><form className="walkin-form staff-walkin-form" onSubmit={addWalkIn}><label>Nome<input value={walkInName} onChange={(event) => setWalkInName(event.target.value)} required placeholder="Nome completo" /></label><label>Pessoas<input type="number" min="1" max="20" value={walkInParty} onChange={(event) => setWalkInParty(event.target.value)} required /></label><button className="button-primary" type="submit">Adicionar <Check size={15} /></button></form><button className="button-outline print-button print-site-button" onClick={() => printReport('mockups')}><Printer size={15} /> Exportar mockups do site em PDF</button></section>
+    <section className="print-mockups"><span className="eyebrow">ELISA & TOMÁS · ESTUDOS VISUAIS</span><h2>Opções de identidade para o site</h2><p>Pranchas de referência geradas a partir dos temas implementáveis no projeto.</p><div className="mockup-print-grid">{THEMES.map((theme) => <article key={theme.id} className={`mockup-print-card mockup-print-${theme.id}`}><span>e<span>&</span>t</span><h3>Elisa & Tomás</h3><p>18 de setembro de 2027</p><small>{theme.name} · {theme.note}</small><div>{theme.colors.map((color) => <i key={color} style={{ background: color }} />)}</div></article>)}</div></section>
+  </RoleFrame>
+}
+
+const DEMO_WEDDINGS = [
+  { id: 'w1', couple: 'Elisa & Tomás', slug: 'elisa-e-tomas', status: 'Ativo', guests: 128, updated: 'Hoje, 10:42' },
+  { id: 'w2', couple: 'Marina & Rafael', slug: 'marina-e-rafael', status: 'Em configuração', guests: 0, updated: 'Ontem, 16:18' },
+  { id: 'w3', couple: 'Lívia & Pedro', slug: 'livia-e-pedro', status: 'Suspenso', guests: 94, updated: '10 out, 12:05' },
+]
+
+const DEMO_ACCOUNTS = [
+  { id: 'a1', name: 'Henrique Souza', email: 'henrique@exemplo.test', role: 'Superadmin', status: 'Ativa' },
+  { id: 'a2', name: 'Elisa Martins', email: 'elisa@exemplo.test', role: 'Noivos · administradora', status: 'Ativa' },
+  { id: 'a3', name: 'Tomás Almeida', email: 'tomas@exemplo.test', role: 'Noivos · administrador', status: 'Ativa' },
+  { id: 'a4', name: 'Equipe do evento', email: 'equipe@exemplo.test', role: 'Equipe · recepção', status: 'Pendente' },
+]
+
+function SuperAdminPanel({ notify }) {
+  const [weddings, setWeddings] = usePersistentState('demo-superadmin-weddings', DEMO_WEDDINGS)
+  const [accounts, setAccounts] = usePersistentState('demo-superadmin-accounts', DEMO_ACCOUNTS)
+  const [fees, setFees] = usePersistentState('demo-superadmin-fees', { enabled: false, rate: '0', min: '0', max: '0', paidBy: 'couple' })
+  const [purgeTarget, setPurgeTarget] = useState('')
+  const [purgePhrase, setPurgePhrase] = useState('')
+  const [audit, setAudit] = usePersistentState('demo-superadmin-audit', [])
+  const activeCount = weddings.filter((wedding) => wedding.status === 'Ativo').length
+  const logAction = (action, couple) => setAudit((current) => [{ id: crypto.randomUUID(), action, couple, at: new Date().toLocaleString('pt-BR') }, ...current].slice(0, 8))
+  const changeStatus = (wedding) => { const nextStatus = wedding.status === 'Ativo' ? 'Suspenso' : 'Ativo'; setWeddings((current) => current.map((item) => item.id === wedding.id ? { ...item, status: nextStatus } : item)); logAction(`Status alterado para ${nextStatus}`, wedding.couple); notify(`Casamento ${nextStatus.toLowerCase()} na demonstração`) }
+  const changeAccountStatus = (account) => { const nextStatus = account.status === 'Ativa' ? 'Suspensa' : 'Ativa'; setAccounts((current) => current.map((item) => item.id === account.id ? { ...item, status: nextStatus } : item)); logAction(`Conta ${nextStatus.toLowerCase()}`, account.name); notify(`Conta ${nextStatus.toLowerCase()} na demonstração`) }
+  const saveFees = (event) => { event.preventDefault(); setFees((current) => ({ ...current, savedAt: new Date().toISOString() })); notify(fees.enabled ? 'Política de taxas salva na demonstração' : 'Configuração sem taxas salva na demonstração') }
+  const purgePersonalData = () => { const wedding = weddings.find((item) => item.id === purgeTarget); if (!wedding || purgePhrase !== 'ANONIMIZAR') return; setWeddings((current) => current.map((item) => item.id === wedding.id ? { ...item, guests: 0, status: 'Dados anonimizados' } : item)); logAction('Dados pessoais anonimizados; financeiro e auditoria preservados', wedding.couple); setPurgeTarget(''); setPurgePhrase(''); notify('Dados pessoais anonimizados; registros financeiros e de auditoria preservados') }
+  return <RoleFrame icon={Shield} eyebrow="CONTROLE DA PLATAFORMA" title="Visão global, com trilha de auditoria." description="Administre casamentos, acessos e política de taxas. Toda ação real exigirá autenticação reforçada e registro no servidor.">
+    <div className="role-stat-grid"><div className="role-stat"><span>Casamentos ativos</span><strong>{activeCount}</strong></div><div className="role-stat"><span>Contas cadastradas</span><strong>342</strong></div><div className="role-stat"><span>Política da plataforma</span><strong>{fees.enabled ? `${fees.rate}%` : 'Sem taxas'}</strong></div></div>
+    <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">CONTAS E SITES</span><h2>Casamentos cadastrados</h2></div><button className="button-outline" onClick={() => notify('Relatório global demonstrativo')}><Printer size={15} /> Exportar visão geral</button></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>CASAL</th><th>SUBDOMÍNIO</th><th>CONVIDADOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>{weddings.map((wedding) => <tr key={wedding.id}><td><strong>{wedding.couple}</strong><small>Atualizado {wedding.updated}</small></td><td>{wedding.slug}</td><td>{wedding.guests}</td><td><span className={`admin-state ${wedding.status === 'Ativo' ? 'admin-state-active' : ''}`}>{wedding.status}</span></td><td><div className="admin-row-actions"><button onClick={() => changeStatus(wedding)}>{wedding.status === 'Ativo' ? 'Suspender' : 'Ativar'}</button><button onClick={() => setPurgeTarget(wedding.id)}><Trash2 size={14} /> Anonimizar dados</button></div></td></tr>)}</tbody></table></div>{purgeTarget && <div className="purge-confirm"><div><span className="eyebrow">CONFIRMAÇÃO DE DADOS</span><p>Dados pessoais dos convidados serão removidos. Financeiro e auditoria serão preservados.</p></div><label>Digite ANONIMIZAR<input value={purgePhrase} onChange={(event) => setPurgePhrase(event.target.value)} /></label><div className="admin-row-actions"><button onClick={() => { setPurgeTarget(''); setPurgePhrase('') }}>Cancelar</button><button disabled={purgePhrase !== 'ANONIMIZAR'} onClick={purgePersonalData}>Confirmar anonimização</button></div></div>}</section>
+    <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO À PLATAFORMA</span><h2>Contas cadastradas</h2></div><span className="task-count">{accounts.length} contas na demonstração</span></div><div className="superadmin-table-wrap"><table className="superadmin-table accounts-table"><thead><tr><th>NOME</th><th>E-MAIL</th><th>PERFIL</th><th>STATUS</th><th>AÇÃO</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id}><td><strong>{account.name}</strong></td><td>{account.email}</td><td>{account.role}</td><td><span className={`admin-state ${account.status === 'Ativa' ? 'admin-state-active' : ''}`}>{account.status}</span></td><td><button className="account-status-action" onClick={() => changeAccountStatus(account)}>{account.status === 'Ativa' ? 'Suspender' : 'Ativar'}</button></td></tr>)}</tbody></table></div></section>
+    <section className="role-card fee-admin-card"><div className="role-card-heading"><div><span className="eyebrow">REGRAS COMERCIAIS</span><h2>Taxas por presente</h2></div><span className={`fee-switch-label ${fees.enabled ? 'fee-active' : ''}`}>{fees.enabled ? 'Taxa ativada' : 'Sem taxas'}</span></div><form className="fee-form" onSubmit={saveFees}><label className="fee-toggle"><input type="checkbox" checked={fees.enabled} onChange={(event) => setFees((current) => ({ ...current, enabled: event.target.checked }))} /><span>Ativar taxa para presentes</span></label><div className="fee-fields"><label>Percentual (%)<input type="number" min="0" max="100" step="0.1" value={fees.rate} onChange={(event) => setFees((current) => ({ ...current, rate: event.target.value }))} disabled={!fees.enabled} /></label><label>Mínimo (R$)<input type="number" min="0" step="0.01" value={fees.min} onChange={(event) => setFees((current) => ({ ...current, min: event.target.value }))} disabled={!fees.enabled} /></label><label>Máximo (R$)<input type="number" min="0" step="0.01" value={fees.max} onChange={(event) => setFees((current) => ({ ...current, max: event.target.value }))} disabled={!fees.enabled} /></label><label>Quem paga<select value={fees.paidBy} onChange={(event) => setFees((current) => ({ ...current, paidBy: event.target.value }))} disabled={!fees.enabled}><option value="couple">Noivos</option><option value="guest">Convidado</option></select></label></div><div className="fee-form-footer"><p>Alterações reais serão gravadas no D1 e aplicadas somente após confirmação e registro de auditoria.</p><button className="button-primary" type="submit">Salvar política <Check size={15} /></button></div></form></section>
+    <section className="role-card audit-card"><div className="role-card-heading"><div><span className="eyebrow">SEGURANÇA</span><h2>Atividade administrativa</h2></div><span><LockKeyhole size={15} /> Registro imutável</span></div>{audit.length ? <div className="audit-list">{audit.map((item) => <div key={item.id}><span>{item.action}</span><strong>{item.couple}</strong><small>{item.at}</small></div>)}</div> : <p className="buffet-empty">As ações administrativas de demonstração aparecerão aqui.</p>}</section>
+    <div className="admin-security-note"><Shield size={16} /><span>O painel real usará senha e TOTP. Remoção de dados exigirá nova autenticação, frase de confirmação e preservará ledger financeiro e auditoria.</span></div>
+  </RoleFrame>
+}
+
+function usePersistentState(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : initialValue } catch { return initialValue }
+  })
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(value)) } catch { return undefined } }, [key, value])
+  return [value, setValue]
 }
 
 function CheckIn({ notify }) {
