@@ -1370,7 +1370,7 @@ app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requir
       )
       AND NOT EXISTS (SELECT 1 FROM platform_admins p WHERE p.account_id = accounts.id)
       AND NOT EXISTS (SELECT 1 FROM weddings w WHERE w.owner_account_id = accounts.id AND w.id != ? AND w.status != 'deleted')
-      AND NOT EXISTS (SELECT 1 FROM wedding_memberships m JOIN weddings w ON w.id = m.wedding_id WHERE m.account_id = accounts.id AND m.wedding_id != ? AND m.status = 'active' AND w.status != 'deleted')`).bind(weddingId, weddingId, weddingId, weddingId),
+      AND NOT EXISTS (SELECT 1 FROM wedding_memberships m JOIN weddings w ON w.id = m.wedding_id WHERE m.account_id = accounts.id AND m.wedding_id != ? AND m.status IN ('active', 'pending') AND w.status != 'deleted')`).bind(weddingId, weddingId, weddingId, weddingId),
     context.env.DB.prepare("DELETE FROM account_mfa WHERE account_id IN (SELECT id FROM accounts WHERE status = 'deleted')"),
     context.env.DB.prepare("DELETE FROM auth_sessions WHERE account_id IN (SELECT id FROM accounts WHERE status = 'deleted')"),
     context.env.DB.prepare("DELETE FROM auth_challenges WHERE account_id IN (SELECT id FROM accounts WHERE status = 'deleted')"),
