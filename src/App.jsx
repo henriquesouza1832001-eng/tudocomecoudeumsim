@@ -100,14 +100,14 @@ function App() {
     <main className={`app-shell theme-${theme}`}>
       <div className="prototype-bar">
         <div className="prototype-label"><span className="prototype-dot" /> ESTUDO VISUAL <span className="prototype-divider">/</span> Plataforma de casamento</div>
-        <div className="prototype-switch" role="tablist" aria-label="Demonstrações do mockup">
-          <button className={view === 'guest' ? 'selected' : ''} onClick={() => setView('guest')}><Heart size={15} /> Site do casal</button>
-          <button className={view === 'dashboard' ? 'selected' : ''} onClick={() => setView('dashboard')}><Settings2 size={15} /> Painel dos noivos</button>
-          <button className={view === 'guest-portal' ? 'selected' : ''} onClick={() => setView('guest-portal')}><UserRound size={15} /> Convidado</button>
-          <button className={view === 'godparent' ? 'selected' : ''} onClick={() => setView('godparent')}><Heart size={15} /> Padrinhos</button>
-          <button className={view === 'event-staff' ? 'selected' : ''} onClick={() => setView('event-staff')}><ListChecks size={15} /> Equipe</button>
-          <button className={view === 'superadmin' ? 'selected' : ''} onClick={() => setView('superadmin')}><Shield size={15} /> Superadmin</button>
-          <button className={view === 'checkin' ? 'selected' : ''} onClick={() => setView('checkin')}><QrCode size={15} /> Entrada</button>
+        <div className="prototype-switch" role="group" aria-label="Demonstrações do mockup">
+          <button aria-pressed={view === 'guest'} className={view === 'guest' ? 'selected' : ''} onClick={() => setView('guest')}><Heart size={15} /> Site do casal</button>
+          <button aria-pressed={view === 'dashboard'} className={view === 'dashboard' ? 'selected' : ''} onClick={() => setView('dashboard')}><Settings2 size={15} /> Painel dos noivos</button>
+          <button aria-pressed={view === 'guest-portal'} className={view === 'guest-portal' ? 'selected' : ''} onClick={() => setView('guest-portal')}><UserRound size={15} /> Convidado</button>
+          <button aria-pressed={view === 'godparent'} className={view === 'godparent' ? 'selected' : ''} onClick={() => setView('godparent')}><Heart size={15} /> Padrinhos</button>
+          <button aria-pressed={view === 'event-staff'} className={view === 'event-staff' ? 'selected' : ''} onClick={() => setView('event-staff')}><ListChecks size={15} /> Equipe</button>
+          <button aria-pressed={view === 'superadmin'} className={view === 'superadmin' ? 'selected' : ''} onClick={() => setView('superadmin')}><Shield size={15} /> Superadmin</button>
+          <button aria-pressed={view === 'checkin'} className={view === 'checkin' ? 'selected' : ''} onClick={() => setView('checkin')}><QrCode size={15} /> Entrada</button>
         </div>
         <span className="prototype-badge">Demonstração</span>
       </div>
