@@ -53,15 +53,23 @@ async function verifyAccessAssertion(assertion, env) {
 }
 
 export async function onRequest(context) {
-  if (!protectedPath(new URL(context.request.url).pathname)) return context.next()
-
-  const assertion = context.request.headers.get('Cf-Access-Jwt-Assertion')
-  if (!assertion || !await verifyAccessAssertion(assertion, context.env)) {
-    return new Response('Acesso não autorizado', {
-      status: 403,
-      headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' },
-    })
+  let response
+  if (protectedPath(new URL(context.request.url).pathname)) {
+    const assertion = context.request.headers.get('Cf-Access-Jwt-Assertion')
+    if (!assertion || !await verifyAccessAssertion(assertion, context.env)) {
+      response = new Response('Acesso não autorizado', {
+        status: 403,
+        headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+    }
   }
 
-  return context.next()
+  response ||= await context.next()
+  const headers = new Headers(response.headers)
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
+  headers.set('Strict-Transport-Security', 'max-age=15552000')
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
