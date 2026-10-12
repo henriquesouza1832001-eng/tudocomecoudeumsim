@@ -1,0 +1,12 @@
+﻿{
+    "name":  "tudocomecoudeumsim",
+    "pages_build_output_dir":  "./dist",
+    "compatibility_date":  "2026-10-12",
+    "d1_databases":  [
+                         {
+                             "binding":  "DB",
+                             "database_name":  "tudocomecoudeumsim-db",
+                             "database_id":  "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555"
+                         }
+                     ]
+}
