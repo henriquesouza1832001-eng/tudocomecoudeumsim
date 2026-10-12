@@ -2198,7 +2198,7 @@ function CheckIn({ notify }) {
 
   const exportBuffetList = () => {
     const rows = [['Nome do convidado', 'Pessoas', 'Restrição alimentar'], ...walkIns.map((guest) => [guest.name, guest.partySize, guest.dietary || 'Nenhuma informada'])]
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(';')).join('\n')
+    const csv = rows.map((row) => row.map(csvCell).join(';')).join('\n')
     const url = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
