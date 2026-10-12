@@ -498,7 +498,7 @@ app.post('/api/couple/weddings/:weddingId/members/invitations', requireSession, 
   const body = await context.req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
   const role = body?.role
-  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || !['event_staff', 'checkin_staff'].includes(role)) return jsonError(context, 400, 'invalid_invitation')
+  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || !['couple_admin', 'event_staff', 'checkin_staff'].includes(role)) return jsonError(context, 400, 'invalid_invitation')
   const existingAccount = await context.env.DB.prepare('SELECT id, status FROM accounts WHERE email = ? COLLATE NOCASE').bind(email).first()
   if (existingAccount && existingAccount.status !== 'active') return jsonError(context, 409, 'account_not_ready')
   const accountId = existingAccount?.id || crypto.randomUUID()
