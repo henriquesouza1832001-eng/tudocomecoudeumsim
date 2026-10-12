@@ -1,0 +1,1 @@
+ALTER TABLE account_mfa ADD COLUMN last_totp_counter INTEGER NOT NULL DEFAULT 0;

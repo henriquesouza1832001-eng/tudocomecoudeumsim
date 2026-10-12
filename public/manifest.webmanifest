@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Sites de Casamento",
+  "short_name": "Casamento",
+  "description": "Sites e ferramentas para casamentos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ed",
+  "theme_color": "#f7f3ed",
+  "icons": [
+    {
+      "src": "/icons/wedding.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

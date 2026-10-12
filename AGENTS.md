@@ -268,6 +268,8 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Equipe do evento: acesso restrito aos eventos atribuídos. Pode consultar e exportar em PDF a lista necessária para o evento, sem acesso amplo a contatos ou dados de outros casamentos. O PDF do site público usa apenas conteúdo publicado.
 - Equipe de entrada: permissão separada para check-in do evento, sem acesso às configurações financeiras ou de personalização.
 - Todas as consultas e mutações de dados verificam conta, papel, casamento e evento no servidor. O cliente nunca escolhe livremente o identificador do casamento autorizado.
+- Convidados e padrinhos usam token individual armazenado apenas como hash; o servidor limita eventos pelo grupo autorizado. Padrinhos só consultam e atualizam tarefas ligadas ao próprio convite.
+- Equipe do evento e equipe de entrada só consultam eventos atribuídos por `membership_event_access`. A lista da equipe não inclui e-mail ou telefone; somente `checkin_staff` pode registrar entradas e acompanhantes de última hora.
 - A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando registros financeiros e trilha de auditoria. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
 - A política de taxa pode estar desligada. Quando ligada, percentual, mínimo, máximo e pagador são configuráveis; não fixar valores de negócio no código.
 
@@ -359,6 +361,11 @@ A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo 
 - Dados de convidados visíveis somente aos noivos do respectivo casamento.
 - Limite de requisições e Turnstile nos formulários públicos.
 - Tokens de QR e links de acesso assinados, com expiração quando aplicável.
+- Superadmin protegido pelo Cloudflare Access com política para o e-mail autorizado e MFA independente. O middleware Pages valida assinatura, emissor, audiência, validade e identidade do token nas rotas `/superadmin/*` e `/api/superadmin/*`.
+- Configurar `ACCESS_TEAM_DOMAIN`, `ACCESS_APPLICATION_AUD` e `SUPERADMIN_EMAIL` como variáveis do Pages e `MFA_ENCRYPTION_KEY` como secret. A rota falha fechada se a configuração ou o token estiver ausente ou inválido.
+- Cloudflare Access é uma barreira adicional. A API ainda valida a sessão do produto, papel superadmin e autorização no D1 em cada operação.
+- Sessões do produto usam cookie seguro HttpOnly, hash do token no D1, validade limitada, senha PBKDF2, MFA TOTP cifrado em repouso e proteção contra reutilização do mesmo código. Tentativas de login e confirmação de MFA são limitadas por conta e endereço de origem.
+- Anonimização global exige MFA validado nos últimos cinco minutos, frase com o ID do casamento e gravação de auditoria. Preservar as linhas financeiras e de auditoria.
 
 ## 16. Fases
 
