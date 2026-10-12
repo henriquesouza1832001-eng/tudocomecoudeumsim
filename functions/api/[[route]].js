@@ -1245,8 +1245,9 @@ app.get('/api/superadmin/overview', requireSession, requireSuperadmin, async (co
       COALESCE(SUM(CASE WHEN fee_status = 'due' THEN fee_amount_cents ELSE 0 END), 0) AS fees_due_cents
       FROM gift_contributions`).first(),
     context.env.DB.prepare(`
-      SELECT action, target_type, target_id, created_at
-      FROM audit_logs ORDER BY created_at DESC LIMIT 20
+      SELECT l.action, l.target_type, l.target_id, l.created_at, a.email AS actor_email
+      FROM audit_logs l LEFT JOIN accounts a ON a.id = l.actor_account_id
+      ORDER BY l.created_at DESC LIMIT 20
     `).all(),
   ])
   return context.json({ accounts, weddings, guests, fees, financials, audit: audit.results })
