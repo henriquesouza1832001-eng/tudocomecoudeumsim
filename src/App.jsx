@@ -313,6 +313,26 @@ async function readOfflineCheckins(eventId) {
   return result
 }
 
+async function readAllOfflineCheckins() {
+  const database = await openCheckinStore()
+  const result = await new Promise((resolve, reject) => {
+    const request = database.transaction('entries').objectStore('entries').getAll()
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+  database.close()
+  return result
+}
+
+function clearOfflineCheckinData() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('wedding-checkin')
+    request.onsuccess = resolve
+    request.onerror = () => reject(request.error)
+    request.onblocked = () => reject(new Error('offline_data_in_use'))
+  })
+}
+
 async function removeOfflineCheckins(ids) {
   if (!ids.length) return
   const database = await openCheckinStore()
@@ -1324,8 +1344,8 @@ function GameManager({ enabled, setEnabled, notify }) {
   return <div className="game-layout"><section className="dash-card game-settings"><div className="card-heading"><div><span className="eyebrow">BRINCADEIRA OPCIONAL</span><h3>Quiz dos noivos</h3></div><span className={`game-state ${enabled ? 'enabled' : ''}`}>{enabled ? 'Ativo na prévia' : 'Desativado'}</span></div><p>Uma partida com cinco perguntas por dia, ranking entre convidados e uma nova chance amanhã. Só aparece no convite quando vocês ativarem.</p><div className="game-toggle-card"><span className="game-sparkle"><Sparkles size={21} /></span><span><strong>Mostrar o jogo no site</strong><small>{enabled ? 'O quiz aparece no convite demonstrativo.' : 'O menu do jogo fica oculto para os convidados.'}</small></span><button className={`toggle-switch ${enabled ? 'on' : ''}`} aria-label={enabled ? 'Desativar jogo' : 'Ativar jogo'} onClick={() => setEnabled(!enabled)}><i /></button></div><div className="game-details"><div><small>PARTIDAS</small><strong>5 perguntas por dia</strong></div><div><small>RANKING</small><strong>Semanal e geral</strong></div><div><small>PRIVACIDADE</small><strong>Apelido ou oculto</strong></div></div><button className="button-outline full-width" onClick={() => notify('Perguntas personalizadas serão configuradas na fase do jogo')}>Editar perguntas <ArrowRight size={14} /></button></section><section className="game-preview-card"><div className="quiz-top"><span className="quiz-mark"><Sparkles size={20} /></span><span className="quiz-day">QUIZ DO DIA · PRÉVIA</span><h3>Quem disse<br />“eu te amo” primeiro?</h3><p>Escolha uma resposta para ver como o jogo pode funcionar.</p></div><div className="quiz-options"><button onClick={() => notify('Resposta de demonstração selecionada')}>Elisa <span>A</span></button><button onClick={() => notify('Resposta de demonstração selecionada')}>Tomás <span>B</span></button></div><div className="quiz-footer"><span>01 / 05</span><span>Uma tentativa por dia</span></div></section></div>
 }
 
-function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento' }) {
-  return <div className={`role-page ${className}`}><header className="role-header"><a className="role-brand" href="#inicio"><span>e<span>&</span>t</span><strong>{secure ? secureName : 'Elisa & Tomás'}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : 'PRÉVIA INTERATIVA · DADOS FICTÍCIOS'}</span></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}{!secure && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure ? secureFooter : 'e&t · celebração em 18.09.2027'}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento', headerAction = null }) {
+  return <div className={`role-page ${className}`}><header className="role-header"><a className="role-brand" href="#inicio"><span>e<span>&</span>t</span><strong>{secure ? secureName : 'Elisa & Tomás'}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : 'PRÉVIA INTERATIVA · DADOS FICTÍCIOS'}</span>{headerAction}</header><main className="role-main"><div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}{!secure && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure ? secureFooter : 'e&t · celebração em 18.09.2027'}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
 function TeamInvitationAcceptance() {
@@ -1675,6 +1695,36 @@ function EventStaffPanel({ notify }) {
       notify(`${completedIds.length} entrada(s) offline sincronizada(s)`)
     }
   }
+
+  async function logoutStaff() {
+    if (!navigator.onLine) {
+      setError('Conecte-se à internet para encerrar a sessão com segurança.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const queued = await readAllOfflineCheckins()
+      if (queued.length) throw new Error('Sincronize as entradas pendentes antes de sair.')
+      const response = await fetch('/api/auth/logout', { method: 'POST' })
+      if (!response.ok && response.status !== 401) throw new Error('Não foi possível encerrar a sessão. Tente novamente.')
+      await clearOfflineCheckinData()
+      window.location.assign('/equipe')
+    } catch (cause) {
+      if (cause.message === 'offline_data_in_use') {
+        setEvents([])
+        setGuests([])
+        setWalkIns([])
+        setOfflineRoster([])
+        setStage('login')
+        setError('Sessão encerrada. Feche outras abas da equipe neste aparelho para apagar a lista offline.')
+      } else {
+        setError(cause.message)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
   useEffect(() => {
     fetch('/api/auth/session').then(async (response) => {
       if (!response.ok) throw new Error('authentication_required')
@@ -1867,7 +1917,7 @@ function EventStaffPanel({ notify }) {
   const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length
   const checkinCount = guests.filter((guest) => guest.checked_in_at).length + walkIns.length
   const eventDate = currentEvent?.starts_at ? new Date(currentEvent.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Data não definida'
-  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Lista do evento, com acesso controlado." description="Esta lista contém apenas os convidados autorizados para o evento selecionado." className={`staff-print-${printMode}`} secure>
+  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Lista do evento, com acesso controlado." description="Esta lista contém apenas os convidados autorizados para o evento selecionado." className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy || !isOnline} onClick={logoutStaff} title={!isOnline ? 'Conecte-se para encerrar a sessão com segurança' : ''}>Sair</button>}>
     {events.length > 1 && <label className="staff-event-select">Evento<select value={selectedEvent} onChange={(event) => setSelectedEvent(event.target.value)}>{events.map((event) => <option key={event.id} value={event.id}>{event.name} · {event.starts_at ? new Date(event.starts_at).toLocaleDateString('pt-BR') : 'sem data'}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     {checkinAllowed && <div className="staff-offline-status" role="status"><span className={isOnline ? 'staff-online' : 'staff-offline'}>{isOnline ? 'Conexao ativa' : 'Modo offline'}</span><span>{pendingCheckins.length} entrada(s) aguardando sincronizacao</span>{offlineRoster.length > 0 && <span>Lista temporaria preparada neste dispositivo</span>}{isOnline && pendingCheckins.length > 0 && <button className="button-outline" disabled={busy} onClick={() => syncPendingCheckins().catch((cause) => setError(cause.message))}>Sincronizar agora</button>}</div>}
