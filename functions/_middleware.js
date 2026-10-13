@@ -15,13 +15,15 @@ function decodeJson(value) {
 }
 
 async function verifyAccessAssertion(assertion, env) {
-  if (!env.CLOUDFLARE_ACCESS_TEAM_DOMAIN || !env.CLOUDFLARE_ACCESS_AUD || !env.SUPERADMIN_EMAIL) return false
-  const audiences = env.CLOUDFLARE_ACCESS_AUD.split(',').map((audience) => audience.trim()).filter(Boolean)
+  const teamDomainValue = env.ACCESS_TEAM_DOMAIN || env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
+  const audienceValue = env.ACCESS_APPLICATION_AUD || env.CLOUDFLARE_ACCESS_AUD
+  if (!teamDomainValue || !audienceValue || !env.SUPERADMIN_EMAIL) return false
+  const audiences = audienceValue.split(',').map((audience) => audience.trim()).filter(Boolean)
   if (!audiences.length) return false
 
   let issuer
   try {
-    const teamDomain = new URL(env.CLOUDFLARE_ACCESS_TEAM_DOMAIN)
+    const teamDomain = new URL(teamDomainValue)
     if (teamDomain.protocol !== 'https:' || teamDomain.pathname !== '/' || teamDomain.search || teamDomain.hash || teamDomain.username || teamDomain.password) return false
     issuer = teamDomain.origin
   } catch {
