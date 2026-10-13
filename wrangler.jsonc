@@ -2,6 +2,10 @@
     "name":  "tudocomecoudeumsim",
     "pages_build_output_dir":  "./dist",
     "compatibility_date":  "2026-10-12",
+    "vars":  {
+        "CLOUDFLARE_ACCESS_TEAM_DOMAIN":  "https://quarta-amstel-pages.cloudflareaccess.com",
+        "CLOUDFLARE_ACCESS_AUD":  "1db573da6440a8939d5a164852d6ff202d9e1721fb43cc219b6720740e496e3e"
+    },
     "d1_databases":  [
                          {
                              "binding":  "DB",
