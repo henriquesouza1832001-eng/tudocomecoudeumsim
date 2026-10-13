@@ -464,8 +464,8 @@ function GuestSite({ theme, setTheme, notify }) {
       <div className="demo-ribbon"><span>CONTEÚDO DEMONSTRATIVO</span><span>Casal, data e valores fictícios</span><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Topo <ArrowDown size={13} className="rotate-up" /></button></div>
       <header className="guest-nav">
         <a className="guest-brand" href="#inicio" aria-label="Elisa e Tomás, início"><span>e<span className="brand-amp">&</span>t</span><small>18 · 09 · 2027</small></a>
-        <button className="mobile-menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}>{menuOpen ? <X /> : <Menu />}</button>
-        <nav className={menuOpen ? 'nav-links open' : 'nav-links'}>
+        <button className="mobile-menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="guest-navigation">{menuOpen ? <X /> : <Menu />}</button>
+        <nav id="guest-navigation" className={menuOpen ? 'nav-links open' : 'nav-links'}>
           <a href="#historia" onClick={() => setMenuOpen(false)}>Nossa história</a>
           <a href="#celebracao" onClick={() => setMenuOpen(false)}>A celebração</a>
           <a href="#presentes" onClick={() => setMenuOpen(false)}>Presentes</a>
