@@ -2389,8 +2389,8 @@ function QrCamera({ onDecode, onError }) {
 }
 function superadminAccessMessage(code) {
   return ({
-    cloudflare_access_unconfigured: 'Configure CLOUDFLARE_ACCESS_TEAM_DOMAIN e CLOUDFLARE_ACCESS_AUD nas variáveis do Cloudflare Pages.',
-    cloudflare_access_required: 'O Cloudflare Access bloqueou esta solicitação. Confirme a regra Allow para seu e-mail e entre pelo endereço /superadmin.',
+    cloudflare_access_unconfigured: 'Configure ACCESS_TEAM_DOMAIN e ACCESS_APPLICATION_AUD nas variáveis do Cloudflare Pages.',
+    cloudflare_access_required: 'O Cloudflare Access não validou sua identidade. Confira a regra Allow, o Team domain e o AUD da aplicação antes de tentar novamente.',
     superadmin_email_unconfigured: 'Configure SUPERADMIN_EMAIL nas variáveis do Cloudflare Pages.',
     recaptcha_unconfigured: 'Configure a chave do reCAPTCHA no site e o segredo no Cloudflare Pages.',
     recaptcha_failed: 'Conclua novamente a verificação de segurança.',

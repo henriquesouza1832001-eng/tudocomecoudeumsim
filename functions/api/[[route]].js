@@ -64,8 +64,8 @@ function jsonError(context, status, error) {
 }
 
 async function verifyAccessIdentity(context, expectedEmail) {
-  const teamDomain = context.env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
-  const audiences = context.env.CLOUDFLARE_ACCESS_AUD?.split(',').map((audience) => audience.trim()).filter(Boolean) || []
+  const teamDomain = context.env.ACCESS_TEAM_DOMAIN || context.env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
+  const audiences = (context.env.ACCESS_APPLICATION_AUD || context.env.CLOUDFLARE_ACCESS_AUD)?.split(',').map((audience) => audience.trim()).filter(Boolean) || []
   if (!teamDomain || !audiences.length) return { configured: false, valid: false }
   let issuer
   try {
