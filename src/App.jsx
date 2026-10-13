@@ -1698,7 +1698,15 @@ function EventStaffPanel({ notify }) {
 
   async function logoutStaff() {
     if (!navigator.onLine) {
-      setError('Conecte-se à internet para encerrar a sessão com segurança.')
+      localStorage.setItem('wedding-staff-locked', '1')
+      setEvents([])
+      setGuests([])
+      setWalkIns([])
+      setOfflineRoster([])
+      setPendingCheckins([])
+      setScannerOpen(false)
+      setStage('login')
+      setError('Tela bloqueada. As entradas pendentes serão sincronizadas quando a conexão voltar.')
       return
     }
     setBusy(true)
@@ -1726,6 +1734,10 @@ function EventStaffPanel({ notify }) {
     }
   }
   useEffect(() => {
+    if (localStorage.getItem('wedding-staff-locked') === '1') {
+      setStage('login')
+      return
+    }
     fetch('/api/auth/session').then(async (response) => {
       if (!response.ok) throw new Error('authentication_required')
       const session = await response.json()
@@ -1785,6 +1797,7 @@ function EventStaffPanel({ notify }) {
       const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) })
       const result = await response.json()
       if (!response.ok) throw new Error('E-mail, senha ou código inválido.')
+      localStorage.removeItem('wedding-staff-locked')
       if (result.mfaSetupRequired) {
         setStage('mfa-setup')
         return
@@ -1917,7 +1930,7 @@ function EventStaffPanel({ notify }) {
   const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length
   const checkinCount = guests.filter((guest) => guest.checked_in_at).length + walkIns.length
   const eventDate = currentEvent?.starts_at ? new Date(currentEvent.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Data não definida'
-  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Lista do evento, com acesso controlado." description="Esta lista contém apenas os convidados autorizados para o evento selecionado." className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy || !isOnline} onClick={logoutStaff} title={!isOnline ? 'Conecte-se para encerrar a sessão com segurança' : ''}>Sair</button>}>
+  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Lista do evento, com acesso controlado." description="Esta lista contém apenas os convidados autorizados para o evento selecionado." className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy} onClick={logoutStaff} title={!isOnline ? 'Bloqueia esta tela e preserva as entradas offline pendentes' : ''}>{isOnline ? 'Sair' : 'Bloquear aparelho'}</button>}>
     {events.length > 1 && <label className="staff-event-select">Evento<select value={selectedEvent} onChange={(event) => setSelectedEvent(event.target.value)}>{events.map((event) => <option key={event.id} value={event.id}>{event.name} · {event.starts_at ? new Date(event.starts_at).toLocaleDateString('pt-BR') : 'sem data'}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     {checkinAllowed && <div className="staff-offline-status" role="status"><span className={isOnline ? 'staff-online' : 'staff-offline'}>{isOnline ? 'Conexao ativa' : 'Modo offline'}</span><span>{pendingCheckins.length} entrada(s) aguardando sincronizacao</span>{offlineRoster.length > 0 && <span>Lista temporaria preparada neste dispositivo</span>}{isOnline && pendingCheckins.length > 0 && <button className="button-outline" disabled={busy} onClick={() => syncPendingCheckins().catch((cause) => setError(cause.message))}>Sincronizar agora</button>}</div>}
