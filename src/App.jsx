@@ -815,7 +815,7 @@ function CouplePanel({ notify, setView }) {
     anchor.href = url
     anchor.download = 'modelo-convidados.csv'
     anchor.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   function downloadImportedGuestLinks() {
@@ -827,7 +827,7 @@ function CouplePanel({ notify, setView }) {
     anchor.href = url
     anchor.download = 'links-dos-convidados.csv'
     anchor.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   async function saveGuest(event) {
@@ -2310,7 +2310,7 @@ function CheckIn({ notify }) {
     link.href = url
     link.download = 'lista-do-buffet.csv'
     link.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     notify('Lista do buffet exportada')
   }
 
