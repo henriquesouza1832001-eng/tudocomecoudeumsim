@@ -2651,11 +2651,11 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await request('/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) })
+      await requestWithRecentMfa(request, '/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) })
       await refresh()
       notify('Política de taxas gravada no D1 e registrada na auditoria')
-    } catch {
-      setError('A política de taxas não foi salva. Confira os valores e tente novamente.')
+    } catch (cause) {
+      setError(cause.message === 'invalid_mfa_code' ? 'O código do autenticador não foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirmação do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de alterar a política.' : 'A política de taxas não foi salva. Confira os valores e tente novamente.')
     } finally {
       setBusy(false)
     }

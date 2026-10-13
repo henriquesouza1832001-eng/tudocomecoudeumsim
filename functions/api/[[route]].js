@@ -1931,6 +1931,8 @@ app.get('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (
 })
 
 app.put('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (context) => {
+  const mfaVerifiedAt = Date.parse(context.get('session').mfa_verified_at)
+  if (!Number.isFinite(mfaVerifiedAt) || mfaVerifiedAt > Date.now() || Date.now() - mfaVerifiedAt > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const body = await context.req.json().catch(() => null)
   const validInteger = (value) => Number.isSafeInteger(value) && value >= 0
   if (!body || typeof body.enabled !== 'boolean' || !validInteger(body.rateBasisPoints) || body.rateBasisPoints > 10000 || !validInteger(body.minimumFeeCents) || !(body.maximumFeeCents === null || validInteger(body.maximumFeeCents)) || !['couple', 'guest'].includes(body.paidBy)) return jsonError(context, 400, 'invalid_fee_policy')
