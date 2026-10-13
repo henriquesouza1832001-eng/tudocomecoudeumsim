@@ -1181,6 +1181,38 @@ app.get('/api/couple/weddings/:weddingId/contributions', requireSession, async (
   return context.json({ summary: totals, contributions: contributions.results, page, pageSize, hasMore: totals.total_count > offset + contributions.results.length }, 200, { 'Cache-Control': 'no-store' })
 })
 
+app.post('/api/couple/weddings/:weddingId/contributions/:contributionId/decision', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const contributionId = context.req.param('contributionId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const session = context.get('session')
+  const mfaVerifiedAt = Date.parse(session.mfa_verified_at)
+  if (!Number.isFinite(mfaVerifiedAt) || mfaVerifiedAt > Date.now() || Date.now() - mfaVerifiedAt > 300000) return jsonError(context, 403, 'recent_mfa_required')
+  const body = await context.req.json().catch(() => null)
+  if (!body || !['confirmed', 'rejected'].includes(body.status)) return jsonError(context, 400, 'invalid_contribution_decision')
+  const contribution = await context.env.DB.prepare(`SELECT id, payment_mode, status, amount_cents FROM gift_contributions WHERE id = ? AND wedding_id = ?`)
+    .bind(contributionId, weddingId).first()
+  if (!contribution) return jsonError(context, 404, 'contribution_not_found')
+  if (contribution.payment_mode !== 'pix_direct' || contribution.status !== 'reported') return jsonError(context, 409, 'contribution_not_reviewable')
+  const policy = await context.env.DB.prepare(`SELECT enabled, rate_basis_points, minimum_fee_cents, maximum_fee_cents, paid_by FROM fee_policies WHERE wedding_id = ? OR wedding_id IS NULL ORDER BY wedding_id IS NOT NULL DESC LIMIT 1`)
+    .bind(weddingId).first()
+  const feeEnabled = body.status === 'confirmed' && Boolean(policy?.enabled)
+  const calculatedFee = feeEnabled
+    ? Math.min(policy.maximum_fee_cents ?? Number.MAX_SAFE_INTEGER, Math.max(policy.minimum_fee_cents, Math.round(contribution.amount_cents * policy.rate_basis_points / 10000)))
+    : 0
+  const actorId = context.get('session').account_id
+  const results = await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE gift_contributions SET status = ?, fee_amount_cents = ?, fee_rate_basis_points = ?, fee_minimum_cents = ?, fee_maximum_cents = ?, fee_paid_by = ?, fee_status = ?, confirmed_at = CASE WHEN ? = 'confirmed' THEN CURRENT_TIMESTAMP ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ? AND status = 'reported' AND payment_mode = 'pix_direct'`)
+      .bind(body.status, calculatedFee, feeEnabled ? policy.rate_basis_points : 0, feeEnabled ? policy.minimum_fee_cents : 0, feeEnabled ? policy.maximum_fee_cents : null, policy?.paid_by || 'couple', feeEnabled ? 'due' : 'not_due', body.status, contributionId, weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json) SELECT ?, ?, ?, ?, 'gift_contribution', ?, ? WHERE changes() > 0`)
+      .bind(crypto.randomUUID(), actorId, weddingId, body.status === 'confirmed' ? 'gift_contribution_confirmed' : 'gift_contribution_rejected', contributionId, JSON.stringify({ amountCents: contribution.amount_cents, feeAmountCents: calculatedFee, feePaidBy: policy?.paid_by || 'couple' })),
+  ])
+  if (!results[0].meta.changes) return jsonError(context, 409, 'contribution_not_reviewable')
+  return context.json({ id: contributionId, status: body.status, feeAmountCents: calculatedFee, feeStatus: feeEnabled ? 'due' : 'not_due' })
+})
+
 app.post('/api/couple/weddings/:weddingId/rsvps', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
