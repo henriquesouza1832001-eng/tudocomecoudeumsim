@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/cloudflare-pages'
+import { createRemoteJWKSet, jwtVerify } from 'jose'
 import {
   authenticate,
   checkLoginLimit,
@@ -15,6 +16,7 @@ import {
 } from '../../src/server/auth.js'
 
 const app = new Hono()
+const accessKeySets = new Map()
 const siteThemes = ['garden', 'editorial', 'minimal', 'floral', 'rustic', 'beach', 'tropical', 'night']
 const siteCoverLayouts = ['full', 'split', 'arch', 'type', 'video', 'collage']
 const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
@@ -50,6 +52,45 @@ function jsonError(context, status, error) {
   return context.json({ error }, status, { 'Cache-Control': 'no-store' })
 }
 
+async function verifyAccessIdentity(context, expectedEmail) {
+  const teamDomain = context.env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
+  const audience = context.env.CLOUDFLARE_ACCESS_AUD
+  if (!teamDomain || !audience) return { configured: false, valid: false }
+  let issuer
+  try {
+    const domain = new URL(teamDomain)
+    if (domain.protocol !== 'https:' || domain.pathname !== '/' || domain.search || domain.hash || domain.username || domain.password) {
+      return { configured: false, valid: false }
+    }
+    issuer = domain.origin
+  } catch {
+    return { configured: false, valid: false }
+  }
+  const token = context.req.header('Cf-Access-Jwt-Assertion')
+  if (!token || token.length > 8192) return { configured: true, valid: false }
+  try {
+    let keySet = accessKeySets.get(issuer)
+    if (!keySet) {
+      keySet = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`))
+      accessKeySets.set(issuer, keySet)
+    }
+    const { payload } = await jwtVerify(token, keySet, { issuer, audience, algorithms: ['RS256'] })
+    const tokenEmail = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : ''
+    return { configured: true, valid: payload.type === 'app' && Boolean(expectedEmail) && tokenEmail === expectedEmail.trim().toLowerCase() }
+  } catch {
+    return { configured: true, valid: false }
+  }
+}
+
+async function requireCloudflareAccess(context, next) {
+  const expectedEmail = context.env.SUPERADMIN_EMAIL?.trim().toLowerCase()
+  if (!expectedEmail) return jsonError(context, 503, 'superadmin_email_unconfigured')
+  const access = await verifyAccessIdentity(context, expectedEmail)
+  if (!access.configured) return jsonError(context, 503, 'cloudflare_access_unconfigured')
+  if (!access.valid) return jsonError(context, 403, 'cloudflare_access_required')
+  return next()
+}
+
 function validOrigin(context) {
   const origin = context.req.header('Origin')
   return origin === new URL(context.req.url).origin
@@ -69,6 +110,9 @@ async function requireSuperadmin(context, next) {
   if (!session?.mfa_verified_at || !context.env.SUPERADMIN_EMAIL || session.email.toLowerCase() !== context.env.SUPERADMIN_EMAIL.toLowerCase()) {
     return jsonError(context, 403, 'superadmin_access_required')
   }
+  const access = await verifyAccessIdentity(context, session.email)
+  if (!access.configured) return jsonError(context, 503, 'cloudflare_access_unconfigured')
+  if (!access.valid) return jsonError(context, 403, 'cloudflare_access_required')
   const admin = await context.env.DB.prepare("SELECT 1 AS allowed FROM platform_admins WHERE account_id = ? AND role = 'superadmin'").bind(session.account_id).first()
   if (!admin) return jsonError(context, 403, 'superadmin_access_required')
   context.set('actorId', session.account_id)
@@ -80,6 +124,9 @@ async function requireSuperadminIdentity(context, next) {
   if (!session || !context.env.SUPERADMIN_EMAIL || session.email.toLowerCase() !== context.env.SUPERADMIN_EMAIL.toLowerCase()) {
     return jsonError(context, 403, 'superadmin_access_required')
   }
+  const access = await verifyAccessIdentity(context, session.email)
+  if (!access.configured) return jsonError(context, 503, 'cloudflare_access_unconfigured')
+  if (!access.valid) return jsonError(context, 403, 'cloudflare_access_required')
   const admin = await context.env.DB.prepare("SELECT 1 AS allowed FROM platform_admins WHERE account_id = ? AND role = 'superadmin'").bind(session.account_id).first()
   if (!admin) return jsonError(context, 403, 'superadmin_access_required')
   context.set('actorId', session.account_id)
@@ -391,13 +438,13 @@ app.post('/api/auth/logout', requireSession, async (context) => {
   return context.body(null, 204)
 })
 
-app.get('/api/superadmin/bootstrap/status', async (context) => {
+app.get('/api/superadmin/bootstrap/status', requireCloudflareAccess, async (context) => {
   if (!context.env.SUPERADMIN_EMAIL) return jsonError(context, 503, 'superadmin_email_unconfigured')
   const admin = await context.env.DB.prepare("SELECT 1 AS configured FROM platform_admins WHERE role = 'superadmin' LIMIT 1").first()
   return context.json({ available: !admin, email: context.env.SUPERADMIN_EMAIL })
 })
 
-app.post('/api/superadmin/bootstrap', async (context) => {
+app.post('/api/superadmin/bootstrap', requireCloudflareAccess, async (context) => {
   const configuredEmail = context.env.SUPERADMIN_EMAIL?.trim().toLowerCase()
   if (!configuredEmail) return jsonError(context, 503, 'superadmin_email_unconfigured')
   const body = await context.req.json().catch(() => null)
