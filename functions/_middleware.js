@@ -15,10 +15,16 @@ function decodeJson(value) {
 }
 
 async function verifyAccessAssertion(assertion, env) {
-  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_APPLICATION_AUD || !env.SUPERADMIN_EMAIL) return false
+  if (!env.CLOUDFLARE_ACCESS_TEAM_DOMAIN || !env.CLOUDFLARE_ACCESS_AUD || !env.SUPERADMIN_EMAIL) return false
 
-  const teamDomain = env.ACCESS_TEAM_DOMAIN.replace(/^https?:\/\//, '').replace(/\/$/, '')
-  const issuer = `https://${teamDomain}`
+  let issuer
+  try {
+    const teamDomain = new URL(env.CLOUDFLARE_ACCESS_TEAM_DOMAIN)
+    if (teamDomain.protocol !== 'https:' || teamDomain.pathname !== '/' || teamDomain.search || teamDomain.hash || teamDomain.username || teamDomain.password) return false
+    issuer = teamDomain.origin
+  } catch {
+    return false
+  }
   const parts = assertion.split('.')
   if (parts.length !== 3) return false
 
@@ -27,7 +33,7 @@ async function verifyAccessAssertion(assertion, env) {
     const claims = decodeJson(parts[1])
     if (header.alg !== 'RS256' || !header.kid) return false
     if (claims.iss !== issuer || claims.email?.toLowerCase() !== env.SUPERADMIN_EMAIL.toLowerCase()) return false
-    if (!(Array.isArray(claims.aud) ? claims.aud : [claims.aud]).includes(env.ACCESS_APPLICATION_AUD)) return false
+    if (!(Array.isArray(claims.aud) ? claims.aud : [claims.aud]).includes(env.CLOUDFLARE_ACCESS_AUD)) return false
     const now = Math.floor(Date.now() / 1000)
     if (!Number.isFinite(claims.exp) || claims.exp <= now) return false
     if (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now)) return false
