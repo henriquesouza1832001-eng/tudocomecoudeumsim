@@ -51,6 +51,8 @@ const THEMES = [
   { id: 'tropical', name: 'Tropical', note: 'Vivo e natural', colors: ['#637455', '#d38a68', '#f5f3e9'] },
   { id: 'night', name: 'Noturno', note: 'Profundo e elegante', colors: ['#38424c', '#d1a96a', '#f3f1ec'] },
 ]
+const SITE_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR' }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
 let turnstileScriptPromise
@@ -394,7 +396,7 @@ function App() {
       </div>}
 
       {view === 'guest' && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
-      {view === 'dashboard' && <CouplePanel notify={notify} setView={setView} />}
+      {view === 'dashboard' && <CouplePanel notify={notify} />}
       {view === 'team-invitation' && <TeamInvitationAcceptance />}
       {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} />}
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
@@ -587,7 +589,7 @@ function AccountMfaSetup({ onComplete }) {
   return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><label>Chave do autenticador<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Adicione esta chave em um aplicativo autenticador, como Google Authenticator, Microsoft Authenticator ou Authy.</p><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
 }
 
-function CouplePanel({ notify, setView }) {
+function CouplePanel({ notify }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
@@ -621,6 +623,8 @@ function CouplePanel({ notify, setView }) {
   const [members, setMembers] = useState([])
   const [assignments, setAssignments] = useState([])
   const [godparentTasks, setGodparentTasks] = useState([])
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG)
+  const [siteConfigLoading, setSiteConfigLoading] = useState(false)
   const [tab, setTab] = useState('guests')
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
@@ -686,7 +690,7 @@ function CouplePanel({ notify, setView }) {
   async function loadWeddingData(id) {
     if (!id) return
     const base = `/api/couple/weddings/${id}`
-    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, contributionResult, memberResult, assignmentResult, taskResult] = await Promise.all([
+    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, contributionResult, memberResult, assignmentResult, taskResult, siteConfigResult] = await Promise.all([
       request(`${base}/guests`),
       request(`${base}/groups`),
       request(`${base}/events`),
@@ -696,6 +700,7 @@ function CouplePanel({ notify, setView }) {
       request(`${base}/members`),
       request(`${base}/event-assignments`),
       request(`${base}/godparent-tasks`),
+      request(`${base}/site-config`),
     ])
     setGuests(guestResult.guests)
     setGroups(groupResult.groups)
@@ -707,6 +712,22 @@ function CouplePanel({ notify, setView }) {
     setMembers(memberResult.members)
     setAssignments(assignmentResult.assignments)
     setGodparentTasks(taskResult.tasks)
+    setSiteConfig(siteConfigResult.draft)
+    setSiteConfigLoading(false)
+  }
+
+  async function saveSiteDraft() {
+    setSiteConfigLoading(true)
+    setError('')
+    try {
+      const result = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
+      setSiteConfig(result.draft)
+      notify('Rascunho do site salvo no D1')
+    } catch {
+      setError('Não foi possível salvar o rascunho do site.')
+    } finally {
+      setSiteConfigLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -1162,11 +1183,11 @@ function CouplePanel({ notify, setView }) {
     <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking'}>Entrar <LockKeyhole size={15} /></button></form>
   </SuperAdminAccessFrame>
 
-  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={() => setView('dashboard-preview')}>Prévia visual do editor</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">ÁREA DOS NOIVOS</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.</p></div>
+  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={() => setTab('site')}>Editar meu site</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">ÁREA DOS NOIVOS</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.</p></div>
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => setWeddingId(event.target.value)}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     <div className="role-stat-grid"><div className="role-stat"><span>Convidados ativos</span><strong>{guests.length}</strong></div><div className="role-stat"><span>Grupos</span><strong>{groups.length}</strong></div><div className="role-stat"><span>Eventos</span><strong>{events.length}</strong></div><div className="role-stat"><span>Confirmações</span><strong>{rsvps.filter((item) => item.status === 'confirmed').length}</strong></div></div>
-    <div className="couple-panel-tabs"><button className={tab === 'guests' ? 'selected' : ''} onClick={() => setTab('guests')}>Convidados</button><button className={tab === 'rsvps' ? 'selected' : ''} onClick={() => setTab('rsvps')}>Presenças</button><button className={tab === 'groups' ? 'selected' : ''} onClick={() => setTab('groups')}>Grupos</button><button className={tab === 'events' ? 'selected' : ''} onClick={() => setTab('events')}>Eventos</button><button className={tab === 'team' ? 'selected' : ''} onClick={() => setTab('team')}>Equipe e acessos</button><button className={tab === 'godparents' ? 'selected' : ''} onClick={() => setTab('godparents')}>Padrinhos</button><button className={tab === 'gifts' ? 'selected' : ''} onClick={() => setTab('gifts')}>Presentes</button></div>
+    <div className="couple-panel-tabs"><button className={tab === 'guests' ? 'selected' : ''} onClick={() => setTab('guests')}>Convidados</button><button className={tab === 'rsvps' ? 'selected' : ''} onClick={() => setTab('rsvps')}>Presenças</button><button className={tab === 'groups' ? 'selected' : ''} onClick={() => setTab('groups')}>Grupos</button><button className={tab === 'events' ? 'selected' : ''} onClick={() => setTab('events')}>Eventos</button><button className={tab === 'team' ? 'selected' : ''} onClick={() => setTab('team')}>Equipe e acessos</button><button className={tab === 'godparents' ? 'selected' : ''} onClick={() => setTab('godparents')}>Padrinhos</button><button className={tab === 'gifts' ? 'selected' : ''} onClick={() => setTab('gifts')}>Presentes</button><button className={tab === 'site' ? 'selected' : ''} onClick={() => setTab('site')}>Site do casal</button></div>
     {tab === 'guests' && <>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO CONVITE</span><h2>Adicionar convidado</h2></div></div><form className="couple-guest-form" onSubmit={createGuest}><label>Nome<input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength="160" required /></label><label>E-mail<input type="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} /></label><label>Telefone<input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} /></label><label>Grupo<select value={guestGroup} onChange={(event) => setGuestGroup(event.target.value)}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>Pessoas<input type="number" min="1" max="20" value={guestPartySize} onChange={(event) => setGuestPartySize(event.target.value)} required /></label><label>Perfil<select value={guestType} onChange={(event) => setGuestType(event.target.value)}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={guestDietaryNotes} maxLength="1000" onChange={(event) => setGuestDietaryNotes(event.target.value)} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar e gerar link individual <QrCode size={15} /></button></form></section>
       <section className="role-card guest-import-card"><div className="role-card-heading"><div><span className="eyebrow">IMPORTAÇÃO EM LOTE</span><h2>Adicionar convidados por CSV</h2></div><Users size={18} /></div><p className="team-access-note">Use o modelo com cabeçalho em português ou inglês. Os grupos precisam existir neste casamento. Até 100 convidados por arquivo; nenhuma linha é salva se houver erro.</p><div className="guest-import-actions"><button type="button" className="button-outline" onClick={downloadGuestCsvTemplate}>Baixar modelo CSV</button><label className="button-primary guest-import-file">{busy ? 'Importando…' : 'Selecionar arquivo CSV'}<input type="file" accept=".csv,text/csv" onChange={importGuestCsv} disabled={busy} /></label></div>{guestImportErrors.length > 0 && <div className="guest-import-errors" role="alert"><strong>Revise o arquivo</strong>{guestImportErrors.map((item) => <span key={item.row}>Linha {item.row}: {item.fields.join(', ')}</span>)}</div>}{guestImportResults.length > 0 && <div className="guest-import-success"><span>{guestImportResults.length} convidados importados. Os links individuais foram criados.</span><button type="button" className="button-outline" onClick={downloadImportedGuestLinks}>Baixar links dos convites <QrCode size={14} /></button></div>}</section>      {editingGuest && <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">EDITAR CONVITE</span><h2>{editingGuest.name}</h2></div></div><form className="couple-guest-form" onSubmit={saveGuest}><label>Nome<input value={editingGuest.name} onChange={(event) => setEditingGuest({ ...editingGuest, name: event.target.value })} maxLength="160" required /></label><label>E-mail<input type="email" value={editingGuest.email || ''} onChange={(event) => setEditingGuest({ ...editingGuest, email: event.target.value })} /></label><label>Telefone<input type="tel" value={editingGuest.phone || ''} onChange={(event) => setEditingGuest({ ...editingGuest, phone: event.target.value })} /></label><label>Grupo<select value={editingGuest.group_id || ''} onChange={(event) => setEditingGuest({ ...editingGuest, group_id: event.target.value })}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>Pessoas<input type="number" min="1" max="20" value={editingGuest.party_size} onChange={(event) => setEditingGuest({ ...editingGuest, party_size: event.target.value })} required /></label><label>Perfil<select value={editingGuest.guest_type} onChange={(event) => setEditingGuest({ ...editingGuest, guest_type: event.target.value })}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={editingGuest.dietary_notes || ''} maxLength="1000" onChange={(event) => setEditingGuest({ ...editingGuest, dietary_notes: event.target.value })} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar alterações <Check size={15} /></button><button type="button" className="button-outline" disabled={busy} onClick={() => setEditingGuest(null)}>Cancelar</button></form></section>}
@@ -1204,7 +1225,38 @@ function CouplePanel({ notify, setView }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
+    {tab === 'site' && <CoupleSiteEditor wedding={wedding} config={siteConfig} setConfig={setSiteConfig} onSave={saveSiteDraft} saving={siteConfigLoading} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+}
+
+function CoupleSiteEditor({ wedding, config, setConfig, onSave, saving }) {
+  const [device, setDevice] = useState('desktop')
+  const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
+  const palettes = [
+    theme.colors,
+    [theme.colors[0], '#d2b994', '#fbf8f1'],
+    [theme.colors[0], '#bf8b67', '#f6ece2'],
+    [theme.colors[0], '#d08e91', '#f5ebec'],
+    [theme.colors[0], '#9d9c70', '#f1efe3'],
+    [theme.colors[0], '#d7b862', '#faf5dd'],
+  ]
+  const selectedPalette = palettes[config.paletteIndex] || palettes[0]
+  const layoutNames = [{ id: 'full', label: 'Foto em tela cheia' }, { id: 'split', label: 'Foto ao lado' }, { id: 'arch', label: 'Moldura ou arco' }, { id: 'type', label: 'Só tipografia' }, { id: 'video', label: 'Vídeo curto' }, { id: 'collage', label: 'Colagem de fotos' }]
+  const languageCopy = {
+    'pt-BR': { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('pt-BR') : 'Data a definir', message: 'Com alegria, convidamos você.', button: 'Descobrir o convite' },
+    en: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('en-US') : 'Date to be announced', message: 'With joy, we invite you.', button: 'Explore the invitation' },
+    es: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('es') : 'Fecha por definir', message: 'Con alegría, te invitamos.', button: 'Descubre la invitación' },
+  }[config.language]
+  const update = (values) => setConfig((current) => ({ ...current, ...values }))
+  const toggleSection = (section) => update({ enabledSections: config.enabledSections.includes(section) ? config.enabledSections.filter((item) => item !== section) : [...config.enabledSections, section] })
+
+  return <div className="customize-layout"><div className="customize-controls">
+    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">RASCUNHO DO CASAMENTO</span><h3>Temas curados</h3></div><span className="step-counter">8 opções</span></div><p>Escolha uma base visual segura. As alterações ficam privadas até publicar.</p><ThemePicker theme={config.theme} setTheme={(value) => update({ theme: value, paletteIndex: 0 })} compact /><div className="palette-picker"><div className="palette-heading"><strong>Paletas deste tema</strong><small>Combinações curadas</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${index + 1}`}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div><label className="font-pair-label">Par de fontes<select value={config.fontPair} onChange={(event) => update({ fontPair: event.target.value })}><option>Clássico editorial</option><option>Romântico leve</option><option>Moderno sem serifa</option><option>Elegante de alto contraste</option><option>Contemporâneo humanista</option><option>Floral delicado</option><option>Minimalista geométrico</option><option>Rústico acolhedor</option></select></label></section>
+    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CAPA DO CONVITE</span><h3>Escolha um layout</h3></div><span className="step-counter">6 opções</span></div><div className="cover-layout-grid">{layoutNames.map((layout) => <button type="button" key={layout.id} className={config.coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })}><span className={`layout-thumb layout-thumb-${layout.id}`}><i /><b /><em /></span><small>{layout.label}</small></button>)}</div></section>
+    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO</span><h3>Seções do site</h3></div><span className="section-count">{config.enabledSections.length} ativas</span></div><div className="toggle-list">{SITE_SECTIONS.map((section, index) => <div className="toggle-row" key={section}><span className="toggle-index">{String(index + 1).padStart(2, '0')}</span><span className="toggle-name">{section}{section === 'Quiz dos noivos' && <small>Opcional</small>}</span><button type="button" className={`toggle-switch ${config.enabledSections.includes(section) ? 'on' : ''}`} aria-label={`${config.enabledSections.includes(section) ? 'Desativar' : 'Ativar'} ${section}`} onClick={() => toggleSection(section)}><i /></button></div>)}</div></section>
+    <section className="dash-card customize-card animation-card"><div className="card-heading"><div><span className="eyebrow">MOVIMENTO E IDIOMA</span><h3>Preferências do convite</h3></div><Sparkles size={17} /></div><div className="segmented-control">{['Suave', 'Elegante', 'Festivo', 'Nenhum'].map((preset) => <button type="button" key={preset} className={config.animationPreset === preset ? 'selected' : ''} onClick={() => update({ animationPreset: preset })}>{preset}</button>)}</div><label className="font-pair-label">Idioma principal<select value={config.language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label></section>
+    <button className="button-primary save-customize" onClick={onSave} disabled={saving}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button>
+  </div><div className="customize-preview" style={{ '--forest': selectedPalette[0], '--accent': selectedPalette[1], '--paper': selectedPalette[2] }}><div className="preview-sticky-label"><span><span className="status-dot" /> RASCUNHO PRIVADO</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div><span>{config.language}</span></div><div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.dominio-a-definir</div><ExternalLink size={12} /></div><div className={`browser-content cover-${config.coverLayout}`}><img src="/images/wedding-garden.png" alt="Prévia do tema do convite" /><div className="browser-overlay" /><span className="browser-date">{languageCopy.date}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong><small>{languageCopy.message}</small><button type="button">{languageCopy.button} <ArrowRight size={13} /></button>{config.coverLayout === 'video' && <span className="video-preview-tag">Vídeo de capa · silencioso</span>}</div><div className="browser-below">{config.enabledSections.slice(0, 3).map((section) => <span key={section}>{section}</span>)}</div></div><div className="preview-notice"><CircleHelp size={15} /> Este rascunho é salvo por casamento no D1. O site publicado permanece separado.</div></div></div>
 }
 
 function InvitationShare({ share, onClose, notify }) {

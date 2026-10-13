@@ -15,6 +15,36 @@ import {
 } from '../../src/server/auth.js'
 
 const app = new Hono()
+const siteThemes = ['garden', 'editorial', 'minimal', 'floral', 'rustic', 'beach', 'tropical', 'night']
+const siteCoverLayouts = ['full', 'split', 'arch', 'type', 'video', 'collage']
+const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
+const siteLanguages = ['pt-BR', 'en', 'es']
+const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
+const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR' }
+
+function parseSiteConfig(value) {
+  if (!value || value === '{}') return null
+  try {
+    const config = JSON.parse(value || '{}')
+    if (!siteThemes.includes(config.theme) || !Number.isInteger(config.paletteIndex) || config.paletteIndex < 0 || config.paletteIndex > 5
+      || !siteCoverLayouts.includes(config.coverLayout) || !siteAnimations.includes(config.animationPreset)
+      || !siteFontPairs.includes(config.fontPair) || !siteLanguages.includes(config.language)
+      || !Array.isArray(config.enabledSections) || config.enabledSections.some((section) => !siteSections.includes(section))) return null
+    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)] }
+  } catch {
+    return null
+  }
+}
+
+function validateSiteConfig(body) {
+  if (!body || !siteThemes.includes(body.theme) || !Number.isInteger(body.paletteIndex) || body.paletteIndex < 0 || body.paletteIndex > 5
+    || !siteCoverLayouts.includes(body.coverLayout) || !siteAnimations.includes(body.animationPreset)
+    || !siteFontPairs.includes(body.fontPair) || !siteLanguages.includes(body.language)
+    || !Array.isArray(body.enabledSections) || body.enabledSections.length > siteSections.length
+    || body.enabledSections.some((section) => !siteSections.includes(section))) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language }
+}
 
 function jsonError(context, status, error) {
   return context.json({ error }, status, { 'Cache-Control': 'no-store' })
@@ -398,6 +428,30 @@ app.get('/api/couple/weddings', requireSession, async (context) => {
     ORDER BY w.created_at DESC
   `).bind(context.get('session').account_id).all()
   return context.json({ weddings: result.results })
+})
+
+app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  const wedding = await context.env.DB.prepare('SELECT site_config_json, published_site_config_json, site_published_at FROM weddings WHERE id = ?').bind(weddingId).first()
+  return context.json({ draft: parseSiteConfig(wedding.site_config_json) || defaultSiteConfig, published: parseSiteConfig(wedding.published_site_config_json), publishedAt: wedding.site_published_at })
+})
+
+app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const config = validateSiteConfig(await context.req.json().catch(() => null))
+  if (!config) return jsonError(context, 400, 'invalid_site_config')
+  await context.env.DB.batch([
+    context.env.DB.prepare('UPDATE weddings SET site_config_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(JSON.stringify(config), weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'wedding_site_draft_saved', 'wedding', ?, ?)`)
+      .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, weddingId, JSON.stringify({ theme: config.theme, coverLayout: config.coverLayout, enabledSections: config.enabledSections.length })),
+  ])
+  return context.json({ draft: config })
 })
 
 app.get('/api/couple/weddings/:weddingId/groups', requireSession, async (context) => {
