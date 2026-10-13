@@ -2092,6 +2092,14 @@ function QrCamera({ onDecode, onError }) {
 
   return <div className="staff-camera-view"><video ref={videoRef} muted playsInline /><button className="button-outline" onClick={onError.bind(null, 'Leitura cancelada.')}>Cancelar leitura</button></div>
 }
+function superadminAccessMessage(code) {
+  return ({
+    cloudflare_access_unconfigured: 'Configure CLOUDFLARE_ACCESS_TEAM_DOMAIN e CLOUDFLARE_ACCESS_AUD nas variáveis do Cloudflare Pages.',
+    cloudflare_access_required: 'Entre no Cloudflare Access autorizado antes de abrir esta área.',
+    superadmin_email_unconfigured: 'Configure SUPERADMIN_EMAIL nas variáveis do Cloudflare Pages.',
+  })[code] || null
+}
+
 function SuperAdminPanel({ notify }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
@@ -2112,8 +2120,9 @@ function SuperAdminPanel({ notify }) {
       setAccount(result.account)
       setStage(result.mfaVerified ? 'ready' : result.mfaEnabled ? 'login' : 'setup')
     }).catch(() => fetch('/api/superadmin/bootstrap/status').then(async (response) => {
-      if (!response.ok) throw new Error('bootstrap_unavailable')
-      return response.json()
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'bootstrap_unavailable')
+      return result
     }).then((result) => {
       if (result.available) {
         setEmail(result.email)
@@ -2121,7 +2130,10 @@ function SuperAdminPanel({ notify }) {
       } else {
         setStage('login')
       }
-    }).catch(() => setStage('login')))
+    }).catch((cause) => {
+      setError(superadminAccessMessage(cause.message) || '')
+      setStage('login')
+    }))
   }, [])
 
   useEffect(() => {
@@ -2130,7 +2142,7 @@ function SuperAdminPanel({ notify }) {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'mfa_setup_unavailable')
       setEnrollment(result)
-    }).catch(() => setError('Não foi possível iniciar o cadastro do autenticador.'))
+    }).catch((cause) => setError(superadminAccessMessage(cause.message) || 'Não foi possível iniciar o cadastro do autenticador.'))
   }, [stage, enrollment, account])
 
   async function login(event) {
@@ -2145,7 +2157,7 @@ function SuperAdminPanel({ notify }) {
       setAccount(result.account)
       setStage(result.mfaSetupRequired ? 'setup' : 'ready')
     } catch (cause) {
-      setError(cause.message === 'too_many_attempts' ? 'Muitas tentativas. Aguarde antes de tentar novamente.' : cause.message === 'mfa_unavailable' ? 'O MFA está indisponível no servidor.' : 'E-mail, senha ou código de autenticação inválido.')
+      setError(superadminAccessMessage(cause.message) || (cause.message === 'too_many_attempts' ? 'Muitas tentativas. Aguarde antes de tentar novamente.' : cause.message === 'mfa_unavailable' ? 'O MFA está indisponível no servidor.' : 'E-mail, senha ou código de autenticação inválido.'))
     } finally {
       setBusy(false)
     }
@@ -2162,13 +2174,13 @@ function SuperAdminPanel({ notify }) {
     try {
       const response = await fetch('/api/superadmin/bootstrap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error === 'superadmin_already_configured' ? 'A conta inicial já foi configurada. Entre com seu e-mail e senha.' : 'A senha precisa ter pelo menos 14 caracteres.')
+      if (!response.ok) throw new Error(superadminAccessMessage(result.error) || (result.error === 'superadmin_already_configured' ? 'A conta inicial já foi configurada. Entre com seu e-mail e senha.' : result.error === 'superadmin_email_unconfigured' ? 'Configure SUPERADMIN_EMAIL no Cloudflare Pages.' : 'A senha precisa ter pelo menos 14 caracteres.'))
       setAccount(result.account)
       setPassword('')
       setBootstrapConfirmation('')
       setStage('setup')
     } catch (cause) {
-      setError(cause.message)
+      setError(superadminAccessMessage(cause.message) || cause.message)
     } finally {
       setBusy(false)
     }
@@ -2184,8 +2196,8 @@ function SuperAdminPanel({ notify }) {
       if (!response.ok) throw new Error(result.error || 'invalid_mfa_code')
       setStage('ready')
       setCode('')
-    } catch {
-      setError('Código inválido. Confira o horário do celular e tente novamente.')
+    } catch (cause) {
+      setError(superadminAccessMessage(cause.message) || 'Código inválido. Confira o horário do celular e tente novamente.')
     } finally {
       setBusy(false)
     }
@@ -2255,7 +2267,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
   }
 
   useEffect(() => {
-    refresh().catch((cause) => setError(cause.message === 'superadmin_access_required' ? 'A conta não tem permissão de superadmin.' : 'Não foi possível carregar os dados do D1.'))
+    refresh().catch((cause) => setError(superadminAccessMessage(cause.message) || (cause.message === 'superadmin_access_required' ? 'A conta não tem permissão de superadmin.' : 'Não foi possível carregar os dados do D1.')))
   }, [accountsPage, weddingsPage, auditPage])
 
   async function changeAccountStatus(item) {
