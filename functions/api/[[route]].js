@@ -1444,7 +1444,7 @@ app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requir
   const actorId = session.account_id
   const auditId = crypto.randomUUID()
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE weddings SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP, slug = ?, partner_one_name = 'Dados anonimizados', partner_two_name = 'Dados anonimizados', event_date = NULL, site_config_json = '{}', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status != 'deleted'`)
+    context.env.DB.prepare(`UPDATE weddings SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP, slug = ?, partner_one_name = 'Dados anonimizados', partner_two_name = 'Dados anonimizados', event_date = NULL, site_config_json = '{}', published_site_config_json = '{}', site_published_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status != 'deleted'`)
       .bind(`removido-${weddingId}`, weddingId),
     context.env.DB.prepare('UPDATE gift_contributions SET guest_id = NULL, payer_name = NULL, message = NULL WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare(`UPDATE gifts SET title = 'Presente anonimizado', description = '', status = 'archived', updated_at = CURRENT_TIMESTAMP WHERE wedding_id = ?`).bind(weddingId),
