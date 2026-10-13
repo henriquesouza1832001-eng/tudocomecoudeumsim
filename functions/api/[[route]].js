@@ -481,12 +481,15 @@ app.post('/api/auth/password-reset/confirm', async (context) => {
   const passwordHash = await hashPassword(password)
   const resetAt = new Date().toISOString()
   const results = await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE auth_challenges SET consumed_at = CURRENT_TIMESTAMP
-      WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at IS NULL AND expires_at > CURRENT_TIMESTAMP`).bind(tokenDigest),
-    context.env.DB.prepare(`UPDATE accounts SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'active'`).bind(passwordHash, challenge.id),
-    context.env.DB.prepare('UPDATE auth_sessions SET revoked_at = ? WHERE account_id = ? AND revoked_at IS NULL').bind(resetAt, challenge.id),
+    context.env.DB.prepare(`UPDATE auth_challenges SET consumed_at = ?
+      WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at IS NULL AND expires_at > CURRENT_TIMESTAMP`).bind(resetAt, tokenDigest),
+    context.env.DB.prepare(`UPDATE accounts SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'active'
+      AND EXISTS (SELECT 1 FROM auth_challenges WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at = ?)`).bind(passwordHash, challenge.id, tokenDigest, resetAt),
+    context.env.DB.prepare(`UPDATE auth_sessions SET revoked_at = ? WHERE account_id = ? AND revoked_at IS NULL
+      AND EXISTS (SELECT 1 FROM auth_challenges WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at = ?)`).bind(resetAt, challenge.id, tokenDigest, resetAt),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, action, target_type, target_id, details_json)
-      VALUES (?, ?, 'account_password_reset', 'account', ?, '{}')`).bind(crypto.randomUUID(), challenge.id, challenge.id),
+      SELECT ?, ?, 'account_password_reset', 'account', ?, '{}'
+      WHERE EXISTS (SELECT 1 FROM auth_challenges WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at = ?)`).bind(crypto.randomUUID(), challenge.id, challenge.id, tokenDigest, resetAt),
   ])
   if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1) return jsonError(context, 400, 'password_reset_expired_or_used')
   return context.json({ email: challenge.email, passwordReset: true })
