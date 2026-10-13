@@ -56,7 +56,9 @@ const SITE_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronogra
 const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' } }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 let turnstileScriptPromise
+let recaptchaScriptPromise
 
 function loadTurnstileScript() {
   if (window.turnstile) return Promise.resolve()
@@ -74,6 +76,24 @@ function loadTurnstileScript() {
     document.head.append(script)
   })
   return turnstileScriptPromise
+}
+
+function loadRecaptchaScript() {
+  if (window.grecaptcha?.render) return Promise.resolve()
+  if (recaptchaScriptPromise) return recaptchaScriptPromise
+  recaptchaScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'
+    script.async = true
+    script.defer = true
+    script.onload = resolve
+    script.onerror = () => {
+      recaptchaScriptPromise = null
+      reject(new Error('recaptcha_script_unavailable'))
+    }
+    document.head.append(script)
+  })
+  return recaptchaScriptPromise
 }
 
 const NAV_ITEMS = [
@@ -480,7 +500,7 @@ function GuestSite({ theme, setTheme, notify }) {
           <a href="#presentes" onClick={() => setMenuOpen(false)}>Presentes</a>
           <a href="#presenca" onClick={() => setMenuOpen(false)}>Presença</a>
         </nav>
-        <a className="nav-rsvp" href="#presenca">Confirmar presença <ArrowRight size={15} /></a>
+        <a className="nav-rsvp nav-signup" href="/cadastro">Criar meu site <ArrowRight size={15} /></a>
       </header>
 
       <section className="guest-hero" id="inicio">
@@ -604,6 +624,9 @@ function CoupleSignup() {
   const [confirmation, setConfirmation] = useState('')
   const [partnerOneName, setPartnerOneName] = useState('')
   const [partnerTwoName, setPartnerTwoName] = useState('')
+  const [coupleType, setCoupleType] = useState('bride-groom')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [slug, setSlug] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [error, setError] = useState('')
@@ -626,7 +649,7 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null }),
+        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, recaptchaToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'signup_failed')
@@ -635,11 +658,15 @@ function CoupleSignup() {
       setConfirmation('')
     } catch (cause) {
       setError(cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
+        : cause.message === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.'
+          : cause.message === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.'
         : cause.message === 'email_or_slug_unavailable' ? 'Este e-mail ou endereço já está cadastrado. Confira os dados e tente entrar.'
           : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
             : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
               : 'Não foi possível criar o cadastro. Confira os campos e tente novamente.')
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -647,13 +674,15 @@ function CoupleSignup() {
   return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Comecem a planejar juntos.'} description={submitted ? `Enviamos um link de confirmação para ${email}. Ele vale por 24 horas.` : 'Crie o acesso do casal e reserve o endereço curto do site de vocês.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
     {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o endereço, vocês poderão abrir o painel e configurar um autenticador no primeiro acesso.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
       <label>E-mail do casal<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-      <div className="signup-name-grid"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => { setPartnerOneName(event.target.value); setSlug(createSlug(event.target.value, partnerTwoName)) }} required /></label><label>Nome do segundo noivo<input autoComplete="given-name" maxLength="100" value={partnerTwoName} onChange={(event) => { setPartnerTwoName(event.target.value); setSlug(createSlug(partnerOneName, event.target.value)) }} required /></label></div>
+      <fieldset className="couple-type-field"><legend>Como vocês preferem identificar o casal?</legend><div className="couple-type-options">{[['bride-groom', 'Noiva e noivo'], ['two-brides', 'Duas noivas'], ['two-grooms', 'Dois noivos'], ['neutral', 'Nomes neutros']].map(([value, label]) => <label className={coupleType === value ? 'selected' : ''} key={value}><input type="radio" name="couple-type" value={value} checked={coupleType === value} onChange={() => setCoupleType(value)} /><span>{label}</span></label>)}</div></fieldset>
+      <div className="signup-name-grid"><label>{({ 'bride-groom': 'Nome da noiva', 'two-brides': 'Nome da primeira noiva', 'two-grooms': 'Nome do primeiro noivo', neutral: 'Nome da pessoa 1' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => { setPartnerOneName(event.target.value); setSlug(createSlug(event.target.value, partnerTwoName)) }} required /></label><label>{({ 'bride-groom': 'Nome do noivo', 'two-brides': 'Nome da segunda noiva', 'two-grooms': 'Nome do segundo noivo', neutral: 'Nome da pessoa 2' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerTwoName} onChange={(event) => { setPartnerTwoName(event.target.value); setSlug(createSlug(partnerOneName, event.target.value)) }} required /></label></div>
       <label>Endereço curto do site<input autoComplete="url" minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))} required /><small className="signup-hint">Um endereço simples para compartilhar o convite depois.</small></label>
       <label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
       <label>Crie uma senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       <label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
+      <RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />
       {error && <p className="admin-form-error" role="alert">{error}</p>}
-      <button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
+      <button className="button-primary signup-submit" type="submit" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
       <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
     </form>}
   </RoleFrame>
@@ -683,6 +712,8 @@ function CoupleEmailConfirmation() {
 
 function PasswordResetRequest() {
   const [email, setEmail] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -695,7 +726,7 @@ function PasswordResetRequest() {
       const response = await fetch('/api/auth/password-reset/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, recaptchaToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'request_failed')
@@ -703,16 +734,22 @@ function PasswordResetRequest() {
     } catch (cause) {
       setError(cause.message === 'email_service_unconfigured'
         ? 'O envio de e-mails está sendo configurado. Tente novamente em breve.'
+        : cause.message === 'recaptcha_unconfigured'
+          ? 'A verificação de segurança ainda não foi configurada neste site.'
+          : cause.message === 'recaptcha_failed'
+            ? 'Conclua novamente a verificação de segurança.'
         : cause.message === 'too_many_attempts'
           ? 'Muitas solicitações neste aparelho. Aguarde e tente novamente.'
           : 'Não foi possível solicitar a recuperação agora. Tente novamente mais tarde.')
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
 
   return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={submitted ? 'Confira sua caixa de entrada.' : 'Recupere seu acesso.'} description={submitted ? 'Se houver uma conta ativa com esse endereço, enviaremos um link válido por 30 minutos.' : 'Informe o e-mail da conta para receber um link de redefinição de senha.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
-    <form className="role-card admin-login-form" onSubmit={requestReset}><label>E-mail da conta<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitted} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}{submitted ? <a className="button-primary signup-submit" href="/painel">Voltar para entrar <ArrowRight size={15} /></a> : <button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Solicitando…' : 'Enviar link de recuperação'} <ArrowRight size={15} /></button>}</form>
+    <form className="role-card admin-login-form" onSubmit={requestReset}><label>E-mail da conta<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitted} /></label>{!submitted && <RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />}{error && <p className="admin-form-error" role="alert">{error}</p>}{submitted ? <a className="button-primary signup-submit" href="/painel">Voltar para entrar <ArrowRight size={15} /></a> : <button className="button-primary signup-submit" type="submit" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken}>{busy ? 'Solicitando…' : 'Enviar link de recuperação'} <ArrowRight size={15} /></button>}</form>
   </RoleFrame>
 }
 
@@ -763,6 +800,8 @@ function CouplePanel({ notify }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [weddings, setWeddings] = useState([])
   const [weddingId, setWeddingId] = useState('')
   const [guests, setGuests] = useState([])
@@ -956,7 +995,7 @@ function CouplePanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'invalid_credentials')
       setAccount(result.account)
@@ -966,9 +1005,11 @@ function CouplePanel({ notify }) {
       }
       await loadWeddings()
     } catch (cause) {
-      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message)
+      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.' : cause.message)
       setStage('login')
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -1379,7 +1420,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking'}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Cadastrem o casamento</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Cadastrem o casamento</a></p></form>
   </SuperAdminAccessFrame>
 
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={() => setTab('site')}>Editar meu site</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">ÁREA DOS NOIVOS</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.</p></div>
@@ -1627,6 +1668,8 @@ function TeamInvitationAcceptance() {
   const [confirmation, setConfirmation] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [code, setCode] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -1671,7 +1714,7 @@ function TeamInvitationAcceptance() {
     setError('')
     try {
       if (invitation?.requiresLogin) {
-        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, code }) })
+        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, code, recaptchaToken }) })
         const loginResult = await loginResponse.json()
         if (!loginResponse.ok) throw new Error('Confira o e-mail, a senha e o código do autenticador da sua conta.')
         if (loginResult.mfaSetupRequired) {
@@ -1684,6 +1727,8 @@ function TeamInvitationAcceptance() {
     } catch (cause) {
       setError(cause.message)
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -1695,7 +1740,7 @@ function TeamInvitationAcceptance() {
 
   const isCoupleInvitation = invitation?.role === 'couple_admin'
   return <RoleFrame icon={LockKeyhole} eyebrow={isCoupleInvitation ? "ACESSO DOS NOIVOS" : "ACESSO DA EQUIPE"} title={isCoupleInvitation ? "Ative o painel do casamento." : "Ative seu acesso ao evento."} description={isCoupleInvitation ? "Crie sua conta para administrar o site, os eventos e os convidados. Todos os acessos exigem autenticador." : "A permissão é limitada aos eventos escolhidos pelos noivos e exige autenticador."} secure secureName={isCoupleInvitation ? "Convite dos noivos" : "Convite da equipe"} secureFooter="Acesso individual">
-    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitation.role === 'couple_admin' ? 'administrador do casamento' : invitation.role === 'checkin_staff' ? 'equipe de entrada' : 'equipe do evento'}.</p><label>Senha da conta<input type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, cadastre também um autenticador.</p><label>Nova senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitation.role === 'couple_admin' ? 'administrador do casamento' : invitation.role === 'checkin_staff' ? 'equipe de entrada' : 'equipe do evento'}.</p><label>Senha da conta<input type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} /></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, cadastre também um autenticador.</p><label>Nova senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation || (invitation.requiresLogin && (!RECAPTCHA_SITE_KEY || !recaptchaToken))} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
   </RoleFrame>
 }
 
@@ -1831,6 +1876,44 @@ function TurnstileChallenge({ onToken, resetKey }) {
     : <p className="turnstile-unavailable">A validação antirobô ainda não foi configurada.</p>
 }
 
+function RecaptchaChallenge({ onToken, resetKey }) {
+  const container = useRef(null)
+  const widgetId = useRef(null)
+  const onTokenRef = useRef(onToken)
+  const [scriptError, setScriptError] = useState(false)
+
+  useEffect(() => { onTokenRef.current = onToken }, [onToken])
+
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY || !container.current) return undefined
+    let active = true
+    loadRecaptchaScript().then(() => {
+      if (!active || !container.current || widgetId.current !== null) return
+      widgetId.current = window.grecaptcha.render(container.current, {
+        sitekey: RECAPTCHA_SITE_KEY,
+        callback: (token) => onTokenRef.current(token),
+        'expired-callback': () => onTokenRef.current(''),
+        'error-callback': () => onTokenRef.current(''),
+      })
+    }).catch(() => {
+      if (active) setScriptError(true)
+    })
+    return () => {
+      active = false
+      if (widgetId.current !== null && window.grecaptcha) window.grecaptcha.reset(widgetId.current)
+      widgetId.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (resetKey > 0 && widgetId.current !== null && window.grecaptcha) window.grecaptcha.reset(widgetId.current)
+  }, [resetKey])
+
+  return RECAPTCHA_SITE_KEY
+    ? <>{scriptError ? <p className="turnstile-unavailable">Não foi possível carregar a verificação de segurança. Atualize a página e tente novamente.</p> : <div className="recaptcha-challenge" ref={container} aria-label="Verificação de segurança" />}</>
+    : <p className="turnstile-unavailable">A verificação de segurança ainda não foi configurada.</p>
+}
+
 function GodparentPortal({ notify }) {
   const [tasks, setTasks] = useState([])
   const [error, setError] = useState('')
@@ -1884,6 +1967,8 @@ function EventStaffPanel({ notify }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [events, setEvents] = useState([])
   const [selectedEvent, setSelectedEvent] = useState('')
   const [guests, setGuests] = useState([])
@@ -2097,9 +2182,9 @@ function EventStaffPanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
       const result = await response.json()
-      if (!response.ok) throw new Error('E-mail, senha ou código inválido.')
+      if (!response.ok) throw new Error(result.error === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.' : result.error === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.' : 'E-mail, senha ou código inválido.')
       localStorage.removeItem('wedding-staff-locked')
       if (result.mfaSetupRequired) {
         setStage('mfa-setup')
@@ -2109,6 +2194,8 @@ function EventStaffPanel({ notify }) {
     } catch (cause) {
       setError(cause.message)
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -2227,7 +2314,7 @@ function EventStaffPanel({ notify }) {
   }
   if (stage === 'mfa-setup') return <RoleFrame icon={Shield} eyebrow="SEGUNDO FATOR" title="Proteja sua conta." description="Configure um autenticador para continuar à área da equipe." secure><AccountMfaSetup onComplete={loadEvents} /></RoleFrame>
   if (stage !== 'ready') return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Acesso ao evento." description="Entre com a conta atribuída pelos noivos. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." secure>
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking'} type="submit">Entrar <LockKeyhole size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
   </RoleFrame>
 
   const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length
@@ -2285,6 +2372,8 @@ function superadminAccessMessage(code) {
     cloudflare_access_unconfigured: 'Configure CLOUDFLARE_ACCESS_TEAM_DOMAIN e CLOUDFLARE_ACCESS_AUD nas variáveis do Cloudflare Pages.',
     cloudflare_access_required: 'Entre no Cloudflare Access autorizado antes de abrir esta área.',
     superadmin_email_unconfigured: 'Configure SUPERADMIN_EMAIL nas variáveis do Cloudflare Pages.',
+    recaptcha_unconfigured: 'Configure a chave do reCAPTCHA no site e o segredo no Cloudflare Pages.',
+    recaptcha_failed: 'Conclua novamente a verificação de segurança.',
   })[code] || null
 }
 
@@ -2295,6 +2384,8 @@ function SuperAdminPanel({ notify }) {
   const [password, setPassword] = useState('')
   const [bootstrapConfirmation, setBootstrapConfirmation] = useState('')
   const [code, setCode] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaReset, setRecaptchaReset] = useState(0)
   const [enrollment, setEnrollment] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -2338,7 +2429,7 @@ function SuperAdminPanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'invalid_credentials')
       if (!result.account.isSuperadmin) throw new Error('superadmin_access_required')
@@ -2347,6 +2438,8 @@ function SuperAdminPanel({ notify }) {
     } catch (cause) {
       setError(superadminAccessMessage(cause.message) || (cause.message === 'too_many_attempts' ? 'Muitas tentativas. Aguarde antes de tentar novamente.' : cause.message === 'mfa_unavailable' ? 'O MFA está indisponível no servidor.' : 'E-mail, senha ou código de autenticação inválido.'))
     } finally {
+      setRecaptchaToken('')
+      setRecaptchaReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -2396,7 +2489,7 @@ function SuperAdminPanel({ notify }) {
     <form className="role-card admin-login-form" onSubmit={bootstrap}><label>E-mail autorizado<input type="email" value={email} readOnly /></label><label>Crie uma senha forte<input type="password" autoComplete="new-password" minLength="14" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="14" maxLength="1024" value={bootstrapConfirmation} onChange={(event) => setBootstrapConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy} type="submit">{busy ? 'Criando conta segura…' : 'Criar e configurar MFA'} <Shield size={15} /></button></form>
   </SuperAdminAccessFrame>
   if (stage === 'login') return <SuperAdminAccessFrame title="Acesso administrativo." description="Entre com sua conta. Cloudflare Access e a autenticação do produto são verificados separadamente.">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} placeholder="6 dígitos, se já configurado" /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy} type="submit">{busy ? 'Verificando…' : 'Entrar'} <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} placeholder="6 dígitos, se já configurado" /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken} type="submit">{busy ? 'Verificando…' : 'Entrar'} <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a></form>
   </SuperAdminAccessFrame>
   if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Adicione esta chave em um aplicativo autenticador e confirme o código de seis dígitos. A chave fica visível somente nesta etapa.">
     <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><label>Chave de configuração<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Abra seu autenticador, adicione uma conta manualmente e use esta chave. O segredo é cifrado antes de ser gravado no D1.</p><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>

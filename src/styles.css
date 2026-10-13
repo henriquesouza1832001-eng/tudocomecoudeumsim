@@ -56,6 +56,8 @@ img { display: block; max-width: 100%; }
 .nav-links a:hover { color: var(--accent); }
 .nav-rsvp { height: 38px; padding: 0 15px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--forest); color: var(--forest); font-size: 10px; transition: .2s ease; }
 .nav-rsvp:hover { color: white; background: var(--forest); }
+.nav-signup { border-color: var(--accent); color: #665247; }
+.nav-signup:hover { border-color: var(--forest); }
 .mobile-menu-button { display: none; }
 .guest-hero { height: min(760px, 77vw); min-height: 560px; position: relative; overflow: hidden; color: #fff; background: #475248; }
 .hero-photo { position: absolute; inset: 0; background-image: url('/images/wedding-garden.png'); background-position: center 53%; background-size: cover; transform: scale(1.015); animation: hero-reveal 1.1s ease-out both; }
@@ -1205,6 +1207,19 @@ img { display: block; max-width: 100%; }
 .admin-login-form input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 .admin-login-form .button-primary { min-height: 42px; justify-content: center; }
 .signup-name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.couple-type-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.couple-type-field legend { margin-bottom: 8px; color: #6d7167; font-size: 10px; }
+.couple-type-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.couple-type-options label { min-height: 40px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(48,55,47,.15); color: #666b62; background: #fff; cursor: pointer; }
+.couple-type-options label.selected { border-color: #8f806e; color: #4e554c; background: #f5f2ed; }
+.couple-type-options input { width: 15px; min-height: 15px; margin: 0; accent-color: #6f7468; }
+.couple-type-options span { font-size: 10px; }
+.recaptcha-challenge { min-height: 78px; max-width: 100%; overflow: hidden; }
+.recaptcha-challenge iframe { max-width: 100%; }
+@media (max-width: 360px) {
+  .recaptcha-challenge { width: 258px; min-height: 67px; }
+  .recaptcha-challenge > div { transform: scale(.85); transform-origin: top left; }
+}
 .signup-hint { color: #898b81; font-size: 9px; line-height: 1.5; }
 .signup-login-link { margin: 4px 0 0; text-align: center; }
 .signup-login-link a, .admin-login-form > p a { color: var(--forest); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
