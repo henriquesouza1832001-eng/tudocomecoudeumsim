@@ -624,6 +624,9 @@ function CouplePanel({ notify }) {
   const [assignments, setAssignments] = useState([])
   const [godparentTasks, setGodparentTasks] = useState([])
   const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG)
+  const [savedSiteConfig, setSavedSiteConfig] = useState(DEFAULT_SITE_CONFIG)
+  const [publishedSiteConfig, setPublishedSiteConfig] = useState(null)
+  const [sitePublishedAt, setSitePublishedAt] = useState(null)
   const [siteConfigLoading, setSiteConfigLoading] = useState(false)
   const [tab, setTab] = useState('guests')
   const [guestName, setGuestName] = useState('')
@@ -713,6 +716,9 @@ function CouplePanel({ notify }) {
     setAssignments(assignmentResult.assignments)
     setGodparentTasks(taskResult.tasks)
     setSiteConfig(siteConfigResult.draft)
+    setSavedSiteConfig(siteConfigResult.draft)
+    setPublishedSiteConfig(siteConfigResult.published)
+    setSitePublishedAt(siteConfigResult.publishedAt)
     setSiteConfigLoading(false)
   }
 
@@ -722,9 +728,34 @@ function CouplePanel({ notify }) {
     try {
       const result = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
       setSiteConfig(result.draft)
+      setSavedSiteConfig(result.draft)
       notify('Rascunho do site salvo no D1')
     } catch {
       setError('Não foi possível salvar o rascunho do site.')
+    } finally {
+      setSiteConfigLoading(false)
+    }
+  }
+
+  async function publishSite() {
+    if (!window.confirm('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?')) return
+    setSiteConfigLoading(true)
+    setError('')
+    try {
+      let draft = siteConfig
+      if (JSON.stringify(siteConfig) !== JSON.stringify(savedSiteConfig)) {
+        const saved = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
+        draft = saved.draft
+        setSiteConfig(draft)
+        setSavedSiteConfig(draft)
+      }
+      const result = await request(`/api/couple/weddings/${weddingId}/site-config/publish`, { method: 'POST' })
+      setPublishedSiteConfig(result.published)
+      setSitePublishedAt(result.publishedAt)
+      setWeddings((current) => current.map((item) => item.id === weddingId ? { ...item, status: result.status } : item))
+      notify('Site publicado para os convites individuais')
+    } catch {
+      setError('Não foi possível publicar o site. Confira o estado do casamento e tente novamente.')
     } finally {
       setSiteConfigLoading(false)
     }
@@ -1225,11 +1256,11 @@ function CouplePanel({ notify }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
-    {tab === 'site' && <CoupleSiteEditor wedding={wedding} config={siteConfig} setConfig={setSiteConfig} onSave={saveSiteDraft} saving={siteConfigLoading} />}
+    {tab === 'site' && <CoupleSiteEditor wedding={wedding} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function CoupleSiteEditor({ wedding, config, setConfig, onSave, saving }) {
+function CoupleSiteEditor({ wedding, config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = [
@@ -1247,6 +1278,8 @@ function CoupleSiteEditor({ wedding, config, setConfig, onSave, saving }) {
     en: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('en-US') : 'Date to be announced', message: 'With joy, we invite you.', button: 'Explore the invitation' },
     es: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('es') : 'Fecha por definir', message: 'Con alegría, te invitamos.', button: 'Descubre la invitación' },
   }[config.language]
+  const draftChanged = JSON.stringify(config) !== JSON.stringify(savedConfig)
+  const published = publishedAt ? new Date(publishedAt).toLocaleString('pt-BR') : ''
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const toggleSection = (section) => update({ enabledSections: config.enabledSections.includes(section) ? config.enabledSections.filter((item) => item !== section) : [...config.enabledSections, section] })
 
@@ -1255,8 +1288,8 @@ function CoupleSiteEditor({ wedding, config, setConfig, onSave, saving }) {
     <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CAPA DO CONVITE</span><h3>Escolha um layout</h3></div><span className="step-counter">6 opções</span></div><div className="cover-layout-grid">{layoutNames.map((layout) => <button type="button" key={layout.id} className={config.coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })}><span className={`layout-thumb layout-thumb-${layout.id}`}><i /><b /><em /></span><small>{layout.label}</small></button>)}</div></section>
     <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO</span><h3>Seções do site</h3></div><span className="section-count">{config.enabledSections.length} ativas</span></div><div className="toggle-list">{SITE_SECTIONS.map((section, index) => <div className="toggle-row" key={section}><span className="toggle-index">{String(index + 1).padStart(2, '0')}</span><span className="toggle-name">{section}{section === 'Quiz dos noivos' && <small>Opcional</small>}</span><button type="button" className={`toggle-switch ${config.enabledSections.includes(section) ? 'on' : ''}`} aria-label={`${config.enabledSections.includes(section) ? 'Desativar' : 'Ativar'} ${section}`} onClick={() => toggleSection(section)}><i /></button></div>)}</div></section>
     <section className="dash-card customize-card animation-card"><div className="card-heading"><div><span className="eyebrow">MOVIMENTO E IDIOMA</span><h3>Preferências do convite</h3></div><Sparkles size={17} /></div><div className="segmented-control">{['Suave', 'Elegante', 'Festivo', 'Nenhum'].map((preset) => <button type="button" key={preset} className={config.animationPreset === preset ? 'selected' : ''} onClick={() => update({ animationPreset: preset })}>{preset}</button>)}</div><label className="font-pair-label">Idioma principal<select value={config.language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label></section>
-    <button className="button-primary save-customize" onClick={onSave} disabled={saving}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button>
-  </div><div className="customize-preview" style={{ '--forest': selectedPalette[0], '--accent': selectedPalette[1], '--paper': selectedPalette[2] }}><div className="preview-sticky-label"><span><span className="status-dot" /> RASCUNHO PRIVADO</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div><span>{config.language}</span></div><div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.dominio-a-definir</div><ExternalLink size={12} /></div><div className={`browser-content cover-${config.coverLayout}`}><img src="/images/wedding-garden.png" alt="Prévia do tema do convite" /><div className="browser-overlay" /><span className="browser-date">{languageCopy.date}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong><small>{languageCopy.message}</small><button type="button">{languageCopy.button} <ArrowRight size={13} /></button>{config.coverLayout === 'video' && <span className="video-preview-tag">Vídeo de capa · silencioso</span>}</div><div className="browser-below">{config.enabledSections.slice(0, 3).map((section) => <span key={section}>{section}</span>)}</div></div><div className="preview-notice"><CircleHelp size={15} /> Este rascunho é salvo por casamento no D1. O site publicado permanece separado.</div></div></div>
+    <div className="site-editor-actions"><button className="button-primary save-customize" onClick={onSave} disabled={saving || !draftChanged}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={onPublish} disabled={saving}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar site'}</button></div>
+  </div><div className="customize-preview" style={{ '--forest': selectedPalette[0], '--accent': selectedPalette[1], '--paper': selectedPalette[2] }}><div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'RASCUNHO PRIVADO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div><span>{config.language}</span></div><div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.dominio-a-definir</div><ExternalLink size={12} /></div><div className={`browser-content cover-${config.coverLayout}`}><img src="/images/wedding-garden.png" alt="Prévia do tema do convite" /><div className="browser-overlay" /><span className="browser-date">{languageCopy.date}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong><small>{languageCopy.message}</small><button type="button">{languageCopy.button} <ArrowRight size={13} /></button>{config.coverLayout === 'video' && <span className="video-preview-tag">Vídeo de capa · silencioso</span>}</div><div className="browser-below">{config.enabledSections.slice(0, 3).map((section) => <span key={section}>{section}</span>)}</div></div><div className="preview-notice"><CircleHelp size={15} /> {publishedAt ? `Última publicação: ${published}. Novas alterações só aparecem após publicar novamente.` : 'Rascunho privado no D1. A publicação ativa os convites individuais.'}</div></div></div>
 }
 
 function InvitationShare({ share, onClose, notify }) {
@@ -1396,8 +1429,8 @@ function GameManager({ enabled, setEnabled, notify }) {
   return <div className="game-layout"><section className="dash-card game-settings"><div className="card-heading"><div><span className="eyebrow">BRINCADEIRA OPCIONAL</span><h3>Quiz dos noivos</h3></div><span className={`game-state ${enabled ? 'enabled' : ''}`}>{enabled ? 'Ativo na prévia' : 'Desativado'}</span></div><p>Uma partida com cinco perguntas por dia, ranking entre convidados e uma nova chance amanhã. Só aparece no convite quando vocês ativarem.</p><div className="game-toggle-card"><span className="game-sparkle"><Sparkles size={21} /></span><span><strong>Mostrar o jogo no site</strong><small>{enabled ? 'O quiz aparece no convite demonstrativo.' : 'O menu do jogo fica oculto para os convidados.'}</small></span><button className={`toggle-switch ${enabled ? 'on' : ''}`} aria-label={enabled ? 'Desativar jogo' : 'Ativar jogo'} onClick={() => setEnabled(!enabled)}><i /></button></div><div className="game-details"><div><small>PARTIDAS</small><strong>5 perguntas por dia</strong></div><div><small>RANKING</small><strong>Semanal e geral</strong></div><div><small>PRIVACIDADE</small><strong>Apelido ou oculto</strong></div></div><button className="button-outline full-width" onClick={() => notify('Perguntas personalizadas serão configuradas na fase do jogo')}>Editar perguntas <ArrowRight size={14} /></button></section><section className="game-preview-card"><div className="quiz-top"><span className="quiz-mark"><Sparkles size={20} /></span><span className="quiz-day">QUIZ DO DIA · PRÉVIA</span><h3>Quem disse<br />“eu te amo” primeiro?</h3><p>Escolha uma resposta para ver como o jogo pode funcionar.</p></div><div className="quiz-options"><button onClick={() => notify('Resposta de demonstração selecionada')}>Elisa <span>A</span></button><button onClick={() => notify('Resposta de demonstração selecionada')}>Tomás <span>B</span></button></div><div className="quiz-footer"><span>01 / 05</span><span>Uma tentativa por dia</span></div></section></div>
 }
 
-function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento', headerAction = null }) {
-  return <div className={`role-page ${className}`}><header className="role-header"><a className="role-brand" href="#inicio"><span>e<span>&</span>t</span><strong>{secure ? secureName : 'Elisa & Tomás'}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : 'PRÉVIA INTERATIVA · DADOS FICTÍCIOS'}</span>{headerAction}</header><main className="role-main"><div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}{!secure && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure ? secureFooter : 'e&t · celebração em 18.09.2027'}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento', headerAction = null, style }) {
+  return <div className={`role-page ${className}`} style={style}><header className="role-header"><a className="role-brand" href="#inicio"><span>e<span>&</span>t</span><strong>{secure ? secureName : 'Elisa & Tomás'}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : 'PRÉVIA INTERATIVA · DADOS FICTÍCIOS'}</span>{headerAction}</header><main className="role-main"><div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}{!secure && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure ? secureFooter : 'e&t · celebração em 18.09.2027'}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
 function TeamInvitationAcceptance() {
@@ -1483,6 +1516,10 @@ function GuestPortal({ notify, setView }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const token = window.location.hash.startsWith('#convite/') ? window.location.hash.slice(9) : ''
+  const siteTheme = THEMES.find((item) => item.id === invitation?.siteConfig?.theme)
+  const sitePalettes = siteTheme ? [siteTheme.colors, [siteTheme.colors[0], '#d2b994', '#fbf8f1'], [siteTheme.colors[0], '#bf8b67', '#f6ece2'], [siteTheme.colors[0], '#d08e91', '#f5ebec'], [siteTheme.colors[0], '#9d9c70', '#f1efe3'], [siteTheme.colors[0], '#d7b862', '#faf5dd']] : []
+  const activePalette = sitePalettes[invitation?.siteConfig?.paletteIndex] || sitePalettes[0]
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2] } : undefined
 
   async function loadInvitation() {
     if (!token) {
@@ -1525,7 +1562,7 @@ function GuestPortal({ notify, setView }) {
     notify('Resposta registrada para este evento')
   }
 
-  return <RoleFrame icon={UserRound} eyebrow="CONVITE INDIVIDUAL" title={invitation ? `Olá, ${invitation.guest.name}.` : 'Seu convite individual.'} description={invitation ? `Você está convidado para celebrar com ${invitation.wedding.partnerOneName} e ${invitation.wedding.partnerTwoName}.` : 'Os detalhes são exibidos somente pelo link individual enviado pelos noivos.'} secure secureName="Seu convite" secureFooter="Convite individual">
+  return <RoleFrame icon={UserRound} eyebrow="CONVITE INDIVIDUAL" title={invitation ? `Olá, ${invitation.guest.name}.` : 'Seu convite individual.'} description={invitation ? `Você está convidado para celebrar com ${invitation.wedding.partnerOneName} e ${invitation.wedding.partnerTwoName}.` : 'Os detalhes são exibidos somente pelo link individual enviado pelos noivos.'} secure secureName="Seu convite" secureFooter="Convite individual" style={siteStyle}>
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>

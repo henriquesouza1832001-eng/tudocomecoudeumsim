@@ -511,6 +511,8 @@ img { display: block; max-width: 100%; }
 .segmented-control button.selected { color: var(--forest); background: #fff; box-shadow: 0 1px 4px rgba(38,49,39,.09); }
 .animation-card > small { color: #9ca198; font-size: 7px; }
 .save-customize { min-height: 36px; }
+.site-editor-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.site-editor-actions > button { min-height: 36px; }
 .customize-preview { position: sticky; top: 17px; padding: 12px; border: 1px solid #e6e9e3; border-radius: 4px; background: #fff; }
 .preview-sticky-label { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 .preview-sticky-label > span { display: flex; align-items: center; gap: 6px; color: #8b9389; font-size: 7px; letter-spacing: .08em; }
@@ -820,6 +822,7 @@ img { display: block; max-width: 100%; }
   .gift-summary-grid { gap: 7px; }
   .gift-summary-grid .stat-card { min-height: 76px; }
   .customize-preview { position: static; }
+  .site-editor-actions { grid-template-columns: 1fr; }
   .game-layout { gap: 11px; }
   .checkin-content { width: 90%; padding: 35px 0 45px; }
   .checkin-heading h1 { font-size: 34px; }

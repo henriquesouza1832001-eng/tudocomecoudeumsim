@@ -164,7 +164,8 @@ async function invitationGuest(context) {
   if (!match) return null
   return context.env.DB.prepare(`
     SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type,
-      w.partner_one_name, w.partner_two_name, w.event_date, w.timezone, w.status AS wedding_status
+      w.partner_one_name, w.partner_two_name, w.event_date, w.timezone, w.status AS wedding_status,
+      w.published_site_config_json
     FROM guests g JOIN weddings w ON w.id = g.wedding_id
     WHERE g.access_token_hash = ? AND g.deleted_at IS NULL AND w.status = 'active'
   `).bind(await tokenHash(match[1])).first()
@@ -452,6 +453,25 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, weddingId, JSON.stringify({ theme: config.theme, coverLayout: config.coverLayout, enabledSections: config.enabledSections.length })),
   ])
   return context.json({ draft: config })
+})
+
+app.post('/api/couple/weddings/:weddingId/site-config/publish', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  if (membership.wedding_status === 'completed') return jsonError(context, 409, 'wedding_not_publishable')
+  const configRow = await context.env.DB.prepare('SELECT site_config_json FROM weddings WHERE id = ?').bind(weddingId).first()
+  const config = parseSiteConfig(configRow?.site_config_json) || defaultSiteConfig
+  const publishedAt = new Date().toISOString()
+  await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+      .bind(JSON.stringify(config), publishedAt, weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'wedding_site_published', 'wedding', ?, ?)`)
+      .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, weddingId, JSON.stringify({ theme: config.theme, coverLayout: config.coverLayout })),
+  ])
+  return context.json({ published: config, publishedAt, status: 'active' })
 })
 
 app.get('/api/couple/weddings/:weddingId/groups', requireSession, async (context) => {
@@ -1059,6 +1079,7 @@ app.get('/api/invitation', async (context) => {
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, timezone: guest.timezone },
+    siteConfig: parseSiteConfig(guest.published_site_config_json),
     events: events.results.map((event) => ({ ...event, rsvp: rsvps.results.find((rsvp) => rsvp.event_id === event.id) || null })),
     gifts: gifts.results,
   })
