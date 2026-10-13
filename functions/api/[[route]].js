@@ -153,6 +153,51 @@ async function tokenHash(token) {
   return encodeToken(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))))
 }
 
+async function allowCoupleSignup(context) {
+  const now = Math.floor(Date.now() / 1000)
+  const windowSeconds = 3600
+  const maximumRequests = 3
+  const remoteIp = context.req.header('CF-Connecting-IP') || 'unknown'
+  const identifierHash = await tokenHash(`couple-signup:${remoteIp}`)
+  const current = await context.env.DB.prepare(`
+    INSERT INTO auth_rate_limits (identifier_hash, failed_attempts, window_started_at, blocked_until)
+    VALUES (?, 1, ?, NULL)
+    ON CONFLICT(identifier_hash) DO UPDATE SET
+      failed_attempts = CASE WHEN auth_rate_limits.window_started_at <= ? THEN 1 ELSE auth_rate_limits.failed_attempts + 1 END,
+      window_started_at = CASE WHEN auth_rate_limits.window_started_at <= ? THEN excluded.window_started_at ELSE auth_rate_limits.window_started_at END,
+      blocked_until = CASE
+        WHEN auth_rate_limits.blocked_until > ? THEN auth_rate_limits.blocked_until
+        WHEN auth_rate_limits.window_started_at <= ? THEN NULL
+        WHEN auth_rate_limits.failed_attempts + 1 >= ? THEN ?
+        ELSE NULL
+      END
+    RETURNING blocked_until
+  `).bind(identifierHash, now, now - windowSeconds, now - windowSeconds, now, now - windowSeconds, maximumRequests, now + windowSeconds).first()
+  return !(current?.blocked_until > now)
+}
+
+async function sendAccountVerification(context, email, token) {
+  const apiToken = context.env.CLOUDFLARE_EMAIL_API_TOKEN
+  const accountId = context.env.CLOUDFLARE_ACCOUNT_ID
+  const from = context.env.EMAIL_FROM
+  if (!apiToken || !accountId || !from) return false
+  const verificationUrl = `${new URL(context.req.url).origin}/confirmar-email#confirmar-email/${token}`
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      from,
+      subject: 'Confirme seu cadastro | Tudo começou de um sim',
+      text: `Confirme seu endereço de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.`,
+      html: `<p>Confirme seu endereço de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>`,
+    }),
+  })
+  if (!response.ok) return false
+  const result = await response.json().catch(() => null)
+  return result?.success === true && !result.result?.permanent_bounces?.includes(email)
+}
+
 async function verifyTurnstile(context, token) {
   const secret = context.env.TURNSTILE_SECRET_KEY
   if (!secret) return { configured: false, verified: false }
@@ -257,6 +302,95 @@ app.use('/api/*', async (context, next) => {
   context.header('X-Content-Type-Options', 'nosniff')
   if (!['GET', 'HEAD', 'OPTIONS'].includes(context.req.method) && !validOrigin(context)) return jsonError(context, 403, 'invalid_origin')
   await next()
+})
+
+app.post('/api/auth/couple-signup', async (context) => {
+  const body = await context.req.json().catch(() => null)
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const password = typeof body?.password === 'string' ? body.password : ''
+  const partnerOneName = typeof body?.partnerOneName === 'string' ? body.partnerOneName.trim() : ''
+  const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
+  const slug = typeof body?.slug === 'string' ? body.slug.trim().toLowerCase() : ''
+  const eventDate = body?.eventDate || null
+  const reservedSlugs = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
+  const slugIsValid = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(slug) && !reservedSlugs.includes(slug)
+  const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
+  const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+    && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
+  if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
+    || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100
+    || !slugIsValid || !dateIsValid) return jsonError(context, 400, 'invalid_signup')
+  if (!context.env.CLOUDFLARE_EMAIL_API_TOKEN || !context.env.CLOUDFLARE_ACCOUNT_ID || !context.env.EMAIL_FROM) return jsonError(context, 503, 'email_service_unconfigured')
+  if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
+  const accountId = crypto.randomUUID()
+  const weddingId = crypto.randomUUID()
+  const membershipId = crypto.randomUUID()
+  const challengeId = crypto.randomUUID()
+  const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+  const challengeHash = await tokenHash(token)
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+  const passwordHash = await hashPassword(password)
+  try {
+    await context.env.DB.batch([
+      context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status)
+        VALUES (?, ?, ?, 'pending')`).bind(accountId, email, passwordHash),
+      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, timezone, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft')`).bind(weddingId, slug, accountId, partnerOneName, partnerTwoName, eventDate),
+      context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status)
+        VALUES (?, ?, ?, 'couple_admin', 'pending')`).bind(membershipId, weddingId, accountId),
+      context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
+        VALUES (?, ?, 'email_verification', ?, ?, ?)`).bind(challengeId, accountId, challengeHash, expiresAt, membershipId),
+    ])
+  } catch {
+    return jsonError(context, 409, 'email_or_slug_unavailable')
+  }
+  let sent = false
+  try {
+    sent = await sendAccountVerification(context, email, token)
+  } catch {
+    sent = false
+  }
+  if (!sent) {
+    await context.env.DB.batch([
+      context.env.DB.prepare('DELETE FROM auth_challenges WHERE id = ?').bind(challengeId),
+      context.env.DB.prepare('DELETE FROM wedding_memberships WHERE id = ?').bind(membershipId),
+      context.env.DB.prepare('DELETE FROM weddings WHERE id = ?').bind(weddingId),
+      context.env.DB.prepare('DELETE FROM accounts WHERE id = ? AND status = \'pending\'').bind(accountId),
+    ])
+    return jsonError(context, 503, 'verification_email_failed')
+  }
+  await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+    VALUES (?, ?, ?, 'couple_signup_created', 'wedding', ?, '{}')`).bind(crypto.randomUUID(), accountId, weddingId, weddingId).run()
+  return context.json({ status: 'pending_email_verification' }, 201)
+})
+
+app.post('/api/auth/verify-couple-email', async (context) => {
+  const body = await context.req.json().catch(() => null)
+  const token = typeof body?.token === 'string' ? body.token : ''
+  if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return jsonError(context, 400, 'invalid_verification')
+  const challengeHash = await tokenHash(token)
+  const challenge = await context.env.DB.prepare(`
+    SELECT a.id AS account_id, a.email, w.id AS wedding_id, m.id AS membership_id
+    FROM auth_challenges c JOIN accounts a ON a.id = c.account_id
+    JOIN wedding_memberships m ON m.id = c.membership_id AND m.account_id = a.id AND m.status = 'pending' AND m.role = 'couple_admin'
+    JOIN weddings w ON w.id = m.wedding_id AND w.owner_account_id = a.id AND w.status = 'draft'
+    WHERE c.token_hash = ? AND c.purpose = 'email_verification' AND c.consumed_at IS NULL AND c.expires_at > CURRENT_TIMESTAMP AND a.status = 'pending'
+  `).bind(challengeHash).first()
+  if (!challenge) return jsonError(context, 400, 'verification_expired_or_used')
+  const verifiedAt = new Date().toISOString()
+  const results = await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE auth_challenges SET consumed_at = CURRENT_TIMESTAMP
+      WHERE token_hash = ? AND purpose = 'email_verification' AND consumed_at IS NULL AND expires_at > CURRENT_TIMESTAMP`).bind(challengeHash),
+    context.env.DB.prepare(`UPDATE accounts SET status = 'active', email_verified_at = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND status = 'pending'`).bind(verifiedAt, challenge.account_id),
+    context.env.DB.prepare(`UPDATE wedding_memberships SET status = 'active'
+      WHERE id = ? AND account_id = ? AND status = 'pending'`).bind(challenge.membership_id, challenge.account_id),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'couple_email_verified', 'account', ?, '{}')`).bind(crypto.randomUUID(), challenge.account_id, challenge.wedding_id, challenge.account_id),
+  ])
+  if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1 || results[2].meta.changes !== 1) return jsonError(context, 400, 'verification_expired_or_used')
+  const session = await createSession(context, challenge.account_id, false)
+  return context.json({ account: { id: challenge.account_id, email: challenge.email }, expiresAt: session.expiresAt, mfaSetupRequired: true }, 201)
 })
 
 app.post('/api/auth/login', async (context) => {

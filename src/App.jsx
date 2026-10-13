@@ -397,6 +397,8 @@ function App() {
 
       {view === 'guest' && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
       {view === 'dashboard' && <CouplePanel notify={notify} />}
+      {view === 'couple-signup' && <CoupleSignup />}
+      {view === 'email-confirmation' && <CoupleEmailConfirmation />}
       {view === 'team-invitation' && <TeamInvitationAcceptance />}
       {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} />}
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
@@ -412,6 +414,8 @@ function App() {
 function resolveCurrentView() {
   const path = window.location.pathname
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
+  if (path === '/cadastro') return 'couple-signup'
+  if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/painel') return 'dashboard'
   if (path === '/equipe' || path === '/entrada') return 'event-staff'
   if (path === '/convidado' || path === '/convidados') return 'guest-portal'
@@ -587,6 +591,89 @@ function AccountMfaSetup({ onComplete }) {
   }
 
   return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><label>Chave do autenticador<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Adicione esta chave em um aplicativo autenticador, como Google Authenticator, Microsoft Authenticator ou Authy.</p><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
+}
+
+function CoupleSignup() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const [partnerOneName, setPartnerOneName] = useState('')
+  const [partnerTwoName, setPartnerTwoName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [eventDate, setEventDate] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  function createSlug(firstName, secondName) {
+    return `${firstName}-${secondName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30).replace(/-$/g, '')
+  }
+
+  async function signup(event) {
+    event.preventDefault()
+    if (password !== confirmation) {
+      setError('As senhas não coincidem.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch('/api/auth/couple-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'signup_failed')
+      setSubmitted(true)
+      setPassword('')
+      setConfirmation('')
+    } catch (cause) {
+      setError(cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
+        : cause.message === 'email_or_slug_unavailable' ? 'Este e-mail ou endereço já está cadastrado. Confira os dados e tente entrar.'
+          : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
+            : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
+              : 'Não foi possível criar o cadastro. Confira os campos e tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Comecem a planejar juntos.'} description={submitted ? `Enviamos um link de confirmação para ${email}. Ele vale por 24 horas.` : 'Crie o acesso do casal e reserve o endereço curto do site de vocês.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o endereço, vocês poderão abrir o painel e configurar um autenticador no primeiro acesso.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+      <label>E-mail do casal<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <div className="signup-name-grid"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => { setPartnerOneName(event.target.value); setSlug(createSlug(event.target.value, partnerTwoName)) }} required /></label><label>Nome do segundo noivo<input autoComplete="given-name" maxLength="100" value={partnerTwoName} onChange={(event) => { setPartnerTwoName(event.target.value); setSlug(createSlug(partnerOneName, event.target.value)) }} required /></label></div>
+      <label>Endereço curto do site<input autoComplete="url" minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))} required /><small className="signup-hint">Um endereço simples para compartilhar o convite depois.</small></label>
+      <label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
+      <label>Crie uma senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+      <label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
+      {error && <p className="admin-form-error" role="alert">{error}</p>}
+      <button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
+      <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
+    </form>}
+  </RoleFrame>
+}
+
+function CoupleEmailConfirmation() {
+  const [status, setStatus] = useState('confirming')
+  const token = window.location.hash.match(/^#confirmar-email\/([A-Za-z0-9_-]{40,60})$/)?.[1] || ''
+
+  useEffect(() => {
+    if (!token) {
+      setStatus('invalid')
+      return
+    }
+    fetch('/api/auth/verify-couple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).then(async (response) => {
+      const result = await response.json()
+      if (!response.ok || !result.mfaSetupRequired) throw new Error('invalid')
+      setStatus('verified')
+    }).catch(() => setStatus('invalid'))
+  }, [token])
+
+  const verified = status === 'verified'
+  return <RoleFrame icon={verified ? Check : Shield} eyebrow="CONFIRMAÇÃO DE E-MAIL" title={status === 'confirming' ? 'Validando seu cadastro.' : verified ? 'Cadastro confirmado.' : 'Este link não está mais válido.'} description={status === 'confirming' ? 'Só um instante enquanto ativamos o acesso do casal.' : verified ? 'Seu espaço está pronto. No primeiro acesso, configure o autenticador para proteger a conta.' : 'O link pode ter expirado ou já ter sido utilizado. Volte ao cadastro para começar novamente.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
+    <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/cadastro">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
+  </RoleFrame>
 }
 
 function CouplePanel({ notify }) {
@@ -1211,7 +1298,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking'}>Entrar <LockKeyhole size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking'}>Entrar <LockKeyhole size={15} /></button><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Cadastrem o casamento</a></p></form>
   </SuperAdminAccessFrame>
 
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={() => setTab('site')}>Editar meu site</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">ÁREA DOS NOIVOS</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.</p></div>
