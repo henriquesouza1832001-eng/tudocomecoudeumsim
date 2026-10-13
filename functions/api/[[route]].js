@@ -1379,7 +1379,9 @@ app.post('/api/superadmin/weddings/:weddingId/status', requireSession, requireSu
 
 app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requireSuperadmin, async (context) => {
   const session = context.get('session')
-  if (Date.now() - Date.parse(session.mfa_verified_at) > 300000) return jsonError(context, 403, 'recent_mfa_required')
+  const mfaVerifiedAt = Date.parse(session.mfa_verified_at)
+  const now = Date.now()
+  if (!Number.isFinite(mfaVerifiedAt) || mfaVerifiedAt > now || now - mfaVerifiedAt > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const weddingId = context.req.param('weddingId')
   const body = await context.req.json().catch(() => null)
   if (body?.confirmation !== `ANONIMIZAR ${weddingId}`) return jsonError(context, 400, 'confirmation_required')
