@@ -1714,6 +1714,7 @@ function EventStaffPanel({ notify }) {
     try {
       const queued = await readAllOfflineCheckins()
       if (queued.length) throw new Error('Sincronize as entradas pendentes antes de sair.')
+      localStorage.setItem('wedding-staff-locked', '1')
       const response = await fetch('/api/auth/logout', { method: 'POST' })
       if (!response.ok && response.status !== 401) throw new Error('Não foi possível encerrar a sessão. Tente novamente.')
       await clearOfflineCheckinData()
@@ -1724,8 +1725,17 @@ function EventStaffPanel({ notify }) {
         setGuests([])
         setWalkIns([])
         setOfflineRoster([])
+        setPendingCheckins([])
         setStage('login')
         setError('Sessão encerrada. Feche outras abas da equipe neste aparelho para apagar a lista offline.')
+      } else if (localStorage.getItem('wedding-staff-locked') === '1') {
+        setEvents([])
+        setGuests([])
+        setWalkIns([])
+        setOfflineRoster([])
+        setPendingCheckins([])
+        setStage('login')
+        setError(cause.message)
       } else {
         setError(cause.message)
       }
@@ -1784,6 +1794,22 @@ function EventStaffPanel({ notify }) {
       window.removeEventListener('offline', onOffline)
     }
   }, [selectedEvent])
+
+  useEffect(() => {
+    const lockFromAnotherTab = (event) => {
+      if (event.key !== 'wedding-staff-locked' || event.newValue !== '1') return
+      setEvents([])
+      setGuests([])
+      setWalkIns([])
+      setOfflineRoster([])
+      setPendingCheckins([])
+      setScannerOpen(false)
+      setStage('login')
+      setError('O acesso foi bloqueado em outra aba deste aparelho.')
+    }
+    window.addEventListener('storage', lockFromAnotherTab)
+    return () => window.removeEventListener('storage', lockFromAnotherTab)
+  }, [])
 
   useEffect(() => {
     if (stage === 'ready' && selectedEvent && isOnline) syncPendingCheckins().catch((cause) => setError(cause.message))
