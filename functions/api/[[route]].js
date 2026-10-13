@@ -176,6 +176,29 @@ async function allowCoupleSignup(context) {
   return !(current?.blocked_until > now)
 }
 
+async function allowPasswordReset(context, email) {
+  const now = Math.floor(Date.now() / 1000)
+  const windowSeconds = 3600
+  const maximumRequests = 3
+  const remoteIp = context.req.header('CF-Connecting-IP') || 'unknown'
+  const identifierHash = await tokenHash(`password-reset:${remoteIp}:${email}`)
+  const current = await context.env.DB.prepare(`
+    INSERT INTO auth_rate_limits (identifier_hash, failed_attempts, window_started_at, blocked_until)
+    VALUES (?, 1, ?, NULL)
+    ON CONFLICT(identifier_hash) DO UPDATE SET
+      failed_attempts = CASE WHEN auth_rate_limits.window_started_at <= ? THEN 1 ELSE auth_rate_limits.failed_attempts + 1 END,
+      window_started_at = CASE WHEN auth_rate_limits.window_started_at <= ? THEN excluded.window_started_at ELSE auth_rate_limits.window_started_at END,
+      blocked_until = CASE
+        WHEN auth_rate_limits.blocked_until > ? THEN auth_rate_limits.blocked_until
+        WHEN auth_rate_limits.window_started_at <= ? THEN NULL
+        WHEN auth_rate_limits.failed_attempts + 1 >= ? THEN ?
+        ELSE NULL
+      END
+    RETURNING blocked_until
+  `).bind(identifierHash, now, now - windowSeconds, now - windowSeconds, now, now - windowSeconds, maximumRequests, now + windowSeconds).first()
+  return !(current?.blocked_until > now)
+}
+
 async function sendAccountVerification(context, email, token) {
   const apiToken = context.env.CLOUDFLARE_EMAIL_API_TOKEN
   const accountId = context.env.CLOUDFLARE_ACCOUNT_ID
@@ -191,6 +214,28 @@ async function sendAccountVerification(context, email, token) {
       subject: 'Confirme seu cadastro | Tudo começou de um sim',
       text: `Confirme seu endereço de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.`,
       html: `<p>Confirme seu endereço de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>`,
+    }),
+  })
+  if (!response.ok) return false
+  const result = await response.json().catch(() => null)
+  return result?.success === true && !result.result?.permanent_bounces?.includes(email)
+}
+
+async function sendPasswordReset(context, email, token) {
+  const apiToken = context.env.CLOUDFLARE_EMAIL_API_TOKEN
+  const accountId = context.env.CLOUDFLARE_ACCOUNT_ID
+  const from = context.env.EMAIL_FROM
+  if (!apiToken || !accountId || !from) return false
+  const resetUrl = `${new URL(context.req.url).origin}/redefinir-senha#redefinir-senha/${token}`
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      from,
+      subject: 'Redefina sua senha | Tudo começou de um sim',
+      text: `Use este link para redefinir sua senha. Ele expira em 30 minutos.\n\n${resetUrl}`,
+      html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>`,
     }),
   })
   if (!response.ok) return false
@@ -391,6 +436,60 @@ app.post('/api/auth/verify-couple-email', async (context) => {
   if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1 || results[2].meta.changes !== 1) return jsonError(context, 400, 'verification_expired_or_used')
   const session = await createSession(context, challenge.account_id, false)
   return context.json({ account: { id: challenge.account_id, email: challenge.email }, expiresAt: session.expiresAt, mfaSetupRequired: true }, 201)
+})
+
+app.post('/api/auth/password-reset/request', async (context) => {
+  const body = await context.req.json().catch(() => null)
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) return jsonError(context, 400, 'invalid_email')
+  if (!context.env.CLOUDFLARE_EMAIL_API_TOKEN || !context.env.CLOUDFLARE_ACCOUNT_ID || !context.env.EMAIL_FROM) return jsonError(context, 503, 'email_service_unconfigured')
+  if (!await allowPasswordReset(context, email)) return context.json({ requested: true }, 202)
+  const account = await context.env.DB.prepare(`SELECT id, email FROM accounts
+    WHERE email = ? COLLATE NOCASE AND status = 'active' AND email_verified_at IS NOT NULL`).bind(email).first()
+  if (!account) return context.json({ requested: true }, 202)
+  const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+  const tokenDigest = await tokenHash(token)
+  const challengeId = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+  await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE auth_challenges SET consumed_at = CURRENT_TIMESTAMP
+      WHERE account_id = ? AND purpose = 'password_reset' AND consumed_at IS NULL`).bind(account.id),
+    context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at)
+      VALUES (?, ?, 'password_reset', ?, ?)`).bind(challengeId, account.id, tokenDigest, expiresAt),
+  ])
+  let sent = false
+  try {
+    sent = await sendPasswordReset(context, account.email, token)
+  } catch {
+    sent = false
+  }
+  if (!sent) await context.env.DB.prepare('DELETE FROM auth_challenges WHERE id = ? AND consumed_at IS NULL').bind(challengeId).run()
+  return context.json({ requested: true }, 202)
+})
+
+app.post('/api/auth/password-reset/confirm', async (context) => {
+  const body = await context.req.json().catch(() => null)
+  const token = typeof body?.token === 'string' ? body.token : ''
+  const password = typeof body?.password === 'string' ? body.password : ''
+  if (!/^[A-Za-z0-9_-]{40,60}$/.test(token) || password.length < 12 || password.length > 1024) return jsonError(context, 400, 'invalid_password_reset')
+  const tokenDigest = await tokenHash(token)
+  const challenge = await context.env.DB.prepare(`SELECT a.id, a.email FROM auth_challenges c
+    JOIN accounts a ON a.id = c.account_id
+    WHERE c.token_hash = ? AND c.purpose = 'password_reset' AND c.consumed_at IS NULL
+      AND c.expires_at > CURRENT_TIMESTAMP AND a.status = 'active' AND a.email_verified_at IS NOT NULL`).bind(tokenDigest).first()
+  if (!challenge) return jsonError(context, 400, 'password_reset_expired_or_used')
+  const passwordHash = await hashPassword(password)
+  const resetAt = new Date().toISOString()
+  const results = await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE auth_challenges SET consumed_at = CURRENT_TIMESTAMP
+      WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at IS NULL AND expires_at > CURRENT_TIMESTAMP`).bind(tokenDigest),
+    context.env.DB.prepare(`UPDATE accounts SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'active'`).bind(passwordHash, challenge.id),
+    context.env.DB.prepare('UPDATE auth_sessions SET revoked_at = ? WHERE account_id = ? AND revoked_at IS NULL').bind(resetAt, challenge.id),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, 'account_password_reset', 'account', ?, '{}')`).bind(crypto.randomUUID(), challenge.id, challenge.id),
+  ])
+  if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1) return jsonError(context, 400, 'password_reset_expired_or_used')
+  return context.json({ email: challenge.email, passwordReset: true })
 })
 
 app.post('/api/auth/login', async (context) => {
