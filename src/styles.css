@@ -550,6 +550,8 @@ img { display: block; max-width: 100%; }
 .palette-swatches i { flex: 1; }
 .font-pair-label { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #687067; font-size: 7px; }
 .font-pair-label select { max-width: 180px; height: 29px; padding: 0 7px; border: 1px solid #e4e8e2; color: #667065; background: #fff; font-size: 7px; }
+.font-pair-label textarea { width: 100%; min-height: 60px; padding: 9px; border: 1px solid #e4e8e2; border-radius: 7px; color: #667065; background: #fff; font: inherit; resize: vertical; }
+.font-pair-label:has(textarea) { align-items: stretch; flex-direction: column; }
 .cover-layout-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .cover-layout-grid button { padding: 6px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #edf0eb; border-radius: 3px; background: #fff; }
 .cover-layout-grid button.active { border-color: var(--forest); background: #f7f9f6; }
@@ -959,6 +961,7 @@ img { display: block; max-width: 100%; }
 .guest-pass-details { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 9px 20px; }
 .guest-pass-details > span { display: inline-flex; align-items: center; gap: 7px; color: #686e65; font-size: 10px; }
 .guest-pass-details svg { color: var(--forest); }
+.guest-cover-message { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(48,55,47,.1); color: var(--forest); font-family: var(--serif); font-size: 17px; line-height: 1.5; }
 .guest-gift-list { display: grid; }
 .guest-gift-list article { padding: 12px 0; display: flex; align-items: flex-start; gap: 10px; border-top: 1px solid rgba(48,55,47,.08); }
 .guest-gift-mark { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; color: var(--forest); background: #edf0e8; }

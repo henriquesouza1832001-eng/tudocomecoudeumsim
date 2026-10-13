@@ -23,7 +23,14 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR' }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' } }
+
+function validCoverMessages(messages) {
+  if (messages === undefined) return defaultSiteConfig.coverMessages
+  if (!messages || typeof messages !== 'object' || Array.isArray(messages)) return null
+  if (siteLanguages.some((language) => typeof messages[language] !== 'string' || messages[language].length > 240)) return null
+  return Object.fromEntries(siteLanguages.map((language) => [language, messages[language].trim()]))
+}
 
 function parseSiteConfig(value) {
   if (!value || value === '{}') return null
@@ -33,7 +40,9 @@ function parseSiteConfig(value) {
       || !siteCoverLayouts.includes(config.coverLayout) || !siteAnimations.includes(config.animationPreset)
       || !siteFontPairs.includes(config.fontPair) || !siteLanguages.includes(config.language)
       || !Array.isArray(config.enabledSections) || config.enabledSections.some((section) => !siteSections.includes(section))) return null
-    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)] }
+    const coverMessages = validCoverMessages(config.coverMessages)
+    if (!coverMessages) return null
+    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages }
   } catch {
     return null
   }
@@ -45,7 +54,9 @@ function validateSiteConfig(body) {
     || !siteFontPairs.includes(body.fontPair) || !siteLanguages.includes(body.language)
     || !Array.isArray(body.enabledSections) || body.enabledSections.length > siteSections.length
     || body.enabledSections.some((section) => !siteSections.includes(section))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language }
+  const coverMessages = validCoverMessages(body.coverMessages)
+  if (!coverMessages) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages }
 }
 
 function jsonError(context, status, error) {
