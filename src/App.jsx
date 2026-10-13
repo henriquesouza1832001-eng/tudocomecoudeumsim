@@ -2390,11 +2390,22 @@ function QrCamera({ onDecode, onError }) {
 function superadminAccessMessage(code) {
   return ({
     cloudflare_access_unconfigured: 'Configure CLOUDFLARE_ACCESS_TEAM_DOMAIN e CLOUDFLARE_ACCESS_AUD nas variáveis do Cloudflare Pages.',
-    cloudflare_access_required: 'Entre no Cloudflare Access autorizado antes de abrir esta área.',
+    cloudflare_access_required: 'O Cloudflare Access bloqueou esta solicitação. Confirme a regra Allow para seu e-mail e entre pelo endereço /superadmin.',
     superadmin_email_unconfigured: 'Configure SUPERADMIN_EMAIL nas variáveis do Cloudflare Pages.',
     recaptcha_unconfigured: 'Configure a chave do reCAPTCHA no site e o segredo no Cloudflare Pages.',
     recaptcha_failed: 'Conclua novamente a verificação de segurança.',
   })[code] || null
+}
+
+async function readSuperadminResponse(response) {
+  try {
+    return await response.json()
+  } catch {
+    if (response.status === 403 || response.redirected || response.url.includes('.cloudflareaccess.com')) {
+      throw new Error('cloudflare_access_required')
+    }
+    throw new Error('superadmin_response_unavailable')
+  }
 }
 
 function SuperAdminPanel({ notify }) {
@@ -2419,7 +2430,7 @@ function SuperAdminPanel({ notify }) {
       setAccount(result.account)
       setStage(result.mfaVerified ? 'ready' : result.mfaEnabled ? 'login' : 'setup')
     }).catch(() => fetch('/api/superadmin/bootstrap/status').then(async (response) => {
-      const result = await response.json().catch(() => ({}))
+      const result = await readSuperadminResponse(response)
       if (!response.ok) throw new Error(result.error || 'bootstrap_unavailable')
       return result
     }).then((result) => {
@@ -2474,7 +2485,7 @@ function SuperAdminPanel({ notify }) {
     setError('')
     try {
       const response = await fetch('/api/superadmin/bootstrap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
-      const result = await response.json()
+      const result = await readSuperadminResponse(response)
       if (!response.ok) throw new Error(superadminAccessMessage(result.error) || (result.error === 'superadmin_already_configured' ? 'A conta inicial já foi configurada. Entre com seu e-mail e senha.' : result.error === 'superadmin_account_exists' ? 'Já existe uma conta com este e-mail. Tente entrar ou recuperar a senha.' : result.error === 'superadmin_bootstrap_failed' ? 'O servidor não concluiu a configuração. O erro foi registrado para diagnóstico; tente novamente mais tarde.' : result.error === 'superadmin_email_unconfigured' ? 'Configure SUPERADMIN_EMAIL no Cloudflare Pages.' : 'A senha precisa ter pelo menos 14 caracteres.'))
       setAccount(result.account)
       setPassword('')
@@ -2546,7 +2557,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
 
   async function request(path, options = {}) {
     const response = await fetch(path, { ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers } })
-    const result = response.status === 204 ? null : await response.json()
+    const result = response.status === 204 ? null : await readSuperadminResponse(response)
     if (!response.ok) throw new Error(result?.error || 'request_failed')
     return result
   }
