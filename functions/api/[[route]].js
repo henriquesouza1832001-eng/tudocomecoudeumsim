@@ -1412,14 +1412,16 @@ app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requir
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'wedding_personal_data_anonymized', 'wedding', ?, '{"personal_data_removed":true,"operational_data_purged":true}')`)
       .bind(auditId, actorId, weddingId, weddingId),
+    context.env.DB.prepare('DELETE FROM public_request_limits WHERE guest_id IN (SELECT id FROM guests WHERE wedding_id = ?)').bind(weddingId),
     context.env.DB.prepare('DELETE FROM guest_rsvps WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM godparent_tasks WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM check_ins WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM event_group_access WHERE event_id IN (SELECT id FROM events WHERE wedding_id = ?)').bind(weddingId),
+    context.env.DB.prepare('DELETE FROM auth_challenges WHERE membership_id IN (SELECT id FROM wedding_memberships WHERE wedding_id = ?)').bind(weddingId),
+    context.env.DB.prepare('DELETE FROM membership_event_access WHERE membership_id IN (SELECT id FROM wedding_memberships WHERE wedding_id = ?)').bind(weddingId),
     context.env.DB.prepare('DELETE FROM guests WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM events WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM guest_groups WHERE wedding_id = ?').bind(weddingId),
-    context.env.DB.prepare('DELETE FROM membership_event_access WHERE membership_id IN (SELECT id FROM wedding_memberships WHERE wedding_id = ?)').bind(weddingId),
     context.env.DB.prepare('DELETE FROM wedding_memberships WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare('DELETE FROM fee_policies WHERE wedding_id = ?').bind(weddingId),
   ])
