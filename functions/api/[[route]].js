@@ -54,8 +54,8 @@ function jsonError(context, status, error) {
 
 async function verifyAccessIdentity(context, expectedEmail) {
   const teamDomain = context.env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
-  const audience = context.env.CLOUDFLARE_ACCESS_AUD
-  if (!teamDomain || !audience) return { configured: false, valid: false }
+  const audiences = context.env.CLOUDFLARE_ACCESS_AUD?.split(',').map((audience) => audience.trim()).filter(Boolean) || []
+  if (!teamDomain || !audiences.length) return { configured: false, valid: false }
   let issuer
   try {
     const domain = new URL(teamDomain)
@@ -74,7 +74,7 @@ async function verifyAccessIdentity(context, expectedEmail) {
       keySet = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`))
       accessKeySets.set(issuer, keySet)
     }
-    const { payload } = await jwtVerify(token, keySet, { issuer, audience, algorithms: ['RS256'] })
+    const { payload } = await jwtVerify(token, keySet, { issuer, audience: audiences, algorithms: ['RS256'] })
     const tokenEmail = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : ''
     return { configured: true, valid: payload.type === 'app' && Boolean(expectedEmail) && tokenEmail === expectedEmail.trim().toLowerCase() }
   } catch {

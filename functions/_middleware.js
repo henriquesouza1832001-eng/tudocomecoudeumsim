@@ -16,6 +16,8 @@ function decodeJson(value) {
 
 async function verifyAccessAssertion(assertion, env) {
   if (!env.CLOUDFLARE_ACCESS_TEAM_DOMAIN || !env.CLOUDFLARE_ACCESS_AUD || !env.SUPERADMIN_EMAIL) return false
+  const audiences = env.CLOUDFLARE_ACCESS_AUD.split(',').map((audience) => audience.trim()).filter(Boolean)
+  if (!audiences.length) return false
 
   let issuer
   try {
@@ -33,7 +35,7 @@ async function verifyAccessAssertion(assertion, env) {
     const claims = decodeJson(parts[1])
     if (header.alg !== 'RS256' || !header.kid) return false
     if (claims.iss !== issuer || claims.email?.toLowerCase() !== env.SUPERADMIN_EMAIL.toLowerCase()) return false
-    if (!(Array.isArray(claims.aud) ? claims.aud : [claims.aud]).includes(env.CLOUDFLARE_ACCESS_AUD)) return false
+    if (!audiences.some((audience) => (Array.isArray(claims.aud) ? claims.aud : [claims.aud]).includes(audience))) return false
     const now = Math.floor(Date.now() / 1000)
     if (!Number.isFinite(claims.exp) || claims.exp <= now) return false
     if (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now)) return false
