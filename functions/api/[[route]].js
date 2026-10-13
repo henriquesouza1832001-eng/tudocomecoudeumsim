@@ -210,48 +210,53 @@ async function allowPasswordReset(context, email) {
   return !(current?.blocked_until > now)
 }
 
-async function sendAccountVerification(context, email, token) {
-  const apiToken = context.env.CLOUDFLARE_EMAIL_API_TOKEN
-  const accountId = context.env.CLOUDFLARE_ACCOUNT_ID
-  const from = context.env.EMAIL_FROM
-  if (!apiToken || !accountId || !from) return false
-  const verificationUrl = `${new URL(context.req.url).origin}/confirmar-email#confirmar-email/${token}`
-  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`, {
+function configuredEmailProvider(env) {
+  const selectedProvider = env.EMAIL_PROVIDER?.trim().toLowerCase()
+  if (selectedProvider === 'resend') return env.RESEND_API_KEY && env.EMAIL_FROM ? 'resend' : null
+  if (selectedProvider === 'cloudflare') return env.CLOUDFLARE_EMAIL_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID && env.EMAIL_FROM ? 'cloudflare' : null
+  if (selectedProvider) return null
+  if (env.CLOUDFLARE_EMAIL_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID && env.EMAIL_FROM) return 'cloudflare'
+  if (env.RESEND_API_KEY && env.EMAIL_FROM) return 'resend'
+  return null
+}
+
+async function sendTransactionalEmail(context, { to, subject, text, html }) {
+  const provider = configuredEmailProvider(context.env)
+  if (!provider) return false
+  const isResend = provider === 'resend'
+  const apiToken = isResend ? context.env.RESEND_API_KEY : context.env.CLOUDFLARE_EMAIL_API_TOKEN
+  const endpoint = isResend
+    ? 'https://api.resend.com/emails'
+    : `https://api.cloudflare.com/client/v4/accounts/${context.env.CLOUDFLARE_ACCOUNT_ID}/email/sending/send`
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: email,
-      from,
-      subject: 'Confirme seu cadastro | Tudo começou de um sim',
-      text: `Confirme seu endereço de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.`,
-      html: `<p>Confirme seu endereço de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>`,
-    }),
+    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html }),
   })
   if (!response.ok) return false
   const result = await response.json().catch(() => null)
-  return result?.success === true && !result.result?.permanent_bounces?.includes(email)
+  if (isResend) return typeof result?.id === 'string' && result.id.length > 0
+  return result?.success === true && !result.result?.permanent_bounces?.includes(to)
+}
+
+async function sendAccountVerification(context, email, token) {
+  const verificationUrl = `${new URL(context.req.url).origin}/confirmar-email#confirmar-email/${token}`
+  return sendTransactionalEmail(context, {
+    to: email,
+    subject: 'Confirme seu cadastro | Tudo começou de um sim',
+    text: `Confirme seu endereço de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.`,
+    html: `<p>Confirme seu endereço de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>`,
+  })
 }
 
 async function sendPasswordReset(context, email, token) {
-  const apiToken = context.env.CLOUDFLARE_EMAIL_API_TOKEN
-  const accountId = context.env.CLOUDFLARE_ACCOUNT_ID
-  const from = context.env.EMAIL_FROM
-  if (!apiToken || !accountId || !from) return false
   const resetUrl = `${new URL(context.req.url).origin}/redefinir-senha#redefinir-senha/${token}`
-  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: email,
-      from,
-      subject: 'Redefina sua senha | Tudo começou de um sim',
-      text: `Use este link para redefinir sua senha. Ele expira em 30 minutos.\n\n${resetUrl}`,
-      html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>`,
-    }),
+  return sendTransactionalEmail(context, {
+    to: email,
+    subject: 'Redefina sua senha | Tudo começou de um sim',
+    text: `Use este link para redefinir sua senha. Ele expira em 30 minutos.\n\n${resetUrl}`,
+    html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>`,
   })
-  if (!response.ok) return false
-  const result = await response.json().catch(() => null)
-  return result?.success === true && !result.result?.permanent_bounces?.includes(email)
 }
 
 async function verifyTurnstile(context, token) {
@@ -376,7 +381,7 @@ app.post('/api/auth/couple-signup', async (context) => {
   if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
     || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100
     || !slugIsValid || !dateIsValid) return jsonError(context, 400, 'invalid_signup')
-  if (!context.env.CLOUDFLARE_EMAIL_API_TOKEN || !context.env.CLOUDFLARE_ACCOUNT_ID || !context.env.EMAIL_FROM) return jsonError(context, 503, 'email_service_unconfigured')
+  if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
   const accountId = crypto.randomUUID()
   const weddingId = crypto.randomUUID()
@@ -453,7 +458,7 @@ app.post('/api/auth/password-reset/request', async (context) => {
   const body = await context.req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
   if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) return jsonError(context, 400, 'invalid_email')
-  if (!context.env.CLOUDFLARE_EMAIL_API_TOKEN || !context.env.CLOUDFLARE_ACCOUNT_ID || !context.env.EMAIL_FROM) return jsonError(context, 503, 'email_service_unconfigured')
+  if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowPasswordReset(context, email)) return context.json({ requested: true }, 202)
   const account = await context.env.DB.prepare(`SELECT id, email FROM accounts
     WHERE email = ? COLLATE NOCASE AND status = 'active' AND email_verified_at IS NOT NULL`).bind(email).first()
