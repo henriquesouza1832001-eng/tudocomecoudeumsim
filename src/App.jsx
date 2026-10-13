@@ -180,7 +180,7 @@ function parseGuestCsv(source) {
 
 function csvCell(value) {
   const source = String(value ?? '')
-  const text = /^[=+\-@\t\r]/.test(source) ? `'${source}` : source
+  const text = /^(?:\s|\uFEFF)*[=+\-@]/.test(source) || /^[\t\r\n]/.test(source) ? `'${source}` : source
   return `"${text.replace(/"/g, '""')}"`
 }
 
