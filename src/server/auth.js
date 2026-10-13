@@ -27,14 +27,15 @@ async function derivePassword(password, salt, iterations) {
 
 export async function hashPassword(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16))
-  const hash = await derivePassword(password, salt, 310000)
-  return `pbkdf2-sha256$310000$${bytesToBase64Url(salt)}$${bytesToBase64Url(hash)}`
+  const iterations = 100000
+  const hash = await derivePassword(password, salt, iterations)
+  return `pbkdf2-sha256$${iterations}$${bytesToBase64Url(salt)}$${bytesToBase64Url(hash)}`
 }
 
 async function verifyPassword(password, storedHash) {
   const [algorithm, rawIterations, rawSalt, rawHash] = storedHash.split('$')
   const iterations = Number(rawIterations)
-  if (algorithm !== 'pbkdf2-sha256' || !Number.isInteger(iterations) || iterations < 100000 || iterations > 600000 || !rawSalt || !rawHash) return false
+  if (algorithm !== 'pbkdf2-sha256' || iterations !== 100000 || !rawSalt || !rawHash) return false
   const expected = base64UrlToBytes(rawHash)
   const actual = await derivePassword(password, base64UrlToBytes(rawSalt), iterations)
   if (expected.length !== actual.length) return false
