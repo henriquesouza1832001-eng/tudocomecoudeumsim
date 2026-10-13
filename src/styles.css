@@ -1269,6 +1269,7 @@ img { display: block; max-width: 100%; }
   .mockup-print-grid { grid-template-columns: 1fr; }
 }
 @media print {
+  @page { size: A4; margin: 12mm; }
   body * { visibility: hidden !important; }
   .couple-print-rsvps .couple-rsvp-print, .couple-print-rsvps .couple-rsvp-print * { visibility: visible !important; }
   .couple-print-rsvps .couple-rsvp-print { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; box-shadow: none; }
@@ -1279,9 +1280,19 @@ img { display: block; max-width: 100%; }
   .staff-print-list .print-list, .staff-print-list .print-list * { visibility: visible !important; }
   .staff-print-list .print-list { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; box-shadow: none; }
   .staff-print-list .print-button, .staff-print-list .role-card-heading .button-outline { display: none !important; }
-  .staff-print-list .staff-guest-row { min-height: 38px; }
+  .staff-print-list .print-list { padding: 0; color: #222; background: #fff; }
+  .staff-print-list .role-card-heading { margin-bottom: 6mm; padding-bottom: 3mm; border-bottom: 1px solid #bbb; }
+  .staff-print-list .role-card-heading h2 { font-size: 18pt; }
+  .staff-print-list .role-card-heading .eyebrow { font-size: 8pt; }
+  .staff-print-list .staff-guest-row { min-height: 0; padding: 3mm 0; gap: 4mm; break-inside: avoid; border-color: #d7d7d7; }
+  .staff-print-list .staff-guest-copy strong { color: #222; font-size: 11pt; }
+  .staff-print-list .staff-guest-copy small { color: #333; font-size: 8.5pt; line-height: 1.35; }
+  .staff-print-list .walkin-entry { background: #fff; }
   .staff-print-mockups .print-mockups, .staff-print-mockups .print-mockups * { visibility: visible !important; }
   .staff-print-mockups .print-mockups { position: absolute; inset: 0 auto auto 0; width: 100%; display: block; padding: 20px; }
   .staff-print-mockups .mockup-print-grid { grid-template-columns: repeat(2, 1fr); }
-  .staff-print-mockups .mockup-print-card { break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .staff-print-mockups .mockup-print-card { min-height: 62mm; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .staff-print-mockups .print-mockups h2 { font-size: 18pt; }
+  .staff-print-mockups .mockup-print-card h3 { font-size: 14pt; }
+  .staff-print-mockups .mockup-print-card p, .staff-print-mockups .mockup-print-card small { font-size: 9pt; }
 }
