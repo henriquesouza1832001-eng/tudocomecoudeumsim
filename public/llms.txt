@@ -1,4 +1,4 @@
-﻿# e&t Sites de casamento
+# e&t Sites de casamento
 
 Plataforma para criar sites de casamento responsivos, compartilhar convites por link ou QR code e acompanhar confirmações de presença.
 
