@@ -204,6 +204,49 @@ button { font: inherit; }
 .marketing-store-card strong { color: #26372f; font: 400 22px/1.25 var(--serif); }
 .marketing-store-card span { color: #414a43; font-size: 15px; line-height: 1.6; }
 .marketing-final-note { max-width: 600px; margin-top: 17px; color: #515950; font-size: 15px; line-height: 1.55; }
+.marketing-page main > section { scroll-margin-top: 28px; }
+.marketing-store-card { min-height: 0; align-content: stretch; gap: 9px; }
+.marketing-store-card-top { width: 100%; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; color: #405849; }
+.marketing-store-card-top span { color: #72513b; font-size: 11px; font-weight: 700; letter-spacing: .1em; }
+.marketing-store-name { color: #5b625b; font-size: 14px; }
+.marketing-store-card b { color: #26372f; font: 400 30px/1.2 var(--serif); }
+.marketing-store-card small { margin-top: 5px; padding-top: 13px; color: #5b625b; border-top: 1px solid #d9e0d7; font-size: 13px; line-height: 1.5; }
+.marketing-guest-journey { padding: 88px max(8vw, calc((100vw - 1160px) / 2)); background: #fbfaf6; }
+.marketing-journey-heading { max-width: 760px; margin: 0 auto 37px; text-align: center; }
+.marketing-journey-heading h2, .marketing-faq-heading h2 { margin: 13px 0 15px; color: #27382e; font: 400 clamp(36px,4.2vw,50px)/1.12 var(--serif); letter-spacing: -.02em; }
+.marketing-journey-heading p { max-width: 700px; margin: 0 auto; color: #414a43; font-size: 17px; line-height: 1.7; }
+.marketing-journey-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 17px; }
+.marketing-journey-grid article { min-height: 230px; padding: 25px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid #dce2d9; background: #fffefa; }
+.marketing-journey-grid article:nth-child(2) { background: #f2ece6; border-color: #e9ddd1; }
+.marketing-journey-grid article:nth-child(3) { background: #edf1eb; }
+.marketing-journey-grid article > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: #405849; background: white; }
+.marketing-journey-grid h3 { margin: 19px 0 8px; color: #27382e; font: 400 24px/1.2 var(--serif); }
+.marketing-journey-grid p { margin: 0 0 17px; color: #414a43; font-size: 15px; line-height: 1.6; }
+.marketing-journey-grid a { min-height: 44px; margin-top: auto; display: inline-flex; align-items: center; gap: 8px; color: #344f3d; font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.marketing-faq { padding: 84px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(230px,.72fr) minmax(0,1.28fr); align-items: start; gap: clamp(36px,8vw,104px); background: #f1eee8; }
+.marketing-faq-heading h2 { max-width: 390px; }
+.marketing-faq-list { border-top: 1px solid #d2d1c9; }
+.marketing-faq-list details { border-bottom: 1px solid #d2d1c9; }
+.marketing-faq-list summary { min-height: 66px; display: flex; justify-content: space-between; align-items: center; gap: 18px; color: #27382e; cursor: pointer; list-style: none; font-size: 16px; font-weight: 700; }
+.marketing-faq-list summary::-webkit-details-marker { display: none; }
+.marketing-faq-list summary > span:first-child { display: inline-flex; align-items: center; gap: 12px; }
+.marketing-faq-list summary svg { flex: 0 0 auto; color: #72513b; }
+.marketing-faq-symbol { width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #bcc8ba; border-radius: 50%; color: #405849; font-size: 20px; font-weight: 400; transition: transform .2s ease; }
+.marketing-faq-list details[open] .marketing-faq-symbol { transform: rotate(45deg); }
+.marketing-faq-list details p { max-width: 700px; margin: -1px 48px 20px 30px; color: #414a43; font-size: 15px; line-height: 1.7; }
+.marketing-final-note { margin-bottom: 2px; }
+@media (max-width: 760px) {
+  .marketing-guest-journey { padding: 58px 7%; }
+  .marketing-journey-heading { margin-bottom: 26px; text-align: left; }
+  .marketing-journey-heading h2, .marketing-faq-heading h2 { font-size: clamp(34px,8vw,42px); }
+  .marketing-journey-heading p { font-size: 16px; }
+  .marketing-journey-grid { grid-template-columns: 1fr; gap: 12px; }
+  .marketing-journey-grid article { min-height: 0; padding: 21px; }
+  .marketing-journey-grid h3 { margin-top: 14px; }
+  .marketing-faq { padding: 58px 7%; grid-template-columns: 1fr; gap: 20px; }
+  .marketing-faq-list summary { min-height: 62px; font-size: 15px; }
+  .marketing-faq-list details p { margin-right: 4px; font-size: 15px; }
+}
 
 @media (max-width: 760px) {
   .marketing-hero { min-height: auto; }
