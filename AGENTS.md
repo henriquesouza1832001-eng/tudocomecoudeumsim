@@ -39,6 +39,8 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 14. Multi-idioma.
 15. Cada casal tem seu subdomínio.
 16. Cobrança por taxa por presente.
+17. Lista de presentes de lojas começa com links externos para a página de compra. Integrações por API serão avaliadas e adicionadas uma loja por vez, após confirmar acesso, autorização comercial, dados de preço e disponibilidade e forma de atualização. Não prometer estoque ou atualização em tempo real sem suporte técnico do parceiro.
+18. Meta comercial: cobrar menos que sites de casamento comparáveis. Não publicar afirmação comparativa nem taxa específica até aprovar a política de preços e comparar o mesmo meio de pagamento, quem paga a tarifa, processamento, mínimos e repasses.
 
 ## 4. Arquitetura (Cloudflare)
 
