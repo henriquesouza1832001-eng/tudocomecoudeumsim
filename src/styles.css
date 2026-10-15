@@ -1104,6 +1104,10 @@ img { display: block; max-width: 100%; }
 .role-footer a { color: var(--forest); }
 .role-stat-grid { margin-bottom: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .couple-role-page .role-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.published-reader-card { display: grid; gap: 12px; }
+.published-reader-card > p, .published-reader-card > small { margin: 0; color: var(--muted); }
+.published-reader-sections { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+.published-reader-sections span { border-radius: 999px; padding: 7px 10px; background: var(--paper); color: var(--forest); font-size: 12px; }
 .staff-event-select { margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; color: #77796f; font-size: 9px; }
 .staff-event-select select { min-height: 38px; padding: 0 10px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; }
 .role-stat { min-height: 77px; padding: 13px 15px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(48,55,47,.1); background: #fbfaf7; }

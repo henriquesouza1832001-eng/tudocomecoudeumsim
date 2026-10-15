@@ -339,21 +339,16 @@ async function invitationGuest(context) {
   return context.env.DB.prepare(`
     SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type,
       w.partner_one_name, w.partner_two_name, w.event_date, w.timezone, w.status AS wedding_status,
-      w.published_site_config_json
+      w.published_site_config_json, w.published_events_json
     FROM guests g JOIN weddings w ON w.id = g.wedding_id
     WHERE g.access_token_hash = ? AND g.deleted_at IS NULL AND w.status = 'active'
   `).bind(await tokenHash(match[1])).first()
 }
 
 async function guestCanAccessEvent(context, guest, eventId) {
-  return context.env.DB.prepare(`
-    SELECT e.id, e.name, e.event_type, e.starts_at, e.venue_name, e.address
-    FROM events e
-    WHERE e.id = ? AND e.wedding_id = ? AND (
-      NOT EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = e.id)
-      OR EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = e.id AND x.group_id = ?)
-    )
-  `).bind(eventId, guest.wedding_id, guest.group_id).first()
+  const row = await context.env.DB.prepare('SELECT published_events_json FROM weddings WHERE id = ? AND status = \'active\'').bind(guest.wedding_id).first()
+  const events = JSON.parse(row?.published_events_json || '[]')
+  return events.find((event) => event.id === eventId && (!event.group_ids.length || event.group_ids.includes(guest.group_id))) || null
 }
 
 async function assignedStaff(context, eventId, roles) {
@@ -768,15 +763,36 @@ app.get('/api/couple/weddings', requireSession, async (context) => {
 
 app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   const wedding = await context.env.DB.prepare('SELECT site_config_json, published_site_config_json, site_published_at FROM weddings WHERE id = ?').bind(weddingId).first()
-  return context.json({ draft: parseSiteConfig(wedding.site_config_json) || defaultSiteConfig, published: parseSiteConfig(wedding.published_site_config_json), publishedAt: wedding.site_published_at })
+  const published = parseSiteConfig(wedding.published_site_config_json)
+  return context.json({ draft: parseSiteConfig(wedding.site_config_json) || defaultSiteConfig, published, publishedAt: wedding.site_published_at })
+})
+
+app.get('/api/couple/weddings/:weddingId/published', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['reader'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  const wedding = await context.env.DB.prepare(`SELECT slug, partner_one_name, partner_two_name, event_date,
+    published_site_config_json, published_events_json, site_published_at
+    FROM weddings WHERE id = ?`).bind(weddingId).first()
+  if (!wedding?.site_published_at) return jsonError(context, 404, 'published_site_not_found')
+  return context.json({
+    wedding: { slug: wedding.slug, partner_one_name: wedding.partner_one_name, partner_two_name: wedding.partner_two_name, event_date: wedding.event_date },
+    siteConfig: parseSiteConfig(wedding.published_site_config_json),
+    events: JSON.parse(wedding.published_events_json || '[]').filter((event) => !event.group_ids.length).map((event) => {
+      const publicEvent = { ...event }
+      delete publicEvent.group_ids
+      return publicEvent
+    }),
+    publishedAt: wedding.site_published_at,
+  })
 })
 
 app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const config = validateSiteConfig(await context.req.json().catch(() => null))
@@ -792,26 +808,30 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
 
 app.post('/api/couple/weddings/:weddingId/site-config/publish', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   if (membership.wedding_status === 'completed') return jsonError(context, 409, 'wedding_not_publishable')
   const configRow = await context.env.DB.prepare('SELECT site_config_json FROM weddings WHERE id = ?').bind(weddingId).first()
   const config = parseSiteConfig(configRow?.site_config_json) || defaultSiteConfig
+  const eventsResult = await context.env.DB.prepare(`SELECT e.id, e.name, e.event_type, e.starts_at, e.venue_name, e.address,
+    (SELECT json_group_array(x.group_id) FROM event_group_access x WHERE x.event_id = e.id) AS group_ids_json
+    FROM events e WHERE e.wedding_id = ? ORDER BY e.starts_at`).bind(weddingId).all()
+  const publishedEvents = eventsResult.results.map((event) => ({ ...event, group_ids: JSON.parse(event.group_ids_json || '[]') }))
   const publishedAt = new Date().toISOString()
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-      .bind(JSON.stringify(config), publishedAt, weddingId),
+    context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, published_events_json = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+      .bind(JSON.stringify(config), JSON.stringify(publishedEvents), publishedAt, weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'wedding_site_published', 'wedding', ?, ?)`)
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, weddingId, JSON.stringify({ theme: config.theme, coverLayout: config.coverLayout })),
   ])
-  return context.json({ published: config, publishedAt, status: 'active' })
+  return context.json({ published: config, events: publishedEvents, publishedAt, status: 'active' })
 })
 
 app.get('/api/couple/weddings/:weddingId/groups', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor', 'reader'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   const result = await context.env.DB.prepare('SELECT id, name, group_type FROM guest_groups WHERE wedding_id = ? ORDER BY name').bind(weddingId).all()
   return context.json({ groups: result.results })
@@ -837,7 +857,7 @@ app.post('/api/couple/weddings/:weddingId/groups', requireSession, async (contex
 
 app.get('/api/couple/weddings/:weddingId/events', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor', 'reader'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   const result = await context.env.DB.prepare(`
     SELECT e.id, e.name, e.event_type, e.starts_at, e.venue_name, e.address,
@@ -849,7 +869,7 @@ app.get('/api/couple/weddings/:weddingId/events', requireSession, async (context
 
 app.post('/api/couple/weddings/:weddingId/events', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const body = await context.req.json().catch(() => null)
@@ -880,7 +900,7 @@ app.post('/api/couple/weddings/:weddingId/events', requireSession, async (contex
 
 app.patch('/api/couple/weddings/:weddingId/events/:eventId', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const eventId = context.req.param('eventId')
@@ -930,7 +950,7 @@ app.post('/api/couple/weddings/:weddingId/members/invitations', requireSession, 
   const body = await context.req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
   const role = body?.role
-  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || !['couple_admin', 'event_staff', 'checkin_staff'].includes(role)) return jsonError(context, 400, 'invalid_invitation')
+  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || !['couple_admin', 'editor', 'reader', 'event_staff', 'checkin_staff'].includes(role)) return jsonError(context, 400, 'invalid_invitation')
   const existingAccount = await context.env.DB.prepare('SELECT id, status FROM accounts WHERE email = ? COLLATE NOCASE').bind(email).first()
   if (existingAccount && existingAccount.status !== 'active') return jsonError(context, 409, 'account_not_ready')
   const accountId = existingAccount?.id || crypto.randomUUID()
@@ -1431,14 +1451,8 @@ app.post('/api/couple/weddings/:weddingId/guests/:guestId/invitation-token', req
 app.get('/api/invitation', async (context) => {
   const guest = await invitationGuest(context)
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
-  const [events, rsvps, gifts] = await Promise.all([
-    context.env.DB.prepare(`
-      SELECT e.id, e.name, e.event_type, e.starts_at, e.venue_name, e.address
-      FROM events e WHERE e.wedding_id = ? AND (
-        NOT EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = e.id)
-        OR EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = e.id AND x.group_id = ?)
-      ) ORDER BY e.starts_at
-    `).bind(guest.wedding_id, guest.group_id).all(),
+  const publishedEvents = JSON.parse(guest.published_events_json || '[]')
+  const [rsvps, gifts] = await Promise.all([
     context.env.DB.prepare('SELECT event_id, status, party_size, dietary_notes FROM guest_rsvps WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
     context.env.DB.prepare(`SELECT id, gift_type, title, description, amount_cents, goal_cents
       FROM gifts WHERE wedding_id = ? AND status = 'active' ORDER BY display_order, created_at`).bind(guest.wedding_id).all(),
@@ -1447,7 +1461,11 @@ app.get('/api/invitation', async (context) => {
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, timezone: guest.timezone },
     siteConfig: parseSiteConfig(guest.published_site_config_json),
-    events: events.results.map((event) => ({ ...event, rsvp: rsvps.results.find((rsvp) => rsvp.event_id === event.id) || null })),
+    events: publishedEvents.filter((event) => !event.group_ids.length || event.group_ids.includes(guest.group_id)).map((event) => {
+      const publicEvent = { ...event }
+      delete publicEvent.group_ids
+      return { ...publicEvent, rsvp: rsvps.results.find((rsvp) => rsvp.event_id === event.id) || null }
+    }),
     gifts: gifts.results,
   })
 })
