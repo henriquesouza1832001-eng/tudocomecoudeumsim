@@ -33,7 +33,7 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 8. Lista de presença (RSVP).
 9. Notificação push 30 dias antes do casamento, com mensagem personalizada pelos noivos, oferecendo adicionar o evento ao calendário. O sistema pergunta qual calendário o convidado usa: Google, Outlook ou Apple.
 10. Site dos noivos totalmente personalizável dentro de limites definidos. Personalização curada, nunca infinita.
-11. Presentes em dinheiro por dois modos que convivem: Pix via Stripe e Pix direto na chave Pix dos noivos.
+11. Presentes em dinheiro via provedor brasileiro com split de pagamento. O pagamento é processado pela conta de marketplace da plataforma; a comissão e a parcela dos noivos são separadas e repassadas conforme regras do provedor. O casal não deve precisar abrir conta individual no provedor quando a solução escolhida permitir subcontas vinculadas à chave Pix.
 12. Modo de controle de entrada: parte do app dedicada a ler QR code no dia do evento, substituindo a lista física.
 13. Jogo diário, uma partida por dia por convidado, com ranking entre convidados. Opcional: os noivos ligam ou desligam.
 14. Multi-idioma.
@@ -41,6 +41,8 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 16. Cobrança por taxa por presente.
 17. Lista de presentes de lojas começa com links externos para a página de compra. Integrações por API serão avaliadas e adicionadas uma loja por vez, após confirmar acesso, autorização comercial, dados de preço e disponibilidade e forma de atualização. Não prometer estoque ou atualização em tempo real sem suporte técnico do parceiro.
 18. Meta comercial: cobrar menos que sites de casamento comparáveis. Não publicar afirmação comparativa nem taxa específica até aprovar a política de preços e comparar o mesmo meio de pagamento, quem paga a tarifa, processamento, mínimos e repasses.
+19. O painel deve ajudar o casal a planejar despesas com fornecedores, registrar valores e vencimentos e configurar lembretes mensais por e-mail ou push. Não apresentar esse recurso como disponível antes da implementação.
+20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
 
 ## 4. Arquitetura (Cloudflare)
 
@@ -260,6 +262,8 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Controle de entrada: lista de quem já entrou, em tempo real.
 - Jogo: ligar ou desligar, perguntas personalizadas, ranking.
 - Personalização do site com pré-visualização ao vivo.
+- Planejamento: despesas, fornecedores, vencimentos e lembretes mensais por e-mail ou push.
+- Convites: identidade visual compartilhada com o site, arquivos de impressão em formatos definidos e convites digitais para carteiras compatíveis.
 
 ### 8.1 Perfis e áreas de acesso
 
@@ -300,37 +304,22 @@ Princípio: o registro do presente (ledger no D1) é independente do meio de pag
 
 A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo por presente). Nunca fixar no código.
 
-### Modo A: Pix via Stripe (automático)
+### Split Pix via provedor brasileiro
 
-- Stripe Connect com direct charges. O convidado paga pelo Checkout com Pix e o dinheiro cai na conta Stripe dos noivos.
-- A taxa por presente é retida automaticamente como application fee.
-- O webhook do Stripe confirma o pagamento e atualiza o D1. Nunca marcar como pago apenas pelo retorno do navegador.
-- Opção configurável de repassar a taxa ao convidado, exibida de forma transparente, ou de os noivos absorverem.
-- Fatos da documentação do Stripe que devem guiar a implementação:
-  - Pix funciona com Connect em direct charges, destination charges e separate charges and transfers.
-  - A conta conectada precisa estar no mesmo país da plataforma.
-  - Plataforma sediada fora do Brasil não pode cobrar application fee de contas brasileiras. A conta Stripe da plataforma precisa ser brasileira. Perguntar ao dono do projeto sobre a conta antes de implementar.
-  - Em direct charges, a própria conta conectada precisa ativar o Pix.
-  - Conferir o tratamento de IOF para o caso brasileiro.
-
-### Modo B: Pix direto na chave dos noivos
-
-- Os noivos cadastram chave Pix (CPF, CNPJ, e-mail, telefone ou aleatória), nome do recebedor e cidade.
-- O app gera o Pix copia e cola e o QR code (BR Code estático, padrão do Banco Central) no próprio navegador. O dinheiro nunca passa pela plataforma.
-- O convidado paga no aplicativo do banco e toca em "Já enviei", informando nome, valor e mensagem opcional. O presente entra no ledger como "informado".
-- Os noivos confirmam o recebimento no painel. O presente passa a "confirmado".
-- Limitação assumida: a plataforma não enxerga o dinheiro, então não há webhook. A confirmação depende dos noivos.
-- A taxa é calculada sobre os presentes confirmados e acumulada em um saldo de taxas do casal.
-- A taxa é cobrada à parte, dos noivos, via Stripe (cartão salvo ou Checkout): cobrança automática quando o saldo atinge um limite e cobrança final antes do evento.
-- Para ativar o Modo B, os noivos precisam ter um método de cobrança cadastrado.
-- Sem quebrar o app: falha na cobrança da taxa nunca derruba o site dos convidados. O site segue no ar, e somente o painel exibe aviso e bloqueia novos recursos até regularizar.
-- Segurança contra golpe de troca de chave: alterar a chave Pix exige reautenticação, envia aviso por e-mail e fica registrado em log.
+- Usar um provedor brasileiro com API de Pix e split que aceite o modelo de marketplace e repasses para noivos sem exigir conta individual no provedor, quando tecnicamente e comercialmente disponível.
+- O convidado paga por uma cobrança Pix criada para o presente. O provedor processa a cobrança e separa comissão da plataforma e saldo devido ao casal conforme a regra de taxa aprovada.
+- O fluxo passa pela conta de marketplace da plataforma e liquida o saldo dos noivos por repasse para a chave Pix indicada. Subcontas ou carteiras virtuais só podem ser usadas se as condições do provedor forem confirmadas.
+- O casal informa a chave Pix e os dados de titularidade necessários. A ausência de conta individual no provedor não elimina validações de identidade, titularidade, prevenção a fraude ou obrigações legais.
+- A confirmação no ledger D1 depende de webhook assinado do provedor. Webhooks são idempotentes; retorno do navegador não confirma pagamento.
+- O painel mostra, antes da confirmação do presente, valor escolhido, taxa do provedor, taxa da plataforma, total pago e valor estimado a repassar ao casal. Nenhuma taxa pode ser publicada até aprovação da política comercial.
+- Reembolsos, disputas, estornos, repasses, saldo pendente e conciliação são registrados no ledger e tratados de acordo com o contrato do provedor.
+- Não implementar pagamentos em produção antes de confirmar elegibilidade da plataforma, contrato, taxas, titularidade, prazos de liquidação, regras de saque, reembolsos e obrigações fiscais e regulatórias.
 
 ### Regras comuns
 
-- Mostrar aos noivos o extrato de presentes e taxas, por modo.
-- Termos de uso explícitos: a plataforma não custodia o dinheiro dos presentes.
-- Os noivos escolhem quais modos ativar. A página de presentes mostra apenas os ativos.
+- Mostrar ao casal o extrato de presentes, taxas, repasses, estornos e saldo pendente.
+- O fluxo financeiro e os papéis da plataforma, do provedor, do casal e do convidado devem ser descritos com clareza antes do pagamento.
+- Os noivos escolhem quais formas de presente ativar. A página de presentes mostra apenas as opções ativas.
 
 ## 12. Controle de entrada
 
@@ -372,7 +361,7 @@ A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo 
 ## 16. Fases
 
 1. Núcleo: autenticação dos noivos, subdomínio, site personalizável, multi-idioma, RSVP, link curto e QR.
-2. Lista de presentes com ledger, Modo B (Pix direto) e taxa; depois Modo A (Stripe).
+2. Lista de presentes com ledger, integração com provedor brasileiro de Pix split, política de taxa transparente e conciliação de repasses.
 3. PWA completo, push VAPID e calendário.
 4. Controle de entrada com leitor de QR offline.
 5. Quiz diário.
@@ -412,9 +401,8 @@ Stripe
 ## 18. Perguntar ao dono do projeto antes de implementar
 
 - Domínio base dos subdomínios.
-- Conta Stripe brasileira da plataforma: existe ou será aberta, e com qual tipo de cadastro. É requisito para cobrar a taxa pelo Modo A.
-- Valor da taxa: percentual, mínimo e máximo por presente, e quem paga por padrão (noivos ou convidado).
-- Modo B: confirmar a exigência de cartão cadastrado pelos noivos para cobrar a taxa acumulada.
+- Provedor brasileiro de Pix split: confirmar elegibilidade da plataforma, contrato, tipo de conta, onboarding dos casais, titularidade da chave Pix, custos de processamento e repasse, prazos, reembolsos e responsabilidades antes de escolher.
+- Valor da taxa da plataforma: percentual, mínimo e máximo por presente, e quem paga por padrão (noivos ou convidado).
 - Idiomas finais: pt-BR, en e es.
 - Referências próprias do dono do projeto, a enviar.
 - Serviço de e-mail transacional para verificação de conta e recuperação de senha.
