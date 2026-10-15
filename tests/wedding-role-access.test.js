@@ -79,6 +79,25 @@ test('readers can see published snapshots but cannot access drafts', async () =>
   assert.equal(site.status, 404)
 })
 
+test('editors and readers cannot access guest, payment, or team administration APIs', async () => {
+  const protectedPaths = [
+    '/api/couple/weddings/wedding-1/members',
+    '/api/couple/weddings/wedding-1/event-assignments',
+    '/api/couple/weddings/wedding-1/guests',
+    '/api/couple/weddings/wedding-1/rsvps',
+    '/api/couple/weddings/wedding-1/gifts',
+    '/api/couple/weddings/wedding-1/contributions',
+  ]
+  for (const role of ['editor', 'reader']) {
+    for (const path of protectedPaths) {
+      const response = await call(path, role)
+      assert.equal(response.status, 404, `${role} should not access ${path}`)
+    }
+    const groupMutation = await call('/api/couple/weddings/wedding-1/groups', role, { method: 'POST', body: { name: 'Família' } })
+    assert.equal(groupMutation.status, 404, `${role} should not create guest groups`)
+  }
+})
+
 test('event staff can read only assigned event rosters without contact fields', async () => {
   const roster = await call('/api/staff/events/event-1/guests', 'event_staff')
   const otherEvent = await call('/api/staff/events/event-2/guests', 'event_staff')
