@@ -1159,8 +1159,7 @@ function CouplePanel({ notify }) {
       await loadWeddingData(weddingId)
       notify('Dados pessoais removidos; histórico de RSVP e entrada preservado')
     } catch (cause) {
-      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
-      setError('Não foi possível remover este convidado.')
+      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de remover os dados.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
     } finally {
       setBusy(false)
     }
