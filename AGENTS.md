@@ -369,6 +369,8 @@ A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo 
 
 ## 17. Referências
 
+- Direção visual aprovada para a identidade principal: jardim editorial, com fotografia de casamento em destaque, tons pastéis e detalhes florais leves. Priorizar leitura confortável, navegação clara e contraste antes de ornamentos.
+
 Brasil
 - Casar.com: lista de presentes em dinheiro com saque por Pix e itens editáveis. Levantamento deles indica que 74% dos casais preferem lista convertida em dinheiro. Referência principal de modelo de negócio e taxa.
 - iCasei: site completo com lista, enquetes, contagem regressiva e mural de recados.
