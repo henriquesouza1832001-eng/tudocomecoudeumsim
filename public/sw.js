@@ -22,12 +22,21 @@ self.addEventListener('install', (event) => {
     const [manifest, html] = await Promise.all([manifestResponse.json(), response.clone()])
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(manifest))))
     const cacheName = `${cachePrefix}${[...digest.slice(0, 8)].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
-    const assets = Object.values(manifest).flatMap((asset) => [asset.file, ...(asset.css || [])]).map((path) => `/${path}`)
+    const entry = manifest['index.html']
+    const assets = new Set()
+    const addRequiredAssets = (asset, visited = new Set()) => {
+      if (!asset || visited.has(asset.file)) return
+      visited.add(asset.file)
+      assets.add(`/${asset.file}`)
+      for (const path of asset.css || []) assets.add(`/${path}`)
+      for (const imported of asset.imports || []) addRequiredAssets(manifest[imported], visited)
+    }
+    addRequiredAssets(entry)
     const cache = await caches.open(cacheName)
     await cache.put('/index.html', html)
     await cache.put('/build-manifest.json', manifestCopy)
     await cache.put(currentShellMarker, new Response('current'))
-    await cache.addAll([...new Set(['/', '/manifest.webmanifest', '/icons/wedding.svg', '/icons/wedding-180.png', '/icons/wedding-192.png', '/icons/wedding-512.png', '/images/wedding-garden.png', ...assets])])
+    await cache.addAll([...new Set(['/', '/manifest.webmanifest', '/icons/wedding.svg', '/icons/wedding-180.png', '/icons/wedding-192.png', '/icons/wedding-512.png', '/images/wedding-pexels.webp', ...assets])])
     await self.skipWaiting()
   })())
 })
