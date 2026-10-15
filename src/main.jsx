@@ -1,6 +1,5 @@
 import React, { lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
-import './styles.css'
 
 const App = lazy(() => import('./App.jsx'))
 const MarketingLanding = lazy(() => import('./MarketingLanding.jsx'))
@@ -10,8 +9,8 @@ if (isMarketingLanding) {
   const imagePreload = document.createElement('link')
   imagePreload.rel = 'preload'
   imagePreload.as = 'image'
-  imagePreload.href = '/images/wedding-pexels.webp'
-  imagePreload.type = 'image/webp'
+  imagePreload.href = '/images/wedding-pexels.avif'
+  imagePreload.type = 'image/avif'
   imagePreload.fetchPriority = 'high'
   document.head.append(imagePreload)
 }

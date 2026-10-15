@@ -1234,92 +1234,15 @@ img { display: block; max-width: 100%; }
 .admin-form-error { margin: 0; padding: 11px 13px; color: #8a423b; background: #f7e9e5; font-size: 10px; line-height: 1.5; }
 .admin-mfa-instructions { margin: 0; color: #77796f; font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }
 .role-header > .button-outline { min-height: 31px; padding: 0 11px; font-size: 9px; }
-.marketing-page { --marketing-ink: #24362e; --marketing-green: #405447; --marketing-paper: #f7f5f0; color: var(--marketing-ink); background: var(--marketing-paper); }
-.marketing-header { min-height: 76px; padding: 0 max(6vw, calc((100vw - 1240px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 24px; background: #fbfaf7; }
-.marketing-brand { display: inline-flex; align-items: center; gap: 12px; color: var(--marketing-ink); }
-.marketing-brand > span, .marketing-footer > span { font-family: var(--serif); font-size: 27px; }
-.marketing-brand > span > span, .marketing-footer > span > span { color: #b28b67; font-style: italic; }
-.marketing-brand strong { padding-left: 12px; border-left: 1px solid #d7d3c8; font-size: 9px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
-.marketing-header nav { display: flex; align-items: center; gap: clamp(16px, 3vw, 39px); }
-.marketing-header nav a { color: #656b61; font-size: 10px; }
-.marketing-header nav .marketing-login { min-height: 38px; padding: 0 17px; display: inline-flex; align-items: center; border: 1px solid rgba(64,84,71,.4); color: var(--marketing-green); }
-.marketing-hero { min-height: 650px; height: min(740px, calc(100svh - 76px)); position: relative; overflow: hidden; color: white; background: #435246; }
-.marketing-hero-image, .marketing-hero-shade { position: absolute; inset: 0; }
-.marketing-hero-image { background: url('/images/wedding-pexels.webp') center 54% / cover; animation: hero-reveal 1s ease-out both; }
-.marketing-hero-shade { background: linear-gradient(90deg, rgba(20,32,26,.76), rgba(23,35,28,.45) 47%, rgba(22,32,25,.04) 100%), linear-gradient(0deg, rgba(15,25,20,.28), transparent 28%); }
-.marketing-hero-copy { width: min(590px, 54%); position: absolute; top: 50%; left: max(9vw, calc((100vw - 1180px) / 2)); transform: translateY(-47%); }
-.marketing-kicker { color: #795536; font-size: 9px; font-weight: 700; letter-spacing: .19em; }
-.marketing-hero .marketing-kicker { color: rgba(255,255,255,.72); }
-.marketing-hero h1 { max-width: 650px; margin: 24px 0 19px; font-family: var(--serif); font-size: clamp(48px, 6.1vw, 82px); font-weight: 400; letter-spacing: -.045em; line-height: .99; }
-.marketing-hero h1 i { color: #dbc5a7; font-weight: 400; }
-.marketing-hero-copy > p { max-width: 430px; margin: 0 0 25px; color: rgba(255,255,255,.83); font-family: var(--serif); font-size: 17px; line-height: 1.7; }
-.marketing-primary { min-height: 48px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; color: #26382f; background: #f1e9dc; font-size: 10px; font-weight: 600; transition: transform .2s, background .2s; }
-.marketing-primary:hover { transform: translateY(-2px); background: white; }
-.marketing-caption { margin: 14px 0 0; display: block; color: rgba(255,255,255,.7); font-size: 9px; }
-.marketing-hero-index { position: absolute; right: 7%; bottom: 37px; color: rgba(255,255,255,.86); font-family: var(--serif); font-size: 14px; }
-.marketing-hero-index span { padding: 0 6px; color: rgba(255,255,255,.52); }
-.marketing-intro { padding: 100px 20px 65px; text-align: center; }
-.marketing-intro h2, .marketing-showcase-copy h2, .marketing-final h2 { margin: 16px 0 15px; font-family: var(--serif); font-size: clamp(36px, 4.2vw, 53px); font-weight: 400; letter-spacing: -.035em; line-height: 1.13; }
-.marketing-intro h2 i { color: #73806f; font-weight: 400; }
-.marketing-intro > p { max-width: 540px; margin: 0 auto; color: #5b625b; font-size: 12px; line-height: 1.85; }
-.marketing-steps { width: min(1080px, 88%); margin: 0 auto; padding: 28px 0 105px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.marketing-steps article { min-height: 194px; padding: 20px 19px; display: grid; grid-template-columns: 30px 1fr; gap: 13px; border-top: 1px solid #cecfc4; }
-.marketing-steps article > span { color: #795536; font-family: var(--serif); font-size: 15px; }
-.marketing-steps article svg { color: var(--marketing-green); }
-.marketing-steps h3 { margin: 14px 0 7px; font-family: var(--serif); font-size: 22px; font-weight: 400; }
-.marketing-steps p { margin: 0; color: #5b625b; font-size: 10px; line-height: 1.8; }
-.marketing-showcase { padding: 85px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 10%; background: #eeece5; }
-.marketing-showcase-photo { min-height: 445px; position: relative; }
-.marketing-showcase-photo img { width: 100%; height: 445px; object-fit: cover; }
-.marketing-showcase-photo > span { position: absolute; left: 18px; bottom: 18px; color: white; font-size: 8px; letter-spacing: .16em; text-shadow: 0 1px 9px #1b211c; }
-.marketing-showcase-copy h2 { margin: 13px 0 21px; font-size: clamp(34px, 4vw, 48px); }
-.marketing-showcase-copy ul { margin: 0; padding: 0; display: grid; gap: 15px; list-style: none; }
-.marketing-showcase-copy li { display: flex; align-items: center; gap: 10px; color: #525c52; font-size: 11px; }
-.marketing-showcase-copy li svg { color: var(--marketing-green); }
-.marketing-text-link { margin-top: 26px; padding-bottom: 7px; display: inline-flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--marketing-green); color: var(--marketing-green); font-size: 10px; }
-.marketing-final { padding: 88px 20px 94px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.marketing-final h2 { max-width: 620px; margin: 13px 0 23px; }
-.marketing-final .marketing-primary { color: white; background: var(--marketing-green); }
-.marketing-final .marketing-primary:hover { background: #304439; }
-.marketing-final-login { margin-top: 14px; color: #555d55; font-size: 10px; text-decoration: underline; text-underline-offset: 3px; }
-.marketing-footer { min-height: 75px; padding: 14px max(6vw, calc((100vw - 1240px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid rgba(54,65,54,.12); background: #fbfaf7; }
-.marketing-footer > span { color: #596257; font-size: 16px; }
-.marketing-footer > a { display: inline-flex; align-items: center; gap: 6px; color: #555d55; font-size: 9px; }
 .superadmin-tabs { margin: 10px 0 20px; padding: 5px; display: flex; gap: 5px; overflow-x: auto; border: 1px solid rgba(48,55,47,.1); background: #f0eee7; scrollbar-width: thin; }
 .superadmin-tabs button { min-height: 42px; padding: 0 15px; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; color: #6a6f66; background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
 .superadmin-tabs button.active { border-color: rgba(48,55,47,.12); color: #35463b; background: #fffdfa; box-shadow: 0 2px 8px rgba(40,48,40,.05); }
 .superadmin-section { display: grid; gap: 14px; animation: content-up .25s ease both; }
 @media (max-width: 700px) {
-  .marketing-header { min-height: 64px; padding: 0 5%; }
-  .marketing-brand { gap: 8px; }
-  .marketing-brand > span { font-size: 23px; }
-  .marketing-brand strong { max-width: 93px; padding-left: 8px; font-size: 7px; line-height: 1.45; }
-  .marketing-header nav { gap: 12px; }
-  .marketing-header nav a { font-size: 8px; }
-  .marketing-header nav a:first-child { display: none; }
-  .marketing-header nav .marketing-login { min-height: 34px; padding: 0 11px; }
-  .marketing-hero { min-height: 610px; height: calc(88svh - 64px); max-height: 740px; }
-  .marketing-hero-image { background-position: 60% center; }
-  .marketing-hero-shade { background: linear-gradient(90deg, rgba(20,32,26,.7), rgba(23,35,28,.24) 100%), linear-gradient(0deg, rgba(15,25,20,.35), transparent 55%); }
-  .marketing-hero-copy { left: 7%; width: 86%; }
-  .marketing-hero h1 { max-width: 540px; font-size: clamp(48px, 12vw, 68px); }
-  .marketing-hero-copy > p { max-width: 390px; font-size: 15px; }
-  .marketing-intro { padding: 72px 7% 40px; }
-  .marketing-intro h2 { font-size: 38px; }
-  .marketing-steps { width: 86%; padding: 10px 0 67px; grid-template-columns: 1fr; gap: 3px; }
-  .marketing-steps article { min-height: 140px; padding: 17px 8px; }
-  .marketing-showcase { padding: 55px 7% 60px; grid-template-columns: 1fr; gap: 30px; }
-  .marketing-showcase-photo, .marketing-showcase-photo img { min-height: 290px; height: 290px; }
-  .marketing-showcase-copy h2 { max-width: 490px; }
-  .marketing-final { padding: 66px 7%; }
-  .marketing-final h2 { font-size: 38px; }
-  .marketing-footer { padding: 14px 5%; }
   .superadmin-tabs { margin-right: -3vw; margin-left: -3vw; padding: 5px 3vw; }
   .superadmin-tabs button { min-height: 40px; padding: 0 12px; font-size: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .marketing-hero-image, .superadmin-section { animation: none; }
-  .marketing-primary { transition: none; }
 }
 @media (max-width: 1050px) {
   .prototype-switch { max-width: min(70vw, 660px); overflow-x: auto; }
@@ -1580,84 +1503,3 @@ img { display: block; max-width: 100%; }
   .staff-print-mockups .mockup-print-card p, .staff-print-mockups .mockup-print-card small { font-size: 9pt; }
 }
 .page-loading { min-height: 100svh; background: #f7f5f0; }
-.marketing-page { min-height: 100vh; overflow: clip; }
-.marketing-page a:focus-visible, .marketing-page button:focus-visible { outline: 3px solid #9d684b; outline-offset: 4px; }
-.marketing-header { min-height: 78px; }
-.marketing-hero { width: 100%; min-height: 0; height: auto; padding: clamp(54px, 7vw, 96px) max(7.8vw, calc((100vw - 1240px) / 2)); display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr); align-items: center; gap: clamp(44px, 8.2vw, 116px); color: var(--marketing-ink); background: #eeece5; }
-.marketing-hero-photo { min-width: 0; }
-.marketing-photo-frame { position: relative; overflow: hidden; aspect-ratio: 1.16; background: #d9d5ca; box-shadow: 0 19px 55px rgba(41, 48, 40, .12); }
-.marketing-photo-button { width: 100%; height: 100%; position: absolute; inset: 0; padding: 0; overflow: hidden; border: 0; text-align: left; background: transparent; }
-.marketing-photo-button img { width: 100%; height: 100%; object-fit: cover; object-position: center 46%; transform: scale(1.035) translate3d(var(--photo-shift-x, 0px), var(--photo-shift-y, 0px), 0); transition: transform .32s ease, opacity .24s ease; animation: marketing-photo-enter .34s ease both; }
-@keyframes marketing-photo-enter { from { opacity: .62; } to { opacity: 1; } }
-.marketing-photo-button:hover img { transform: scale(1.06) translate3d(var(--photo-shift-x, 0px), var(--photo-shift-y, 0px), 0); }
-.marketing-photo-button::after { position: absolute; inset: 48% 0 0; content: ''; background: linear-gradient(transparent, rgba(20, 29, 25, .63)); pointer-events: none; }
-.marketing-photo-label { position: absolute; left: 18px; bottom: 16px; z-index: 1; display: grid; gap: 4px; color: white; text-shadow: 0 1px 10px rgba(0, 0, 0, .45); }
-.marketing-photo-label > span { font-size: 8px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
-.marketing-photo-label small { font-size: 8px; }
-.marketing-photo-expand { position: absolute; z-index: 1; top: 15px; right: 15px; min-height: 36px; padding: 0 11px; display: inline-flex; align-items: center; gap: 7px; color: white; border: 1px solid rgba(255, 255, 255, .6); background: rgba(30, 39, 33, .38); backdrop-filter: blur(8px); font-size: 9px; }
-.marketing-photo-arrow { width: 39px; height: 39px; position: absolute; z-index: 2; top: 50%; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .72); border-radius: 50%; color: #fff; background: rgba(32, 43, 36, .5); backdrop-filter: blur(8px); transform: translateY(-50%); transition: background .18s ease, transform .18s ease; }
-.marketing-photo-arrow:hover { background: rgba(32, 43, 36, .85); }
-.marketing-photo-previous { left: 14px; }
-.marketing-photo-next { right: 14px; }
-.marketing-photo-count { position: absolute; right: 18px; bottom: 18px; z-index: 2; color: white; font-family: var(--serif); font-size: 13px; text-shadow: 0 1px 8px rgba(0, 0, 0, .55); }
-.marketing-hero-copy { width: auto; min-width: 0; position: static; transform: none; animation: none; }
-.marketing-hero .marketing-kicker { color: #795536; }
-.marketing-hero h1 { max-width: 590px; margin: 19px 0 18px; color: #26372f; font-size: clamp(42px, 5vw, 67px); letter-spacing: -.04em; line-height: 1.02; }
-.marketing-hero h1 i { color: #73806f; }
-.marketing-hero-copy > p { max-width: 450px; margin: 0 0 23px; color: #656b61; font-family: inherit; font-size: 14px; line-height: 1.8; }
-.marketing-hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 21px; }
-.marketing-hero .marketing-primary { min-height: 46px; color: white; background: #405447; font-size: 11px; }
-.marketing-hero .marketing-primary:hover { background: #304439; }
-.marketing-hero .marketing-text-link { margin-top: 0; font-size: 10px; }
-.marketing-caption { margin-top: 15px; color: #5b625b; font-size: 9px; }
-.marketing-intro { padding-top: 94px; }
-.marketing-showcase-photo img { object-position: center 43%; }
-.marketing-showcase-photo > span { left: 14px; bottom: 14px; font-size: 8px; letter-spacing: .06em; }
-.marketing-photo-dialog { width: min(92vw, 1120px); max-width: none; max-height: 94dvh; position: fixed; inset: 50% auto auto 50%; padding: 18px; overflow: auto; border: 1px solid rgba(255,255,255,.24); color: #f7f5f0; background: #222d27; box-shadow: 0 20px 100px rgba(0,0,0,.4); transform: translate(-50%, -50%); }
-.marketing-photo-dialog::backdrop { background: rgba(16, 23, 19, .84); backdrop-filter: blur(5px); }
-.marketing-photo-dialog[open] { animation: marketing-dialog-in .18s ease both; }
-@keyframes marketing-dialog-in { from { opacity: .4; } to { opacity: 1; } }
-.marketing-photo-dialog > img { width: 100%; max-height: calc(94dvh - 82px); object-fit: contain; }
-.marketing-photo-dialog > p { margin: 10px 0 0; color: rgba(255,255,255,.78); font-size: 10px; }
-.marketing-dialog-close { width: 38px; height: 38px; position: absolute; top: 25px; right: 25px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.68); border-radius: 50%; color: white; background: rgba(25, 34, 29, .7); }
-@media (max-width: 900px) {
-  .marketing-hero { grid-template-columns: minmax(0, 1fr) minmax(280px, .94fr); gap: 5vw; padding-right: 6%; padding-left: 6%; }
-  .marketing-hero h1 { font-size: clamp(38px, 5.2vw, 54px); }
-  .marketing-hero-actions { gap: 14px; }
-  .marketing-hero .marketing-text-link { margin-top: 0; }
-}
-@media (max-width: 700px) {
-  .marketing-header { min-height: 66px; }
-  .marketing-hero { min-height: 0; height: auto; padding: 24px 6% 55px; grid-template-columns: 1fr; gap: 32px; }
-  .marketing-photo-frame { aspect-ratio: 1.06; }
-  .marketing-photo-button img { object-position: center 42%; }
-  .marketing-photo-expand { min-height: 34px; }
-  .marketing-photo-previous, .marketing-photo-next { width: 36px; height: 36px; }
-  .marketing-photo-previous { left: 10px; }
-  .marketing-photo-next { right: 10px; }
-  .marketing-photo-count { bottom: 17px; }
-  .marketing-hero-copy { width: 100%; }
-  .marketing-hero h1 { max-width: 580px; margin: 13px 0; font-size: clamp(40px, 10.8vw, 57px); line-height: 1.04; }
-  .marketing-hero-copy > p { max-width: 500px; font-size: 14px; }
-  .marketing-hero-actions { gap: 17px; }
-  .marketing-caption { font-size: 9px; }
-  .marketing-intro { padding: 68px 7% 38px; }
-  .marketing-intro h2 { font-size: clamp(33px, 9vw, 40px); }
-  .marketing-showcase { padding: 45px 7% 52px; gap: 26px; }
-  .marketing-showcase-photo, .marketing-showcase-photo img { min-height: 0; height: auto; aspect-ratio: 1.12; }
-  .marketing-showcase-copy h2 { font-size: clamp(33px, 9vw, 40px); }
-  .marketing-final { padding: 60px 7%; }
-  .marketing-footer { min-height: 68px; }
-}
-@media (max-width: 390px) {
-  .marketing-photo-label { left: 12px; bottom: 12px; }
-  .marketing-photo-label small { max-width: 130px; font-size: 7px; }
-  .marketing-photo-expand { top: 10px; right: 10px; padding: 0 8px; font-size: 8px; }
-  .marketing-photo-dialog { padding: 10px; }
-  .marketing-dialog-close { top: 15px; right: 15px; }
-  .marketing-hero-actions { align-items: flex-start; flex-direction: column; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .marketing-photo-button img, .marketing-photo-dialog[open] { animation: none; transition: none; }
-  .marketing-photo-arrow { transition: none; }
-}

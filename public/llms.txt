@@ -1,0 +1,11 @@
+﻿# e&t Sites de casamento
+
+Plataforma para criar sites de casamento responsivos, compartilhar convites por link ou QR code e acompanhar confirmações de presença.
+
+## Páginas
+
+- [Página inicial](https://tudocomecoudeumsim.pages.dev/)
+- [Criar site de casamento](https://tudocomecoudeumsim.pages.dev/cadastro)
+- [Acessar painel](https://tudocomecoudeumsim.pages.dev/painel)
+- [Contato por WhatsApp](https://wa.me/5531988924409)
+- [Contato por e-mail](mailto:henriquesouza1832001@gmail.com)

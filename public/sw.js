@@ -36,7 +36,7 @@ self.addEventListener('install', (event) => {
     await cache.put('/index.html', html)
     await cache.put('/build-manifest.json', manifestCopy)
     await cache.put(currentShellMarker, new Response('current'))
-    await cache.addAll([...new Set(['/', '/manifest.webmanifest', '/icons/wedding.svg', '/icons/wedding-180.png', '/icons/wedding-192.png', '/icons/wedding-512.png', '/images/wedding-pexels.webp', ...assets])])
+    await cache.addAll([...new Set(['/', '/manifest.webmanifest', '/icons/wedding.svg', '/icons/wedding-180.png', '/icons/wedding-192.png', '/icons/wedding-512.png', '/images/wedding-pexels.avif', '/images/wedding-pexels.webp', ...assets])])
     await self.skipWaiting()
   })())
 })
