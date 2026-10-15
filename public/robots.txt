@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /painel
+Disallow: /superadmin
+Disallow: /convidado
+Disallow: /padrinhos
+Disallow: /equipe
+Disallow: /pre-entrada

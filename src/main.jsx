@@ -12,7 +12,26 @@ if (isMarketingLanding) {
   imagePreload.as = 'image'
   imagePreload.href = '/images/wedding-pexels.webp'
   imagePreload.type = 'image/webp'
+  imagePreload.fetchPriority = 'high'
   document.head.append(imagePreload)
+}
+
+if (!isMarketingLanding) {
+  const fontPreconnect = document.createElement('link')
+  fontPreconnect.rel = 'preconnect'
+  fontPreconnect.href = 'https://fonts.googleapis.com'
+  document.head.append(fontPreconnect)
+
+  const fontFilePreconnect = document.createElement('link')
+  fontFilePreconnect.rel = 'preconnect'
+  fontFilePreconnect.href = 'https://fonts.gstatic.com'
+  fontFilePreconnect.crossOrigin = 'anonymous'
+  document.head.append(fontFilePreconnect)
+
+  const appFonts = document.createElement('link')
+  appFonts.rel = 'stylesheet'
+  appFonts.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap'
+  document.head.append(appFonts)
 }
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

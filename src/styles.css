@@ -1248,7 +1248,7 @@ img { display: block; max-width: 100%; }
 .marketing-hero-image { background: url('/images/wedding-pexels.webp') center 54% / cover; animation: hero-reveal 1s ease-out both; }
 .marketing-hero-shade { background: linear-gradient(90deg, rgba(20,32,26,.76), rgba(23,35,28,.45) 47%, rgba(22,32,25,.04) 100%), linear-gradient(0deg, rgba(15,25,20,.28), transparent 28%); }
 .marketing-hero-copy { width: min(590px, 54%); position: absolute; top: 50%; left: max(9vw, calc((100vw - 1180px) / 2)); transform: translateY(-47%); }
-.marketing-kicker { color: #aa8060; font-size: 9px; font-weight: 700; letter-spacing: .19em; }
+.marketing-kicker { color: #795536; font-size: 9px; font-weight: 700; letter-spacing: .19em; }
 .marketing-hero .marketing-kicker { color: rgba(255,255,255,.72); }
 .marketing-hero h1 { max-width: 650px; margin: 24px 0 19px; font-family: var(--serif); font-size: clamp(48px, 6.1vw, 82px); font-weight: 400; letter-spacing: -.045em; line-height: .99; }
 .marketing-hero h1 i { color: #dbc5a7; font-weight: 400; }
@@ -1261,30 +1261,30 @@ img { display: block; max-width: 100%; }
 .marketing-intro { padding: 100px 20px 65px; text-align: center; }
 .marketing-intro h2, .marketing-showcase-copy h2, .marketing-final h2 { margin: 16px 0 15px; font-family: var(--serif); font-size: clamp(36px, 4.2vw, 53px); font-weight: 400; letter-spacing: -.035em; line-height: 1.13; }
 .marketing-intro h2 i { color: #73806f; font-weight: 400; }
-.marketing-intro > p { max-width: 540px; margin: 0 auto; color: #777b73; font-size: 12px; line-height: 1.85; }
+.marketing-intro > p { max-width: 540px; margin: 0 auto; color: #5b625b; font-size: 12px; line-height: 1.85; }
 .marketing-steps { width: min(1080px, 88%); margin: 0 auto; padding: 28px 0 105px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .marketing-steps article { min-height: 194px; padding: 20px 19px; display: grid; grid-template-columns: 30px 1fr; gap: 13px; border-top: 1px solid #cecfc4; }
-.marketing-steps article > span { color: #aa8060; font-family: var(--serif); font-size: 15px; }
+.marketing-steps article > span { color: #795536; font-family: var(--serif); font-size: 15px; }
 .marketing-steps article svg { color: var(--marketing-green); }
 .marketing-steps h3 { margin: 14px 0 7px; font-family: var(--serif); font-size: 22px; font-weight: 400; }
-.marketing-steps p { margin: 0; color: #777b73; font-size: 10px; line-height: 1.8; }
+.marketing-steps p { margin: 0; color: #5b625b; font-size: 10px; line-height: 1.8; }
 .marketing-showcase { padding: 85px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 10%; background: #eeece5; }
 .marketing-showcase-photo { min-height: 445px; position: relative; }
 .marketing-showcase-photo img { width: 100%; height: 445px; object-fit: cover; }
 .marketing-showcase-photo > span { position: absolute; left: 18px; bottom: 18px; color: white; font-size: 8px; letter-spacing: .16em; text-shadow: 0 1px 9px #1b211c; }
 .marketing-showcase-copy h2 { margin: 13px 0 21px; font-size: clamp(34px, 4vw, 48px); }
 .marketing-showcase-copy ul { margin: 0; padding: 0; display: grid; gap: 15px; list-style: none; }
-.marketing-showcase-copy li { display: flex; align-items: center; gap: 10px; color: #6b7067; font-size: 11px; }
+.marketing-showcase-copy li { display: flex; align-items: center; gap: 10px; color: #525c52; font-size: 11px; }
 .marketing-showcase-copy li svg { color: var(--marketing-green); }
 .marketing-text-link { margin-top: 26px; padding-bottom: 7px; display: inline-flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--marketing-green); color: var(--marketing-green); font-size: 10px; }
 .marketing-final { padding: 88px 20px 94px; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .marketing-final h2 { max-width: 620px; margin: 13px 0 23px; }
 .marketing-final .marketing-primary { color: white; background: var(--marketing-green); }
 .marketing-final .marketing-primary:hover { background: #304439; }
-.marketing-final-login { margin-top: 14px; color: #73786f; font-size: 10px; text-decoration: underline; text-underline-offset: 3px; }
+.marketing-final-login { margin-top: 14px; color: #555d55; font-size: 10px; text-decoration: underline; text-underline-offset: 3px; }
 .marketing-footer { min-height: 75px; padding: 14px max(6vw, calc((100vw - 1240px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid rgba(54,65,54,.12); background: #fbfaf7; }
 .marketing-footer > span { color: #596257; font-size: 16px; }
-.marketing-footer > a { display: inline-flex; align-items: center; gap: 6px; color: #72776e; font-size: 9px; }
+.marketing-footer > a { display: inline-flex; align-items: center; gap: 6px; color: #555d55; font-size: 9px; }
 .superadmin-tabs { margin: 10px 0 20px; padding: 5px; display: flex; gap: 5px; overflow-x: auto; border: 1px solid rgba(48,55,47,.1); background: #f0eee7; scrollbar-width: thin; }
 .superadmin-tabs button { min-height: 42px; padding: 0 15px; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; color: #6a6f66; background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
 .superadmin-tabs button.active { border-color: rgba(48,55,47,.12); color: #35463b; background: #fffdfa; box-shadow: 0 2px 8px rgba(40,48,40,.05); }
@@ -1601,7 +1601,7 @@ img { display: block; max-width: 100%; }
 .marketing-photo-next { right: 14px; }
 .marketing-photo-count { position: absolute; right: 18px; bottom: 18px; z-index: 2; color: white; font-family: var(--serif); font-size: 13px; text-shadow: 0 1px 8px rgba(0, 0, 0, .55); }
 .marketing-hero-copy { width: auto; min-width: 0; position: static; transform: none; animation: none; }
-.marketing-hero .marketing-kicker { color: #a37353; }
+.marketing-hero .marketing-kicker { color: #795536; }
 .marketing-hero h1 { max-width: 590px; margin: 19px 0 18px; color: #26372f; font-size: clamp(42px, 5vw, 67px); letter-spacing: -.04em; line-height: 1.02; }
 .marketing-hero h1 i { color: #73806f; }
 .marketing-hero-copy > p { max-width: 450px; margin: 0 0 23px; color: #656b61; font-family: inherit; font-size: 14px; line-height: 1.8; }
@@ -1609,7 +1609,7 @@ img { display: block; max-width: 100%; }
 .marketing-hero .marketing-primary { min-height: 46px; color: white; background: #405447; font-size: 11px; }
 .marketing-hero .marketing-primary:hover { background: #304439; }
 .marketing-hero .marketing-text-link { margin-top: 0; font-size: 10px; }
-.marketing-caption { margin-top: 15px; color: #777b73; font-size: 9px; }
+.marketing-caption { margin-top: 15px; color: #5b625b; font-size: 9px; }
 .marketing-intro { padding-top: 94px; }
 .marketing-showcase-photo img { object-position: center 43%; }
 .marketing-showcase-photo > span { left: 14px; bottom: 14px; font-size: 8px; letter-spacing: .06em; }
