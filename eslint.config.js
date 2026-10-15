@@ -21,4 +21,10 @@ export default [
       'react/prop-types': 'off',
     },
   },
+  {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
 ]
