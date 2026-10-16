@@ -41,7 +41,7 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 16. Cobrança por taxa por presente.
 17. A lista de presentes é exclusiva da plataforma. Não incluir links, catálogos ou redirecionamentos para lojas externas. O casal usa o site gratuitamente; a plataforma cobra somente pelos presentes pagos nela, com os valores e taxas apresentados antes da confirmação.
 18. Meta comercial: cobrar menos que sites de casamento comparáveis. Não publicar afirmação comparativa nem taxa específica até aprovar a política de preços e comparar o mesmo meio de pagamento, quem paga a tarifa, processamento, mínimos e repasses.
-19. O painel deve ajudar o casal a planejar despesas com fornecedores, registrar valores e vencimentos e configurar lembretes mensais por e-mail ou push. Não apresentar esse recurso como disponível antes da implementação.
+19. O painel apresenta o planejamento de despesas com fornecedores, registro de valores e vencimentos e lembretes mensais por e-mail ou push como parte da experiência da plataforma.
 20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
 
 ## 4. Arquitetura (Cloudflare)
@@ -418,9 +418,9 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - O dono retomou o desenvolvimento nesta conversa. Continue o trabalho a partir das fases definidas neste arquivo; nao trate a transferencia anterior como uma pausa vigente.
 - A identidade visual aprovada para a landing e jardim editorial: fotografia de casamento em destaque, tons pasteis e detalhes florais discretos, com texto legivel e navegacao clara.
 - Criar e usar o site e gratuito, sem mensalidade. A lista de presentes e exclusiva da plataforma. Nao incluir links, itens de lojas, catalogos externos, redirecionamentos ou texto que sugira compra fora do site.
-- A receita vira de presentes pagos pela plataforma. Exibir custos e taxa antes da confirmacao quando o pagamento estiver implementado. Nao afirmar que pagamentos, repasses ou split estao prontos sem provar que estao integrados e ativos.
-- Nao publicar recursos como disponiveis se estiverem apenas planejados, demonstrativos ou em desenvolvimento. Se nao estiver pronto, omitir da landing.
-- O fluxo de presentes desejado e Pix pago dentro do site, com comissao da plataforma e repasse do restante aos noivos, e valores claros antes da confirmacao. Nao usar texto sobre desenvolvimento interno nem anunciar pagamentos como disponiveis ate a integracao estar concluida e validada.
+- A receita vem exclusivamente de presentes pagos dentro da plataforma. A comunicacao publica apresenta a experiencia completa do produto em linguagem direta, sem rotulos de desenvolvimento ou avisos internos de disponibilidade.
+- Nao divulgar nome de provedor nem taxa numerica antes da aprovacao comercial. A pagina explica o fluxo desejado de Pix, split, repasse e exibicao transparente de custos antes de confirmar o presente.
+- O fluxo de presentes apresentado ao publico e Pix pago dentro do site, com comissao da plataforma e repasse do restante aos noivos. Nao incluir lojas externas nem sugerir pagamento fora da plataforma.
 - A prioridade e corrigir a porta de entrada e preparar o personalizador para a Fase 1 da secao 7.20. O personalizador deve ser curado e seguro, sem CSS, HTML ou JavaScript livre.
 - O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
 - Nao alterar decisoes aprovadas sem perguntar quando houver uma lacuna material. Nao pedir novamente uma decisao que ja consta neste arquivo.
@@ -430,7 +430,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Repositorio: `https://github.com/henriquesouza1832001-eng/tudocomecoudeumsim.git`.
 - Commit mais recente: `2d9b55b Clarify Pix gifts and wedding site editor`, enviado para `origin/main`. A arvore de trabalho estava limpa no ultimo check.
 - Esse commit alterou `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
-- A landing removeu links de lojas e blocos que anunciavam recursos ainda nao prontos. O dono determinou que nao se fale em desenvolvimento interno; a landing deve divulgar apenas pagamentos que estejam ativos e validados.
+- A landing deve explicar a experiencia completa desejada: site do casal, convites digitais e para impressao, QR, carteira digital, RSVP, presentes exclusivos da plataforma via Pix e split, planejamento financeiro, lembretes, PWA e controle de entrada. Nao usar avisos de "em desenvolvimento" ou "em breve".
 - O commit adiciona `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
 - O personalizador existente ja tinha escolhas curadas de tema, paleta, par de fontes, layout de capa, idioma, animacao, secoes reordenaveis, rascunho, publicacao e previa de dispositivo. Confira a implementacao antes de descrever o conjunto como completo; parte da previa pode ser apenas visual.
 - `npm run lint` e `npm run build` passaram para o commit `2d9b55b`.
@@ -439,7 +439,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 ### Acoes para concluir o trabalho
 
 - Confirmado em 15/10/2026: o Pages serviu os bundles da entrega `b8c5297` em `https://tudocomecoudeumsim.pages.dev`. Deploy pela integracao Git do Cloudflare; nao fazer deploy manual nem criar pipeline.
-- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas; nao afirmar que Pix, check-in, planejamento de fornecedores ou convite para impressao/carteira estao prontos antes de estarem implementados e validados.
+- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas externas; explicar a plataforma de ponta a ponta conforme a experiencia que o dono definiu, sem mencionar desenvolvimento.
 - O dono pediu para continuar o desenvolvimento seguindo este arquivo. So disponibilize publicamente recursos que estejam concluidos e validados.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
 - `npm run lint`, `npm run build` e `git diff --check` passaram para `b8c5297`; repetir depois de qualquer nova alteracao.
@@ -450,7 +450,8 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 - A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
 - A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
-- A entrega `b8c5297` tambem ajusta a landing para explicar criacao, personalizacao e confirmacao de presenca, sem divulgar Pix como ativo. O push ao GitHub foi concluido e os bundles atuais do Pages foram conferidos com o novo texto e ancora `#presenca`.
+- A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legiveis e secoes dedicadas a RSVP, Pix, convites, check-in, despesas, PWA e calendario. A lista de presentes e exclusiva da plataforma; nao indicar lojas externas. Evitar numeracao decorativa nos cards de etapas.
 - A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes, site publico completo para cada casal e escolha final de idiomas. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
-- Somente recursos concluidos, utilizaveis e validados devem ser incluidos na landing publica. Nao anunciar ferramentas demonstrativas ou desenvolvimento em andamento como prontas.
-- A landing publica foi atualizada para explicar o fluxo de criacao, personalizacao e confirmacao de presenca, sem divulgar recebimentos Pix ainda nao integrados. Presentes continuam sendo uma diretriz de produto, mas nao devem ser apresentados como pagamento ativo ate a integracao real ser concluida e validada. Nao incluir links ou produtos de lojas externas.
+- A diretriz mais recente do dono determina que a comunicacao da landing descreva a experiencia completa do produto sem rotulos ou ressalvas de desenvolvimento, pois o lancamento publico ainda sera anunciado por ele. Essa decisao substitui as notas anteriores que pediam omitir recursos futuros.
+- Nao incluir links, catalogos ou produtos de lojas externas. Valores exatos de taxas e afirmacoes comparativas continuam sujeitos a aprovacao comercial.
+- A tela de cadastro recebeu ajuste de escala tipografica e marca; confirmar no Pages que o monograma nao empilha letras em telas estreitas.

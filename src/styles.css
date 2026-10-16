@@ -937,7 +937,7 @@ img { display: block; max-width: 100%; }
 .role-page { min-height: calc(100vh - 48px); display: flex; flex-direction: column; color: var(--ink); background: #f5f3ed; }
 .role-header { min-height: 67px; padding: 0 5.5%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(48,55,47,.1); background: #faf9f5; }
 .role-brand { display: flex; align-items: center; gap: 11px; }
-.role-brand > span { width: 37px; height: 37px; display: grid; place-items: center; border: 1px solid rgba(64,84,71,.23); border-radius: 50%; color: var(--forest); font-family: var(--serif); font-size: 16px; }
+.role-brand > span { width: 44px; height: 44px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(64,84,71,.23); border-radius: 50%; color: var(--forest); font-family: var(--serif); font-size: 19px; white-space: nowrap; }
 .role-brand > span > span { color: var(--accent); font-style: italic; }
 .role-brand strong { color: var(--forest); font-family: var(--serif); font-size: 14px; font-weight: 400; }
 .role-preview { display: flex; align-items: center; gap: 7px; color: #8a887f; font-size: 8px; letter-spacing: .1em; }
@@ -1223,6 +1223,30 @@ img { display: block; max-width: 100%; }
 .couple-type-options span { font-size: 10px; }
 .recaptcha-challenge { min-height: 78px; max-width: 100%; overflow: hidden; }
 .recaptcha-challenge iframe { max-width: 100%; }
+.signup-page { --forest: #405849; --accent: #a77d62; --paper: #fbfaf6; background: #f2efe8; }
+.signup-page .role-header { min-height: 82px; padding-right: max(6vw, calc((100vw - 1240px) / 2)); padding-left: max(6vw, calc((100vw - 1240px) / 2)); }
+.signup-page .role-brand { gap: 14px; }
+.signup-page .role-brand strong { font-size: 18px; }
+.signup-page .role-preview { gap: 9px; font-size: 11px; }
+.signup-page .role-main { width: min(960px, 90%); padding: 58px 0 76px; }
+.signup-page .role-intro { max-width: 790px; margin-bottom: 35px; }
+.signup-page .role-icon { width: 56px; height: 56px; margin-bottom: 17px; }
+.signup-page .role-intro .eyebrow { font-size: 13px; letter-spacing: .16em; }
+.signup-page .role-intro h1 { margin: 13px 0 12px; font-size: clamp(42px, 5vw, 62px); }
+.signup-page .role-intro p { max-width: 680px; color: #555d54; font-size: 17px; line-height: 1.6; }
+.signup-page .signup-form { gap: 21px; padding: clamp(24px, 4vw, 42px); border-color: #ded8ce; box-shadow: 0 15px 38px rgba(47,53,47,.06); }
+.signup-page .admin-login-form label { gap: 8px; color: #424d43; font-size: 15px; font-weight: 600; }
+.signup-page .admin-login-form input { min-height: 52px; padding: 0 14px; border-color: #d4d5cf; border-radius: 2px; font-size: 16px; }
+.signup-page .couple-type-field legend { margin-bottom: 11px; color: #424d43; font-size: 15px; font-weight: 600; }
+.signup-page .couple-type-options { gap: 10px; }
+.signup-page .couple-type-options label { min-height: 52px; padding: 0 14px; gap: 11px; border-color: #d8d9d2; }
+.signup-page .couple-type-options input { width: 18px; min-height: 18px; flex: 0 0 auto; }
+.signup-page .couple-type-options span { font-size: 15px; }
+.signup-page .signup-hint { color: #60685f; font-size: 13px; }
+.signup-page .recaptcha-challenge { min-height: 78px; }
+.signup-page .admin-login-form .button-primary { min-height: 54px; font-size: 16px; }
+.signup-page .signup-login-link { margin: 0; color: #555d54; font-size: 15px; }
+.signup-page .role-footer { min-height: 76px; padding: 16px max(6vw, calc((100vw - 1240px) / 2)); font-size: 14px; }
 @media (max-width: 360px) {
   .recaptcha-challenge { width: 258px; min-height: 67px; }
   .recaptcha-challenge > div { transform: scale(.85); transform-origin: top left; }
