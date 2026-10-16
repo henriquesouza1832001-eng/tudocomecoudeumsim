@@ -438,19 +438,19 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ### Acoes para concluir o trabalho
 
-- Verificar se o Cloudflare Pages publicou `2d9b55b`; se nao, diagnosticar a integracao Git do Pages. Nao fazer deploy manual nem criar pipeline.
+- Confirmado em 15/10/2026: o Pages serviu os bundles da entrega `b8c5297` em `https://tudocomecoudeumsim.pages.dev`. Deploy pela integracao Git do Cloudflare; nao fazer deploy manual nem criar pipeline.
 - Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas; nao afirmar que Pix, check-in, planejamento de fornecedores ou convite para impressao/carteira estao prontos antes de estarem implementados e validados.
 - O dono pediu para continuar o desenvolvimento seguindo este arquivo. So disponibilize publicamente recursos que estejam concluidos e validados.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
-- O lint e o build deste commit ja passaram; repetir depois de qualquer nova alteracao.
+- `npm run lint`, `npm run build` e `git diff --check` passaram para `b8c5297`; repetir depois de qualquer nova alteracao.
 - Ainda faltam decisoes listadas na secao 18, principalmente dominio base e provedor, contrato e taxas do Pix split. Nao inventar essas informacoes nem implementar recebimentos em producao antes das confirmacoes exigidas na secao 11.
 - Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.
 
 ## 20. Atualizacao de desenvolvimento em 15/10/2026
 
 - A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
-- A implementacao local atual adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo. Lint e build passaram depois desta alteracao.
-- O commit `2d9b55b` e o registro `b722f23` estavam em `origin/main` no inicio desta retomada. As alteracoes atuais para conteudo por secao ainda precisam ser revisadas, validadas, commitadas e enviadas ao Git. So considerar publicadas depois de conferir a implantacao do Pages.
+- A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
+- A entrega `b8c5297` tambem ajusta a landing para explicar criacao, personalizacao e confirmacao de presenca, sem divulgar Pix como ativo. O push ao GitHub foi concluido e os bundles atuais do Pages foram conferidos com o novo texto e ancora `#presenca`.
 - A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes, site publico completo para cada casal e escolha final de idiomas. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
 - Somente recursos concluidos, utilizaveis e validados devem ser incluidos na landing publica. Nao anunciar ferramentas demonstrativas ou desenvolvimento em andamento como prontas.
 - A landing publica foi atualizada para explicar o fluxo de criacao, personalizacao e confirmacao de presenca, sem divulgar recebimentos Pix ainda nao integrados. Presentes continuam sendo uma diretriz de produto, mas nao devem ser apresentados como pagamento ativo ate a integracao real ser concluida e validada. Nao incluir links ou produtos de lojas externas.
