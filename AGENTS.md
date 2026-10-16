@@ -425,23 +425,23 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
 - Nao alterar decisoes aprovadas sem perguntar quando houver uma lacuna material. Nao pedir novamente uma decisao que ja consta neste arquivo.
 
-### Estado local conhecido antes da transferencia
+### Estado confirmado na transferencia
 
 - Repositorio: `https://github.com/henriquesouza1832001-eng/tudocomecoudeumsim.git`.
-- Ultimo commit conhecido: `006062d Add touch reordering to site editor`.
-- O checkout local tinha alteracoes nao commitadas em `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
-- As alteracoes locais removem da landing o bloco de itens e links de lojas e os blocos que anunciavam recursos ainda nao prontos; deixam a lista de presentes como parte da plataforma e dizem que o uso do site nao tem mensalidade. Confira a redacao para nao prometer pagamento ou taxa ja operacional.
-- As alteracoes locais adicionam `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
+- Commit mais recente: `2d9b55b Clarify Pix gifts and wedding site editor`, enviado para `origin/main`. A arvore de trabalho estava limpa no ultimo check.
+- Esse commit alterou `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
+- A landing remove o bloco de itens e links de lojas e os blocos que anunciavam recursos ainda nao prontos. A secao de presentes agora descreve Pix no site, separacao da comissao pela plataforma, transferencia do restante aos noivos e exibicao clara de valores e taxas antes da confirmacao. A decisao do dono e nao falar que a integracao esta "sendo estruturada".
+- O commit adiciona `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
 - O personalizador existente ja tinha escolhas curadas de tema, paleta, par de fontes, layout de capa, idioma, animacao, secoes reordenaveis, rascunho, publicacao e previa de dispositivo. Confira a implementacao antes de descrever o conjunto como completo; parte da previa pode ser apenas visual.
-- `npm run lint` e `npm run build` foram iniciados, mas as execucoes foram interrompidas pelo usuario. Nao existe resultado final de validacao para as alteracoes locais.
-- Essas alteracoes ainda nao foram commitadas, enviadas ao GitHub nem confirmadas no Cloudflare Pages. Nao informar que o novo conteudo esta publicado.
+- `npm run lint` e `npm run build` passaram para o commit `2d9b55b`.
+- O push para GitHub foi confirmado. A publicacao Cloudflare Pages nao foi confirmada. No ultimo acesso a `https://tudocomecoudeumsim.pages.dev`, o bundle remoto ainda continha a frase antiga "Estamos estruturando o pagamento". A verificacao posterior foi interrompida; confira novamente o estado atual antes de informar se publicou.
 
 ### Acoes para concluir o trabalho
 
-- Revisar `git status` e o diff dos seis arquivos acima; manter as mudancas validas e corrigir erros ou textos que sugiram funcionalidade indisponivel.
-- Confirmar que a landing nao tem links, catalogos ou redirecionamentos de lojas, nem afirma que check-in, planejamento de fornecedores, convite para impressao/carteira ou split Pix estao prontos quando nao estiverem implementados.
+- Verificar se o Cloudflare Pages publicou `2d9b55b`; se nao, diagnosticar a integracao Git do Pages. Nao fazer deploy manual nem criar pipeline.
+- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas; explicar o fluxo Pix aprovado sem a frase "estamos estruturando"; nao afirmar que check-in, planejamento de fornecedores ou convite para impressao/carteira estao prontos se nao estiverem implementados.
+- O dono disse que o proximo Codex vai conduzir as demais tarefas. Nao continuar a implementacao por conta propria nesta transferencia; usar este arquivo como contexto e prosseguir quando o dono der a proxima instrucao.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
-- Executar `npm run lint` e `npm run build`, conforme as regras de trabalho. Registrar o resultado real e corrigir falhas.
-- So entao criar commit e enviar ao repositorio. O Cloudflare Pages publica pela integracao Git; nao criar pipeline nem deploy manual. Aguardar e verificar a publicacao remota antes de compartilhar um link como atualizado.
+- O lint e o build deste commit ja passaram; repetir depois de qualquer nova alteracao.
 - Ainda faltam decisoes listadas na secao 18, principalmente dominio base e provedor, contrato e taxas do Pix split. Nao inventar essas informacoes nem implementar recebimentos em producao antes das confirmacoes exigidas na secao 11.
 - Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.
