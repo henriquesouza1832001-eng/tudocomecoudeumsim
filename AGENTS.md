@@ -474,3 +474,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Usar português direto, específico e natural. Evitar frases promocionais genéricas, títulos artificiais em caixa alta, ícones decorativos repetidos e setas em todos os links.
 - Não inventar valores, resultados, nomes, depoimentos, números de uso ou estados de interface para ilustrar recursos. Identificar exemplos visuais como exemplos e usar informações configuradas pelo casal.
 - Preservar a direção aprovada de jardim editorial: fotos de casamento identificadas, tons pastéis, detalhes florais leves, leitura confortável e navegação clara.
+
+- Em 15/10/2026, `/criar-site` foi ampliado para permitir a escolha de tema, paleta, par tipográfico, escala de leitura, formato da capa, foto pública de referência e seções antes do cadastro. A prévia acompanha as escolhas em computador, tablet e celular; os campos `fontScale` e `coverImage` são validados e persistidos pela API para a edição no painel.
+- O catálogo mantém oito temas curados. `Rock & romance` e `Festa no jardim` atendem casais que querem uma estética mais marcante sem liberar CSS ou cores sem limite. Os seis layouts usam CSS e fotos já disponíveis no projeto, sem novas bibliotecas ou fontes externas.
+- O personalizador permite escolher entre fotos públicas de referência. Upload das fotos próprias para R2 continua pendente; não afirmar que o envio de fotos já está disponível.

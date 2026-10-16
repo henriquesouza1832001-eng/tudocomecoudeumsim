@@ -23,7 +23,7 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {} }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'wedding-pexels', fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {} }
 
 function validCoverMessages(messages) {
   if (messages === undefined) return defaultSiteConfig.coverMessages
@@ -65,6 +65,7 @@ function parseSiteConfig(value) {
     if (!siteThemes.includes(config.theme) || !Number.isInteger(config.paletteIndex) || config.paletteIndex < 0 || config.paletteIndex > 5
       || !siteCoverLayouts.includes(config.coverLayout) || !siteAnimations.includes(config.animationPreset)
       || !siteFontPairs.includes(config.fontPair) || !siteLanguages.includes(config.language)
+      || !['small', 'medium', 'large'].includes(config.fontScale || 'medium') || !['wedding-pexels', 'wedding-moments'].includes(config.coverImage || 'wedding-pexels')
       || !Array.isArray(config.enabledSections) || config.enabledSections.some((section) => !siteSections.includes(section))) return null
     const coverMessages = validCoverMessages(config.coverMessages)
     if (!coverMessages) return null
@@ -82,6 +83,7 @@ function validateSiteConfig(body) {
   if (!body || !siteThemes.includes(body.theme) || !Number.isInteger(body.paletteIndex) || body.paletteIndex < 0 || body.paletteIndex > 5
     || !siteCoverLayouts.includes(body.coverLayout) || !siteAnimations.includes(body.animationPreset)
     || !siteFontPairs.includes(body.fontPair) || !siteLanguages.includes(body.language)
+    || !['small', 'medium', 'large'].includes(body.fontScale || 'medium') || !['wedding-pexels', 'wedding-moments'].includes(body.coverImage || 'wedding-pexels')
     || !Array.isArray(body.enabledSections) || body.enabledSections.length > siteSections.length
     || body.enabledSections.some((section) => !siteSections.includes(section))) return null
   const coverMessages = validCoverMessages(body.coverMessages)
@@ -90,7 +92,7 @@ function validateSiteConfig(body) {
   if (!storyMessages) return null
   const sectionContent = validSectionContent(body.sectionContent)
   if (!sectionContent) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: body.coverImage || 'wedding-pexels', fontScale: body.fontScale || 'medium', enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent }
 }
 
 function jsonError(context, status, error) {
