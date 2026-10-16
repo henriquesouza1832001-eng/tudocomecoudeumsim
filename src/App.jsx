@@ -432,6 +432,7 @@ function App() {
 
       {view === 'guest' && import.meta.env.DEV && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
       {view === 'dashboard' && <CouplePanel notify={notify} />}
+      {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'couple-signup' && <CoupleSignup />}
       {view === 'email-confirmation' && <CoupleEmailConfirmation />}
       {view === 'password-reset-request' && <PasswordResetRequest />}
@@ -451,7 +452,8 @@ function App() {
 function resolveCurrentView() {
   const path = window.location.pathname
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
-  if (path === '/cadastro' || path === '/criar-site') return 'couple-signup'
+  if (path === '/cadastro') return 'couple-signup'
+  if (path === '/criar-site') return 'public-customizer'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/recuperar-senha') return 'password-reset-request'
   if (path === '/redefinir-senha' || window.location.hash.startsWith('#redefinir-senha/')) return 'password-reset'
@@ -632,17 +634,99 @@ function AccountMfaSetup({ onComplete }) {
   return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><label>Chave do autenticador<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Adicione esta chave em um aplicativo autenticador, como Google Authenticator, Microsoft Authenticator ou Authy.</p><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
 }
 
+const PUBLIC_SITE_DRAFT_KEY = 'wedding-site-customizer-draft'
+
+function readPublicSiteDraft() {
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(PUBLIC_SITE_DRAFT_KEY) || '{}')
+    return draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : {}
+  } catch {
+    return {}
+  }
+}
+
+function createCoupleSlug(firstName, secondName) {
+  return `${firstName}-${secondName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30).replace(/-$/g, '')
+}
+
+function PublicSiteCustomizer() {
+  const savedDraft = readPublicSiteDraft()
+  const [draft, setDraft] = useState(() => ({
+    partnerOneName: '',
+    partnerTwoName: '',
+    eventDate: '',
+    ...savedDraft,
+    siteConfig: { ...DEFAULT_SITE_CONFIG, ...savedDraft.siteConfig, coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...savedDraft.siteConfig?.coverMessages } },
+  }))
+  const [saved, setSaved] = useState(true)
+  const [device, setDevice] = useState('desktop')
+  const theme = THEMES.find((item) => item.id === draft.siteConfig.theme) || THEMES[0]
+  const coverMessage = draft.siteConfig.coverMessages['pt-BR']
+  const dateLabel = draft.eventDate ? new Date(`${draft.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'A data de vocês'
+
+  useEffect(() => {
+    setSaved(false)
+    const timeout = window.setTimeout(() => {
+      window.localStorage.setItem(PUBLIC_SITE_DRAFT_KEY, JSON.stringify(draft))
+      setSaved(true)
+    }, 300)
+    return () => window.clearTimeout(timeout)
+  }, [draft])
+
+  function updateDraft(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  function updateConfig(key, value) {
+    setDraft((current) => ({ ...current, siteConfig: { ...current.siteConfig, [key]: value } }))
+  }
+
+  function toggleSection(section) {
+    const enabledSections = draft.siteConfig.enabledSections.includes(section)
+      ? draft.siteConfig.enabledSections.filter((item) => item !== section)
+      : [...draft.siteConfig.enabledSections, section]
+    updateConfig('enabledSections', enabledSections)
+  }
+
+  return <div className="public-customizer" style={{ '--customizer-ink': theme.colors[0], '--customizer-accent': theme.colors[1], '--customizer-paper': theme.colors[2] }}>
+    <header className="customizer-header"><a className="customizer-brand" href="/" aria-label="e&t sites de casamento">e<span>&amp;</span>t <small>sites de casamento</small></a><div><span role="status">{saved ? 'Rascunho salvo neste aparelho' : 'Salvando…'}</span><a href="/painel">Entrar</a></div></header>
+    <main className="customizer-main">
+      <section className="customizer-intro"><span className="marketing-kicker">UM COMEÇO COM A CARA DE VOCÊS</span><h1>Montem o convite antes de criar a conta.</h1><p>Preencham os primeiros detalhes e vejam o resultado na hora. O rascunho fica guardado neste aparelho.</p></section>
+      <div className="customizer-workspace">
+        <section className="customizer-controls" aria-label="Personalização do convite">
+          <div className="customizer-step"><span>O casal</span><div className="customizer-name-fields"><label>Primeiro nome<input autoComplete="given-name" maxLength="100" value={draft.partnerOneName} onChange={(event) => updateDraft('partnerOneName', event.target.value)} placeholder="Como devemos chamar vocês?" /></label><label>Segundo nome<input autoComplete="additional-name" maxLength="100" value={draft.partnerTwoName} onChange={(event) => updateDraft('partnerTwoName', event.target.value)} placeholder="E a outra pessoa?" /></label></div><label>Data do casamento<input type="date" value={draft.eventDate} onChange={(event) => updateDraft('eventDate', event.target.value)} /></label></div>
+          <div className="customizer-step"><span>O estilo</span><label>Tema<select value={draft.siteConfig.theme} onChange={(event) => updateConfig('theme', event.target.value)}>{THEMES.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="customizer-swatches" aria-label={`Cores do tema ${theme.name}`}>{theme.colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}<span>{theme.note}</span></div><label>Formato da capa<select value={draft.siteConfig.coverLayout} onChange={(event) => updateConfig('coverLayout', event.target.value)}><option value="full">Foto em destaque</option><option value="split">Foto ao lado do texto</option></select></label><label>Frase de abertura<textarea maxLength="240" rows="2" value={coverMessage} onChange={(event) => updateConfig('coverMessages', { ...draft.siteConfig.coverMessages, 'pt-BR': event.target.value })} /></label></div>
+          <div className="customizer-step"><span>O que aparece</span><div className="customizer-section-options">{['Nossa história', 'Eventos', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados'].map((section) => <label key={section}><input type="checkbox" checked={draft.siteConfig.enabledSections.includes(section)} onChange={() => toggleSection(section)} /><span>{section}</span></label>)}</div></div>
+          <a className="customizer-continue" href="/cadastro" onClick={() => window.localStorage.setItem(PUBLIC_SITE_DRAFT_KEY, JSON.stringify(draft))}>Criar acesso e continuar <ArrowRight size={17} /></a>
+          <p className="customizer-note">Nomes, data e escolhas visuais seguem com vocês ao criar o acesso.</p>
+        </section>
+        <section className="customizer-preview" aria-label="Prévia do site dos noivos">
+          <div className="customizer-preview-heading"><span>PRÉVIA DO CONVITE</span><div role="group" aria-label="Tamanho da prévia">{[['desktop', Monitor, 'Computador'], ['tablet', Tablet, 'Tablet'], ['mobile', Smartphone, 'Celular']].map(([size, Icon, label]) => <button key={size} className={device === size ? 'selected' : ''} type="button" aria-label={label} aria-pressed={device === size} onClick={() => setDevice(size)}><Icon size={17} /></button>)}</div></div>
+          <div className={`customizer-browser customizer-${device} customizer-cover-${draft.siteConfig.coverLayout}`}>
+            <div className="customizer-browser-bar"><i /><i /><i /><span>o convite de vocês</span></div>
+            <div className="customizer-live-cover"><img src="/images/wedding-pexels.webp" alt="Casal de noivos em um jardim" /><div><span>{dateLabel}</span><h2>{draft.partnerOneName || 'Nome'} <i>&amp;</i><br />{draft.partnerTwoName || 'Nome'}</h2><p>{coverMessage || 'Uma frase de vocês para quem vai celebrar junto.'}</p><button type="button">Ver o convite <ArrowDown size={14} /></button></div></div>
+            <div className="customizer-live-sections">{draft.siteConfig.enabledSections.map((section) => <span key={section}>{section}</span>)}</div>
+          </div>
+          <p className="customizer-preview-caption">A prévia muda enquanto vocês escolhem. Ela usa fotos e textos de referência.</p>
+        </section>
+      </div>
+    </main>
+    <footer className="customizer-footer"><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
+  </div>
+}
+
 function CoupleSignup() {
+  const publicDraft = readPublicSiteDraft()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
-  const [partnerOneName, setPartnerOneName] = useState('')
-  const [partnerTwoName, setPartnerTwoName] = useState('')
+  const [partnerOneName, setPartnerOneName] = useState(publicDraft.partnerOneName || '')
+  const [partnerTwoName, setPartnerTwoName] = useState(publicDraft.partnerTwoName || '')
   const [coupleType, setCoupleType] = useState('bride-groom')
   const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaReset, setRecaptchaReset] = useState(0)
-  const [slug, setSlug] = useState('')
-  const [eventDate, setEventDate] = useState('')
+  const [slug, setSlug] = useState(createCoupleSlug(publicDraft.partnerOneName || '', publicDraft.partnerTwoName || ''))
+  const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -663,10 +747,11 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, recaptchaToken }),
+        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, siteConfig: publicDraft.siteConfig, recaptchaToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'signup_failed')
+      window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
       setSubmitted(true)
       setPassword('')
       setConfirmation('')

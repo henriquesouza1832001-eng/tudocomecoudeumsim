@@ -423,6 +423,7 @@ app.post('/api/auth/couple-signup', async (context) => {
   const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
   const slug = typeof body?.slug === 'string' ? body.slug.trim().toLowerCase() : ''
   const eventDate = body?.eventDate || null
+  const siteConfig = body?.siteConfig === undefined ? defaultSiteConfig : validateSiteConfig(body.siteConfig)
   const reservedSlugs = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
   const slugIsValid = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(slug) && !reservedSlugs.includes(slug)
   const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
@@ -430,7 +431,7 @@ app.post('/api/auth/couple-signup', async (context) => {
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
   if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
     || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100
-    || !slugIsValid || !dateIsValid) return jsonError(context, 400, 'invalid_signup')
+    || !slugIsValid || !dateIsValid || !siteConfig) return jsonError(context, 400, 'invalid_signup')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
   const recaptcha = await verifyRecaptcha(context, body.recaptchaToken)
@@ -448,8 +449,8 @@ app.post('/api/auth/couple-signup', async (context) => {
     await context.env.DB.batch([
       context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status)
         VALUES (?, ?, ?, 'pending')`).bind(accountId, email, passwordHash),
-      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, timezone, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft')`).bind(weddingId, slug, accountId, partnerOneName, partnerTwoName, eventDate),
+      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, timezone, status, site_config_json)
+        VALUES (?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, partnerOneName, partnerTwoName, eventDate, JSON.stringify(siteConfig)),
       context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status)
         VALUES (?, ?, ?, 'couple_admin', 'pending')`).bind(membershipId, weddingId, accountId),
       context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
