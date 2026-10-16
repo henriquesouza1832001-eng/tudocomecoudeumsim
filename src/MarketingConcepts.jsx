@@ -53,7 +53,7 @@ function ConceptOption({ option }) {
           <span className="concept-kicker">{option.kicker}</span>
           <h3>{option.headline}</h3>
           <p>{option.body}</p>
-          <a className="concept-cta" href="/cadastro">Criar meu site grátis <ArrowRight size={17} /></a>
+          <a className="concept-cta" href="/criar-site">Criar meu site grátis <ArrowRight size={17} /></a>
           <span className="concept-free-note">Sem mensalidade para criar o site. Taxa dos presentes informada antes do pagamento.</span>
         </div>
       </div>

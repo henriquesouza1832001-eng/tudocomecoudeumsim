@@ -451,7 +451,7 @@ function App() {
 function resolveCurrentView() {
   const path = window.location.pathname
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
-  if (path === '/cadastro') return 'couple-signup'
+  if (path === '/cadastro' || path === '/criar-site') return 'couple-signup'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/recuperar-senha') return 'password-reset-request'
   if (path === '/redefinir-senha' || window.location.hash.startsWith('#redefinir-senha/')) return 'password-reset'
@@ -514,7 +514,7 @@ function GuestSite({ theme, setTheme, notify }) {
           <a href="#presentes" onClick={() => setMenuOpen(false)}>Presentes</a>
           <a href="#presenca" onClick={() => setMenuOpen(false)}>Presença</a>
         </nav>
-        <a className="nav-rsvp nav-signup" href="/cadastro">Criar meu site <ArrowRight size={15} /></a>
+        <a className="nav-rsvp nav-signup" href="/criar-site">Criar meu site <ArrowRight size={15} /></a>
       </header>
 
       <section className="guest-hero" id="inicio">
@@ -686,7 +686,7 @@ function CoupleSignup() {
   }
 
   return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Comecem a planejar juntos.'} description={submitted ? `Enviamos um link de confirmação para ${email}. Ele vale por 24 horas.` : 'Crie o acesso do casal e reserve o endereço curto do site de vocês.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o endereço, vocês poderão abrir o painel e configurar um autenticador no primeiro acesso.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o endereço, vocês poderão abrir o painel e configurar um autenticador no primeiro acesso.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/criar-site">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
       <label>E-mail do casal<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
       <fieldset className="couple-type-field"><legend>Como vocês preferem identificar o casal?</legend><div className="couple-type-options">{[['bride-groom', 'Noiva e noivo'], ['two-brides', 'Duas noivas'], ['two-grooms', 'Dois noivos'], ['neutral', 'Nomes neutros']].map(([value, label]) => <label className={coupleType === value ? 'selected' : ''} key={value}><input type="radio" name="couple-type" value={value} checked={coupleType === value} onChange={() => setCoupleType(value)} /><span>{label}</span></label>)}</div></fieldset>
       <div className="signup-name-grid"><label>{({ 'bride-groom': 'Nome da noiva', 'two-brides': 'Nome da primeira noiva', 'two-grooms': 'Nome do primeiro noivo', neutral: 'Nome da pessoa 1' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => { setPartnerOneName(event.target.value); setSlug(createSlug(event.target.value, partnerTwoName)) }} required /></label><label>{({ 'bride-groom': 'Nome do noivo', 'two-brides': 'Nome da segunda noiva', 'two-grooms': 'Nome do segundo noivo', neutral: 'Nome da pessoa 2' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerTwoName} onChange={(event) => { setPartnerTwoName(event.target.value); setSlug(createSlug(partnerOneName, event.target.value)) }} required /></label></div>
@@ -720,7 +720,7 @@ function CoupleEmailConfirmation() {
 
   const verified = status === 'verified'
   return <RoleFrame icon={verified ? Check : Shield} eyebrow="CONFIRMAÇÃO DE E-MAIL" title={status === 'confirming' ? 'Validando seu cadastro.' : verified ? 'Cadastro confirmado.' : 'Este link não está mais válido.'} description={status === 'confirming' ? 'Só um instante enquanto ativamos o acesso do casal.' : verified ? 'Seu espaço está pronto. No primeiro acesso, configure o autenticador para proteger a conta.' : 'O link pode ter expirado ou já ter sido utilizado. Volte ao cadastro para começar novamente.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
-    <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/cadastro">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
+    <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/criar-site">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
   </RoleFrame>
 }
 
@@ -1501,7 +1501,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Cadastrem o casamento</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
