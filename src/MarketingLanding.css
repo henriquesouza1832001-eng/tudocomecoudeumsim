@@ -42,13 +42,14 @@ button { font: inherit; }
 .marketing-photo-previous { left: 14px; }
 .marketing-photo-next { right: 14px; }
 .marketing-hero-copy { width: auto; min-width: 0; position: static; }
-.marketing-kicker { color: #72513b; font: 700 12px/1.5 Arial, sans-serif; letter-spacing: .1em; }
+.marketing-kicker { color: #72513b; font: 600 13px/1.5 Arial, sans-serif; letter-spacing: .025em; }
 .marketing-hero h1 { max-width: 620px; margin: 17px 0 18px; color: #26372f; font: 400 clamp(42px, 5vw, 64px)/1.06 var(--serif); letter-spacing: -.025em; }
 .marketing-hero h1 i, .marketing-intro h2 i { color: inherit; font-style: normal; }
 .marketing-hero-copy > p { max-width: 510px; margin: 0 0 26px; color: #414a43; font: 400 18px/1.65 Arial, sans-serif; }
 .marketing-hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
 .marketing-primary { min-height: 56px; padding: 0 21px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; color: white; background: var(--marketing-green); font-size: 16px; font-weight: 700; transition: background .2s; }
 .marketing-text-link { min-height: 44px; padding: 10px 0; display: inline-flex; align-items: center; gap: 9px; border-bottom: 1px solid var(--marketing-green); color: var(--marketing-green); font-size: 15px; font-weight: 600; }
+.marketing-text-link > svg { display: none; }
 .marketing-caption { max-width: 470px; margin-top: 15px; display: block; color: #515950; font-size: 14px; line-height: 1.5; }
 .marketing-intro { padding: 72px 7% 24px; text-align: center; }
 .marketing-intro h2, .marketing-showcase-copy h2, .marketing-final h2 { margin: 15px 0 17px; color: #27382e; font: 400 clamp(34px, 4vw, 49px)/1.13 var(--serif); letter-spacing: -.02em; }
@@ -59,7 +60,7 @@ button { font: inherit; }
 .marketing-steps article:nth-child(2) { border-color: #eadbd6; background: var(--marketing-blush); }
 .marketing-steps article > div { display: grid; justify-items: start; align-content: start; }
 .marketing-steps article svg { color: var(--marketing-green); }
-.marketing-step-label { margin-top: 15px; color: #72513b; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.marketing-step-label { margin-top: 15px; color: #72513b; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
 .marketing-steps h3 { margin: 8px 0 9px; color: #27382e; font: 400 23px/1.2 var(--serif); }
 .marketing-steps p { max-width: 330px; margin: 0; color: #414a43; font-size: 16px; line-height: 1.6; }
 .marketing-showcase { padding: 76px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 9%; background: #e9eee7; }
@@ -368,8 +369,6 @@ button { font: inherit; }
 .marketing-budget-total { margin: 23px 0 12px; display: grid; gap: 8px; }
 .marketing-budget-total small { color: #646b63; font-size: 14px; }
 .marketing-budget-total strong { color: #27382e; font: 400 38px/1.1 var(--serif); }
-.marketing-budget-total > div { height: 9px; margin: 7px 0 2px; overflow: hidden; border-radius: 9px; background: #ebe8e1; }
-.marketing-budget-total > div > i { width: 65%; height: 100%; display: block; border-radius: inherit; background: #73856d; }
 .marketing-budget-total > span { color: #697067; font-size: 12px; }
 .marketing-budget-row { min-height: 47px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-top: 1px solid #e7e3db; color: #545c54; font-size: 14px; }
 .marketing-budget-row > span { display: inline-flex; align-items: center; gap: 8px; }

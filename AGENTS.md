@@ -467,3 +467,10 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - `npm run lint`, `npm run build` e `git diff --check` passaram antes do push. Commits `6b2b897` e `4577b15` enviados a `origin/main`; Cloudflare Pages confirmou os arquivos publicados.
 - Em 15/10/2026, o commit `70640f5` iniciou essa ordem: o painel abre em Personalizar site, coloca presentes após as áreas operacionais e aplica o par tipográfico escolhido à prévia e ao convite publicado. `npm run lint`, `npm run build` e `git diff --check` passaram; os arquivos de aplicação e estilos foram verificados no Cloudflare Pages.
 - Em 15/10/2026, `/criar-site` abre a personalização pública sem login e salva rascunho local. `/cadastro` cria a conta e grava o conteúdo validado no D1. Não escolher domínio base nem alterar o endereço dos convites nesta etapa.
+
+## Diretriz de comunicação visual e textual
+
+- Para a página inicial, aplicar como referências de revisão os repositórios `miqdadbadjuber/anti-slop`, `petergyang/no-ai-slop` e `conorbronsdon/avoid-ai-writing`.
+- Usar português direto, específico e natural. Evitar frases promocionais genéricas, títulos artificiais em caixa alta, ícones decorativos repetidos e setas em todos os links.
+- Não inventar valores, resultados, nomes, depoimentos, números de uso ou estados de interface para ilustrar recursos. Identificar exemplos visuais como exemplos e usar informações configuradas pelo casal.
+- Preservar a direção aprovada de jardim editorial: fotos de casamento identificadas, tons pastéis, detalhes florais leves, leitura confortável e navegação clara.
