@@ -443,7 +443,7 @@ function App() {
       {view === 'password-reset-request' && <PasswordResetRequest />}
       {view === 'password-reset' && <PasswordReset />}
       {view === 'team-invitation' && <TeamInvitationAcceptance />}
-      {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} />}
+      {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} demo />}
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
       {view === 'godparent' && <GodparentPortal notify={notify} />}
       {view === 'event-staff' && <EventStaffPanel notify={notify} />}
@@ -459,6 +459,7 @@ function resolveCurrentView() {
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
   if (path === '/cadastro') return 'couple-signup'
   if (path === '/criar-site') return 'public-customizer'
+  if (path === '/painel/demo') return 'dashboard-preview'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/recuperar-senha') return 'password-reset-request'
   if (path === '/redefinir-senha' || window.location.hash.startsWith('#redefinir-senha/')) return 'password-reset'
@@ -1629,7 +1630,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -1794,7 +1795,7 @@ function InvitationShare({ share, onClose, notify }) {
   return <section className="role-card invitation-share-card"><div><span className="eyebrow">LINK INDIVIDUAL GERADO</span><h2>{share.name}</h2><p>Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela.</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions"><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><button className="button-outline" onClick={onClose}>Fechar</button></div></div>{qr && <img src={qr} alt={`QR code do convite individual de ${share.name}`} />}</section>
 }
 
-function Dashboard({ theme, setTheme, page, setPage, notify }) {
+function Dashboard({ theme, setTheme, page, setPage, notify, demo = false }) {
   const [guestFilter, setGuestFilter] = useState('Todos')
   const [query, setQuery] = useState('')
   const [gameEnabled, setGameEnabled] = useState(false)
@@ -1816,8 +1817,9 @@ function Dashboard({ theme, setTheme, page, setPage, notify }) {
       </aside>
 
       <div className="dashboard-main">
-        <header className="dashboard-topbar"><div className="dash-breadcrumb"><span>Meu espaço</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div><div className="dash-top-actions"><span className="save-state"><span /> Prévia local</span><button className="icon-button" aria-label="Notificações" onClick={() => notify('Nenhuma notificação de demonstração')}><Bell size={18} /><i /></button><button className="preview-site-button" onClick={() => notify('A prévia pública está na aba Site do casal')}>Ver meu site <ExternalLink size={14} /></button></div></header>
+        <header className="dashboard-topbar"><div className="dash-breadcrumb"><span>Meu espaço</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div><div className="dash-top-actions"><span className="save-state"><span /> Prévia local</span><button className="icon-button" aria-label="Notificações" onClick={() => notify('Nenhuma notificação de demonstração')}><Bell size={18} /><i /></button><button className="preview-site-button" onClick={() => demo ? window.location.assign('/criar-site') : notify('A prévia pública está na aba Site do casal')}>{demo ? 'Personalizar convite' : 'Ver meu site'} <ExternalLink size={14} /></button></div></header>
         <div className="dashboard-content">
+          {demo && <aside className="dashboard-demo-notice"><span><Eye size={17} /> Demonstração do painel</span><p>Explore os menus e personalize um rascunho neste aparelho. Os nomes, números e respostas são exemplos; entrar na conta será necessário para salvar online e publicar.</p><a href="/criar-site">Abrir o personalizador completo <ArrowRight size={14} /></a></aside>}
           <div className="dash-page-head"><div><span className="eyebrow">ÁREA DOS NOIVOS · DEMONSTRAÇÃO</span><h1>{page === 'overview' ? 'Um espaço para organizar tudo.' : pageTitle}</h1><p>{pageSubtitle(page)}</p></div><button className="more-button" onClick={() => notify('Ações de demonstração')}><span>•••</span></button></div>
           {page === 'overview' && <Overview setPage={setPage} notify={notify} />}
           {page === 'site' && <SiteSettings setPage={setPage} notify={notify} />}
