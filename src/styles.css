@@ -534,7 +534,7 @@ img { display: block; max-width: 100%; }
 .browser-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(22,33,26,.62), rgba(31,42,34,.16)); }
 .browser-date, .browser-content > strong, .browser-content > small, .browser-content > button { z-index: 1; }
 .browser-date { margin-bottom: 10px; font-size: 7px; letter-spacing: .18em; }
-.browser-content > strong { font-family: var(--serif); font-size: 38px; font-weight: 400; line-height: .98; text-align: center; }
+.browser-content > strong { font-family: var(--font-heading, var(--serif)); font-size: 38px; font-weight: 400; line-height: .98; text-align: center; }
 .browser-content > strong i { color: var(--accent); font-weight: 400; }
 .browser-content > small { margin-top: 13px; color: rgba(255,255,255,.83); font-family: var(--serif); font-size: 10px; }
 .browser-content > button { margin-top: 15px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.59); color: white; background: transparent; font-size: 7px; }
@@ -934,7 +934,7 @@ img { display: block; max-width: 100%; }
   .walkin-count { font-size: 9px; }
 }
 
-.role-page { min-height: calc(100vh - 48px); display: flex; flex-direction: column; color: var(--ink); background: #f5f3ed; }
+.role-page { min-height: calc(100vh - 48px); display: flex; flex-direction: column; color: var(--ink); background: #f5f3ed; font-family: var(--font-body, Arial, sans-serif); }
 .role-header { min-height: 67px; padding: 0 5.5%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(48,55,47,.1); background: #faf9f5; }
 .role-brand { display: flex; align-items: center; gap: 11px; }
 .role-brand > span { width: 44px; height: 44px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(64,84,71,.23); border-radius: 50%; color: var(--forest); font-family: var(--serif); font-size: 19px; white-space: nowrap; }
@@ -946,11 +946,11 @@ img { display: block; max-width: 100%; }
 .role-intro { margin: 0 auto 26px; max-width: 590px; text-align: center; }
 .role-icon { width: 42px; height: 42px; margin: 0 auto 12px; display: grid; place-items: center; border: 1px solid rgba(64,84,71,.17); border-radius: 50%; color: var(--forest); background: rgba(255,255,255,.45); }
 .role-intro .eyebrow { color: var(--accent); }
-.role-intro h1 { margin: 9px 0; color: var(--ink); font-family: var(--serif); font-size: clamp(30px, 4vw, 43px); font-weight: 400; line-height: 1.1; }
+.role-intro h1 { margin: 9px 0; color: var(--ink); font-family: var(--font-heading, var(--serif)); font-size: clamp(30px, 4vw, 43px); font-weight: 400; line-height: 1.1; }
 .role-intro p { max-width: 500px; margin: 0 auto; color: #77796f; font-size: 11px; line-height: 1.7; }
 .role-card { min-width: 0; padding: 20px; border: 1px solid rgba(48,55,47,.1); background: #fbfaf7; box-shadow: 0 8px 25px rgba(47,53,47,.025); }
 .role-card + .role-card { margin-top: 15px; }
-.role-card h2 { margin: 7px 0 11px; color: var(--ink); font-family: var(--serif); font-size: 21px; font-weight: 400; }
+.role-card h2 { margin: 7px 0 11px; color: var(--ink); font-family: var(--font-heading, var(--serif)); font-size: 21px; font-weight: 400; }
 .role-card p { color: #77796f; font-size: 10px; line-height: 1.7; }
 .role-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .role-card-heading .eyebrow, .role-card > .eyebrow, .walkin-staff-card .eyebrow { color: var(--accent); }
@@ -963,7 +963,7 @@ img { display: block; max-width: 100%; }
 .guest-pass-details { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 9px 20px; }
 .guest-pass-details > span { display: inline-flex; align-items: center; gap: 7px; color: #686e65; font-size: 10px; }
 .guest-pass-details svg { color: var(--forest); }
-.guest-cover-message { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(48,55,47,.1); color: var(--forest); font-family: var(--serif); font-size: 17px; line-height: 1.5; }
+.guest-cover-message { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(48,55,47,.1); color: var(--forest); font-family: var(--font-heading, var(--serif)); font-size: 17px; line-height: 1.5; }
 .guest-gift-list { display: grid; }
 .guest-gift-list article { padding: 12px 0; display: flex; align-items: flex-start; gap: 10px; border-top: 1px solid rgba(48,55,47,.08); }
 .guest-gift-mark { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; color: var(--forest); background: #edf0e8; }
@@ -1600,7 +1600,7 @@ img { display: block; max-width: 100%; }
 .couple-role-page .section-content-editor textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
 .couple-role-page .browser-story-preview { padding: 22px 24px; color: var(--forest); background: var(--paper); }
 .couple-role-page .browser-story-preview > span { color: #72513b; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
-.couple-role-page .browser-story-preview p { margin: 10px 0 0; color: #354239; font: 400 15px/1.65 var(--serif); white-space: pre-wrap; }
+.couple-role-page .browser-story-preview p { margin: 10px 0 0; color: #354239; font: 400 15px/1.65 var(--font-body, var(--serif)); white-space: pre-wrap; }
 .couple-role-page .guest-story-section { border-color: #d9e1d7; background: #f3f5ef; }
 .couple-role-page .guest-story-section p { margin: 12px 0 0; color: #3f4a41; font-size: 16px; line-height: 1.75; white-space: pre-wrap; }
 

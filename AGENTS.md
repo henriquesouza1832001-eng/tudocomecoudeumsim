@@ -360,12 +360,17 @@ A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo 
 
 ## 16. Fases
 
-1. Núcleo: autenticação dos noivos, subdomínio, site personalizável, multi-idioma, RSVP, link curto e QR.
-2. Lista de presentes com ledger, integração com provedor brasileiro de Pix split, política de taxa transparente e conciliação de repasses.
-3. PWA completo, push VAPID e calendário.
-4. Controle de entrada com leitor de QR offline.
-5. Quiz diário.
-6. Empacotamento para as lojas.
+1. Personalização: assistente inicial, tokens de tema e fonte aplicados à prévia e ao convite publicado, conteúdo e seções, mídia, responsividade, rascunho e publicação.
+2. Convidados e convites: lista, grupos, eventos, RSVP, acesso individual por link curto e QR code.
+3. Entrada: leitor de QR para a equipe, funcionamento offline, registro manual de última hora, buffet e exportação de entradas.
+4. Despesas: fornecedores, orçamento, pagamentos, vencimentos e lembretes por e-mail ou push.
+5. Convites físicos e digitais: formatos de impressão em alta resolução, QR estilizado e integração de carteira digital.
+6. Presentes e Pix: catálogo interno, ledger, provedor brasileiro de split, taxas transparentes, repasses e conciliação. Esta etapa vem depois do controle de despesas.
+7. PWA, notificações e calendários: instalação, lembrete personalizado, escolha de calendário e conteúdo por idioma.
+8. Quiz diário.
+9. Empacotamento para as lojas.
+
+Executar em ordem crescente de dependência e esforço, concluindo e validando cada etapa antes de abrir a seguinte. Na interface do painel, deixar personalização como primeira entrada e presentes após planejamento financeiro. Manter exceção manual para convidados de última hora; o fluxo regular de entrada usa QR code.
 
 ## 17. Referências
 
@@ -455,6 +460,8 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - A diretriz mais recente do dono determina que a comunicacao da landing descreva a experiencia completa do produto sem rotulos ou ressalvas de desenvolvimento, pois o lancamento publico ainda sera anunciado por ele. Essa decisao substitui as notas anteriores que pediam omitir recursos futuros.
 - Nao incluir links, catalogos ou produtos de lojas externas. Valores exatos de taxas e afirmacoes comparativas continuam sujeitos a aprovacao comercial.
 - A tela de cadastro recebeu ajuste de escala tipografica e marca; confirmar no Pages que o monograma nao empilha letras em telas estreitas.
+- Em 15/10/2026, o dono reorganizou a entrega por esforço e dependencias: personalizador primeiro; convidados/convites e QR; controle de entrada por QR com excecao manual; despesas antes de presentes; Pix split por ultimo depois de despesas; impressao/carteira digital depois da base de convites.
+- O painel dos noivos agora abre em “Personalizar site” e ordena as abas pelo fluxo, deixando Presentes no fim. Os oito pares tipograficos curados agora fornecem tokens de fonte para a previa do editor e o convite individual publicado, com familias locais do sistema e fallbacks.
 - Em 15/10/2026, o commit `4577b15` publicou a landing completa com blocos de RSVP, presentes Pix, convites digitais/impressos/carteira, check-in com entrada manual e relatorios, despesas e lembretes, PWA e calendario. O rodape tem links internos validos e contatos. O menu mobile permite rolagem horizontal sem estourar a viewport.
 - O mesmo commit atualizou title, description, Open Graph e `public/llms.txt` para refletir a plataforma. Confirmados HTTP 200 na pagina inicial, `/cadastro` e `/llms.txt`; os novos assets e estilos de cadastro estavam presentes no Pages.
 - `npm run lint`, `npm run build` e `git diff --check` passaram antes do push. Commits `6b2b897` e `4577b15` enviados a `origin/main`; Cloudflare Pages confirmou os arquivos publicados.
