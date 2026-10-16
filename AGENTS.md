@@ -415,12 +415,12 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ### Decisoes confirmadas pelo dono
 
-- O dono quer transferir o trabalho para outra conta/Codex. Leia este arquivo e confira o estado do Git antes de alterar algo ou afirmar que esta concluido.
+- O dono retomou o desenvolvimento nesta conversa. Continue o trabalho a partir das fases definidas neste arquivo; nao trate a transferencia anterior como uma pausa vigente.
 - A identidade visual aprovada para a landing e jardim editorial: fotografia de casamento em destaque, tons pasteis e detalhes florais discretos, com texto legivel e navegacao clara.
 - Criar e usar o site e gratuito, sem mensalidade. A lista de presentes e exclusiva da plataforma. Nao incluir links, itens de lojas, catalogos externos, redirecionamentos ou texto que sugira compra fora do site.
 - A receita vira de presentes pagos pela plataforma. Exibir custos e taxa antes da confirmacao quando o pagamento estiver implementado. Nao afirmar que pagamentos, repasses ou split estao prontos sem provar que estao integrados e ativos.
 - Nao publicar recursos como disponiveis se estiverem apenas planejados, demonstrativos ou em desenvolvimento. Se nao estiver pronto, omitir da landing.
-- O dono pediu que a landing descreva diretamente o fluxo de presentes por Pix: o convidado paga dentro do site, a plataforma separa a comissao e transfere o restante aos noivos, com valores e taxas claros antes da confirmacao. Nao usar texto como "estamos estruturando" ou mencionar o estado interno da integracao. Descrever o modelo de produto nao autoriza afirmar que pagamentos ja estao ativos; conferir o estado real antes de dizer que ja podem ser usados.
+- O fluxo de presentes desejado e Pix pago dentro do site, com comissao da plataforma e repasse do restante aos noivos, e valores claros antes da confirmacao. Nao usar texto sobre desenvolvimento interno nem anunciar pagamentos como disponiveis ate a integracao estar concluida e validada.
 - A prioridade e corrigir a porta de entrada e preparar o personalizador para a Fase 1 da secao 7.20. O personalizador deve ser curado e seguro, sem CSS, HTML ou JavaScript livre.
 - O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
 - Nao alterar decisoes aprovadas sem perguntar quando houver uma lacuna material. Nao pedir novamente uma decisao que ja consta neste arquivo.
@@ -430,7 +430,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Repositorio: `https://github.com/henriquesouza1832001-eng/tudocomecoudeumsim.git`.
 - Commit mais recente: `2d9b55b Clarify Pix gifts and wedding site editor`, enviado para `origin/main`. A arvore de trabalho estava limpa no ultimo check.
 - Esse commit alterou `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
-- A landing remove o bloco de itens e links de lojas e os blocos que anunciavam recursos ainda nao prontos. A secao de presentes agora descreve Pix no site, separacao da comissao pela plataforma, transferencia do restante aos noivos e exibicao clara de valores e taxas antes da confirmacao. A decisao do dono e nao falar que a integracao esta "sendo estruturada".
+- A landing removeu links de lojas e blocos que anunciavam recursos ainda nao prontos. O dono determinou que nao se fale em desenvolvimento interno; a landing deve divulgar apenas pagamentos que estejam ativos e validados.
 - O commit adiciona `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
 - O personalizador existente ja tinha escolhas curadas de tema, paleta, par de fontes, layout de capa, idioma, animacao, secoes reordenaveis, rascunho, publicacao e previa de dispositivo. Confira a implementacao antes de descrever o conjunto como completo; parte da previa pode ser apenas visual.
 - `npm run lint` e `npm run build` passaram para o commit `2d9b55b`.
@@ -439,9 +439,18 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 ### Acoes para concluir o trabalho
 
 - Verificar se o Cloudflare Pages publicou `2d9b55b`; se nao, diagnosticar a integracao Git do Pages. Nao fazer deploy manual nem criar pipeline.
-- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas; explicar o fluxo Pix aprovado sem a frase "estamos estruturando"; nao afirmar que check-in, planejamento de fornecedores ou convite para impressao/carteira estao prontos se nao estiverem implementados.
-- O dono disse que o proximo Codex vai conduzir as demais tarefas. Nao continuar a implementacao por conta propria nesta transferencia; usar este arquivo como contexto e prosseguir quando o dono der a proxima instrucao.
+- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas; nao afirmar que Pix, check-in, planejamento de fornecedores ou convite para impressao/carteira estao prontos antes de estarem implementados e validados.
+- O dono pediu para continuar o desenvolvimento seguindo este arquivo. So disponibilize publicamente recursos que estejam concluidos e validados.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
 - O lint e o build deste commit ja passaram; repetir depois de qualquer nova alteracao.
 - Ainda faltam decisoes listadas na secao 18, principalmente dominio base e provedor, contrato e taxas do Pix split. Nao inventar essas informacoes nem implementar recebimentos em producao antes das confirmacoes exigidas na secao 11.
 - Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.
+
+## 20. Atualizacao de desenvolvimento em 15/10/2026
+
+- A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
+- A implementacao local atual adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo. Lint e build passaram depois desta alteracao.
+- O commit `2d9b55b` e o registro `b722f23` estavam em `origin/main` no inicio desta retomada. As alteracoes atuais para conteudo por secao ainda precisam ser revisadas, validadas, commitadas e enviadas ao Git. So considerar publicadas depois de conferir a implantacao do Pages.
+- A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes, site publico completo para cada casal e escolha final de idiomas. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
+- Somente recursos concluidos, utilizaveis e validados devem ser incluidos na landing publica. Nao anunciar ferramentas demonstrativas ou desenvolvimento em andamento como prontas.
+- A landing publica foi atualizada para explicar o fluxo de criacao, personalizacao e confirmacao de presenca, sem divulgar recebimentos Pix ainda nao integrados. Presentes continuam sendo uma diretriz de produto, mas nao devem ser apresentados como pagamento ativo ate a integracao real ser concluida e validada. Nao incluir links ou produtos de lojas externas.

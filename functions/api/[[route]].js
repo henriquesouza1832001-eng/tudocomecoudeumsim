@@ -23,7 +23,7 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {} }
 
 function validCoverMessages(messages) {
   if (messages === undefined) return defaultSiteConfig.coverMessages
@@ -39,6 +39,25 @@ function validStoryMessages(messages) {
   return Object.fromEntries(siteLanguages.map((language) => [language, messages[language].trim()]))
 }
 
+function validSectionContent(content) {
+  if (content === undefined) return defaultSiteConfig.sectionContent
+  if (!content || typeof content !== 'object' || Array.isArray(content) || Object.keys(content).some((section) => !siteSections.includes(section))) return null
+  const result = {}
+  for (const [section, translations] of Object.entries(content)) {
+    if (!translations || typeof translations !== 'object' || Array.isArray(translations) || Object.keys(translations).some((language) => !siteLanguages.includes(language))) return null
+    result[section] = {}
+    for (const language of siteLanguages) {
+      const item = translations[language] || {}
+      if (!item || typeof item !== 'object' || Array.isArray(item) || Object.keys(item).some((key) => !['title', 'body'].includes(key))) return null
+      const title = item.title ?? ''
+      const body = item.body ?? ''
+      if (typeof title !== 'string' || title.length > 120 || typeof body !== 'string' || body.length > 4000) return null
+      result[section][language] = { title: title.trim(), body: body.trim() }
+    }
+  }
+  return result
+}
+
 function parseSiteConfig(value) {
   if (!value || value === '{}') return null
   try {
@@ -51,7 +70,9 @@ function parseSiteConfig(value) {
     if (!coverMessages) return null
     const storyMessages = validStoryMessages(config.storyMessages)
     if (!storyMessages) return null
-    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages }
+    const sectionContent = validSectionContent(config.sectionContent)
+    if (!sectionContent) return null
+    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent }
   } catch {
     return null
   }
@@ -67,7 +88,9 @@ function validateSiteConfig(body) {
   if (!coverMessages) return null
   const storyMessages = validStoryMessages(body.storyMessages)
   if (!storyMessages) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages }
+  const sectionContent = validSectionContent(body.sectionContent)
+  if (!sectionContent) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent }
 }
 
 function jsonError(context, status, error) {
