@@ -1,6 +1,19 @@
-# e&t Sites de casamento
+# e&t Sites de casamento e planejamento
 
-Plataforma para criar sites de casamento responsivos, compartilhar convites por link ou QR code e acompanhar confirmações de presença.
+Plataforma responsiva para organizar o casamento do planejamento ao dia da celebração. Os casais criam um site personalizado, compartilham convites digitais ou impressos e reúnem convidados, presentes e fornecedores em um só lugar.
+
+## Recursos da plataforma
+
+- Site de casamento personalizado com fotografia, temas, paletas, história, galeria, eventos e informações para os convidados.
+- Convites digitais individuais, acesso por link curto e QR code, formatos para impressão e convite guardado em carteira digital.
+- Confirmação de presença por convidado e evento, organização de acompanhantes, famílias e informações para o buffet.
+- Lista de presentes dentro da plataforma, com pagamento por Pix, divisão entre comissão da plataforma e repasse aos noivos e apresentação das taxas antes da confirmação.
+- Controle de entrada da equipe por leitor de QR code, registro manual para convidados de última hora e relatórios de presença.
+- Planejamento financeiro com fornecedores, valores, vencimentos, pagamentos e lembretes.
+- Aplicativo web instalável, notificações e inclusão da data nos calendários Google, Outlook ou Apple.
+- Criação e uso do site sem mensalidade; a plataforma cobra somente quando um presente é pago.
+
+Os presentes são oferecidos exclusivamente dentro da plataforma. Não há links de lojas externas.
 
 ## Páginas
 
