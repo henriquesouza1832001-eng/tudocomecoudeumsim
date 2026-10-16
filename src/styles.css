@@ -1537,6 +1537,8 @@ img { display: block; max-width: 100%; }
 .couple-role-page .section-reorder-controls { gap: 5px; }
 .couple-role-page .section-reorder-controls button { width: 40px; height: 40px; }
 .couple-role-page .section-reorder-controls button svg { width: 18px; height: 18px; }
+.couple-role-page .section-reorder-controls .section-drag-handle { touch-action: none; cursor: grab; color: #54685a; background: #f2f5f0; }
+.couple-role-page .section-reorder-controls .section-drag-handle:active { cursor: grabbing; }
 .couple-role-page .toggle-switch { width: 44px; height: 26px; flex: 0 0 44px; padding: 4px; cursor: pointer; }
 .couple-role-page .toggle-switch i { width: 18px; height: 18px; }
 .couple-role-page .toggle-switch.on i { transform: translateX(18px); }

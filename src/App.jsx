@@ -17,6 +17,7 @@ import {
   Eye,
   ExternalLink,
   Gift,
+  GripVertical,
   Heart,
   House,
   Image,
@@ -1549,6 +1550,8 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
 function CoupleSiteEditor({ wedding, config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
   const [draggedSection, setDraggedSection] = useState('')
+  const pointerDragSection = useRef('')
+  const pointerDropSection = useRef('')
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = [
     theme.colors,
@@ -1593,11 +1596,30 @@ function CoupleSiteEditor({ wedding, config, savedConfig, publishedConfig, publi
     if (position < 0 || target < 0 || target >= config.enabledSections.length) return
     reorderSection(section, config.enabledSections[target])
   }
+  const startPointerDrag = (event, section) => {
+    if (event.pointerType === 'mouse') return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    pointerDragSection.current = section
+    pointerDropSection.current = section
+    setDraggedSection(section)
+  }
+  const updatePointerDrag = (event) => {
+    if (!pointerDragSection.current) return
+    const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-section-id]')
+    if (targetRow) pointerDropSection.current = targetRow.dataset.sectionId
+  }
+  const finishPointerDrag = () => {
+    if (pointerDragSection.current && pointerDropSection.current) reorderSection(pointerDragSection.current, pointerDropSection.current)
+    pointerDragSection.current = ''
+    pointerDropSection.current = ''
+    setDraggedSection('')
+  }
 
   return <div className="customize-layout"><div className="customize-controls">
     <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">RASCUNHO DO CASAMENTO</span><h3>Temas curados</h3></div><span className="step-counter">Temas para escolher</span></div><p>Escolha uma base visual segura. As alterações ficam privadas até publicar.</p><ThemePicker theme={config.theme} setTheme={(value) => update({ theme: value, paletteIndex: 0 })} compact /><div className="palette-picker"><div className="palette-heading"><strong>Paletas deste tema</strong><small>Combinações curadas</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${index + 1}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div><label className="font-pair-label">Par de fontes<select value={config.fontPair} onChange={(event) => update({ fontPair: event.target.value })}><option>Clássico editorial</option><option>Romântico leve</option><option>Moderno sem serifa</option><option>Elegante de alto contraste</option><option>Contemporâneo humanista</option><option>Floral delicado</option><option>Minimalista geométrico</option><option>Rústico acolhedor</option></select></label></section>
     <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CAPA DO CONVITE</span><h3>Escolha um layout</h3></div><span className="step-counter">Modelos de capa</span></div><div className="cover-layout-grid">{layoutNames.map((layout) => <button type="button" key={layout.id} className={config.coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })} aria-pressed={config.coverLayout === layout.id}><span className={`layout-thumb layout-thumb-${layout.id}`}><i /><b /><em /></span><small>{layout.label}</small></button>)}</div></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO</span><h3>Seções do site</h3></div><span className="section-count">{config.enabledSections.length} ativas</span></div><p>Arraste para organizar as seções. Use os botões de ordem se preferir o teclado ou a tela sensível ao toque.</p><div className="toggle-list">{orderedSections.map((section) => { const active = config.enabledSections.includes(section); const position = config.enabledSections.indexOf(section); return <div className={`toggle-row${draggedSection === section ? ' dragging' : ''}`} key={section} draggable={active} onDragStart={(event) => { setDraggedSection(section); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', section) }} onDragOver={(event) => { if (active) event.preventDefault() }} onDrop={(event) => { event.preventDefault(); if (active && draggedSection) reorderSection(draggedSection, section); setDraggedSection('') }} onDragEnd={() => setDraggedSection('')}><span className="toggle-name">{section}{section === 'Quiz dos noivos' && <small>Opcional</small>}</span>{active && <span className="section-reorder-controls"><button type="button" aria-label={`Mover ${section} para cima`} disabled={position === 0} onClick={() => moveSection(section, -1)}><ArrowUp size={17} /></button><button type="button" aria-label={`Mover ${section} para baixo`} disabled={position === config.enabledSections.length - 1} onClick={() => moveSection(section, 1)}><ArrowDown size={17} /></button></span>}<button type="button" className={`toggle-switch ${active ? 'on' : ''}`} aria-label={`${active ? 'Desativar' : 'Ativar'} ${section}`} aria-pressed={active} onClick={() => toggleSection(section)}><i /></button></div>})}</div></section>
+    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO</span><h3>Seções do site</h3></div><span className="section-count">{config.enabledSections.length} ativas</span></div><p>Arraste para organizar as seções. Use os botões para reorganizar com teclado ou toque.</p><div className="toggle-list">{orderedSections.map((section) => { const active = config.enabledSections.includes(section); const position = config.enabledSections.indexOf(section); return <div className={`toggle-row${draggedSection === section ? ' dragging' : ''}`} key={section} data-section-id={section} draggable={active} onDragStart={(event) => { setDraggedSection(section); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', section) }} onDragOver={(event) => { if (active) event.preventDefault() }} onDrop={(event) => { event.preventDefault(); if (active && draggedSection) reorderSection(draggedSection, section); setDraggedSection('') }} onDragEnd={() => setDraggedSection('')}><span className="toggle-name">{section}{section === 'Quiz dos noivos' && <small>Opcional</small>}</span>{active && <span className="section-reorder-controls"><button type="button" className="section-drag-handle" aria-label={`Arraste ${section} para reordenar`} onPointerDown={(event) => startPointerDrag(event, section)} onPointerMove={updatePointerDrag} onPointerUp={finishPointerDrag} onPointerCancel={finishPointerDrag}><GripVertical size={18} /></button><button type="button" aria-label={`Mover ${section} para cima`} disabled={position === 0} onClick={() => moveSection(section, -1)}><ArrowUp size={17} /></button><button type="button" aria-label={`Mover ${section} para baixo`} disabled={position === config.enabledSections.length - 1} onClick={() => moveSection(section, 1)}><ArrowDown size={17} /></button></span>}<button type="button" className={`toggle-switch ${active ? 'on' : ''}`} aria-label={`${active ? 'Desativar' : 'Ativar'} ${section}`} aria-pressed={active} onClick={() => toggleSection(section)}><i /></button></div>})}</div></section>
     <section className="dash-card customize-card animation-card"><div className="card-heading"><div><span className="eyebrow">MOVIMENTO E IDIOMA</span><h3>Preferências do convite</h3></div><Sparkles size={17} /></div><div className="segmented-control">{['Suave', 'Elegante', 'Festivo', 'Nenhum'].map((preset) => <button type="button" key={preset} className={config.animationPreset === preset ? 'selected' : ''} onClick={() => update({ animationPreset: preset })}>{preset}</button>)}</div><label className="font-pair-label">Idioma principal<select value={config.language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label></section>
     <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">TEXTO DA CAPA</span><h3>Mensagem do convite</h3></div></div><p>Escreva uma mensagem por idioma. Ela aparece na prévia e no convite publicado.</p>{[['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']].map(([language, label]) => <label className="font-pair-label" key={language}>{label}<textarea rows="2" maxLength="240" value={config.coverMessages?.[language] || ''} onChange={(event) => update({ coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...config.coverMessages, [language]: event.target.value } })} /></label>)}</section>
     <div className="site-editor-actions"><button className="button-primary save-customize" onClick={onSave} disabled={saving || !draftChanged}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={onPublish} disabled={saving}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar site'}</button></div>
