@@ -39,7 +39,7 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 14. Multi-idioma.
 15. Cada casal tem seu subdomínio.
 16. Cobrança por taxa por presente.
-17. Lista de presentes de lojas começa com links externos para a página de compra. Integrações por API serão avaliadas e adicionadas uma loja por vez, após confirmar acesso, autorização comercial, dados de preço e disponibilidade e forma de atualização. Não prometer estoque ou atualização em tempo real sem suporte técnico do parceiro.
+17. A lista de presentes é exclusiva da plataforma. Não incluir links, catálogos ou redirecionamentos para lojas externas. O casal usa o site gratuitamente; a plataforma cobra somente pelos presentes pagos nela, com os valores e taxas apresentados antes da confirmação.
 18. Meta comercial: cobrar menos que sites de casamento comparáveis. Não publicar afirmação comparativa nem taxa específica até aprovar a política de preços e comparar o mesmo meio de pagamento, quem paga a tarifa, processamento, mínimos e repasses.
 19. O painel deve ajudar o casal a planejar despesas com fornecedores, registrar valores e vencimentos e configurar lembretes mensais por e-mail ou push. Não apresentar esse recurso como disponível antes da implementação.
 20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
@@ -375,7 +375,7 @@ Brasil
 - Casar.com: lista de presentes em dinheiro com saque por Pix e itens editáveis. Levantamento deles indica que 74% dos casais preferem lista convertida em dinheiro. Referência principal de modelo de negócio e taxa.
 - iCasei: site completo com lista, enquetes, contagem regressiva e mural de recados.
 - Wedy: layout moderno, confirmação de presença por WhatsApp e formas de arrecadar dinheiro.
-- Casamentos.com.br: site de casamento com lista de presentes e link externo.
+- Lista de presentes exclusiva da plataforma, vinculada ao convite do casal.
 - Padrões a seguir: lista de presentes para todos os bolsos, opção de lua de mel, resgate via Pix, confirmação pelo WhatsApp.
 
 Internacional (design e produto)
@@ -408,3 +408,40 @@ Stripe
 - Idiomas finais: pt-BR, en e es.
 - Referências próprias do dono do projeto, a enviar.
 - Serviço de e-mail transacional para verificação de conta e recuperação de senha.
+
+## 19. Estado para continuidade em outro Codex
+
+Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o trabalho for validado, enviado ou publicado. Elas nao substituem as diretrizes anteriores.
+
+### Decisoes confirmadas pelo dono
+
+- O dono quer transferir o trabalho para outra conta/Codex. Leia este arquivo e confira o estado do Git antes de alterar algo ou afirmar que esta concluido.
+- A identidade visual aprovada para a landing e jardim editorial: fotografia de casamento em destaque, tons pasteis e detalhes florais discretos, com texto legivel e navegacao clara.
+- Criar e usar o site e gratuito, sem mensalidade. A lista de presentes e exclusiva da plataforma. Nao incluir links, itens de lojas, catalogos externos, redirecionamentos ou texto que sugira compra fora do site.
+- A receita vira de presentes pagos pela plataforma. Exibir custos e taxa antes da confirmacao quando o pagamento estiver implementado. Nao afirmar que pagamentos, repasses ou split estao prontos sem provar que estao integrados e ativos.
+- Nao publicar recursos como disponiveis se estiverem apenas planejados, demonstrativos ou em desenvolvimento. Se nao estiver pronto, omitir da landing.
+- O dono pediu que a landing descreva diretamente o fluxo de presentes por Pix: o convidado paga dentro do site, a plataforma separa a comissao e transfere o restante aos noivos, com valores e taxas claros antes da confirmacao. Nao usar texto como "estamos estruturando" ou mencionar o estado interno da integracao. Descrever o modelo de produto nao autoriza afirmar que pagamentos ja estao ativos; conferir o estado real antes de dizer que ja podem ser usados.
+- A prioridade e corrigir a porta de entrada e preparar o personalizador para a Fase 1 da secao 7.20. O personalizador deve ser curado e seguro, sem CSS, HTML ou JavaScript livre.
+- O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
+- Nao alterar decisoes aprovadas sem perguntar quando houver uma lacuna material. Nao pedir novamente uma decisao que ja consta neste arquivo.
+
+### Estado local conhecido antes da transferencia
+
+- Repositorio: `https://github.com/henriquesouza1832001-eng/tudocomecoudeumsim.git`.
+- Ultimo commit conhecido: `006062d Add touch reordering to site editor`.
+- O checkout local tinha alteracoes nao commitadas em `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
+- As alteracoes locais removem da landing o bloco de itens e links de lojas e os blocos que anunciavam recursos ainda nao prontos; deixam a lista de presentes como parte da plataforma e dizem que o uso do site nao tem mensalidade. Confira a redacao para nao prometer pagamento ou taxa ja operacional.
+- As alteracoes locais adicionam `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
+- O personalizador existente ja tinha escolhas curadas de tema, paleta, par de fontes, layout de capa, idioma, animacao, secoes reordenaveis, rascunho, publicacao e previa de dispositivo. Confira a implementacao antes de descrever o conjunto como completo; parte da previa pode ser apenas visual.
+- `npm run lint` e `npm run build` foram iniciados, mas as execucoes foram interrompidas pelo usuario. Nao existe resultado final de validacao para as alteracoes locais.
+- Essas alteracoes ainda nao foram commitadas, enviadas ao GitHub nem confirmadas no Cloudflare Pages. Nao informar que o novo conteudo esta publicado.
+
+### Acoes para concluir o trabalho
+
+- Revisar `git status` e o diff dos seis arquivos acima; manter as mudancas validas e corrigir erros ou textos que sugiram funcionalidade indisponivel.
+- Confirmar que a landing nao tem links, catalogos ou redirecionamentos de lojas, nem afirma que check-in, planejamento de fornecedores, convite para impressao/carteira ou split Pix estao prontos quando nao estiverem implementados.
+- Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
+- Executar `npm run lint` e `npm run build`, conforme as regras de trabalho. Registrar o resultado real e corrigir falhas.
+- So entao criar commit e enviar ao repositorio. O Cloudflare Pages publica pela integracao Git; nao criar pipeline nem deploy manual. Aguardar e verificar a publicacao remota antes de compartilhar um link como atualizado.
+- Ainda faltam decisoes listadas na secao 18, principalmente dominio base e provedor, contrato e taxas do Pix split. Nao inventar essas informacoes nem implementar recebimentos em producao antes das confirmacoes exigidas na secao 11.
+- Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.

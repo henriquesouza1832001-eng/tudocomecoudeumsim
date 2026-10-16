@@ -182,40 +182,15 @@ button { font: inherit; }
 .marketing-showcase-photo { overflow: visible; }
 .marketing-showcase-photo img { border: 8px solid #fffdf9; box-shadow: 0 14px 36px rgba(41,48,40,.1); }
 .marketing-showcase-photo > .marketing-flower-showcase { left: auto; padding: 9px; color: #8e9c88; background: #fbfaf6; font-size: initial; line-height: normal; }
-.marketing-gifts { background: #fcfaf5; }
-.marketing-gift-note { border-color: #d8e0d5; background: #edf2eb; }
-.marketing-gift-flow { position: relative; border-color: #e0d4c8; background: #f7f2e9; }
-.marketing-gift-flow::after { width: 40px; height: 40px; position: absolute; top: -19px; right: 24px; content: ''; border: 1px solid #d4c0ad; border-radius: 50%; background: #f7f2e9; }
-.marketing-store-links { background: #edf1eb; }
-.marketing-store-card { border-color: #d7dfd5; background: rgba(255,255,255,.76); }
-.marketing-planning { padding: 82px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1fr) minmax(330px,.9fr); align-items: center; gap: clamp(36px,7vw,90px); background: #f5e9e6; }
-.marketing-planning-copy h2, .marketing-invites-copy h2, .marketing-entry-copy h2 { margin: 14px 0 17px; color: #27382e; font: 400 clamp(36px,4.2vw,50px)/1.12 var(--serif); letter-spacing: -.02em; }
-.marketing-planning-copy > p, .marketing-invites-copy > p, .marketing-entry-copy > p { margin: 0; color: #414a43; font-size: 17px; line-height: 1.7; }
-.marketing-status { min-height: 42px; width: fit-content; margin-top: 22px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d8c9bd; color: #654f40; background: rgba(255,255,255,.56); font-size: 13px; font-weight: 700; line-height: 1.4; }
-.marketing-planning-cards { display: grid; gap: 12px; }
-.marketing-planning-cards article { min-height: 118px; padding: 20px; display: grid; grid-template-columns: 42px minmax(0,1fr); align-content: center; column-gap: 13px; border: 1px solid #e0d5ce; background: rgba(255,255,255,.68); }
-.marketing-planning-cards article > span { width: 40px; height: 40px; grid-row: span 2; display: grid; place-items: center; border: 1px solid #d9dfd5; border-radius: 50%; color: #536a57; background: white; }
-.marketing-planning-cards strong { align-self: end; color: #293a31; font: 400 20px/1.25 var(--serif); }
-.marketing-planning-cards small { margin-top: 4px; color: #4d554e; font-size: 14px; line-height: 1.5; }
-.marketing-invites { padding: 86px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: clamp(42px,8vw,100px); background: #fbfaf6; }
-.marketing-invites-photo { min-width: 0; position: relative; }
-.marketing-invites-photo > picture { display: block; }
-.marketing-invites-photo img { width: 100%; aspect-ratio: 1.22; display: block; object-fit: cover; border: 8px solid #fff; box-shadow: 0 14px 36px rgba(41,48,40,.1); }
-.marketing-invite-stamp { width: 112px; height: 112px; position: absolute; right: -22px; bottom: -25px; display: grid; align-content: center; justify-items: center; gap: 6px; border: 1px solid #d5bca4; border-radius: 50%; color: #74553f; background: #f5eee4; transform: rotate(8deg); }
-.marketing-invite-stamp span { font: 400 15px/1.2 var(--serif); }
-.marketing-invite-features { margin-top: 20px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
-.marketing-invite-features span { min-height: 60px; padding: 9px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 5px; border: 1px solid #e1ded5; color: #405849; background: #f4f2ec; font-size: 12px; font-weight: 700; line-height: 1.35; }
-.marketing-entry { padding: 78px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1fr) minmax(290px,.8fr); align-items: center; gap: clamp(38px,8vw,100px); background: #edf1eb; }
-.marketing-entry-copy ul { margin: 20px 0 0; padding: 0; display: grid; gap: 12px; list-style: none; }
-.marketing-entry-copy li { display: flex; align-items: center; gap: 9px; color: #35463a; font-size: 15px; line-height: 1.5; }
-.marketing-entry-copy li svg { flex: 0 0 auto; color: #4f6855; }
-.marketing-entry-card { min-height: 280px; padding: 27px; display: grid; align-content: start; justify-items: start; gap: 16px; border: 1px solid #d8e0d6; background: #fffdf9; box-shadow: 0 12px 32px rgba(41,48,40,.07); }
-.marketing-entry-card > span:first-child { width: 54px; height: 54px; display: grid; place-items: center; border: 1px solid #d6dfd4; border-radius: 50%; color: #526b58; background: #f0f3ed; }
-.marketing-entry-card > div { display: grid; gap: 8px; }
-.marketing-entry-card strong { font: 400 25px/1.2 var(--serif); }
-.marketing-entry-card small { color: #4c574e; font-size: 15px; line-height: 1.6; }
-.marketing-entry-rule { margin-top: auto; padding-top: 13px; display: flex; align-items: flex-start; gap: 8px; border-top: 1px solid #e1e4dd; color: #526156; font-size: 13px; line-height: 1.5; }
-.marketing-entry-rule svg { flex: 0 0 auto; color: #536c58; }
+.marketing-platform-gifts { padding: 78px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1.15fr) minmax(280px,.85fr); align-items: center; gap: 8%; background: #edf1eb; }
+.marketing-platform-gifts h2 { max-width: 650px; margin: 15px 0 19px; color: #27382e; font: 400 clamp(36px,4.2vw,51px)/1.12 var(--serif); letter-spacing: -.02em; }
+.marketing-platform-gifts > div:first-child p { max-width: 620px; margin: 0 0 15px; color: #414a43; font-size: 17px; line-height: 1.7; }
+.marketing-platform-gifts-card { min-height: 235px; padding: 28px; display: grid; align-content: center; justify-items: start; gap: 15px; border: 1px solid #d7dfd5; background: rgba(255,255,255,.78); }
+.marketing-platform-gifts-card > span { width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #d8dfd6; border-radius: 50%; color: #405849; background: #fffefa; }
+.marketing-platform-gifts-card strong { color: #26372f; font: 400 25px/1.25 var(--serif); }
+.marketing-platform-gifts-card p { margin: 0; color: #414a43; font-size: 15px; line-height: 1.6; }
+.marketing-platform-gifts-card small { padding-top: 12px; border-top: 1px solid #d9e0d7; color: #405849; font-size: 14px; font-weight: 700; }
+.marketing-platform-gifts-card > p { margin: 0; }
 .marketing-footer { background: #f4f0e8; }
 
 @media (max-width: 760px) {
@@ -226,23 +201,6 @@ button { font: inherit; }
   .marketing-hero-copy { order: 2; }
   .marketing-flower-hero { width: 47px; height: 47px; right: 23px; }
   .marketing-hero::before { width: 130px; height: 130px; top: 9px; right: -40px; }
-  .marketing-planning, .marketing-invites, .marketing-entry { padding: 54px 7%; grid-template-columns: 1fr; gap: 27px; }
-  .marketing-planning-copy h2, .marketing-invites-copy h2, .marketing-entry-copy h2 { font-size: clamp(34px,8vw,42px); }
-  .marketing-planning-copy > p, .marketing-invites-copy > p, .marketing-entry-copy > p { font-size: 16px; }
-  .marketing-planning-cards article { min-height: 106px; }
-  .marketing-invites-photo { order: 1; }
-  .marketing-invites-copy { order: 2; }
-  .marketing-invites-photo img { aspect-ratio: 1.1; }
-  .marketing-invite-stamp { width: 94px; height: 94px; right: -7px; bottom: -18px; }
-  .marketing-invite-stamp svg { width: 21px; height: 21px; }
-  .marketing-invite-features { gap: 7px; }
-  .marketing-invite-features span { min-height: 66px; font-size: 11px; }
-  .marketing-entry-card { min-height: 0; }
-}
-
-@media (max-width: 390px) {
-  .marketing-invite-features { grid-template-columns: 1fr; }
-  .marketing-invite-features span { min-height: 44px; flex-direction: row; justify-content: flex-start; align-items: center; gap: 8px; font-size: 13px; }
 }
 
 .marketing-hero { min-height: 610px; }
@@ -259,35 +217,8 @@ button { font: inherit; }
 .marketing-steps p { max-width: 320px; }
 .marketing-showcase { min-height: 550px; }
 .marketing-showcase-copy h2 { max-width: 510px; }
-.marketing-gifts { padding: 96px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1.05fr) minmax(330px,.85fr); align-items: center; gap: clamp(42px,8vw,110px); background: #fbfaf6; }
-.marketing-gifts-copy h2, .marketing-store-links h2 { max-width: 580px; margin: 15px 0 19px; color: #27382e; font: 400 clamp(36px,4.2vw,51px)/1.12 var(--serif); letter-spacing: -.02em; }
-.marketing-gifts-copy > p, .marketing-store-links > div:first-child p { max-width: 590px; margin: 0 0 15px; color: #414a43; font-size: 17px; line-height: 1.7; }
-.marketing-gift-note { margin-top: 24px; padding: 17px 18px; display: flex; align-items: flex-start; gap: 13px; color: #34483a; border: 1px solid #d9e2d8; background: #f1f4ef; font-size: 15px; line-height: 1.55; }
-.marketing-gift-note svg { flex: 0 0 auto; color: #405849; }
-.marketing-gift-flow { padding: 30px; border: 1px solid #d9d5ca; background: #f7f4ef; box-shadow: 0 16px 45px rgba(41,48,40,.07); }
-.marketing-flow-label { margin-bottom: 22px; color: #72513b; font-size: 11px; font-weight: 700; letter-spacing: .12em; line-height: 1.5; }
-.marketing-flow-step { display: flex; align-items: center; gap: 15px; }
-.marketing-flow-icon { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #d8dfd6; border-radius: 50%; color: #405849; background: #fffefa; }
-.marketing-flow-step > div { display: grid; gap: 4px; }
-.marketing-flow-step strong { color: #26372f; font-size: 16px; line-height: 1.4; }
-.marketing-flow-step small { color: #5b625b; font-size: 14px; line-height: 1.45; }
-.marketing-flow-connector { height: 30px; margin-left: 23px; border-left: 1px solid #aab9aa; }
-.marketing-flow-connector span { width: 6px; height: 6px; display: block; margin-left: -4px; border-radius: 50%; background: #a77d62; }
-.marketing-flow-footer { margin-top: 24px; padding-top: 17px; color: #4e5d51; border-top: 1px solid #d9d5ca; font: 400 17px/1.45 var(--serif); }
-.marketing-store-links { padding: 76px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1.2fr) minmax(270px,.8fr); align-items: center; gap: 8%; background: #e9eee7; }
-.marketing-store-links h2 { max-width: 620px; font-size: clamp(34px,4vw,46px); }
-.marketing-store-card { min-height: 200px; padding: 26px; display: grid; align-content: start; justify-items: start; gap: 14px; border: 1px solid #d4ddd2; background: rgba(255,255,255,.62); }
-.marketing-store-card svg { color: #405849; }
-.marketing-store-card strong { color: #26372f; font: 400 22px/1.25 var(--serif); }
-.marketing-store-card span { color: #414a43; font-size: 15px; line-height: 1.6; }
 .marketing-final-note { max-width: 600px; margin-top: 17px; color: #515950; font-size: 15px; line-height: 1.55; }
 .marketing-page main > section { scroll-margin-top: 28px; }
-.marketing-store-card { min-height: 0; align-content: stretch; gap: 9px; }
-.marketing-store-card-top { width: 100%; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; color: #405849; }
-.marketing-store-card-top span { color: #72513b; font-size: 11px; font-weight: 700; letter-spacing: .1em; }
-.marketing-store-name { color: #5b625b; font-size: 14px; }
-.marketing-store-card b { color: #26372f; font: 400 30px/1.2 var(--serif); }
-.marketing-store-card small { margin-top: 5px; padding-top: 13px; color: #5b625b; border-top: 1px solid #d9e0d7; font-size: 13px; line-height: 1.5; }
 .marketing-guest-journey { padding: 88px max(8vw, calc((100vw - 1160px) / 2)); background: #fbfaf6; }
 .marketing-journey-heading { max-width: 760px; margin: 0 auto 37px; text-align: center; }
 .marketing-journey-heading h2, .marketing-faq-heading h2 { margin: 13px 0 15px; color: #27382e; font: 400 clamp(36px,4.2vw,50px)/1.12 var(--serif); letter-spacing: -.02em; }
@@ -330,20 +261,13 @@ button { font: inherit; }
   .marketing-hero h1 { font-size: clamp(39px,9vw,49px); }
   .marketing-intro { padding-top: 60px; }
   .marketing-steps article { min-height: 0; padding: 22px; }
-  .marketing-gifts { padding: 58px 7%; grid-template-columns: 1fr; gap: 30px; }
-  .marketing-gifts-copy h2 { font-size: clamp(35px,8vw,43px); }
-  .marketing-gifts-copy > p { font-size: 16px; }
-  .marketing-gift-flow { padding: 24px 20px; }
-  .marketing-flow-step strong { font-size: 15px; }
-  .marketing-flow-step small { font-size: 13px; }
-  .marketing-store-links { padding: 55px 7%; grid-template-columns: 1fr; gap: 25px; }
-  .marketing-store-links h2 { font-size: clamp(34px,8vw,42px); }
-  .marketing-store-links > div:first-child p { font-size: 16px; }
-  .marketing-store-card { min-height: 0; padding: 22px; }
+  .marketing-platform-gifts { padding: 58px 7%; grid-template-columns: 1fr; gap: 25px; }
+  .marketing-platform-gifts h2 { font-size: clamp(34px,8vw,42px); }
+  .marketing-platform-gifts > div:first-child p { font-size: 16px; }
+  .marketing-platform-gifts-card { min-height: 0; padding: 22px; }
   .marketing-final-note { max-width: 430px; font-size: 14px; }
 }
 
 @media (max-width: 430px) {
   .marketing-header nav a:nth-child(3) { display: none; }
-  .marketing-gift-note { padding: 14px; font-size: 14px; }
 }

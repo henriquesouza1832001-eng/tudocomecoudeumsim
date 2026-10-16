@@ -1568,6 +1568,12 @@ img { display: block; max-width: 100%; }
 .couple-role-page .device-mobile .browser-content { min-height: 370px; height: 370px; }
 .couple-role-page .device-mobile .browser-content > strong { font-size: 32px; }
 .couple-role-page .device-mobile .browser-content > small { font-size: 12px; }
+.couple-role-page .couple-story-editor textarea { min-height: 118px; resize: vertical; line-height: 1.6; }
+.couple-role-page .browser-story-preview { padding: 22px 24px; color: var(--forest); background: var(--paper); }
+.couple-role-page .browser-story-preview > span { color: #72513b; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
+.couple-role-page .browser-story-preview p { margin: 10px 0 0; color: #354239; font: 400 15px/1.65 var(--serif); white-space: pre-wrap; }
+.couple-role-page .guest-story-section { border-color: #d9e1d7; background: #f3f5ef; }
+.couple-role-page .guest-story-section p { margin: 12px 0 0; color: #3f4a41; font-size: 16px; line-height: 1.75; white-space: pre-wrap; }
 
 @media (max-width: 900px) {
   .couple-role-page .customize-layout { grid-template-columns: minmax(0, 1fr); }
