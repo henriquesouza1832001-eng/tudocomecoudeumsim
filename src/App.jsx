@@ -1045,6 +1045,9 @@ function CouplePanel({ notify }) {
   const [sitePublishedAt, setSitePublishedAt] = useState(null)
   const [siteConfigLoading, setSiteConfigLoading] = useState(false)
   const [tab, setTab] = useState(() => window.location.hash === '#equipe' ? 'team' : 'site')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const mobileNavToggleRef = useRef(null)
+  const mobileNavRef = useRef(null)
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -1702,6 +1705,31 @@ function CouplePanel({ notify }) {
     }
   }
 
+  function closeMobileNav() {
+    setMobileNavOpen(false)
+    if (window.matchMedia('(max-width: 760px)').matches) mobileNavToggleRef.current?.focus()
+  }
+
+  function selectPanelTab(nextTab) {
+    setTab(nextTab)
+    closeMobileNav()
+  }
+
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    mobileNavRef.current?.querySelector('button.selected')?.focus()
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeMobileNav()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [mobileNavOpen])
+
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
     <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
@@ -1713,16 +1741,19 @@ function CouplePanel({ notify }) {
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     {!isEditor && <div className="role-stat-grid"><div className="role-stat"><span>Convidados</span><strong>{guests.length}</strong></div><div className="role-stat"><span>Grupos</span><strong>{groups.length}</strong></div><div className="role-stat"><span>Eventos</span><strong>{events.length}</strong></div></div>}
-    <nav className="couple-panel-tabs" aria-label="Áreas do casamento">
-      <button className={tab === 'site' ? 'selected' : ''} aria-current={tab === 'site' ? 'page' : undefined} onClick={() => setTab('site')}><Paintbrush size={18} />Personalizar</button>
-      {(isEditor || !isReader) && <button className={tab === 'events' ? 'selected' : ''} aria-current={tab === 'events' ? 'page' : undefined} onClick={() => setTab('events')}><CalendarDays size={18} />Eventos</button>}
+    <button ref={mobileNavToggleRef} type="button" className="couple-mobile-menu-toggle" aria-expanded={mobileNavOpen} aria-controls="couple-panel-tabs" onClick={() => setMobileNavOpen(true)}><Menu size={19} />Navegação do casamento</button>
+    {mobileNavOpen && <button type="button" className="couple-mobile-nav-backdrop" aria-label="Fechar navegação" onClick={closeMobileNav} />}
+    <nav id="couple-panel-tabs" ref={mobileNavRef} className={`couple-panel-tabs${mobileNavOpen ? ' mobile-open' : ''}`} aria-label="Áreas do casamento">
+      <div className="couple-mobile-nav-heading"><strong>Áreas do casamento</strong><button type="button" aria-label="Fechar menu" onClick={closeMobileNav}><X size={20} /></button></div>
+      <button className={tab === 'site' ? 'selected' : ''} aria-current={tab === 'site' ? 'page' : undefined} onClick={() => selectPanelTab('site')}><Paintbrush size={18} />Personalizar</button>
+      {(isEditor || !isReader) && <button className={tab === 'events' ? 'selected' : ''} aria-current={tab === 'events' ? 'page' : undefined} onClick={() => selectPanelTab('events')}><CalendarDays size={18} />Eventos</button>}
       {!isEditor && <>
-        <button className={tab === 'guests' ? 'selected' : ''} aria-current={tab === 'guests' ? 'page' : undefined} onClick={() => setTab('guests')}><Users size={18} />Convidados</button>
-        <button className={tab === 'groups' ? 'selected' : ''} aria-current={tab === 'groups' ? 'page' : undefined} onClick={() => setTab('groups')}><Users size={18} />Grupos</button>
-        <button className={tab === 'team' ? 'selected' : ''} aria-current={tab === 'team' ? 'page' : undefined} onClick={() => setTab('team')}><Shield size={18} />Equipe</button>
-        <button className={tab === 'godparents' ? 'selected' : ''} aria-current={tab === 'godparents' ? 'page' : undefined} onClick={() => setTab('godparents')}><Heart size={18} />Padrinhos</button>
-        <button className={tab === 'memories' ? 'selected' : ''} aria-current={tab === 'memories' ? 'page' : undefined} onClick={() => setTab('memories')}><Camera size={18} />Álbum</button>
-        <button className={tab === 'gifts' ? 'selected' : ''} aria-current={tab === 'gifts' ? 'page' : undefined} onClick={() => setTab('gifts')}><Gift size={18} />Presentes</button>
+        <button className={tab === 'guests' ? 'selected' : ''} aria-current={tab === 'guests' ? 'page' : undefined} onClick={() => selectPanelTab('guests')}><Users size={18} />Convidados</button>
+        <button className={tab === 'groups' ? 'selected' : ''} aria-current={tab === 'groups' ? 'page' : undefined} onClick={() => selectPanelTab('groups')}><Users size={18} />Grupos</button>
+        <button className={tab === 'team' ? 'selected' : ''} aria-current={tab === 'team' ? 'page' : undefined} onClick={() => selectPanelTab('team')}><Shield size={18} />Equipe</button>
+        <button className={tab === 'godparents' ? 'selected' : ''} aria-current={tab === 'godparents' ? 'page' : undefined} onClick={() => selectPanelTab('godparents')}><Heart size={18} />Padrinhos</button>
+        <button className={tab === 'memories' ? 'selected' : ''} aria-current={tab === 'memories' ? 'page' : undefined} onClick={() => selectPanelTab('memories')}><Camera size={18} />Álbum</button>
+        <button className={tab === 'gifts' ? 'selected' : ''} aria-current={tab === 'gifts' ? 'page' : undefined} onClick={() => selectPanelTab('gifts')}><Gift size={18} />Presentes</button>
       </>}
     </nav>    {tab === 'guests' && <>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO CONVITE</span><h2>Adicionar convidado</h2></div></div><form className="couple-guest-form" onSubmit={createGuest}><label>Nome<input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength="160" required /></label><label>E-mail<input type="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} /></label><label>Telefone<input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} /></label><label>Grupo<select value={guestGroup} onChange={(event) => setGuestGroup(event.target.value)}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>Pessoas<input type="number" min="1" max="20" value={guestPartySize} onChange={(event) => setGuestPartySize(event.target.value)} required /></label><label>Perfil<select value={guestType} onChange={(event) => setGuestType(event.target.value)}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={guestDietaryNotes} maxLength="1000" onChange={(event) => setGuestDietaryNotes(event.target.value)} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar e gerar link individual <QrCode size={15} /></button></form></section>

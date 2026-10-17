@@ -2818,3 +2818,19 @@ img { display: block; max-width: 100%; }
 @media (max-width: 760px) {
   .couple-role-page .couple-panel-tabs { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; }
 }
+
+.couple-mobile-menu-toggle, .couple-mobile-nav-heading, .couple-mobile-nav-backdrop { display: none; }
+@media (max-width: 760px) {
+  .couple-role-page .couple-mobile-menu-toggle { position: sticky; top: 8px; z-index: 30; width: fit-content; min-height: 46px; margin: 0 0 12px; padding: 0 15px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #cbd5c9; border-radius: 3px; color: #30483a; background: #fffefa; box-shadow: 0 3px 12px rgba(42,62,49,.12); font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; }
+  .couple-role-page .couple-mobile-menu-toggle svg { width: 19px; height: 19px; }
+  .couple-role-page .couple-mobile-nav-backdrop { position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100%; display: block; border: 0; background: rgba(30,39,33,.42); cursor: pointer; }
+  .couple-role-page .couple-panel-tabs { position: fixed; inset: 0 auto 0 0; z-index: 1001; width: min(86vw, 340px); height: 100vh; height: 100dvh; margin: 0; padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 8px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border: 0; border-right: 1px solid #d9ded4; background: #fffdf9; box-shadow: 10px 0 30px rgba(32,46,36,.18); transform: translateX(-105%); visibility: hidden; transition: transform .24s ease, visibility .24s; }
+  .couple-role-page .couple-panel-tabs.mobile-open { transform: translateX(0); visibility: visible; }
+  .couple-role-page .couple-mobile-nav-heading { min-height: 48px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; color: #30483a; font-size: 16px; }
+  .couple-role-page .couple-mobile-nav-heading button { width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 1px solid #d5dbd2; border-radius: 3px; color: #405247; background: #fffefa; cursor: pointer; }
+  .couple-role-page .couple-panel-tabs > button { width: 100%; min-height: 52px; padding: 0 14px; flex: 0 0 auto; justify-content: flex-start; text-align: left; font-size: 16px; }
+  .couple-role-page .couple-panel-tabs > button.selected { color: #fffefa; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .couple-role-page .couple-panel-tabs { transition: none; }
+}
