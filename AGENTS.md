@@ -481,7 +481,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ## Continuidade de trabalho — personalizador e convite compacto
 
-Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado da branch `preview` para quem continuar o projeto.
+Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado da branch `hen` para quem continuar o projeto.
 
 ### Pedido confirmado
 
@@ -493,13 +493,14 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - Não pedir ao casal para escrever o mesmo texto em três idiomas. A interface mantém o idioma normal do produto; não replicar campos de conteúdo por idioma neste fluxo simplificado sem uma decisão nova do dono.
 - Carrossel ou galeria de fotos deve ser opcional e compacto. Não exigir detalhes íntimos ou perguntas sobre o casal para concluir um convite.
 
-### Estado da branch `preview`
+### Histórico da branch de prévia
 
-- A branch local `preview` foi criada a partir de `main` em 17/10/2026. Ela é a única branch adicional solicitada para pré-visualização. Antes de integrar mudanças, confirmar o destino com o dono; não alterar `main` diretamente.
+- A antiga branch `preview` foi renomeada para `hen`. A branch `lar` foi criada a partir do mesmo commit. O trabalho atual continua em `hen`.
+- O dono autorizou integrar em `main` as alterações da personalização depois de validar testes, lint e build. Antes de iniciar a integração, verificar se existe merge, rebase ou cherry-pick em andamento e confirmar que a árvore está limpa após o commit.
 - Há alterações de trabalho em `src/App.jsx` e `src/styles.css` que simplificam o editor autenticado do painel para duas áreas, aparência e recado/detalhes. O editor reduz a escolha inicial de temas, permite expandir os demais e mostra na prévia a paleta, foto, composição, mensagem, história curta e informações do evento.
 - A lista de paletas foi alterada para produzir cores visivelmente distintas; o tema noturno deixou de impor um fundo que anulava a paleta escolhida.
 - O convite publicado recebeu ajustes para usar a composição selecionada e manter detalhes opcionais recolhidos. Eventos e RSVP foram compactados em linhas expansíveis; o convite deve continuar sendo conferido visualmente em celular e desktop.
-- Esses ajustes são trabalho em andamento até a conferência ponta a ponta. Não declarar o personalizador concluído apenas porque os controles aparecem na prévia.
+- Esses ajustes foram posteriormente conferidos e integrados à versão de produção. Não declarar novos controles concluídos apenas porque aparecem na prévia.
 - O fluxo público `/criar-site` é separado do editor autenticado e ainda precisa ser revisado para receber a mesma simplificação: poucas etapas, conteúdo em um idioma de entrada, opções com efeito real e prévia compacta. Não deixar que o fluxo aberto e o painel ofereçam modelos incompatíveis.
 - Conferir o ciclo completo: criar/alterar rascunho, recarregar, salvar, publicar e abrir o convite do convidado. Verificar especialmente tema, paleta, foto, composição, mensagem, história curta e detalhes do evento.
 - Verificar responsividade, contraste, controles de toque e ausência de rolagem horizontal. Não ampliar novamente o convite ou o personalizador sem necessidade demonstrável.
@@ -508,21 +509,28 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 
 - `npm run lint`, `npm run build` e `git diff --check` passaram para as alterações em andamento de `src/App.jsx` e `src/styles.css`.
 - `npm test` teve 10 de 11 testes aprovados. O teste `event staff can read only assigned event rosters without contact fields` falhou em `tests/wedding-role-access.test.js:101`, ao acessar `name` na linha 107. O fluxo testado não foi alterado nesta continuação; investigar a falha antes de atribuí-la às mudanças de interface.
-- Ainda não há confirmação de commit, push ou publicação Cloudflare desta branch. A publicação continua obedecendo à integração Git do Cloudflare e à regra de expor somente trabalho concluído e validado.
+- A versão revisada do convite compacto foi integrada e publicada pelo fluxo Git do Cloudflare; mudanças posteriores devem repetir validação e integração.
 
 ## Personalizador público simplificado — 17/10/2026
 
-- Continuação feita na branch `preview`; `main` permanece intacta.
+- Esta etapa começou na antiga branch `preview`, que depois foi renomeada para `hen`; `lar` foi criada no mesmo commit. A personalização simplificada foi integrada à versão de produção no commit `82a8505`.
 - `/criar-site` agora tem duas etapas curtas: nomes, data, tema e paleta; depois foto, composição, recado e detalhes opcionais. O idioma de texto começa em pt-BR e não há campos repetidos por idioma nem seletor de idioma apenas para a prévia.
 - A prévia mostra um convite compacto com a foto, composição, nomes, data, recado e os detalhes opcionais que foram preenchidos. Foram removidos os blocos longos de conteúdo fictício e os controles de personalização que não eram necessários para começar.
 - As três composições oferecidas (`full`, `split`, `arch`) existem no convite publicado e são aceitas pela validação da API. Rascunhos locais antigos com layouts `type`, `video` ou `collage` são normalizados para o layout correspondente ao tema escolhido.
 - Alterar a história curta ativa a seção de história no rascunho, para o conteúdo da prévia também poder aparecer no convite após cadastro/publicação.
 - O editor autenticado continua com duas áreas. Foi removido um bloco duplicado de cardápio e traje encontrado durante a revisão.
 - A API ainda aceita seis layouts antigos para compatibilidade, embora o fluxo novo mostre somente os três layouts que foram alinhados à composição do convite publicado. Não reintroduzir controles antigos sem validar a saída real.
-- `npm run lint`, `npm run build` e `git diff --check` passaram após essas alterações. Não foi feita publicação de produção; continuar nesta branch de prévia até validação ponta a ponta e aprovação do dono.
+- `npm run lint`, `npm run build` e `git diff --check` passaram após essas alterações. A versão foi promovida à produção depois da validação registrada na seção seguinte.
 
 ## Publicação após validação — 17/10/2026
 
 - O dono autorizou levar alterações concluídas para produção depois de validar. Para esta entrega, rodar `npm test`, `npm run lint` e `npm run build`; se passarem, integrar a branch de trabalho em `main` e enviar pelo Git para o deploy automático do Cloudflare Pages. Não fazer deploy manual nem criar pipeline.
 - O teste da equipe do evento falhava porque o mock da base não respondia à consulta reduzida da rota de `event_staff`. A fixture em `tests/wedding-role-access.test.js` agora responde a essa consulta com apenas `id` e `name`; a implementação de autorização não foi alterada.
 - Validação desta promoção: `npm test` passou com 11/11 testes; `npm run lint` e `npm run build` também passaram. O commit `6335794` foi integrado e enviado a `main`; depois do push, `https://tudocomecoudeumsim.pages.dev` respondeu HTTP 200 e serviu o novo bundle de produção.
+
+## Tamanho de texto no personalizador — 17/10/2026
+
+- O campo `fontScale` já era aceito e persistido pela API, mas não tinha controle visível no personalizador e a prévia do painel forçava tamanho padrão.
+- `FontScalePicker` oferece Compacto, Padrão e Ampliado tanto em `/criar-site` quanto no editor autenticado, dentro da etapa Aparência. As escolhas atualizam as prévias na hora e são guardadas no mesmo rascunho.
+- A escala também é aplicada ao convite individual publicado, incluindo capa, recado e detalhes. Valores permitidos continuam sendo `small`, `medium` e `large`, validados pela API.
+- Validação: `npm test` passou com 11/11 testes, `npm run lint`, `npm run build` e `git diff --check` passaram. A integração em `main` foi autorizada pelo dono; registrar o commit e a resposta do Cloudflare depois do push.

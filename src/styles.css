@@ -2295,6 +2295,21 @@ img { display: block; max-width: 100%; }
 .public-customizer .customizer-browser-bar { background: color-mix(in srgb, var(--customizer-paper) 80%, white); }
 .public-customizer .customizer-browser-bar span { color: var(--customizer-ink); }
 .public-customizer .customizer-preview-caption { color: #555f56; }
+.font-scale-picker { display: grid; gap: 8px; color: #38453c; font-size: 14px; font-weight: 600; }
+.font-scale-picker > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.font-scale-picker button { min-height: 44px; padding: 8px 10px; border: 1px solid #d9ded6; color: #38453c; background: #fffdf9; font: inherit; font-size: 13px; cursor: pointer; }
+.font-scale-picker button:hover, .font-scale-picker button:focus-visible { border-color: var(--customizer-ink, #405447); }
+.font-scale-picker button.active { border-color: var(--customizer-ink, #405447); color: var(--customizer-ink, #405447); background: color-mix(in srgb, var(--customizer-paper, #f4f0e8) 68%, white); box-shadow: inset 0 0 0 1px var(--customizer-ink, #405447); }
+.public-customizer .customizer-invite-summary strong { font-size: calc(23px * var(--customizer-text-scale, 1)); }
+.public-customizer .customizer-invite-summary p, .public-customizer .customizer-invite-story p, .public-customizer .customizer-invite-details p { font-size: calc(14px * var(--customizer-text-scale, 1)); }
+.guest-invitation-page .guest-invitation-cover h2 { font-size: calc(clamp(30px, 5vw, 48px) * var(--site-text-scale, 1)); }
+.guest-invitation-page .guest-invitation-cover.guest-cover-split h2 { font-size: calc(clamp(24px, 3vw, 37px) * var(--site-text-scale, 1)); }
+.guest-invitation-page .guest-cover-message { font-size: calc(16px * var(--site-text-scale, 1)); }
+.guest-invitation-page .guest-extra-details > summary { font-size: calc(14px * var(--site-text-scale, 1)); }
+.guest-invitation-page .guest-story-section p { font-size: calc(16px * var(--site-text-scale, 1)); }
+.guest-invitation-page .invitation-event-card > summary strong { font-size: calc(21px * var(--site-text-scale, 1)); }
+.couple-role-page .customize-preview .browser-content > strong { font-size: calc(clamp(34px, 4vw, 46px) * var(--site-text-scale, 1)); }
+.couple-role-page .customize-preview .browser-content > small { font-size: calc(14px * var(--site-text-scale, 1)); }
 @media (max-width: 900px) {
   .public-customizer .customizer-main { width: min(760px, 92%); padding-top: 24px; }
   .public-customizer .customizer-workspace { display: block; }
@@ -2320,7 +2335,8 @@ img { display: block; max-width: 100%; }
   .public-customizer .customizer-wizard-actions .customizer-continue { min-height: 52px; }
   .public-customizer .customizer-mobile .customizer-live-cover { min-height: min(480px, 65dvh); }
   .public-customizer .customizer-mobile.customizer-cover-split .customizer-live-cover { min-height: min(480px, 65dvh); }
-  .public-customizer .customizer-mobile .customizer-live-cover h2 { font-size: clamp(31px, 10vw, 38px); }
+  .guest-invitation-page .guest-invitation-cover.guest-cover-split h2 { font-size: calc(clamp(28px, 8vw, 37px) * var(--site-text-scale, 1)); }
+  .public-customizer .customizer-mobile .customizer-live-cover h2 { font-size: calc(clamp(31px, 10vw, 38px) * var(--customizer-text-scale, 1)); }
   .public-customizer .customizer-invite-summary, .public-customizer .customizer-invite-story, .public-customizer .customizer-invite-details { padding: 16px; }
 }
 .help-center-start { padding: clamp(22px, 4vw, 38px); background: #fbf8f1; }

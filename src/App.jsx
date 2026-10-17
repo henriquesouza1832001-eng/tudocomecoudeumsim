@@ -88,6 +88,13 @@ const SITE_FONT_PAIRS = {
   'Minimalista geométrico': ['"Century Gothic", Futura, Arial, sans-serif', '"Century Gothic", Futura, Arial, sans-serif'],
   'Rústico acolhedor': ['Georgia, "Times New Roman", serif', 'Verdana, Arial, sans-serif'],
 }
+const FONT_SCALE_OPTIONS = [{ id: 'small', label: 'Compacto' }, { id: 'medium', label: 'Padrão' }, { id: 'large', label: 'Ampliado' }]
+function FontScalePicker({ value = 'medium', onChange }) {
+  return <div className="font-scale-picker" role="group" aria-label="Tamanho do texto do convite">
+    <span>Tamanho do texto</span>
+    <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
+  </div>
+}
 const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'wedding-pexels', fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
@@ -727,6 +734,7 @@ function PublicSiteCustomizer() {
     '--customizer-paper': selectedPalette[2],
     '--customizer-font-heading': fontPair[0],
     '--customizer-font-body': fontPair[1],
+    '--customizer-text-scale': draft.siteConfig.fontScale === 'small' ? '.92' : draft.siteConfig.fontScale === 'large' ? '1.1' : '1',
   }
 
   useEffect(() => {
@@ -772,6 +780,7 @@ function PublicSiteCustomizer() {
             <div className="customizer-step" id="customizer-couple"><span>Quem vai celebrar?</span><div className="customizer-name-fields"><label>Primeiro nome<input autoComplete="given-name" maxLength="100" value={draft.partnerOneName} onChange={(event) => updateDraft('partnerOneName', event.target.value)} placeholder="Nome" /></label><label>Segundo nome<input autoComplete="additional-name" maxLength="100" value={draft.partnerTwoName} onChange={(event) => updateDraft('partnerTwoName', event.target.value)} placeholder="Nome" /></label></div><label>Data do casamento<input type="date" value={draft.eventDate} onChange={(event) => updateDraft('eventDate', event.target.value)} /></label></div>
             <div className="customizer-step" id="customizer-style"><span>Escolham a identidade</span><p className="customizer-control-help">O tema e a paleta mudam as cores e as letras do convite.</p><div className="customizer-theme-grid" role="group" aria-label="Temas do convite">{visibleThemes.map((item) => <button type="button" className={'customizer-theme-option' + (theme.id === item.id ? ' active' : '')} key={item.id} onClick={() => selectTheme(item.id)} aria-pressed={theme.id === item.id}><span className={`customizer-theme-mini mini-${item.id}`} style={{ '--theme-ink': item.colors[0], '--theme-accent': item.colors[1], '--theme-paper': item.colors[2] }}><img src={SITE_COVER_PHOTOS[item.id === 'floral' || item.id === 'tropical' ? 1 : 0].src} alt="" loading="lazy" /><b>{draft.partnerOneName || 'Ana'} <i>&amp;</i> {draft.partnerTwoName || 'Rafa'}</b><em /></span><strong>{item.name}</strong></button>)}</div>{!showAllThemes && <button className="customizer-more-themes" type="button" onClick={() => setShowAllThemes(true)}>Ver outros estilos</button>}</div>
             <div className="customizer-choice-group customizer-public-palettes"><strong>Paleta de cores</strong><div className="customizer-palette-options">{palettes.map((colors, index) => <button type="button" className={draft.siteConfig.paletteIndex === index ? 'active' : ''} key={PALETTE_NAMES[index]} onClick={() => updateConfig('paletteIndex', index)} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={draft.siteConfig.paletteIndex === index}><span>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</span><small>{PALETTE_NAMES[index]}</small></button>)}</div></div>
+            <FontScalePicker value={draft.siteConfig.fontScale} onChange={(value) => updateConfig('fontScale', value)} />
             <div className="customizer-wizard-actions"><button type="button" className="customizer-next" onClick={() => goToWizardStep('invite')}>Continuar com o convite <ArrowRight size={16} /></button></div>
           </section> : <section className="customizer-wizard-panel customizer-invite-panel" aria-labelledby="customizer-wizard-title"><h2 className="customizer-wizard-title" id="customizer-wizard-title">Deixem com a cara de vocês</h2>
             <div className="customizer-step" id="customizer-cover"><span>Foto e composição</span><div className="customizer-photo-options"><span>Escolham uma foto</span><div className="customizer-photo-options-grid">{SITE_COVER_PHOTOS.map((item) => <button type="button" className={draft.siteConfig.coverImage === item.id ? 'active' : ''} key={item.id} onClick={() => updateConfig('coverImage', item.id)} aria-pressed={draft.siteConfig.coverImage === item.id}><img src={item.src} alt="" loading="lazy" /><span>{item.name}</span></button>)}</div></div><div className="customizer-layout-options" role="group" aria-label="Composição da foto"><span>Como a foto aparece</span><div>{layoutOptions.map((layout) => <button type="button" className={draft.siteConfig.coverLayout === layout.id ? 'active' : ''} key={layout.id} onClick={() => updateConfig('coverLayout', layout.id)} aria-pressed={draft.siteConfig.coverLayout === layout.id}>{layout.label}</button>)}</div></div></div>
@@ -1845,7 +1854,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     '--deep': selectedPalette[0],
     '--font-heading': selectedFonts[0],
     '--font-body': selectedFonts[1],
-    '--site-text-scale': '1',
+    '--site-text-scale': config.fontScale === 'small' ? '.92' : config.fontScale === 'large' ? '1.1' : '1',
   }
 
   return <div className="customize-layout simplified-customizer">
@@ -1861,6 +1870,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
         <div className="customizer-photo-options"><span>Foto de capa</span><div>{SITE_COVER_PHOTOS.map((photo) => <button type="button" key={photo.id} className={config.coverImage === photo.id ? 'active' : ''} onClick={() => update({ coverImage: photo.id })} aria-pressed={config.coverImage === photo.id}><img src={photo.src} alt="" loading="lazy" /><span>{photo.name}</span></button>)}</div></div>
         <div className="customizer-layout-options" role="group" aria-label="Composição da capa"><span>Composição da foto</span><div>{coverLayouts.map((layout) => <button type="button" key={layout.id} className={coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })} aria-pressed={coverLayout === layout.id}>{layout.label}</button>)}</div></div>
+        <FontScalePicker value={config.fontScale} onChange={(fontScale) => update({ fontScale })} />
       </section> : <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO DOIS</span><h3>Contem só o que importa</h3></div></div>
         <p>Nomes, data e eventos vêm do cadastro do casamento. Acrescentem um recado curto, se quiserem.</p>
