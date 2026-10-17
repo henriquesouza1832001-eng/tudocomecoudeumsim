@@ -7,7 +7,7 @@ const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enab
 const publishedEvent = { id: 'event-published', name: 'Cerimônia', event_type: 'ceremony', starts_at: null, venue_name: 'Jardim', address: null, group_ids: [] }
 const restrictedEvent = { id: 'event-restricted', name: 'Ensaio', event_type: 'rehearsal', starts_at: null, venue_name: 'Salão', address: null, group_ids: ['group-private'] }
 
-function database(role) {
+function database(role, eventDeletion = {}) {
   return {
     prepare(query) {
       let parameters = []
@@ -17,6 +17,8 @@ function database(role) {
           return this
         },
         async first() {
+          if (query.includes('SELECT id FROM events WHERE id = ? AND wedding_id = ?')) return eventDeletion.exists === false ? null : { id: parameters[0] }
+          if (query.includes('SELECT') && query.includes('FROM guest_rsvps WHERE event_id = ?')) return eventDeletion.relatedData || { rsvps: 0, checkins: 0, photos: 0, staff: 0 }
           if (query.includes('FROM auth_sessions s')) return { id: 'session-1', account_id: 'account-1', mfa_verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'editor@example.com', status: 'active', mfa_enabled_at: new Date().toISOString() }
           if (query.includes('FROM wedding_memberships m JOIN weddings w')) {
             const allowedRoles = parameters.slice(2)
@@ -44,18 +46,18 @@ function database(role) {
       }
     },
     async batch() {
-      return []
+      return eventDeletion.results || [{ meta: { changes: 1 } }, { meta: { changes: 1 } }]
     },
   }
 }
 
-async function call(path, role, { method = 'GET', body } = {}) {
+async function call(path, role, { method = 'GET', body, eventDeletion } = {}) {
   const request = new Request(`${origin}${path}`, {
     method,
     headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   })
-  return onRequest({ request, env: { DB: database(role) } })
+  return onRequest({ request, env: { DB: database(role, eventDeletion) } })
 }
 
 test('editors can access drafts and update events', async () => {
@@ -64,6 +66,21 @@ test('editors can access drafts and update events', async () => {
   assert.equal(site.status, 200)
   assert.ok((await site.json()).draft)
   assert.equal(event.status, 201)
+})
+
+test('editors can delete an event with no linked records', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/events/event-1', 'editor', { method: 'DELETE' })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { deleted: true })
+})
+
+test('event deletion is blocked when attendance data is linked', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/events/event-1', 'editor', {
+    method: 'DELETE',
+    eventDeletion: { results: [{ meta: { changes: 0 } }, { meta: { changes: 0 } }], relatedData: { rsvps: 2, checkins: 1, photos: 0, staff: 0 } },
+  })
+  assert.equal(response.status, 409)
+  assert.deepEqual(await response.json(), { error: 'event_has_related_data', relatedData: { rsvps: 2, checkins: 1, photos: 0, staff: 0 } })
 })
 
 test('readers can see published snapshots but cannot access drafts', async () => {
