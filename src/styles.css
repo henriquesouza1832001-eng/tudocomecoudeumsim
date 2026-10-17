@@ -1665,6 +1665,12 @@ img { display: block; max-width: 100%; }
 .couple-role-page .role-card input, .couple-role-page .role-card select, .couple-role-page .role-card textarea { min-height: 48px; color: #263b31; font-size: 16px; }
 .couple-role-page .role-card button, .couple-role-page .role-actions button { min-height: 46px; font-size: 14px; }
 .couple-role-page .role-card small, .couple-role-page .role-card .admin-state, .couple-role-page .role-card .task-count { font-size: 14px; line-height: 1.45; }
+.couple-role-page .superadmin-table th { font-size: 12px; line-height: 1.4; letter-spacing: .08em; }
+.couple-role-page .superadmin-table td { font-size: 15px; line-height: 1.5; }
+.couple-role-page .superadmin-table td strong { font-size: 16px; }
+.couple-role-page .superadmin-table td small { display: block; margin-top: 4px; font-size: 14px; }
+.couple-role-page .guest-admin-actions { gap: 7px; }
+.couple-role-page .guest-admin-actions button { min-width: 44px; min-height: 44px; }
 .couple-role-page .couple-panel-tabs { position: sticky; z-index: 15; top: 0; margin: 0 calc((100% - min(1240px, 92%)) / -2) 20px; padding: 12px max(4%, calc((100% - 1240px) / 2)); display: flex; align-items: center; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; border-bottom: 1px solid #d9ded4; background: rgba(255,253,249,.97); box-shadow: 0 5px 16px rgba(41,54,45,.06); scrollbar-width: thin; }
 .couple-role-page .couple-panel-tabs button { min-height: 48px; padding: 0 15px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #d5dbd2; border-radius: 2px; color: #405247; background: #fffefa; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .couple-role-page .couple-panel-tabs button svg { width: 17px; height: 17px; }
