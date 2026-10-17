@@ -816,14 +816,15 @@ function PublicSiteCustomizer() {
 }
 function PasswordInput(props) {
   const [visible, setVisible] = useState(false)
+  const [focused, setFocused] = useState(false)
   const [capsLockOn, setCapsLockOn] = useState(false)
 
   function updateCapsLock(event) {
     setCapsLockOn(Boolean(event.getModifierState?.('CapsLock')))
   }
 
-  return <span className="password-input-wrap">
-    <input {...props} type={visible ? 'text' : 'password'} onKeyDown={(event) => { updateCapsLock(event); props.onKeyDown?.(event) }} onKeyUp={(event) => { updateCapsLock(event); props.onKeyUp?.(event) }} onBlur={(event) => { setCapsLockOn(false); props.onBlur?.(event) }} />
+  return <span className={`password-input-wrap${focused ? ' is-focused' : ''}`} onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) { setFocused(false); setCapsLockOn(false) } }}>
+    <input {...props} type={visible ? 'text' : 'password'} onKeyDown={(event) => { updateCapsLock(event); props.onKeyDown?.(event) }} onKeyUp={(event) => { updateCapsLock(event); props.onKeyUp?.(event) }} onBlur={(event) => props.onBlur?.(event)} />
     <button className="password-visibility-toggle" type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={visible}><span className="sr-only">{visible ? 'Ocultar senha' : 'Mostrar senha'}</span>{visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button>
     {capsLockOn && <small className="password-capslock" role="status" aria-live="polite">Caps Lock ativado. As letras serão digitadas em maiúsculo.</small>}
   </span>
