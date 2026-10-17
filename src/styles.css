@@ -1227,6 +1227,12 @@ img { display: block; max-width: 100%; }
 .admin-login-form label { display: grid; gap: 6px; color: #6d7167; font-size: 10px; }
 .admin-login-form input { min-height: 42px; padding: 0 11px; border: 1px solid rgba(48,55,47,.18); color: #414940; background: #fff; font: inherit; }
 .admin-login-form input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.password-input-wrap { position: relative; display: grid; width: 100%; gap: 6px; }
+.admin-login-form .password-input-wrap input { width: 100%; padding-right: 50px; }
+.password-visibility-toggle { position: absolute; top: 1px; right: 4px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 3px; color: #536357; background: transparent; cursor: pointer; }
+.password-visibility-toggle:hover { color: #263b30; background: #f2f3ef; }
+.password-visibility-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.password-capslock { color: #755232; font-size: 12px; font-weight: 500; line-height: 1.4; }
 .admin-login-form .button-primary { min-height: 42px; justify-content: center; }
 .signup-name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .couple-type-field { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -1252,6 +1258,8 @@ img { display: block; max-width: 100%; }
 .signup-page .signup-form { gap: 21px; padding: clamp(24px, 4vw, 42px); border-color: #ded8ce; box-shadow: 0 15px 38px rgba(47,53,47,.06); }
 .signup-page .admin-login-form label { gap: 8px; color: #424d43; font-size: 15px; font-weight: 600; }
 .signup-page .admin-login-form input { min-height: 52px; padding: 0 14px; border-color: #d4d5cf; border-radius: 2px; font-size: 16px; }
+.signup-page .admin-login-form .password-input-wrap input { padding-right: 52px; }
+.signup-page .password-visibility-toggle { top: 6px; }
 .signup-page .couple-type-field legend { margin-bottom: 11px; color: #424d43; font-size: 15px; font-weight: 600; }
 .signup-page .couple-type-options { gap: 10px; }
 .signup-page .couple-type-options label { min-height: 52px; padding: 0 14px; gap: 11px; border-color: #d8d9d2; }
