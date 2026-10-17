@@ -98,7 +98,9 @@ function parseSiteConfig(value) {
     if (!weddingDetails) return null
     const guestCamera = validGuestCamera(config.guestCamera)
     if (!guestCamera) return null
-    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+    if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > 8 || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+    if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
+    return { ...defaultSiteConfig, ...config, coverGallery: config.coverGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
   } catch {
     return null
   }
@@ -121,7 +123,9 @@ function validateSiteConfig(body) {
   if (!weddingDetails) return null
   const guestCamera = validGuestCamera(body.guestCamera)
   if (!guestCamera) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: body.coverImage || 'wedding-pexels', fontScale: body.fontScale || 'medium', enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+  if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > 8 || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+  if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: body.coverImage || 'wedding-pexels', fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
 }
 
 function jsonError(context, status, error) {
@@ -829,6 +833,74 @@ app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
   return context.json({ draft: parseSiteConfig(wedding.site_config_json) || defaultSiteConfig, published, publishedAt: wedding.site_published_at })
 })
 
+app.get('/api/couple/weddings/:weddingId/site-media', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin', 'editor'])) return jsonError(context, 404, 'wedding_not_found')
+  const result = await context.env.GUEST_PHOTOS?.list({ prefix: `${weddingId}/site/`, limit: 100 })
+  const media = (result?.objects || []).map((object) => {
+    const match = object.key.match(/\/([0-9a-f-]{36})\.(jpg|png|webp|mp4)$/i)
+    return match ? { id: match[1], mediaType: object.customMetadata?.mediaType || (match[2] === 'mp4' ? 'video' : 'image'), contentType: object.httpMetadata?.contentType || '', sizeBytes: object.size } : null
+  }).filter(Boolean)
+  return context.json({ media })
+})
+
+app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin', 'editor'])) return jsonError(context, 404, 'wedding_not_found')
+  if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
+  const body = await context.req.parseBody().catch(() => null)
+  const file = body?.file
+  const mediaType = body?.mediaType
+  if (!['image', 'video'].includes(mediaType)) return jsonError(context, 400, 'unsupported_media_type')
+  if (Number(context.req.header('Content-Length') || 0) > 16_000_000) return jsonError(context, 413, 'invalid_media_size')
+  const maxBytes = mediaType === 'video' ? 15_728_640 : 8_388_608
+  if (!(file instanceof File) || file.size < 1 || file.size > maxBytes) return jsonError(context, 413, 'invalid_media_size')
+  if ((mediaType === 'image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) || (mediaType === 'video' && file.type !== 'video/mp4')) return jsonError(context, 400, 'unsupported_media_type')
+  const current = await context.env.GUEST_PHOTOS.list({ prefix: `${weddingId}/site/`, limit: 100 })
+  const media = current.objects.map((object) => object.customMetadata?.mediaType || (object.key.endsWith('.mp4') ? 'video' : 'image'))
+  if (mediaType === 'image' && media.filter((type) => type === 'image').length >= 8) return jsonError(context, 409, 'gallery_limit_reached')
+  if (mediaType === 'video' && media.includes('video')) return jsonError(context, 409, 'video_limit_reached')
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const isMp4 = mediaType === 'video' && String.fromCharCode(...bytes.slice(4, 8)) === 'ftyp'
+  const isImage = file.type === 'image/jpeg' ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255 : file.type === 'image/png' ? bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 : String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+  if (!(mediaType === 'video' ? isMp4 : isImage)) return jsonError(context, 400, 'invalid_media_content')
+  const id = crypto.randomUUID()
+  const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'mp4'
+  const objectKey = `${weddingId}/site/${id}.${extension}`
+  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: file.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId, mediaType } })
+  return context.json({ id, mediaType, contentType: file.type, sizeBytes: file.size }, 201)
+})
+
+app.get('/api/site-media/:mediaId', async (context) => {
+  const id = context.req.param('mediaId')
+  const guest = await invitationGuest(context)
+  const session = guest ? null : await loadSession(context)
+  let weddingIds = guest ? [guest.wedding_id] : []
+  if (!guest && session) {
+    context.set('session', session)
+    const weddings = await context.env.DB.prepare(`SELECT w.id FROM weddings w JOIN wedding_memberships m ON m.wedding_id = w.id
+      WHERE m.account_id = ? AND m.status = 'active' AND m.role IN ('couple_admin', 'editor') AND w.status != 'deleted'`).bind(session.account_id).all()
+    weddingIds = weddings.results.map((wedding) => wedding.id)
+  }
+  if (!weddingIds.length) return jsonError(context, guest ? 401 : 401, guest ? 'invitation_invalid' : 'authentication_required')
+  let object
+  for (const weddingId of weddingIds) {
+    if (guest) {
+      const config = parseSiteConfig(guest.published_site_config_json)
+      if (!config?.coverGallery?.includes(id) && config?.coverVideoId !== id) continue
+    }
+    for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
+      object = await context.env.GUEST_PHOTOS?.get(`${weddingId}/site/${id}.${extension}`)
+      if (object) break
+    }
+    if (object) break
+  }
+  if (!object) return jsonError(context, 404, 'media_not_found')
+  context.header('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream')
+  context.header('Cache-Control', 'private, no-store')
+  context.header('X-Content-Type-Options', 'nosniff')
+  return context.body(object.body)
+})
 app.get('/api/couple/weddings/:weddingId/published', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['reader'])
@@ -856,7 +928,17 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const config = validateSiteConfig(await context.req.json().catch(() => null))
   if (!config) return jsonError(context, 400, 'invalid_site_config')
-  await context.env.DB.batch([
+  const mediaIds = [...new Set([...config.coverGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+  if (mediaIds.length) {
+    if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
+    for (const id of mediaIds) {
+      let exists = false
+      for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
+        if (await context.env.GUEST_PHOTOS.get(`${weddingId}/site/${id}.${extension}`)) { exists = true; break }
+      }
+      if (!exists) return jsonError(context, 400, 'site_media_not_found')
+    }
+  }  await context.env.DB.batch([
     context.env.DB.prepare('UPDATE weddings SET site_config_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(JSON.stringify(config), weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'wedding_site_draft_saved', 'wedding', ?, ?)`)

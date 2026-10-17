@@ -42,6 +42,7 @@ import {
   Trash2,
   Users,
   UserRound,
+  Video,
   Wallet,
   X,
 } from 'lucide-react'
@@ -1826,6 +1827,13 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
 function CoupleSiteEditor({ wedding, events = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
   const [step, setStep] = useState('visual')
+  const [siteMedia, setSiteMedia] = useState([])
+  const [mediaUrls, setMediaUrls] = useState({})
+  const [mediaBusy, setMediaBusy] = useState(false)
+  const [mediaError, setMediaError] = useState('')
+  const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
+  const photoInput = useRef(null)
+  const videoInput = useRef(null)
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = getThemePalettes(theme)
   const selectedPalette = palettes[config.paletteIndex] || palettes[0]
@@ -1857,6 +1865,59 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     '--site-text-scale': config.fontScale === 'small' ? '.92' : config.fontScale === 'large' ? '1.1' : '1',
   }
 
+  useEffect(() => {
+    let active = true
+    fetch(`/api/couple/weddings/${wedding.id}/site-media`).then((response) => response.ok ? response.json() : { media: [] }).then((result) => { if (active) setSiteMedia(result.media || []) }).catch(() => { if (active) setSiteMedia([]) })
+    return () => { active = false }
+  }, [wedding.id])
+
+  useEffect(() => {
+    let active = true
+    const ids = [...new Set([...(config.coverGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+    Promise.all(ids.map(async (id) => {
+      const response = await fetch(`/api/site-media/${id}`)
+      if (!response.ok) return [id, '']
+      return [id, URL.createObjectURL(await response.blob())]
+    })).then((entries) => {
+      if (!active) { entries.forEach(([, url]) => url && URL.revokeObjectURL(url)); return }
+      setMediaUrls((current) => {
+        Object.values(current).forEach((url) => URL.revokeObjectURL(url))
+        return Object.fromEntries(entries.filter(([, url]) => url))
+      })
+    }).catch(() => {})
+    return () => { active = false }
+  }, [wedding.id, JSON.stringify(config.coverGallery || []), config.coverVideoId])
+
+  useEffect(() => {
+    setPreviewCoverIndex(0)
+    if ((config.coverGallery || []).length < 2) return undefined
+    const timer = window.setInterval(() => setPreviewCoverIndex((current) => (current + 1) % config.coverGallery.length), 5000)
+    return () => window.clearInterval(timer)
+  }, [JSON.stringify(config.coverGallery || [])])
+
+  async function uploadSiteMedia(file, mediaType) {
+    if (!file) return
+    setMediaError('')
+    setMediaBusy(true)
+    try {
+      const body = new FormData()
+      body.set('file', file)
+      body.set('mediaType', mediaType)
+      const response = await fetch(`/api/couple/weddings/${wedding.id}/site-media`, { method: 'POST', body })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error === 'gallery_limit_reached' ? 'A galeria aceita até oito fotos.' : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : 'Não foi possível guardar este arquivo. Confira o formato e o tamanho.')
+      setSiteMedia((current) => [...current, result])
+      const url = URL.createObjectURL(file)
+      setMediaUrls((current) => ({ ...current, [result.id]: url }))
+      if (mediaType === 'image') setConfig((current) => ({ ...current, coverGallery: [...(current.coverGallery || []), result.id] }))
+      else setConfig((current) => ({ ...current, coverVideoId: result.id, coverLayout: 'video' }))
+    } catch (error) {
+      setMediaError(error.message)
+    } finally {
+      setMediaBusy(false)
+    }
+  }
+
   return <div className="customize-layout simplified-customizer">
     <div className="customize-controls">
       <div className="customizer-wizard-nav" role="tablist" aria-label="Etapas para personalizar o convite">
@@ -1868,7 +1929,9 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} />
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
-        <div className="customizer-photo-options"><span>Foto de capa</span><div>{SITE_COVER_PHOTOS.map((photo) => <button type="button" key={photo.id} className={config.coverImage === photo.id ? 'active' : ''} onClick={() => update({ coverImage: photo.id })} aria-pressed={config.coverImage === photo.id}><img src={photo.src} alt="" loading="lazy" /><span>{photo.name}</span></button>)}</div></div>
+        <div className="customizer-photo-options"><span>Foto de capa</span><div>{SITE_COVER_PHOTOS.map((photo) => <button type="button" key={photo.id} className={!config.coverGallery?.length && config.coverImage === photo.id ? 'active' : ''} onClick={() => update({ coverImage: photo.id, coverGallery: [] })} aria-pressed={!config.coverGallery?.length && config.coverImage === photo.id}><img src={photo.src} alt="" loading="lazy" /><span>{photo.name}</span><small>Usar foto</small></button>)}</div></div>
+        <div className="customizer-upload-panel"><div><strong>Fotos de vocês</strong><p>Adicionem até oito fotos. Elas passam em carrossel na capa do convite.</p></div><input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => { [...event.target.files].slice(0, Math.max(0, 8 - siteMedia.filter((item) => item.mediaType === 'image').length)).forEach((file) => uploadSiteMedia(file, 'image')); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => photoInput.current?.click()} disabled={mediaBusy || siteMedia.filter((item) => item.mediaType === 'image').length >= 8}><Camera size={16} /> {mediaBusy ? 'Enviando…' : 'Adicionar fotos'}</button>{Boolean(siteMedia.filter((item) => item.mediaType === 'image').length) && <div className="customizer-upload-grid">{siteMedia.filter((item) => item.mediaType === 'image').map((item) => <button type="button" key={item.id} className={config.coverGallery?.includes(item.id) ? 'active' : ''} aria-pressed={Boolean(config.coverGallery?.includes(item.id))} onClick={() => update({ coverGallery: config.coverGallery?.includes(item.id) ? config.coverGallery.filter((id) => id !== item.id) : [...(config.coverGallery || []), item.id] })}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><span>{config.coverGallery?.includes(item.id) ? 'No carrossel ✓' : 'Toque para incluir'}</span></button>)}</div>}</div>
+        <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button>{mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}</div>
         <div className="customizer-layout-options" role="group" aria-label="Composição da capa"><span>Composição da foto</span><div>{coverLayouts.map((layout) => <button type="button" key={layout.id} className={coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })} aria-pressed={coverLayout === layout.id}>{layout.label}</button>)}</div></div>
         <FontScalePicker value={config.fontScale} onChange={(fontScale) => update({ fontScale })} />
       </section> : <section className="dash-card customize-card customizer-step-card">
@@ -1886,7 +1949,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     </div>
     <div className={`customize-preview theme-${theme.id}`} style={style}>
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>
-      <div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout}`}><img src={SITE_COVER_PHOTOS.find((item) => item.id === config.coverImage)?.src || SITE_COVER_PHOTOS[0].src} alt="Foto escolhida para a capa do convite" /><div className="browser-overlay" /><span className="browser-date">{wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : language === 'en' ? 'Date to be announced' : language === 'es' ? 'Fecha por confirmar' : 'Data a definir'}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong>{coverMessage && <small>{coverMessage}</small>}<button type="button">{language === 'en' ? 'View invitation' : language === 'es' ? 'Ver invitación' : 'Ver convite'} <ArrowRight size={13} /></button></div>
+      <div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout}`}>{config.coverVideoId && mediaUrls[config.coverVideoId] ? <video src={mediaUrls[config.coverVideoId]} poster={SITE_COVER_PHOTOS[0].src} autoPlay muted loop playsInline /> : <img src={mediaUrls[(config.coverGallery || [])[previewCoverIndex]] || SITE_COVER_PHOTOS.find((item) => item.id === config.coverImage)?.src || SITE_COVER_PHOTOS[0].src} alt="Foto escolhida para a capa do convite" />}{(config.coverGallery || []).length > 1 && <span className="invite-gallery-dots" aria-label={`Carrossel com ${config.coverGallery.length} fotos`}>{config.coverGallery.map((id, index) => <i className={index === previewCoverIndex ? 'active' : ''} key={id} />)}</span>}<div className="browser-overlay" /><span className="browser-date">{wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : language === 'en' ? 'Date to be announced' : language === 'es' ? 'Fecha por confirmar' : 'Data a definir'}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong>{coverMessage && <small>{coverMessage}</small>}<button type="button">{language === 'en' ? 'View invitation' : language === 'es' ? 'Ver invitación' : 'Ver convite'} <ArrowRight size={13} /></button></div>
         <div className="browser-below"><span>{language === 'en' ? 'Event' : language === 'es' ? 'Evento' : 'Evento'}</span><i>·</i><span>{language === 'en' ? 'RSVP' : language === 'es' ? 'Confirmar asistencia' : 'Confirmação de presença'}</span></div>
         {previewEvent && <div className="browser-story-preview"><span>{previewEvent.event_type}</span><p><strong>{previewEvent.name}</strong>{previewEvent.starts_at ? ` · ${new Date(previewEvent.starts_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{previewEvent.venue_name ? ` · ${previewEvent.venue_name}` : ''}</p></div>}
         {storyEnabled && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}
@@ -2125,6 +2188,8 @@ function TeamInvitationAcceptance() {
 
 function GuestPortal({ notify, setView }) {
   const [invitation, setInvitation] = useState(null)
+  const [invitationMedia, setInvitationMedia] = useState({})
+  const [coverIndex, setCoverIndex] = useState(0)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const token = window.location.hash.startsWith('#convite/') ? window.location.hash.slice(9) : ''
@@ -2134,7 +2199,9 @@ function GuestPortal({ notify, setView }) {
   const siteFonts = SITE_FONT_PAIRS[invitation?.siteConfig?.fontPair] || SITE_FONT_PAIRS['Clássico editorial'];
   const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': invitation?.siteConfig?.fontScale === 'small' ? '.92' : invitation?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
   const coverPhoto = SITE_COVER_PHOTOS.find((photo) => photo.id === invitation?.siteConfig?.coverImage) || SITE_COVER_PHOTOS[0]
-  const coverLayout = ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
+  const coverLayout = invitation?.siteConfig?.coverVideoId ? 'video' : ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
+  const coverGallery = invitation?.siteConfig?.coverGallery || []
+  const activeCoverUrl = invitationMedia[coverGallery[coverIndex]] || coverPhoto.src
   const hasMoreInvitationContent = Boolean(
     invitation?.siteConfig?.weddingDetails?.menu
     || invitation?.siteConfig?.weddingDetails?.dressCode
@@ -2162,6 +2229,28 @@ function GuestPortal({ notify, setView }) {
 
   useEffect(() => { loadInvitation() }, [token])
 
+  useEffect(() => {
+    if (!invitation?.siteConfig) return
+    let active = true
+    const ids = [...new Set([...(invitation.siteConfig.coverGallery || []), ...(invitation.siteConfig.coverVideoId ? [invitation.siteConfig.coverVideoId] : [])])]
+    Promise.all(ids.map(async (id) => {
+      const response = await fetch(`/api/site-media/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      if (!response.ok) return [id, '']
+      return [id, URL.createObjectURL(await response.blob())]
+    })).then((entries) => {
+      if (!active) { entries.forEach(([, url]) => url && URL.revokeObjectURL(url)); return }
+      setInvitationMedia(Object.fromEntries(entries.filter(([, url]) => url)))
+    }).catch(() => {})
+    return () => { active = false }
+  }, [invitation?.siteConfig?.coverVideoId, JSON.stringify(invitation?.siteConfig?.coverGallery || []), token])
+
+  useEffect(() => {
+    const gallery = invitation?.siteConfig?.coverGallery || []
+    if (gallery.length < 2) return undefined
+    const timer = window.setInterval(() => setCoverIndex((current) => (current + 1) % gallery.length), 5000)
+    return () => window.clearInterval(timer)
+  }, [invitation?.siteConfig?.coverGallery])
+
   async function saveRsvp(values) {
     const response = await fetch('/api/invitation/rsvp', {
       method: 'POST',
@@ -2186,7 +2275,7 @@ function GuestPortal({ notify, setView }) {
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className="role-card guest-pass-card"><div className={`guest-invitation-cover guest-cover-${coverLayout}`}><img src={coverPhoto.src} alt={coverPhoto.name} /><div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}{invitation.siteConfig?.guestCamera?.enabled && <a className="guest-camera-invite-link" href="#guest-camera"><Camera size={17} /> Registrar um momento da celebração</a>}</section>
+      <section className="role-card guest-pass-card"><div className={`guest-invitation-cover guest-cover-${coverLayout}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} poster={coverPhoto.src} autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : <img src={activeCoverUrl} alt={coverGallery.length ? `Foto ${coverIndex + 1} do casal` : coverPhoto.name} />}{coverGallery.length > 1 && <span className="guest-cover-count">{coverIndex + 1} / {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}{invitation.siteConfig?.guestCamera?.enabled && <a className="guest-camera-invite-link" href="#guest-camera"><Camera size={17} /> Registrar um momento da celebração</a>}</section>
       {hasMoreInvitationContent && <details className="guest-extra-details"><summary>História e outros detalhes</summary>
       {invitation.siteConfig?.weddingDetails?.menu && <section className="role-card guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
       {invitation.siteConfig?.weddingDetails?.dressCode && <section className="role-card guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2><div className="customizer-preview-swatches">{activePalette?.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</div></section>}

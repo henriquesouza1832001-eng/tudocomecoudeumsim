@@ -129,3 +129,10 @@ test('godparent task lists are tied to the authenticated individual invitation',
   assert.equal(result.tasks.length, 1)
   assert.equal(result.tasks[0].title, 'Levar as alianças')
 })
+
+test('site media is scoped to wedding editors and hidden from readers', async () => {
+  const editor = await call('/api/couple/weddings/wedding-1/site-media', 'editor')
+  const reader = await call('/api/couple/weddings/wedding-1/site-media', 'reader')
+  assert.equal(editor.status, 200)
+  assert.equal(reader.status, 404)
+})
