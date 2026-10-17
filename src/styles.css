@@ -2539,6 +2539,12 @@ img { display: block; max-width: 100%; }
 .customizer-theme-mini b, .theme-option-preview b { position: relative; z-index: 1; padding: 0 7px 10px; font-size: 17px; line-height: 1.15; }
 .customizer-live-cover > .browser-cover-placeholder, .couple-role-page .customize-preview .browser-content > .browser-cover-placeholder { min-height: 0; width: 100%; height: 100%; position: absolute; inset: 0; z-index: 0; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 24px; color: var(--customizer-ink, #354c3e); background: linear-gradient(145deg, color-mix(in srgb, var(--customizer-accent, #a98567) 14%, var(--customizer-paper, #f7f2e9)), var(--customizer-paper, #f7f2e9) 70%); text-align: center; }
 .couple-role-page .customize-preview .browser-content > .browser-cover-placeholder { color: var(--forest); background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, var(--paper)), var(--paper) 72%); }
+.browser-content.cover-empty, .couple-role-page .customize-preview .browser-content.cover-empty { padding-left: 0; color: var(--forest); background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, var(--paper)), var(--paper) 58%, color-mix(in srgb, var(--accent) 9%, var(--paper))); }
+.browser-content.cover-empty::before { position: absolute; inset: 16px; z-index: 0; border: 1px solid color-mix(in srgb, var(--forest) 18%, transparent); content: ''; pointer-events: none; }
+.browser-content.cover-empty .browser-overlay { display: none; }
+.browser-content.cover-empty .browser-date, .browser-content.cover-empty > strong, .browser-content.cover-empty > small { color: var(--forest); text-shadow: none; }
+.browser-content.cover-empty > strong i { color: var(--accent); }
+.browser-content.cover-empty > button { border-color: color-mix(in srgb, var(--forest) 45%, transparent); color: var(--forest); background: color-mix(in srgb, var(--paper) 80%, white); }
 .couple-role-page .customizer-layout-options > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .couple-role-page .customizer-layout-options button.customizer-layout-choice { min-width: 0; min-height: 124px; padding: 8px 10px; position: relative; display: grid; grid-template-rows: 66px auto; justify-items: center; align-items: center; gap: 7px; border: 2px solid #d7ddd4; border-radius: 3px; color: #263b31; background: #fffefa; font-size: 14px; font-weight: 700; cursor: pointer; }
 .couple-role-page .customizer-layout-options button.customizer-layout-choice:hover, .couple-role-page .customizer-layout-options button.customizer-layout-choice:focus-visible { border-color: #6d8876; background: #f0f4ed; outline: 2px solid #d5e1d3; outline-offset: 1px; }
@@ -2556,3 +2562,14 @@ img { display: block; max-width: 100%; }
 .customizer-layout-thumb.layout-thumb-arch b { width: 56%; height: 17px; right: 22%; bottom: 5px; }
 .couple-role-page .customizer-extra-fields[open] > summary::after { content: '\2212'; }
 @media (max-width: 760px) { .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options button.customizer-layout-choice { min-height: 110px; grid-template-columns: 104px 1fr 22px; grid-template-rows: 1fr; justify-items: start; text-align: left; } .customizer-layout-thumb { width: 104px; } .customizer-layout-choice > svg { position: static; } }
+.customizer-live-cover.customizer-live-cover-empty, .public-customizer .customizer-cover-split .customizer-live-cover.customizer-live-cover-empty { grid-template-columns: 1fr; align-items: center; color: var(--customizer-ink); background: radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--customizer-accent) 12%, var(--customizer-paper)), var(--customizer-paper) 70%); }
+.customizer-live-cover.customizer-live-cover-empty::after { inset: 18px; border: 1px solid color-mix(in srgb, var(--customizer-ink) 18%, transparent); background: none; }
+.customizer-live-cover.customizer-live-cover-empty > div { grid-column: 1; width: min(100%, 520px); margin: 0 auto; padding: 38px 24px; text-align: center; }
+.customizer-live-cover.customizer-live-cover-empty h2 i { color: var(--customizer-accent); }
+.customizer-live-cover.customizer-live-cover-empty a { border-color: color-mix(in srgb, var(--customizer-ink) 45%, transparent); color: var(--customizer-ink); background: color-mix(in srgb, var(--customizer-paper) 80%, white); }
+.public-customizer .customizer-mobile.customizer-cover-split .customizer-live-cover.customizer-live-cover-empty { align-items: center; color: var(--customizer-ink); }
+.public-customizer .browser-content.cover-empty { color: var(--customizer-ink); background: linear-gradient(145deg, color-mix(in srgb, var(--customizer-accent) 16%, var(--customizer-paper)), var(--customizer-paper) 58%, color-mix(in srgb, var(--customizer-accent) 8%, var(--customizer-paper))); }
+.public-customizer .browser-content.cover-empty::before { border-color: color-mix(in srgb, var(--customizer-ink) 18%, transparent); }
+.public-customizer .browser-content.cover-empty .browser-date, .public-customizer .browser-content.cover-empty > strong, .public-customizer .browser-content.cover-empty > small { color: var(--customizer-ink); }
+.public-customizer .browser-content.cover-empty > strong i { color: var(--customizer-accent); }
+.public-customizer .browser-content.cover-empty > button { border-color: color-mix(in srgb, var(--customizer-ink) 45%, transparent); color: var(--customizer-ink); background: color-mix(in srgb, var(--customizer-paper) 80%, white); }
