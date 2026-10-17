@@ -306,12 +306,12 @@ button { font: inherit; }
 .marketing-gifts-section { padding: 112px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(0,1.12fr) minmax(310px,.78fr); align-items: center; gap: 8%; background: #f5eae7; }
 .marketing-gifts-copy h2 { max-width: 670px; margin: 14px 0 19px; color: #27382e; font: 400 clamp(42px,4.6vw,60px)/1.08 var(--serif); letter-spacing: -.03em; }
 .marketing-gifts-copy > p { max-width: 690px; color: #414a43; font-size: 18px; line-height: 1.75; }
-.marketing-gift-flow { margin: 28px 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 17px; }
-.marketing-gift-flow > article { min-height: 174px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid #e6d8d2; background: rgba(255,255,255,.67); }
+.marketing-gift-flow { margin: 28px 0; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: stretch; gap: 17px; }
+.marketing-gift-flow > article { min-height: 174px; height: 100%; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid #e6d8d2; background: rgba(255,255,255,.67); }
 .marketing-gift-flow > article > span { color: #72513b; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .marketing-gift-flow > article > strong { margin: 11px 0 7px; color: #27382e; font: 400 21px/1.25 var(--serif); }
 .marketing-gift-flow > article > p { margin: 0; color: #4d554e; font-size: 14px; line-height: 1.55; }
-.marketing-gift-flow > svg { color: #80624f; }
+.marketing-gift-flow > svg { align-self: center; flex: 0 0 auto; color: #80624f; }
 .marketing-free-note { margin: 27px 0 20px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 13px; border: 1px solid #d4ded3; color: #405849; background: #edf2ec; }
 .marketing-free-note > svg { flex: 0 0 auto; margin-top: 2px; }
 .marketing-free-note p { margin: 0; color: #35463b; font-size: 15px; line-height: 1.6; }
@@ -381,13 +381,14 @@ button { font: inherit; }
 .marketing-budget-reminder small { color: #686e64; font-size: 12px; line-height: 1.45; }
 .marketing-pwa-section { padding: 108px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: minmax(280px,.8fr) minmax(0,1.2fr); align-items: center; gap: 9%; background: #fbfaf6; }
 .marketing-pwa-art { min-height: 490px; position: relative; display: grid; place-items: center; background: radial-gradient(ellipse at center, #f3e6dd 0, #f3e6dd 34%, transparent 35%); }
-.marketing-pwa-phone { width: min(292px,78%); min-height: 420px; position: relative; padding: 50px 25px 26px; display: flex; flex-direction: column; align-items: center; border: 7px solid #3d493f; border-radius: 34px; text-align: center; color: #27382e; background: #fffefa; box-shadow: 0 19px 55px rgba(48,62,48,.15); }
+.marketing-pwa-phone { width: min(292px,78%); min-height: 420px; position: relative; padding: 42px 12px 12px; display: flex; flex-direction: column; align-items: center; border: 7px solid #3d493f; border-radius: 34px; text-align: center; color: #27382e; background: #fffefa; box-shadow: 0 19px 55px rgba(48,62,48,.15); }
 .marketing-phone-camera { width: 70px; height: 12px; position: absolute; top: 12px; left: 50%; border-radius: 20px; background: #3d493f; transform: translateX(-50%); }
-.marketing-phone-flower { width: 58px; height: 58px; margin: 22px 0; display: grid; place-items: center; border: 1px solid #e4d5c7; border-radius: 50%; color: #987459; background: #f8f1e8; }
-.marketing-pwa-phone > .marketing-kicker { font-size: 10px; }
-.marketing-pwa-phone > strong { margin-top: 12px; font: 400 28px/1.15 var(--serif); }
-.marketing-pwa-phone > p { color: #626c62; font-size: 14px; line-height: 1.55; }
-.marketing-phone-calendar { min-height: 45px; margin-top: auto; padding: 9px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #d9dfd5; color: #405849; font-size: 12px; font-weight: 700; }
+.marketing-phone-invite { width: 100%; min-height: 350px; overflow: hidden; display: flex; flex-direction: column; align-items: center; border: 1px solid #e3dbcd; background: #f8f5eb; }
+.marketing-phone-invite > img { width: 100%; height: 155px; object-fit: cover; object-position: center 45%; }
+.marketing-phone-invite > span { margin-top: 17px; color: #8b6650; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+.marketing-phone-invite > strong { max-width: 210px; margin: 8px 0; color: #27382e; font: 400 24px/1.1 var(--serif); }
+.marketing-phone-invite > small { color: #626c61; font: italic 13px/1.4 var(--serif); }
+.marketing-phone-invite > button { min-height: 39px; margin: auto 0 16px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 0; color: #fffefa; background: #405849; font: 600 11px var(--body); }
 .marketing-pwa-flower { width: 92px; height: 92px; position: absolute; right: 1%; bottom: 12%; padding: 15px; border: 1px solid #d9c4af; border-radius: 50%; color: #9d8068; background: #fbfaf6; }
 .marketing-pwa-flower svg { width: 100%; height: 100%; stroke-width: 1.1; }
 .marketing-pwa-copy h2 { max-width: 640px; }
@@ -431,7 +432,7 @@ button { font: inherit; }
   .marketing-gifts-copy h2 { font-size: clamp(40px,10vw,51px); }
   .marketing-gifts-copy > p { font-size: 16px; }
   .marketing-gift-flow { grid-template-columns: 1fr; gap: 10px; }
-  .marketing-gift-flow > article { min-height: 0; padding: 18px; }
+  .marketing-gift-flow > article { min-height: 0; height: auto; padding: 18px; }
   .marketing-gift-flow > svg { justify-self: center; transform: rotate(90deg); }
   .marketing-gifts-card { min-height: 0; padding: 26px; }
   .marketing-print-options { grid-template-columns: 1fr; }
@@ -478,4 +479,32 @@ button { font: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .marketing-feature-cards article, .marketing-checkin-device, .marketing-gifts-card, .marketing-budget-card { transition: none; }
+}
+
+@media (max-width: 760px) {
+  .marketing-hero-copy { order: 1; }
+  .marketing-hero-photo { order: 2; }
+  .marketing-hero { padding-top: 24px; padding-bottom: 38px; background: #f7f4ed; }
+  .marketing-hero::before, .marketing-flower-hero { display: none; }
+  .marketing-hero h1 { max-width: 560px; font-size: clamp(37px, 8.8vw, 47px); }
+  .marketing-hero-actions { margin-top: 19px; }
+  .marketing-photo-frame { border: 0; box-shadow: none; }
+  .marketing-photo-arrow { width: 44px; height: 44px; }
+  .marketing-steps { width: 86%; }
+  .marketing-steps article, .marketing-steps article:nth-child(2), .marketing-steps article:nth-child(3) { padding: 20px 2px; border: 0; border-top: 1px solid #d9ded5; background: transparent; }
+  .marketing-step-icon { width: 40px; height: 40px; margin-bottom: 10px; }
+  .marketing-showcase-photo img { border: 0; box-shadow: none; }
+  .marketing-flower-showcase { display: none; }
+  .marketing-feature-cards article, .marketing-feature-cards article:nth-child(2), .marketing-feature-cards article:nth-child(3) { padding: 18px 3px; border: 0; border-top: 1px solid #d9ded5; background: transparent; }
+  .marketing-checkin-details article { border-color: #d3dbd1; }
+  .marketing-print-photo > picture > img { border: 0; box-shadow: none; }
+  .marketing-print-card { box-shadow: 0 7px 20px rgba(31,39,32,.09); }
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+  .marketing-hero { min-height: 0; padding-top: 62px; padding-bottom: 62px; }
+  .marketing-hero h1 { font-size: clamp(42px, 5.1vw, 58px); }
+  .marketing-hero-copy > p { font-size: 17px; }
+  .marketing-hero-actions { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .marketing-steps article { min-height: 255px; padding: 24px; }
 }

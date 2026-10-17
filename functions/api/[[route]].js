@@ -23,7 +23,14 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'wedding-pexels', fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {} }
+const siteCameraLimits = [3, 5, 10, 20, 50]
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'wedding-pexels', fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 } }
+
+function validGuestCamera(camera) {
+  if (camera === undefined) return defaultSiteConfig.guestCamera
+  if (!camera || typeof camera !== 'object' || Array.isArray(camera) || typeof camera.enabled !== 'boolean' || !siteCameraLimits.includes(camera.photoLimit)) return null
+  return { enabled: camera.enabled, photoLimit: camera.photoLimit }
+}
 
 function validCoverMessages(messages) {
   if (messages === undefined) return defaultSiteConfig.coverMessages
@@ -58,6 +65,20 @@ function validSectionContent(content) {
   return result
 }
 
+function validWeddingDetails(details) {
+  const fallback = { schedule: '', menu: '', dressCode: '' }
+  if (details === undefined) return fallback
+  const allowedKeys = new Set([...Object.keys(fallback), 'venue', 'address', 'ceremonyTime', 'receptionTime'])
+  if (!details || typeof details !== 'object' || Array.isArray(details) || Object.keys(details).some((key) => !allowedKeys.has(key))) return null
+  const limits = { schedule: 1200, menu: 1200, dressCode: 120 }
+  const result = {}
+  for (const [key, limit] of Object.entries(limits)) {
+    const value = details[key] ?? ''
+    if (typeof value !== 'string' || value.length > limit) return null
+    result[key] = value.trim()
+  }
+  return result
+}
 function parseSiteConfig(value) {
   if (!value || value === '{}') return null
   try {
@@ -73,7 +94,11 @@ function parseSiteConfig(value) {
     if (!storyMessages) return null
     const sectionContent = validSectionContent(config.sectionContent)
     if (!sectionContent) return null
-    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent }
+    const weddingDetails = validWeddingDetails(config.weddingDetails)
+    if (!weddingDetails) return null
+    const guestCamera = validGuestCamera(config.guestCamera)
+    if (!guestCamera) return null
+    return { ...defaultSiteConfig, ...config, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
   } catch {
     return null
   }
@@ -92,11 +117,25 @@ function validateSiteConfig(body) {
   if (!storyMessages) return null
   const sectionContent = validSectionContent(body.sectionContent)
   if (!sectionContent) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: body.coverImage || 'wedding-pexels', fontScale: body.fontScale || 'medium', enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent }
+  const weddingDetails = validWeddingDetails(body.weddingDetails)
+  if (!weddingDetails) return null
+  const guestCamera = validGuestCamera(body.guestCamera)
+  if (!guestCamera) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: body.coverImage || 'wedding-pexels', fontScale: body.fontScale || 'medium', enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
 }
 
 function jsonError(context, status, error) {
   return context.json({ error }, status, { 'Cache-Control': 'no-store' })
+}
+
+async function purgeR2Prefix(bucket, prefix) {
+  if (!bucket) return
+  let cursor
+  do {
+    const page = await bucket.list({ prefix, cursor, limit: 1000 })
+    if (page.objects.length) await bucket.delete(page.objects.map((object) => object.key))
+    cursor = page.truncated ? page.cursor : undefined
+  } while (cursor)
 }
 
 async function verifyAccessIdentity(context, expectedEmail) {
@@ -1452,7 +1491,10 @@ app.delete('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, as
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const guest = await context.env.DB.prepare('SELECT id FROM guests WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL').bind(guestId, weddingId).first()
   if (!guest) return jsonError(context, 404, 'guest_not_found')
+  const guestPhotos = await context.env.DB.prepare('SELECT object_key FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(weddingId, guestId).all()
+  if (guestPhotos.results.length && context.env.GUEST_PHOTOS) await context.env.GUEST_PHOTOS.delete(guestPhotos.results.map((photo) => photo.object_key))
   await context.env.DB.batch([
+    context.env.DB.prepare('DELETE FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(weddingId, guestId),
     context.env.DB.prepare(`UPDATE guests SET name = 'Convidado removido', email = NULL, phone = NULL, access_token_hash = NULL, dietary_notes = NULL,
       deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL`).bind(guestId, weddingId),
     context.env.DB.prepare('UPDATE guest_rsvps SET dietary_notes = NULL WHERE wedding_id = ? AND guest_id = ?').bind(weddingId, guestId),
@@ -1505,6 +1547,101 @@ app.get('/api/invitation', async (context) => {
     }),
     gifts: gifts.results,
   })
+})
+
+app.get('/api/invitation/photos', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  const config = parseSiteConfig(guest.published_site_config_json)
+  if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).first()
+  return context.json({ saved: current?.total || 0, limit: config.guestCamera.photoLimit, remaining: Math.max(0, config.guestCamera.photoLimit - (current?.total || 0)) })
+})
+
+app.post('/api/invitation/photos', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  const config = parseSiteConfig(guest.published_site_config_json)
+  if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'photo_storage_unavailable')
+  const contentLength = Number(context.req.header('Content-Length') || 0)
+  if (contentLength > 7_000_000) return jsonError(context, 413, 'photo_too_large')
+  const body = await context.req.parseBody().catch(() => null)
+  const photo = body?.photo
+  const eventId = typeof body?.eventId === 'string' ? body.eventId : ''
+  if (!(photo instanceof File) || photo.size < 1 || photo.size > 6_291_456) return jsonError(context, 400, 'invalid_photo')
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) return jsonError(context, 400, 'unsupported_photo_type')
+  const event = await guestCanAccessEvent(context, guest, eventId)
+  if (!event) return jsonError(context, 404, 'event_not_found')
+  const bytes = new Uint8Array(await photo.arrayBuffer())
+  const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+  const png = bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 && bytes[4] === 13 && bytes[5] === 10 && bytes[6] === 26 && bytes[7] === 10
+  const webp = String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+  if (!(photo.type === 'image/jpeg' && jpeg) && !(photo.type === 'image/png' && png) && !(photo.type === 'image/webp' && webp)) return jsonError(context, 400, 'invalid_photo_content')
+  const id = crypto.randomUUID()
+  const extension = photo.type === 'image/jpeg' ? 'jpg' : photo.type === 'image/png' ? 'png' : 'webp'
+  const objectKey = `${guest.wedding_id}/${eventId}/${guest.id}/${id}.${extension}`
+  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: photo.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId: guest.wedding_id, guestId: guest.id, eventId } })
+  try {
+    const result = await context.env.DB.prepare(`
+      INSERT INTO guest_photos (id, wedding_id, event_id, guest_id, object_key, content_type, size_bytes)
+      SELECT ?, ?, ?, ?, ?, ?, ? WHERE (
+        SELECT COUNT(*) FROM guest_photos WHERE wedding_id = ? AND guest_id = ?
+      ) < ?
+    `).bind(id, guest.wedding_id, eventId, guest.id, objectKey, photo.type, photo.size, guest.wedding_id, guest.id, config.guestCamera.photoLimit).run()
+    if (!result.meta.changes) {
+      await context.env.GUEST_PHOTOS.delete(objectKey)
+      return jsonError(context, 409, 'photo_limit_reached')
+    }
+  } catch {
+    await context.env.GUEST_PHOTOS.delete(objectKey)
+    return jsonError(context, 500, 'photo_save_failed')
+  }
+  return context.json({ saved: true }, 201)
+})
+
+app.get('/api/couple/weddings/:weddingId/photos', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  const result = await context.env.DB.prepare(`
+    SELECT p.id, p.event_id, e.name AS event_name, g.name AS guest_name, p.content_type, p.size_bytes, p.created_at
+    FROM guest_photos p JOIN events e ON e.id = p.event_id JOIN guests g ON g.id = p.guest_id
+    WHERE p.wedding_id = ? ORDER BY p.created_at DESC
+  `).bind(weddingId).all()
+  return context.json({ photos: result.results }, 200, { 'Cache-Control': 'no-store' })
+})
+
+app.get('/api/couple/weddings/:weddingId/photos/:photoId/image', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership || !context.env.GUEST_PHOTOS) return jsonError(context, 404, 'photo_not_found')
+  const photo = await context.env.DB.prepare('SELECT object_key, content_type FROM guest_photos WHERE id = ? AND wedding_id = ?').bind(context.req.param('photoId'), weddingId).first()
+  if (!photo) return jsonError(context, 404, 'photo_not_found')
+  const object = await context.env.GUEST_PHOTOS.get(photo.object_key)
+  if (!object) return jsonError(context, 404, 'photo_not_found')
+  context.header('Content-Type', photo.content_type)
+  context.header('Cache-Control', 'private, no-store')
+  context.header('Content-Disposition', 'inline')
+  context.header('X-Content-Type-Options', 'nosniff')
+  return context.body(object.body)
+})
+
+app.delete('/api/couple/weddings/:weddingId/photos/:photoId', requireSession, async (context) => {
+  const session = context.get('session')
+  if (Date.now() - Date.parse(session.mfa_verified_at) > 300000) return jsonError(context, 403, 'recent_mfa_required')
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  const photo = await context.env.DB.prepare('SELECT object_key FROM guest_photos WHERE id = ? AND wedding_id = ?').bind(context.req.param('photoId'), weddingId).first()
+  if (!photo) return jsonError(context, 404, 'photo_not_found')
+  await context.env.DB.batch([
+    context.env.DB.prepare('DELETE FROM guest_photos WHERE id = ? AND wedding_id = ?').bind(context.req.param('photoId'), weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'guest_photo_deleted', 'guest_photo', ?, '{}')`).bind(crypto.randomUUID(), context.get('session').account_id, weddingId, context.req.param('photoId')),
+  ])
+  await context.env.GUEST_PHOTOS?.delete(photo.object_key)
+  return context.json({ deleted: true })
 })
 
 app.post('/api/invitation/rsvp', async (context) => {
@@ -1567,6 +1704,17 @@ app.get('/api/staff/events/:eventId/guests', requireSession, async (context) => 
   const eventId = context.req.param('eventId')
   const assignment = await assignedStaff(context, eventId, ['event_staff', 'checkin_staff'])
   if (!assignment) return jsonError(context, 404, 'event_not_found')
+  if (assignment.role === 'event_staff') {
+    const result = await context.env.DB.prepare(`
+      SELECT g.id, g.name
+      FROM guests g
+      WHERE g.wedding_id = ? AND g.deleted_at IS NULL AND (
+        NOT EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = ?)
+        OR EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = ? AND x.group_id = g.group_id)
+      ) ORDER BY g.name COLLATE NOCASE
+    `).bind(assignment.wedding_id, eventId, eventId).all()
+    return context.json({ guests: result.results, walkIns: [] }, 200, { 'Cache-Control': 'no-store' })
+  }
   const result = await context.env.DB.prepare(`
     SELECT g.id, g.name, COALESCE(r.party_size, g.party_size) AS party_size,
       COALESCE(r.status, g.rsvp_status) AS rsvp_status, COALESCE(r.dietary_notes, g.dietary_notes) AS dietary_notes,
@@ -1885,6 +2033,7 @@ app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requir
   const wedding = await context.env.DB.prepare("SELECT id, status FROM weddings WHERE id = ? AND status != 'deleted'").bind(weddingId).first()
   if (!wedding) return jsonError(context, 404, 'wedding_not_found')
   const actorId = session.account_id
+  await purgeR2Prefix(context.env.GUEST_PHOTOS, `${weddingId}/`)
   const auditId = crypto.randomUUID()
   await context.env.DB.batch([
     context.env.DB.prepare(`UPDATE weddings SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP, slug = ?, partner_one_name = 'Dados anonimizados', partner_two_name = 'Dados anonimizados', event_date = NULL, site_config_json = '{}', published_site_config_json = '{}', published_events_json = '[]', site_published_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status != 'deleted'`)
