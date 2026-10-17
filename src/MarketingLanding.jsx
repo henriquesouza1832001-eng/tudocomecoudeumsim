@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Bell, CalendarDays, Camera, Check, CircleHelp, ClipboardList, ExternalLink, Flower2, Heart, Link, Printer, QrCode, ShieldCheck, Smartphone, Users, Wallet, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Bell, CalendarDays, Camera, Check, CircleHelp, ClipboardList, ExternalLink, Flower2, Heart, Link, PanelTopClose, PanelTopOpen, Printer, QrCode, ShieldCheck, Smartphone, Users, Wallet, X } from 'lucide-react'
 import './MarketingLanding.css'
 
 const photos = [
@@ -63,12 +63,23 @@ function FloralMark({ className = '' }) {
 }
 
 export default function MarketingLanding() {
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const collapseButton = useRef(null)
+  const reopenButton = useRef(null)
+
+  function toggleHeader() {
+    const nextVisible = !headerVisible
+    setHeaderVisible(nextVisible)
+    window.requestAnimationFrame(() => (nextVisible ? collapseButton : reopenButton).current?.focus({ preventScroll: true }))
+  }
+
   return <div className="marketing-page">
-    <header className="marketing-header">
+    <header className="marketing-header" id="marketing-header" hidden={!headerVisible}>
       <a className="marketing-brand" href="/" aria-label="Página inicial"><span>e<span>&amp;</span>t</span><strong>sites de casamento</strong></a>
       <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#convite">O convite</a><a href="#presentes">Presentes</a><a href="#planejamento">Planejamento</a><a href="#entrada">Entrada</a><a className="marketing-login" href="/painel">Entrar</a></nav>
-      <a className="marketing-header-cta" href="/criar-site">Criar meu site <ArrowRight size={17} /></a>
+      <div className="marketing-header-actions"><a className="marketing-header-cta" href="/criar-site">Criar meu site <ArrowRight size={17} /></a><button className="marketing-header-toggle" type="button" onClick={toggleHeader} aria-label="Recolher cabeçalho" aria-expanded="true" aria-controls="marketing-header" ref={collapseButton}><PanelTopClose size={19} /><span>Recolher</span></button></div>
     </header>
+    {!headerVisible && <button className="marketing-header-reopen" type="button" onClick={toggleHeader} aria-label="Mostrar cabeçalho" aria-expanded="false" aria-controls="marketing-header" ref={reopenButton}><PanelTopOpen size={19} /><span>Mostrar menu</span></button>}
     <main>
       <section className="marketing-hero" aria-labelledby="marketing-title">
         <div className="marketing-hero-photo"><WeddingPhoto /></div>

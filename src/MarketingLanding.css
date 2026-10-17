@@ -15,6 +15,11 @@ button { font: inherit; }
 .marketing-page { min-height: 100vh; overflow: clip; color: var(--marketing-ink); background: var(--marketing-paper); }
 .marketing-page a:focus-visible, .marketing-page button:focus-visible { outline: 3px solid #72513b; outline-offset: 4px; }
 .marketing-header { min-height: 86px; padding: 12px max(5.5vw, calc((100vw - 1240px) / 2)); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; background: #fffefa; border-bottom: 1px solid rgba(39,56,46,.1); }
+.marketing-header[hidden] { display: none; }
+.marketing-header-actions { display: flex; align-items: center; gap: 10px; }
+.marketing-header-toggle, .marketing-header-reopen { min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #c9cec5; color: var(--marketing-ink); background: #fffefa; font-size: 13px; font-weight: 600; cursor: pointer; }
+.marketing-header-toggle:hover, .marketing-header-reopen:hover { background: #edf1eb; }
+.marketing-header-reopen { min-height: 48px; position: fixed; z-index: 50; top: max(12px, env(safe-area-inset-top)); right: 12px; padding: 0 14px; border-color: #bfc9be; box-shadow: 0 4px 18px rgba(39,56,46,.16); }
 .marketing-brand { display: inline-flex; align-items: center; gap: 13px; color: var(--marketing-ink); white-space: nowrap; }
 .marketing-brand > span { font: 30px/1 var(--serif); }
 .marketing-brand > span > span, .marketing-footer-brand > span { color: #a77d62; font-style: italic; }
@@ -105,6 +110,9 @@ button { font: inherit; }
 }
 @media (max-width: 760px) {
   .marketing-header { min-height: 0; padding: 12px 5% 8px; grid-template-columns: minmax(0,1fr) auto; gap: 8px 12px; }
+  .marketing-header-actions { gap: 6px; }
+  .marketing-header-toggle { width: 44px; padding: 0; }
+  .marketing-header-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .marketing-brand { gap: 9px; }
   .marketing-brand > span { font-size: 26px; }
   .marketing-brand strong { max-width: none; padding-left: 9px; font-size: 10px; }
@@ -272,6 +280,9 @@ button { font: inherit; }
 
 @media (max-width: 430px) {
   .marketing-header nav a:nth-child(3) { display: none; }
+  .marketing-brand strong { display: none; }
+  .marketing-header-actions { gap: 4px; }
+  .marketing-header-cta { min-height: 44px; padding: 0 9px; font-size: 12px; }
 }
 
 .marketing-header { position: sticky; top: 0; z-index: 20; min-height: 82px; backdrop-filter: blur(14px); background: rgba(255,253,249,.95); }
