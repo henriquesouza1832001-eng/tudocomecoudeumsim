@@ -960,10 +960,25 @@ img { display: block; max-width: 100%; }
 .role-actions .button-primary, .role-card .button-primary { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .role-card .button-outline, .role-actions .button-outline { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 10px; }
 .guest-pass-card { position: relative; overflow: hidden; }
+.guest-invitation-cover { min-height: clamp(250px, 42vw, 390px); margin: -20px -20px 18px; position: relative; display: grid; align-items: end; overflow: hidden; color: #fff; background: var(--forest); }
+.guest-invitation-cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+.guest-invitation-cover::after { position: absolute; inset: 30% 0 0; content: ''; background: linear-gradient(transparent, rgba(22,32,25,.78)); }
+.guest-invitation-cover > div { max-width: 620px; padding: 28px clamp(20px, 5vw, 46px); position: relative; z-index: 1; }
+.guest-invitation-cover > div > span { font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.guest-invitation-cover h2 { margin: 10px 0 7px; color: #fff; font-family: var(--font-heading, var(--serif)); font-size: clamp(30px, 5vw, 48px); line-height: 1.05; }
+.guest-invitation-cover h2 i { color: #f0d6bb; font-weight: 400; }
+.guest-invitation-cover p { margin: 0; color: rgba(255,255,255,.94); font-size: 14px; }
+.guest-invitation-cover small { display: block; margin-top: 10px; color: rgba(255,255,255,.85); font-size: 9px; }
+.guest-pass-card .role-card-heading h2 { margin: 0; }
 .guest-pass-details { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 9px 20px; }
 .guest-pass-details > span { display: inline-flex; align-items: center; gap: 7px; color: #686e65; font-size: 10px; }
 .guest-pass-details svg { color: var(--forest); }
 .guest-cover-message { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(48,55,47,.1); color: var(--forest); font-family: var(--font-heading, var(--serif)); font-size: 17px; line-height: 1.5; }
+.guest-extra-details { margin: 12px 0; border: 1px solid rgba(48,55,47,.12); background: rgba(255,255,255,.55); }
+.guest-extra-details > summary { min-height: 48px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; color: var(--forest); cursor: pointer; font-family: var(--font-heading, var(--serif)); font-size: 16px; list-style-position: inside; }
+.guest-extra-details[open] > summary { border-bottom: 1px solid rgba(48,55,47,.1); }
+.guest-extra-details > .role-card { border: 0; border-bottom: 1px solid rgba(48,55,47,.08); background: transparent; box-shadow: none; }
+.guest-extra-details > .role-card:last-child { border-bottom: 0; }
 .guest-gift-list { display: grid; }
 .guest-gift-list article { padding: 12px 0; display: flex; align-items: flex-start; gap: 10px; border-top: 1px solid rgba(48,55,47,.08); }
 .guest-gift-mark { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; color: var(--forest); background: #edf0e8; }
@@ -1419,6 +1434,9 @@ img { display: block; max-width: 100%; }
   .role-preview { max-width: 100%; flex: 1 1 100%; order: 3; font-size: 10px; letter-spacing: .04em; }
   .role-header > .button-outline { min-height: 44px; padding: 0 13px; font-size: 12px; }
   .role-main, .admin-auth-main { width: calc(100% - 32px); min-width: 0; padding: 28px 0 calc(38px + env(safe-area-inset-bottom)); }
+  .guest-invitation-cover { min-height: min(68vw, 310px); }
+  .guest-invitation-cover > div { padding: 21px 17px; }
+  .guest-invitation-cover h2 { font-size: clamp(28px, 8vw, 37px); }
   .role-intro { margin-bottom: 22px; }
   .role-intro h1 { font-size: clamp(30px, 8vw, 40px); }
   .role-intro p { font-size: 14px; }
@@ -1857,6 +1875,10 @@ img { display: block; max-width: 100%; }
 .customizer-live-sections { position: sticky; top: 34px; z-index: 4; min-height: 43px; padding: 10px 14px; gap: 8px 17px; border-bottom: 1px solid color-mix(in srgb, var(--customizer-ink) 14%, transparent); }
 .customizer-live-sections a { color: inherit; font-size: calc(12px * var(--customizer-text-scale, 1)); text-decoration: none; }
 .customizer-live-sections a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.customizer-preview-more { color: var(--customizer-ink); background: var(--customizer-paper); }
+.customizer-preview-more > summary { padding: 15px 20px; border-top: 1px solid color-mix(in srgb, var(--customizer-ink) 14%, transparent); text-align: center; cursor: pointer; font-size: calc(13px * var(--customizer-text-scale, 1)); }
+.customizer-preview-more[open] > summary { border-bottom: 1px solid color-mix(in srgb, var(--customizer-ink) 14%, transparent); }
+.customizer-preview-more .customizer-preview-section { min-height: 140px; }
 .customizer-preview-section { min-height: 210px; padding: clamp(26px, 5vw, 58px) clamp(20px, 7vw, 76px); color: var(--customizer-ink); font-family: var(--customizer-font-body, Arial, sans-serif); text-align: center; }
 .customizer-preview-section.soft { background: color-mix(in srgb, var(--customizer-accent) 12%, var(--customizer-paper)); }
 .customizer-preview-section.plain { background: var(--customizer-paper); }
