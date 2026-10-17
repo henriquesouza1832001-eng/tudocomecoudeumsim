@@ -1232,7 +1232,7 @@ img { display: block; max-width: 100%; }
 .password-visibility-toggle { position: absolute; top: 1px; right: 4px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 3px; color: #536357; background: transparent; cursor: pointer; }
 .password-visibility-toggle:hover { color: #263b30; background: #f2f3ef; }
 .password-visibility-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.password-capslock { color: #755232; font-size: 12px; font-weight: 500; line-height: 1.4; }
+.password-capslock { position: absolute; z-index: 4; top: calc(100% + 4px); right: 42px; width: max-content; max-width: min(300px, calc(100vw - 48px)); padding: 7px 10px; border: 1px solid rgba(117,82,50,.24); border-radius: 4px; color: #654727; background: #fffdf8; box-shadow: 0 5px 16px rgba(48,55,47,.14); font-size: 12px; font-weight: 500; line-height: 1.4; pointer-events: none; }
 .admin-login-form .button-primary { min-height: 42px; justify-content: center; }
 .signup-name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .couple-type-field { min-width: 0; margin: 0; padding: 0; border: 0; }
