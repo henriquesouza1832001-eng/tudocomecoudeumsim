@@ -338,7 +338,7 @@ async function sendPasswordReset(context, email, token) {
   })
 }
 
-async function verifyTurnstile(context, token) {
+async function verifyTurnstile(context, token, expectedAction = 'account') {
   const secret = context.env.TURNSTILE_SECRET_KEY
   if (!secret) return { configured: false, verified: false }
   if (typeof token !== 'string' || token.length < 1 || token.length > 2048) return { configured: true, verified: false }
@@ -349,24 +349,7 @@ async function verifyTurnstile(context, token) {
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body })
     const result = await response.json()
     const hostname = new URL(context.req.url).hostname
-    return { configured: true, verified: response.ok && result.success === true && result.action === 'rsvp' && result.hostname === hostname }
-  } catch {
-    return { configured: true, verified: false }
-  }
-}
-
-async function verifyRecaptcha(context, token) {
-  const secret = context.env.RECAPTCHA_SECRET_KEY
-  if (!secret) return { configured: false, verified: false }
-  if (typeof token !== 'string' || token.length < 1 || token.length > 4096) return { configured: true, verified: false }
-  const body = new URLSearchParams({ secret, response: token })
-  const remoteIp = context.req.header('CF-Connecting-IP')
-  if (remoteIp) body.set('remoteip', remoteIp)
-  try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', { method: 'POST', body })
-    const result = await response.json()
-    const hostname = new URL(context.req.url).hostname
-    return { configured: true, verified: response.ok && result.success === true && result.hostname === hostname }
+    return { configured: true, verified: response.ok && result.success === true && result.action === expectedAction && result.hostname === hostname }
   } catch {
     return { configured: true, verified: false }
   }
@@ -475,9 +458,9 @@ app.post('/api/auth/couple-signup', async (context) => {
     || !slugIsValid || !dateIsValid || !siteConfig) return jsonError(context, 400, 'invalid_signup')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
-  const recaptcha = await verifyRecaptcha(context, body.recaptchaToken)
-  if (!recaptcha.configured) return jsonError(context, 503, 'recaptcha_unconfigured')
-  if (!recaptcha.verified) return jsonError(context, 403, 'recaptcha_failed')
+  const challenge = await verifyTurnstile(context, body.turnstileToken)
+  if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
+  if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
   const accountId = crypto.randomUUID()
   const weddingId = crypto.randomUUID()
   const membershipId = crypto.randomUUID()
@@ -553,9 +536,9 @@ app.post('/api/auth/password-reset/request', async (context) => {
   const body = await context.req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
   if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) return jsonError(context, 400, 'invalid_email')
-  const recaptcha = await verifyRecaptcha(context, body.recaptchaToken)
-  if (!recaptcha.configured) return jsonError(context, 503, 'recaptcha_unconfigured')
-  if (!recaptcha.verified) return jsonError(context, 403, 'recaptcha_failed')
+  const challenge = await verifyTurnstile(context, body.turnstileToken)
+  if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
+  if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowPasswordReset(context, email)) return context.json({ requested: true }, 202)
   const account = await context.env.DB.prepare(`SELECT id, email FROM accounts
@@ -624,9 +607,9 @@ app.post('/api/auth/login', async (context) => {
   const retryAfter = await checkLoginLimit(context, email)
   if (retryAfter) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': String(retryAfter), 'Cache-Control': 'no-store' })
 
-  const recaptcha = await verifyRecaptcha(context, body.recaptchaToken)
-  if (!recaptcha.configured) return jsonError(context, 503, 'recaptcha_unconfigured')
-  if (!recaptcha.verified) return jsonError(context, 403, 'recaptcha_failed')
+  const challenge = await verifyTurnstile(context, body.turnstileToken)
+  if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
+  if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
 
   const result = await authenticate(context, email, password, code)
   if (result.error === 'mfa_setup_required') {

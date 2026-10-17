@@ -1,4 +1,4 @@
-import './styles.css'
+﻿import './styles.css'
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import {
@@ -86,9 +86,7 @@ const SITE_FONT_PAIRS = {
 const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'wedding-pexels', fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 let turnstileScriptPromise
-let recaptchaScriptPromise
 
 function loadTurnstileScript() {
   if (window.turnstile) return Promise.resolve()
@@ -106,24 +104,6 @@ function loadTurnstileScript() {
     document.head.append(script)
   })
   return turnstileScriptPromise
-}
-
-function loadRecaptchaScript() {
-  if (window.grecaptcha?.render) return Promise.resolve()
-  if (recaptchaScriptPromise) return recaptchaScriptPromise
-  recaptchaScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'
-    script.async = true
-    script.defer = true
-    script.onload = resolve
-    script.onerror = () => {
-      recaptchaScriptPromise = null
-      reject(new Error('recaptcha_script_unavailable'))
-    }
-    document.head.append(script)
-  })
-  return recaptchaScriptPromise
 }
 
 const NAV_ITEMS = [
@@ -844,8 +824,8 @@ function CoupleSignup() {
   const [partnerOneName, setPartnerOneName] = useState(publicDraft.partnerOneName || '')
   const [partnerTwoName, setPartnerTwoName] = useState(publicDraft.partnerTwoName || '')
   const [coupleType, setCoupleType] = useState('bride-groom')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [slug, setSlug] = useState(createCoupleSlug(publicDraft.partnerOneName || '', publicDraft.partnerTwoName || ''))
   const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
   const [error, setError] = useState('')
@@ -868,7 +848,7 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, siteConfig: publicDraft.siteConfig, recaptchaToken }),
+        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, siteConfig: publicDraft.siteConfig, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'signup_failed')
@@ -878,15 +858,15 @@ function CoupleSignup() {
       setConfirmation('')
     } catch (cause) {
       setError(cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
-        : cause.message === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.'
-          : cause.message === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.'
+        : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
+          : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.'
         : cause.message === 'email_or_slug_unavailable' ? 'Este e-mail ou endereço já está cadastrado. Confira os dados e tente entrar.'
           : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
             : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
               : 'Não foi possível criar o cadastro. Confira os campos e tente novamente.')
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -901,10 +881,10 @@ function CoupleSignup() {
       <label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
       <label>Crie uma senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       <label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
-      <RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />
-      {!RECAPTCHA_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}
+      <TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />
+      {!TURNSTILE_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}
       {error && <p className="admin-form-error" role="alert">{error}</p>}
-      <button className="button-primary signup-submit" type="submit" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
+      <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
       <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
     </form>}
   </RoleFrame>
@@ -934,8 +914,8 @@ function CoupleEmailConfirmation() {
 
 function PasswordResetRequest() {
   const [email, setEmail] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -948,7 +928,7 @@ function PasswordResetRequest() {
       const response = await fetch('/api/auth/password-reset/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, recaptchaToken }),
+        body: JSON.stringify({ email, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'request_failed')
@@ -956,22 +936,22 @@ function PasswordResetRequest() {
     } catch (cause) {
       setError(cause.message === 'email_service_unconfigured'
         ? 'O envio de e-mails está sendo configurado. Tente novamente em breve.'
-        : cause.message === 'recaptcha_unconfigured'
+        : cause.message === 'turnstile_unavailable'
           ? 'A verificação de segurança ainda não foi configurada neste site.'
-          : cause.message === 'recaptcha_failed'
+          : cause.message === 'turnstile_verification_failed'
             ? 'Conclua novamente a verificação de segurança.'
         : cause.message === 'too_many_attempts'
           ? 'Muitas solicitações neste aparelho. Aguarde e tente novamente.'
           : 'Não foi possível solicitar a recuperação agora. Tente novamente mais tarde.')
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
 
   return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={submitted ? 'Confira sua caixa de entrada.' : 'Recupere seu acesso.'} description={submitted ? 'Se houver uma conta ativa com esse endereço, enviaremos um link válido por 30 minutos.' : 'Informe o e-mail da conta para receber um link de redefinição de senha.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
-    <form className="role-card admin-login-form" onSubmit={requestReset}><label>E-mail da conta<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitted} /></label>{!submitted && <RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />}{error && <p className="admin-form-error" role="alert">{error}</p>}{submitted ? <a className="button-primary signup-submit" href="/painel">Voltar para entrar <ArrowRight size={15} /></a> : <button className="button-primary signup-submit" type="submit" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken}>{busy ? 'Solicitando…' : 'Enviar link de recuperação'} <ArrowRight size={15} /></button>}</form>
+    <form className="role-card admin-login-form" onSubmit={requestReset}><label>E-mail da conta<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitted} /></label>{!submitted && <TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />}{error && <p className="admin-form-error" role="alert">{error}</p>}{submitted ? <a className="button-primary signup-submit" href="/painel">Voltar para entrar <ArrowRight size={15} /></a> : <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Solicitando…' : 'Enviar link de recuperação'} <ArrowRight size={15} /></button>}</form>
   </RoleFrame>
 }
 
@@ -1022,8 +1002,8 @@ function CouplePanel({ notify }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [weddings, setWeddings] = useState([])
   const [weddingId, setWeddingId] = useState('')
   const [guests, setGuests] = useState([])
@@ -1266,7 +1246,7 @@ function CouplePanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, turnstileToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'invalid_credentials')
       setAccount(result.account)
@@ -1276,11 +1256,11 @@ function CouplePanel({ notify }) {
       }
       await loadWeddings()
     } catch (cause) {
-      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.' : cause.message)
+      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : cause.message)
       setStage('login')
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -1709,7 +1689,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -2069,8 +2049,8 @@ function TeamInvitationAcceptance() {
   const [confirmation, setConfirmation] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [code, setCode] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -2115,7 +2095,7 @@ function TeamInvitationAcceptance() {
     setError('')
     try {
       if (invitation?.requiresLogin) {
-        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, code, recaptchaToken }) })
+        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, code, turnstileToken }) })
         const loginResult = await loginResponse.json()
         if (!loginResponse.ok) throw new Error('Confira o e-mail, a senha e o código do autenticador da sua conta.')
         if (loginResult.mfaSetupRequired) {
@@ -2128,8 +2108,8 @@ function TeamInvitationAcceptance() {
     } catch (cause) {
       setError(cause.message)
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -2143,7 +2123,7 @@ function TeamInvitationAcceptance() {
   const invitationRoleName = ({ couple_admin: 'administrador do casamento', editor: 'editor do site e eventos', reader: 'leitor do conteúdo publicado', event_staff: 'equipe do evento', checkin_staff: 'equipe de entrada' })[invitation?.role] || 'equipe do evento'
   const invitationDescription = invitation?.role === 'editor' ? 'Edite o site e os eventos deste casamento. O acesso exige autenticador.' : invitation?.role === 'reader' ? 'Consulte somente o conteúdo publicado. O acesso exige autenticador.' : invitation?.role === 'couple_admin' ? 'Acesse o painel completo deste casamento. O acesso exige autenticador.' : 'A permissão é limitada aos eventos escolhidos pelos noivos e exige autenticador.'
   return <RoleFrame icon={LockKeyhole} eyebrow={isCoupleInvitation ? "ACESSO DO CASAMENTO" : "ACESSO DA EQUIPE"} title={isCoupleInvitation ? "Ative seu acesso ao casamento." : "Ative seu acesso ao evento."} description={invitationDescription} secure secureName="Convite do casamento" secureFooter="Acesso individual">
-    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitationRoleName}.</p><label>Senha da conta<input type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} /></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, cadastre também um autenticador.</p><label>Nova senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation || (invitation.requiresLogin && (!RECAPTCHA_SITE_KEY || !recaptchaToken))} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitationRoleName}.</p><label>Senha da conta<input type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} /></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, cadastre também um autenticador.</p><label>Nova senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation || (invitation.requiresLogin && (!TURNSTILE_SITE_KEY || !turnstileToken))} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
   </RoleFrame>
 }
 
@@ -2334,9 +2314,9 @@ function InvitationEventCard({ event, maxPartySize, onSubmit }) {
     }
   }
 
-  return <section className="role-card invitation-event-card"><div className="role-card-heading"><div><span className="eyebrow">{event.event_type}</span><h2>{event.name}</h2></div>{event.rsvp && <span className="status-pill confirmed"><i /> Resposta registrada</span>}</div><div className="guest-pass-details">{event.starts_at && <span><CalendarDays size={16} /> {new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</span>}{event.venue_name && <span><MapPin size={16} /> {event.venue_name}{event.address ? ` · ${event.address}` : ''}</span>}</div><form className="invitation-rsvp-form" onSubmit={submit}><label>Resposta<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Confirmo presença</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label>Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Salvar resposta'} <Check size={15} /></button></form></section>
+  return <section className="role-card invitation-event-card"><div className="role-card-heading"><div><span className="eyebrow">{event.event_type}</span><h2>{event.name}</h2></div>{event.rsvp && <span className="status-pill confirmed"><i /> Resposta registrada</span>}</div><div className="guest-pass-details">{event.starts_at && <span><CalendarDays size={16} /> {new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</span>}{event.venue_name && <span><MapPin size={16} /> {event.venue_name}{event.address ? ` · ${event.address}` : ''}</span>}</div><form className="invitation-rsvp-form" onSubmit={submit}><label>Resposta<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Confirmo presença</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label>Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Salvar resposta'} <Check size={15} /></button></form></section>
 }
-function TurnstileChallenge({ onToken, resetKey }) {
+function TurnstileChallenge({ onToken, resetKey, action = 'account' }) {
   const container = useRef(null)
   const widgetId = useRef(null)
   const onTokenRef = useRef(onToken)
@@ -2351,7 +2331,7 @@ function TurnstileChallenge({ onToken, resetKey }) {
       if (!active || !container.current || widgetId.current !== null) return
       widgetId.current = window.turnstile.render(container.current, {
         sitekey: TURNSTILE_SITE_KEY,
-        action: 'rsvp',
+        action,
         callback: (token) => onTokenRef.current(token),
         'expired-callback': () => onTokenRef.current(''),
         'error-callback': () => onTokenRef.current(''),
@@ -2364,7 +2344,7 @@ function TurnstileChallenge({ onToken, resetKey }) {
       if (widgetId.current !== null && window.turnstile) window.turnstile.remove(widgetId.current)
       widgetId.current = null
     }
-  }, [])
+  }, [action])
 
   useEffect(() => {
     if (resetKey > 0 && widgetId.current !== null && window.turnstile) window.turnstile.reset(widgetId.current)
@@ -2373,44 +2353,6 @@ function TurnstileChallenge({ onToken, resetKey }) {
   return TURNSTILE_SITE_KEY
     ? <>{scriptError ? <p className="turnstile-unavailable">Não foi possível carregar a validação antirobô. Atualize a página e tente novamente.</p> : <div className="turnstile-challenge" ref={container} aria-label="Validação antirobô" />}</>
     : <p className="turnstile-unavailable">A validação antirobô ainda não foi configurada.</p>
-}
-
-function RecaptchaChallenge({ onToken, resetKey }) {
-  const container = useRef(null)
-  const widgetId = useRef(null)
-  const onTokenRef = useRef(onToken)
-  const [scriptError, setScriptError] = useState(false)
-
-  useEffect(() => { onTokenRef.current = onToken }, [onToken])
-
-  useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY || !container.current) return undefined
-    let active = true
-    loadRecaptchaScript().then(() => {
-      if (!active || !container.current || widgetId.current !== null) return
-      widgetId.current = window.grecaptcha.render(container.current, {
-        sitekey: RECAPTCHA_SITE_KEY,
-        callback: (token) => onTokenRef.current(token),
-        'expired-callback': () => onTokenRef.current(''),
-        'error-callback': () => onTokenRef.current(''),
-      })
-    }).catch(() => {
-      if (active) setScriptError(true)
-    })
-    return () => {
-      active = false
-      if (widgetId.current !== null && window.grecaptcha) window.grecaptcha.reset(widgetId.current)
-      widgetId.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    if (resetKey > 0 && widgetId.current !== null && window.grecaptcha) window.grecaptcha.reset(widgetId.current)
-  }, [resetKey])
-
-  return RECAPTCHA_SITE_KEY
-    ? <>{scriptError ? <p className="turnstile-unavailable">Não foi possível carregar a verificação de segurança. Atualize a página e tente novamente.</p> : <div className="recaptcha-challenge" ref={container} aria-label="Verificação de segurança" />}</>
-    : <p className="turnstile-unavailable">A verificação de segurança ainda não foi configurada.</p>
 }
 
 function GodparentPortal({ notify }) {
@@ -2466,8 +2408,8 @@ function EventStaffPanel({ notify }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [events, setEvents] = useState([])
   const [selectedEvent, setSelectedEvent] = useState('')
   const [guests, setGuests] = useState([])
@@ -2681,9 +2623,9 @@ function EventStaffPanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, turnstileToken }) })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error === 'recaptcha_failed' ? 'Conclua novamente a verificação de segurança.' : result.error === 'recaptcha_unconfigured' ? 'A verificação de segurança ainda não foi configurada neste site.' : 'E-mail, senha ou código inválido.')
+      if (!response.ok) throw new Error(result.error === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : result.error === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : 'E-mail, senha ou código inválido.')
       localStorage.removeItem('wedding-staff-locked')
       if (result.mfaSetupRequired) {
         setStage('mfa-setup')
@@ -2693,8 +2635,8 @@ function EventStaffPanel({ notify }) {
     } catch (cause) {
       setError(cause.message)
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -2813,7 +2755,7 @@ function EventStaffPanel({ notify }) {
   }
   if (stage === 'mfa-setup') return <RoleFrame icon={Shield} eyebrow="SEGUNDO FATOR" title="Proteja sua conta." description="Configure um autenticador para continuar à área da equipe." secure><AccountMfaSetup onComplete={loadEvents} /></RoleFrame>
   if (stage !== 'ready') return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Acesso ao evento." description="Entre com a conta atribuída pelos noivos. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." secure>
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !RECAPTCHA_SITE_KEY || !recaptchaToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
   </RoleFrame>
 
   const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length
@@ -2869,8 +2811,8 @@ function superadminAccessMessage(code) {
     cloudflare_access_unconfigured: 'Configure ACCESS_TEAM_DOMAIN e ACCESS_APPLICATION_AUD nas variáveis do Cloudflare Pages.',
     cloudflare_access_required: 'O Cloudflare Access não validou sua identidade. Confira a regra Allow, o Team domain e o AUD da aplicação antes de tentar novamente.',
     superadmin_email_unconfigured: 'Configure SUPERADMIN_EMAIL nas variáveis do Cloudflare Pages.',
-    recaptcha_unconfigured: 'Configure a chave do reCAPTCHA no site e o segredo no Cloudflare Pages.',
-    recaptcha_failed: 'Conclua novamente a verificação de segurança.',
+    turnstile_unavailable: 'Configure a chave do Turnstile e o secret TURNSTILE_SECRET_KEY no Cloudflare Pages.',
+    turnstile_verification_failed: 'Conclua novamente a verificação de segurança.',
   })[code] || null
 }
 
@@ -2892,8 +2834,8 @@ function SuperAdminPanel({ notify }) {
   const [password, setPassword] = useState('')
   const [bootstrapConfirmation, setBootstrapConfirmation] = useState('')
   const [code, setCode] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaReset, setRecaptchaReset] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [enrollment, setEnrollment] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -2937,7 +2879,7 @@ function SuperAdminPanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, recaptchaToken }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, turnstileToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'invalid_credentials')
       if (!result.account.isSuperadmin) throw new Error('superadmin_access_required')
@@ -2946,8 +2888,8 @@ function SuperAdminPanel({ notify }) {
     } catch (cause) {
       setError(superadminAccessMessage(cause.message) || (cause.message === 'too_many_attempts' ? 'Muitas tentativas. Aguarde antes de tentar novamente.' : cause.message === 'mfa_unavailable' ? 'O MFA está indisponível no servidor.' : 'E-mail, senha ou código de autenticação inválido.'))
     } finally {
-      setRecaptchaToken('')
-      setRecaptchaReset((current) => current + 1)
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
       setBusy(false)
     }
   }
@@ -2997,7 +2939,7 @@ function SuperAdminPanel({ notify }) {
     <form className="role-card admin-login-form" onSubmit={bootstrap}><label>E-mail autorizado<input type="email" value={email} readOnly /></label><label>Crie uma senha forte<input type="password" autoComplete="new-password" minLength="14" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<input type="password" autoComplete="new-password" minLength="14" maxLength="1024" value={bootstrapConfirmation} onChange={(event) => setBootstrapConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy} type="submit">{busy ? 'Criando conta segura…' : 'Criar e configurar MFA'} <Shield size={15} /></button></form>
   </SuperAdminAccessFrame>
   if (stage === 'login') return <SuperAdminAccessFrame title="Acesso administrativo." description="Entre com sua conta. Cloudflare Access e a autenticação do produto são verificados separadamente.">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} placeholder="6 dígitos, se já configurado" /></label><RecaptchaChallenge onToken={setRecaptchaToken} resetKey={recaptchaReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !RECAPTCHA_SITE_KEY || !recaptchaToken} type="submit">{busy ? 'Verificando…' : 'Entrar'} <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} placeholder="6 dígitos, se já configurado" /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">{busy ? 'Verificando…' : 'Entrar'} <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a></form>
   </SuperAdminAccessFrame>
   if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Adicione esta chave em um aplicativo autenticador e confirme o código de seis dígitos. A chave fica visível somente nesta etapa.">
     <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><label>Chave de configuração<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Abra seu autenticador, adicione uma conta manualmente e use esta chave. O segredo é cifrado antes de ser gravado no D1.</p><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>

@@ -1236,8 +1236,8 @@ img { display: block; max-width: 100%; }
 .couple-type-options label.selected { border-color: #8f806e; color: #4e554c; background: #f5f2ed; }
 .couple-type-options input { width: 15px; min-height: 15px; margin: 0; accent-color: #6f7468; }
 .couple-type-options span { font-size: 10px; }
-.recaptcha-challenge { min-height: 78px; max-width: 100%; overflow: hidden; }
-.recaptcha-challenge iframe { max-width: 100%; }
+.turnstile-challenge { min-height: 78px; max-width: 100%; overflow: hidden; }
+.turnstile-challenge iframe { max-width: 100%; }
 .signup-page { --forest: #405849; --accent: #a77d62; --paper: #fbfaf6; background: #f2efe8; }
 .signup-page .role-header { min-height: 82px; padding-right: max(6vw, calc((100vw - 1240px) / 2)); padding-left: max(6vw, calc((100vw - 1240px) / 2)); }
 .signup-page .role-brand { gap: 14px; }
@@ -1258,13 +1258,13 @@ img { display: block; max-width: 100%; }
 .signup-page .couple-type-options input { width: 18px; min-height: 18px; flex: 0 0 auto; }
 .signup-page .couple-type-options span { font-size: 15px; }
 .signup-page .signup-hint { color: #60685f; font-size: 13px; }
-.signup-page .recaptcha-challenge { min-height: 78px; }
+.signup-page .turnstile-challenge { min-height: 78px; }
 .signup-page .admin-login-form .button-primary { min-height: 54px; font-size: 16px; }
 .signup-page .signup-login-link { margin: 0; color: #555d54; font-size: 15px; }
 .signup-page .role-footer { min-height: 76px; padding: 16px max(6vw, calc((100vw - 1240px) / 2)); font-size: 14px; }
 @media (max-width: 360px) {
-  .recaptcha-challenge { width: 258px; min-height: 67px; }
-  .recaptcha-challenge > div { transform: scale(.85); transform-origin: top left; }
+  .turnstile-challenge { width: 258px; min-height: 67px; }
+  .turnstile-challenge > div { transform: scale(.85); transform-origin: top left; }
 }
 .signup-hint { color: #898b81; font-size: 9px; line-height: 1.5; }
 .signup-login-link { margin: 4px 0 0; text-align: center; }
