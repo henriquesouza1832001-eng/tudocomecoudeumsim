@@ -509,3 +509,14 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - `npm run lint`, `npm run build` e `git diff --check` passaram para as alterações em andamento de `src/App.jsx` e `src/styles.css`.
 - `npm test` teve 10 de 11 testes aprovados. O teste `event staff can read only assigned event rosters without contact fields` falhou em `tests/wedding-role-access.test.js:101`, ao acessar `name` na linha 107. O fluxo testado não foi alterado nesta continuação; investigar a falha antes de atribuí-la às mudanças de interface.
 - Ainda não há confirmação de commit, push ou publicação Cloudflare desta branch. A publicação continua obedecendo à integração Git do Cloudflare e à regra de expor somente trabalho concluído e validado.
+
+## Personalizador público simplificado — 17/10/2026
+
+- Continuação feita na branch `preview`; `main` permanece intacta.
+- `/criar-site` agora tem duas etapas curtas: nomes, data, tema e paleta; depois foto, composição, recado e detalhes opcionais. O idioma de texto começa em pt-BR e não há campos repetidos por idioma nem seletor de idioma apenas para a prévia.
+- A prévia mostra um convite compacto com a foto, composição, nomes, data, recado e os detalhes opcionais que foram preenchidos. Foram removidos os blocos longos de conteúdo fictício e os controles de personalização que não eram necessários para começar.
+- As três composições oferecidas (`full`, `split`, `arch`) existem no convite publicado e são aceitas pela validação da API. Rascunhos locais antigos com layouts `type`, `video` ou `collage` são normalizados para o layout correspondente ao tema escolhido.
+- Alterar a história curta ativa a seção de história no rascunho, para o conteúdo da prévia também poder aparecer no convite após cadastro/publicação.
+- O editor autenticado continua com duas áreas. Foi removido um bloco duplicado de cardápio e traje encontrado durante a revisão.
+- A API ainda aceita seis layouts antigos para compatibilidade, embora o fluxo novo mostre somente os três layouts que foram alinhados à composição do convite publicado. Não reintroduzir controles antigos sem validar a saída real.
+- `npm run lint`, `npm run build` e `git diff --check` passaram após essas alterações. Não foi feita publicação de produção; continuar nesta branch de prévia até validação ponta a ponta e aprovação do dono.
