@@ -2067,3 +2067,74 @@ img { display: block; max-width: 100%; }
   .customizer-wizard-panel { gap: 15px; }
   .customizer-review-panel .customizer-continue { min-height: 52px; }
 }
+.help-card { min-height: 56px; color: inherit; text-decoration: none; }
+.help-card strong { font-size: 12px; }
+.help-card small { font-size: 11px; }
+.help-card:focus-visible, .customizer-theme-option:focus-visible, .theme-option:focus-visible { outline: 3px solid #8a6246; outline-offset: 3px; }
+.customizer-theme-option { min-height: 0; grid-template-columns: 1fr; gap: 8px; padding: 9px; }
+.customizer-theme-mini, .theme-option-preview { min-width: 0; height: 88px; position: relative; display: grid; align-items: end; overflow: hidden; isolation: isolate; border: 1px solid color-mix(in srgb, var(--theme-ink) 25%, transparent); background: var(--theme-paper); }
+.customizer-theme-mini img, .theme-option-preview img { position: absolute; inset: 0 0 38% 0; z-index: -2; width: 100%; height: 62%; object-fit: cover; }
+.customizer-theme-mini::after, .theme-option-preview::after { position: absolute; inset: 0; z-index: -1; content: ''; background: linear-gradient(to bottom, transparent 30%, var(--theme-paper) 62%); }
+.customizer-theme-mini b, .theme-option-preview b { padding: 0 8px 8px; color: var(--theme-ink); font: 20px/1.05 Georgia, serif; text-align: center; }
+.customizer-theme-mini b i, .theme-option-preview b i { color: var(--theme-accent); font-weight: 400; }
+.customizer-theme-mini em, .theme-option-preview em { width: 28px; height: 3px; position: absolute; bottom: 5px; left: calc(50% - 14px); background: var(--theme-accent); }
+.customizer-theme-option strong { font-size: 14px; }
+.customizer-theme-option small { min-height: 34px; font-size: 12px; }
+.customizer-theme-option.active .customizer-theme-mini { box-shadow: inset 0 0 0 2px var(--theme-ink); }
+.customizer-theme-colors { display: none; }
+.customizer-live-cover { background: var(--customizer-ink); }
+.customizer-live-cover h2 i { color: var(--customizer-accent); }
+.customizer-live-sections, .customizer-preview-section { color: var(--customizer-ink); }
+.customizer-preview-section { border-color: color-mix(in srgb, var(--customizer-ink) 18%, transparent); }
+.customizer-preview-section.soft { background: color-mix(in srgb, var(--customizer-paper) 76%, var(--customizer-accent) 8%); }
+.customizer-preview-section.plain { background: var(--customizer-paper); }
+.customize-preview .browser-content { background-color: var(--paper); color: var(--forest); font-family: var(--font-body, Arial, sans-serif); }
+.customize-preview .browser-content > strong { font-family: var(--font-heading, Georgia, serif); }
+.customize-preview .browser-content > strong i { color: var(--accent); }
+.customize-preview .browser-content > button { color: var(--paper); background: var(--forest); }
+.customize-preview .browser-below, .customize-preview .browser-story-preview { color: var(--forest); background: var(--paper); font-family: var(--font-body, Arial, sans-serif); }
+.customize-preview .browser-story-preview { border-color: color-mix(in srgb, var(--forest) 18%, transparent); }
+.customize-preview.theme-night .browser-content { background-color: #302b31; }
+.customizer-header > div { flex-wrap: wrap; }
+.customizer-header > div a { min-width: 44px; }
+.theme-impact-note { margin: -4px 0 12px; color: #535c54; font-size: 13px; line-height: 1.5; }
+.guest-invitation-page { color: var(--ink); background: var(--paper); }
+.guest-invitation-page .role-header, .guest-invitation-page .role-footer { border-color: color-mix(in srgb, var(--forest) 18%, transparent); background: color-mix(in srgb, var(--paper) 92%, white); }
+.guest-invitation-page .role-brand > span, .guest-invitation-page .role-brand strong, .guest-invitation-page .role-footer { color: var(--forest); }
+.guest-invitation-page .role-card { border-color: color-mix(in srgb, var(--forest) 18%, transparent); background: color-mix(in srgb, var(--paper) 82%, white); }
+.guest-invitation-page .guest-invitation-cover { background: var(--forest); }
+.guest-invitation-page .guest-invitation-cover::after { background: linear-gradient(transparent, color-mix(in srgb, var(--forest) 90%, transparent)); }
+.guest-invitation-page .guest-invitation-cover h2 i { color: var(--accent); }
+.guest-invitation-page .guest-extra-details { border-color: color-mix(in srgb, var(--forest) 20%, transparent); background: color-mix(in srgb, var(--paper) 75%, white); }
+.guest-invitation-page .guest-extra-details > summary, .guest-invitation-page .guest-cover-message { color: var(--forest); }
+.guest-invitation-page .guest-pass-details svg, .guest-invitation-page .guest-gift-mark { color: var(--forest); }
+.guest-invitation-page .button-primary { border-color: var(--forest); background: var(--forest); }
+.guest-invitation-page .button-outline { border-color: color-mix(in srgb, var(--forest) 40%, transparent); color: var(--forest); }
+.help-center-page .role-main { width: min(800px, 92%); }
+.help-center-start { padding: clamp(22px, 4vw, 38px); background: #fbf8f1; }
+.help-center-start h2 { margin: 8px 0; font-size: clamp(25px, 4vw, 34px); }
+.help-center-start p, .help-center-topics p { color: #4b554c; font-size: 15px; line-height: 1.65; }
+.help-center-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.help-center-actions a { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; }
+.help-center-topics { display: grid; gap: 10px; margin-top: 14px; }
+.help-center-topics .role-card { padding: 0; }
+.help-center-topics summary { min-height: 52px; padding: 14px 18px; display: flex; align-items: center; color: var(--forest); cursor: pointer; font: 20px/1.25 var(--serif); }
+.help-center-topics details > p, .help-center-topics details > a { margin: 0 18px 17px; }
+.help-center-topics details > .help-center-actions { padding: 0 18px 18px; }
+@media (max-width: 600px) {
+  .customizer-theme-grid { gap: 8px; }
+  .customizer-theme-option { padding: 8px; }
+  .customizer-theme-mini { height: 76px; }
+  .customizer-theme-mini b { font-size: 17px; }
+  .customizer-header > div { gap: 8px; }
+  .customizer-header > div span { display: none; }
+  .customizer-header > div a { font-size: 12px; }
+  .help-center-start p, .help-center-topics p { font-size: 16px; }
+  .help-center-topics summary { font-size: 19px; }
+  .help-center-actions { align-items: stretch; flex-direction: column; }
+  .help-center-actions a { width: 100%; }
+}
+.theme-option-preview { width: 68px; flex: 0 0 68px; height: 52px; }
+.theme-option-preview img { inset: 0 0 45% 0; height: 55%; }
+.theme-option-preview b { padding: 0 2px 5px; font-size: 13px; white-space: nowrap; }
+.theme-option-preview em { width: 18px; bottom: 3px; left: calc(50% - 9px); }
