@@ -98,6 +98,7 @@ function FontScalePicker({ value = 'medium', onChange }) {
   </div>
 }
 const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
+const EVENT_TYPE_LABELS = { ceremony: 'Cerimônia', reception: 'Recepção', rehearsal: 'Ensaio', brunch: 'Brunch', other: 'Outro' }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
 let turnstileScriptPromise
@@ -1069,6 +1070,7 @@ function CouplePanel({ notify }) {
   const [eventAddress, setEventAddress] = useState('')
   const [eventGroupIds, setEventGroupIds] = useState([])
   const [editingEventId, setEditingEventId] = useState('')
+  const [eventFormOpen, setEventFormOpen] = useState(false)
   const [teamEmail, setTeamEmail] = useState('')
   const [teamRole, setTeamRole] = useState('checkin_staff')
   const [teamInvitation, setTeamInvitation] = useState(null)
@@ -1596,12 +1598,31 @@ function CouplePanel({ notify }) {
 
   function resetWeddingEventForm() {
     setEditingEventId('')
-    setEventName('')
+    setEventName(EVENT_TYPE_LABELS.ceremony)
     setEventType('ceremony')
     setEventStartsAt('')
     setEventVenue('')
     setEventAddress('')
     setEventGroupIds([])
+    setEventFormOpen(false)
+  }
+
+  function openWeddingEventForm() {
+    setEditingEventId('')
+    setEventType('ceremony')
+    setEventName(EVENT_TYPE_LABELS.ceremony)
+    setEventStartsAt(wedding?.event_date && wedding?.event_time ? `${wedding.event_date}T${wedding.event_time}` : '')
+    setEventVenue('')
+    setEventAddress('')
+    setEventGroupIds([])
+    setError('')
+    setEventFormOpen(true)
+  }
+
+  function changeWeddingEventType(nextType) {
+    const previousDefaultName = EVENT_TYPE_LABELS[eventType]
+    setEventType(nextType)
+    setEventName((current) => !current || current === previousDefaultName ? EVENT_TYPE_LABELS[nextType] : current)
   }
 
   function editWeddingEvent(item) {
@@ -1612,6 +1633,7 @@ function CouplePanel({ notify }) {
     setEventVenue(item.venue_name || '')
     setEventAddress(item.address || '')
     setEventGroupIds(item.group_ids || [])
+    setEventFormOpen(true)
   }
 
   async function saveWeddingEvent(event) {
@@ -1634,6 +1656,34 @@ function CouplePanel({ notify }) {
       notify(wasEditing ? 'Evento atualizado.' : 'Evento criado. Agora você pode atribuir pessoas da equipe a ele.')
     } catch (cause) {
       setError(cause.message === 'event_limit_reached' ? 'Cada casamento pode ter até seis eventos.' : 'Não foi possível criar o evento. Confira os campos e tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function deleteWeddingEvent(item) {
+    if (!window.confirm(`Excluir o evento “${item.name}”? O convite publicado também será atualizado. Confirmações, entradas, fotos ou acessos de equipe vinculados impedem a exclusão.`)) return
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${weddingId}/events/${item.id}`, { method: 'DELETE' })
+      const result = await response.json()
+      if (!response.ok) {
+        if (result.error === 'event_has_related_data') {
+          const labels = { rsvps: 'confirmações de presença', checkins: 'entradas registradas', photos: 'fotos enviadas', staff: 'acessos de equipe' }
+          const related = Object.entries(result.relatedData || {}).filter(([, count]) => count > 0).map(([key, count]) => `${count} ${labels[key]}`)
+          setError(`Não foi possível excluir “${item.name}” porque há ${related.join(', ')} vinculadas.`)
+          return
+        }
+        throw new Error(result.error || 'event_delete_failed')
+      }
+      if (editingEventId === item.id) resetWeddingEventForm()
+      setManualEventId((current) => current === item.id ? '' : current)
+      setRsvpExportEventId((current) => current === item.id ? '' : current)
+      await loadWeddingData(weddingId)
+      notify('Evento excluído.')
+    } catch {
+      setError('Não foi possível excluir este evento. Atualize a página e tente novamente.')
     } finally {
       setBusy(false)
     }
@@ -1773,10 +1823,13 @@ function CouplePanel({ notify }) {
       </form>{manualEventId && !availableManualGuests.length && !editingRsvp && <p className="buffet-empty">Todos os convidados elegíveis já têm resposta para este evento.</p>}</section>
       <section className="role-card superadmin-card couple-rsvp-print"><div className="role-card-heading"><div><span className="eyebrow">RESPOSTAS POR EVENTO</span><h2>Lista de presenças</h2></div><span className="task-count">{rsvpExportRows.length} respostas</span></div><div className="couple-rsvp-toolbar"><label>Filtrar relatório<select value={rsvpExportEventId} onChange={(event) => setRsvpExportEventId(event.target.value)}><option value="">Todos os eventos</option>{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button className="button-outline print-button" disabled={!rsvpExportRows.length} onClick={exportRsvpPdf}><Printer size={15} /> Exportar relatório em PDF</button></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>CONVIDADO</th><th>EVENTO</th><th>RESPOSTA</th><th>PESSOAS</th><th>RESTRIÇÕES</th><th>AÇÃO</th></tr></thead><tbody>{rsvpExportRows.map((item) => <tr key={item.id}><td><strong>{item.guest_name}</strong></td><td>{item.event_name}</td><td>{item.status === 'confirmed' ? 'Confirmou' : 'Não poderá comparecer'}</td><td>{item.party_size}</td><td>{item.dietary_notes || '—'}</td><td><button className="button-outline print-button" disabled={busy} onClick={() => editRsvp(item)} aria-label={`Corrigir resposta de ${item.guest_name} para ${item.event_name}`}><Pencil size={14} /> Corrigir</button></td></tr>)}</tbody></table></div>{!rsvpExportRows.length && <p className="buffet-empty">As respostas dos convidados aparecerão aqui.</p>}</section>
     </div></details>}    {tab === 'groups' && <><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORGANIZAÇÃO</span><h2>Criar grupo</h2></div></div><form className="couple-group-form" onSubmit={createGroup}><label>Nome do grupo<input value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength="100" required /></label><label>Categoria<select value={groupType} onChange={(event) => setGroupType(event.target.value)}><option value="family">Família</option><option value="friends">Amigos</option><option value="godparent">Padrinhos</option><option value="other">Outro</option></select></label><button type="submit" className="button-primary" disabled={busy}>Criar grupo <Users size={15} /></button></form></section><section className="role-card"><span className="eyebrow">GRUPOS DO CASAMENTO</span><div className="group-chip-list">{groups.map((group) => <span className="group-chip" key={group.id}>{group.name} · {group.group_type}</span>)}{!groups.length && <p className="buffet-empty">Nenhum grupo cadastrado.</p>}</div></section></>}
-    {tab === 'events' && <>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO DO CASAMENTO</span><h2>{editingEventId ? 'Editar evento' : 'Criar evento'}</h2></div><span className="task-count">{events.length}/6 eventos</span></div><p className="team-access-note">Cada evento pode ter uma lista de grupos autorizados. Se nenhum grupo for escolhido, o evento fica disponível a todos os convidados.</p><form className="wedding-event-form" onSubmit={saveWeddingEvent}><label>Nome<input value={eventName} onChange={(event) => setEventName(event.target.value)} maxLength="120" required placeholder="Cerimônia, recepção, brunch…" /></label><label>Tipo<select value={eventType} onChange={(event) => setEventType(event.target.value)}><option value="ceremony">Cerimônia</option><option value="reception">Recepção</option><option value="rehearsal">Ensaio</option><option value="brunch">Brunch</option><option value="other">Outro</option></select></label><label>Data e hora<input type="datetime-local" value={eventStartsAt} onChange={(event) => setEventStartsAt(event.target.value)} /></label><label>Local<input value={eventVenue} onChange={(event) => setEventVenue(event.target.value)} maxLength="160" /></label><label className="event-form-wide">Endereço<input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} maxLength="500" /></label>{groups.length > 0 && <fieldset className="event-group-access"><legend>Quem pode acessar este evento?</legend><div>{groups.map((group) => <label key={group.id}><input type="checkbox" checked={eventGroupIds.includes(group.id)} onChange={(change) => setEventGroupIds((current) => change.target.checked ? [...current, group.id] : current.filter((id) => id !== group.id))} />{group.name}</label>)}</div></fieldset>}<div className="event-form-actions"><button className="button-primary" type="submit" disabled={busy || (!editingEventId && events.length >= 6)}>{editingEventId ? 'Salvar alterações' : 'Criar evento'} <CalendarDays size={15} /></button>{editingEventId && <button className="button-outline" type="button" disabled={busy} onClick={resetWeddingEventForm}>Cancelar</button>}</div></form></section>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">SEUS EVENTOS</span><h2>Programação e acesso</h2></div></div><div className="wedding-event-list">{events.map((item) => <article key={item.id}><div><strong>{item.name}</strong><small>{item.starts_at ? new Date(item.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {item.venue_name || 'Local a definir'}</small><small>{item.group_ids?.length ? `Acesso: ${groups.filter((group) => item.group_ids.includes(group.id)).map((group) => group.name).join(', ')}` : 'Acesso: todos os convidados'}</small></div><div className="wedding-event-actions"><span className="admin-state admin-state-active">{item.event_type}</span><button className="button-outline" onClick={() => editWeddingEvent(item)}>Editar</button></div></article>)}</div>{!events.length && <p className="buffet-empty">Cadastre cerimônia, recepção ou outros eventos para organizar as confirmações e liberar acessos para a equipe.</p>}</section>
-    </>}
+    {tab === 'events' && <div className="couple-events-tab">
+      <section className="role-card event-management-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO DO CASAMENTO</span><h2>Eventos</h2></div><div className="event-management-actions"><span className="task-count">{events.length}/6 eventos</span>{!eventFormOpen && events.length < 6 && <button className="button-primary" type="button" onClick={openWeddingEventForm}>Adicionar evento <CalendarDays size={15} /></button>}</div></div>
+        {eventFormOpen && <div className="event-editor-panel"><div className="event-editor-heading"><div><h3>{editingEventId ? 'Editar evento' : 'Novo evento'}</h3><p>Defina os dados deste evento e quem poderá acessá-lo.</p></div><button className="button-outline" type="button" onClick={resetWeddingEventForm} disabled={busy}>Fechar</button></div><form className="wedding-event-form" onSubmit={saveWeddingEvent}><label>Tipo<select value={eventType} onChange={(event) => changeWeddingEventType(event.target.value)}><option value="ceremony">Cerimônia</option><option value="reception">Recepção</option><option value="rehearsal">Ensaio</option><option value="brunch">Brunch</option><option value="other">Outro</option></select></label><label>Nome do evento<input value={eventName} onChange={(event) => setEventName(event.target.value)} maxLength="120" required placeholder="Nome que aparecerá para os convidados" /></label><label>Data e hora<input type="datetime-local" value={eventStartsAt} onChange={(event) => setEventStartsAt(event.target.value)} />{!editingEventId && wedding?.event_date && !wedding?.event_time && <small className="event-date-note">O casamento tem uma data, mas não um horário cadastrado. Informe a data e o horário deste evento.</small>}</label><label>Local<input value={eventVenue} onChange={(event) => setEventVenue(event.target.value)} maxLength="160" /></label><label className="event-form-wide">Endereço<input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} maxLength="500" /></label>{groups.length > 0 && <fieldset className="event-group-access"><legend>Quem pode acessar este evento?</legend><p>Se nenhum grupo for selecionado, todos os convidados poderão acessar.</p><div>{groups.map((group) => <label key={group.id}><input type="checkbox" checked={eventGroupIds.includes(group.id)} onChange={(change) => setEventGroupIds((current) => change.target.checked ? [...current, group.id] : current.filter((id) => id !== group.id))} />{group.name}</label>)}</div></fieldset>}<div className="event-form-actions"><button className="button-primary" type="submit" disabled={busy || (!editingEventId && events.length >= 6)}>{editingEventId ? 'Salvar alterações' : 'Criar evento'} <CalendarDays size={15} /></button><button className="button-outline" type="button" disabled={busy} onClick={resetWeddingEventForm}>Cancelar</button></div></form></div>}
+        {error && <p className="admin-form-error event-page-error" role="alert">{error}</p>}
+      </section>
+      <section className="role-card event-list-card"><div className="role-card-heading"><div><span className="eyebrow">SEUS EVENTOS</span><h2>Programação e acesso</h2></div></div><div className="wedding-event-list">{events.map((item) => <article key={item.id}><div className="event-list-details"><strong>{item.name}</strong><small>{item.starts_at ? new Date(item.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {item.venue_name || 'Local a definir'}</small><small>{item.group_ids?.length ? `Acesso: ${groups.filter((group) => item.group_ids.includes(group.id)).map((group) => group.name).join(', ')}` : 'Acesso: todos os convidados'}</small></div><div className="wedding-event-actions"><span className="admin-state admin-state-active">{EVENT_TYPE_LABELS[item.event_type] || EVENT_TYPE_LABELS.other}</span><button className="button-outline" disabled={busy} onClick={() => editWeddingEvent(item)}>Editar</button><button className="button-outline event-delete-button" disabled={busy} onClick={() => deleteWeddingEvent(item)}>Excluir</button></div></article>)}</div>{!events.length && <p className="buffet-empty">Nenhum evento cadastrado.</p>}</section>
+    </div>}
     {tab === 'team' && <>
     <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO ACESSO</span><h2>Convidar pessoa para o casamento</h2></div><Users size={19} /></div><p className="team-access-note">Editor altera o site e os eventos; leitor consulta somente o conteúdo publicado. A equipe do evento e a equipe de entrada acessam apenas os eventos atribuídos. O envio será manual: copie o link e envie à pessoa.</p><form className="team-invite-form" onSubmit={inviteTeamMember}><label>E-mail<input type="email" value={teamEmail} onChange={(event) => setTeamEmail(event.target.value)} required maxLength="254" /></label><label>Acesso<select value={teamRole} onChange={(event) => setTeamRole(event.target.value)}><option value="couple_admin">Administrador do casal</option><option value="editor">Editor do site e eventos</option><option value="reader">Leitor do conteúdo publicado</option><option value="checkin_staff">Equipe de entrada</option><option value="event_staff">Equipe do evento</option></select></label><button type="submit" className="button-primary" disabled={busy}>Gerar convite <ArrowRight size={15} /></button></form>{teamInvitation && <div className="team-invitation-result"><strong>Convite para {teamInvitation.email}</strong><span>Expira em {new Date(teamInvitation.expiresAt).toLocaleString('pt-BR')}</span><div><input readOnly value={teamInvitation.invitationUrl} aria-label="Link de convite da equipe" /><button className="button-outline" onClick={() => navigator.clipboard.writeText(teamInvitation.invitationUrl).then(() => notify('Link copiado'))}><Copy size={14} /> Copiar</button></div></div>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">MEMBROS DO CASAMENTO</span><h2>Permissões da equipe</h2></div><span className="task-count">{members.length} membros</span></div><p className="team-access-note">Cada pessoa mantém acesso apenas aos eventos atribuídos. Contas já vinculadas ao casamento aparecem nesta lista.</p><div className="team-member-list">{members.map((member) => <article className="team-member-row" key={member.id}><div><strong>{member.email}</strong><small>{member.account_id === account?.id ? 'Sua conta' : member.account_id}</small></div><label>Perfil<select value={member.role} disabled={busy} onChange={(event) => updateMember(member, { role: event.target.value })}><option value="couple_admin">Administrador do casal</option><option value="editor">Editor</option><option value="reader">Leitor</option><option value="event_staff">Equipe do evento</option><option value="checkin_staff">Equipe de entrada</option></select></label><label>Status<select value={member.status} disabled={busy} onChange={(event) => updateMember(member, { status: event.target.value })}><option value="active">Ativo</option><option value="revoked">Revogado</option><option value="pending" disabled>Pendente</option></select></label></article>)}{!members.length && <p className="buffet-empty">Nenhum membro adicional está vinculado a este casamento.</p>}</div></section>
