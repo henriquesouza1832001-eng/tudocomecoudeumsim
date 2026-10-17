@@ -22,7 +22,7 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 } }
 
 function validGuestCamera(camera) {
   if (camera === undefined) return defaultSiteConfig.guestCamera
@@ -97,9 +97,10 @@ function parseSiteConfig(value) {
     const guestCamera = validGuestCamera(config.guestCamera)
     if (!guestCamera) return null
     if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > 8 || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+    if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > 8 || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
-    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
   } catch {
     return null
   }
@@ -123,9 +124,10 @@ function validateSiteConfig(body) {
   const guestCamera = validGuestCamera(body.guestCamera)
   if (!guestCamera) return null
   if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > 8 || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+  if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > 8 || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
 }
 
 function jsonError(context, status, error) {
@@ -917,7 +919,7 @@ app.get('/api/site-media/:mediaId', async (context) => {
   for (const weddingId of weddingIds) {
     if (guest) {
       const config = parseSiteConfig(guest.published_site_config_json)
-      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && config?.coverVideoId !== id) continue
+      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && !config?.siteGallery?.includes(id) && config?.coverVideoId !== id) continue
     }
     for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
       object = await context.env.GUEST_PHOTOS?.get(`${weddingId}/site/${id}.${extension}`)
@@ -962,7 +964,7 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const config = validateSiteConfig(await context.req.json().catch(() => null))
   if (!config) return jsonError(context, 400, 'invalid_site_config')
-  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...config.siteGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
   if (mediaIds.length) {
     if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
     for (const id of mediaIds) {

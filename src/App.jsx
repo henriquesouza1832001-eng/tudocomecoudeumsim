@@ -96,7 +96,7 @@ function FontScalePicker({ value = 'medium', onChange }) {
     <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
   </div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
 let turnstileScriptPromise
@@ -1827,6 +1827,15 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
+function SitePhotoLibrary({ images, mediaUrls, coverPhotoId, coverGallery, siteGallery, coverCarouselEnabled, mediaBusy, remaining, coverInput, siteInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle }) {
+  return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
+    <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até oito imagens no total.</p></div><span className="customizer-photo-count">{images.length}/8 fotos</span></div>
+    <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><input ref={siteInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => onUpload(event, 'site')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto(s) da capa</button><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => siteInput.current?.click()}><Image size={17} /> Adicionar foto(s) do site</button></div>
+    <label className="customizer-carousel-toggle"><input type="checkbox" checked={coverCarouselEnabled} disabled={coverGallery.length < 2} onChange={(event) => onCarouselToggle(event.target.checked)} /><span><strong>Ativar carrossel na capa</strong><small>{coverGallery.length < 2 ? 'Marquem pelo menos duas fotos como carrossel.' : 'As fotos escolhidas alternam na abertura do convite.'}</small></span></label>
+    {images.length > 0 ? <div className="customizer-photo-library-grid">{images.map((item) => <article className="customizer-photo-library-item" key={item.id}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><div className="customizer-photo-roles"><label><input type="radio" name="cover-photo-choice" checked={coverPhotoId === item.id} onChange={() => onCoverSelect(item.id)} /> Foto principal</label><label><input type="checkbox" checked={coverGallery.includes(item.id)} disabled={coverCarouselEnabled && coverPhotoId === item.id} onChange={(event) => onCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel</label><label><input type="checkbox" checked={siteGallery.includes(item.id)} onChange={(event) => onSitePhotoToggle(item.id, event.target.checked)} /> Galeria do site</label></div></article>)}</div> : <div className="customizer-photo-library-empty"><Camera size={23} /><strong>Adicionem as fotos que querem compartilhar.</strong><span>As imagens ficam privadas no rascunho até vocês publicarem o site.</span></div>}
+  </section>
+}
+
 function CoupleSiteEditor({ wedding, events = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
   const [step, setStep] = useState('visual')
@@ -1840,6 +1849,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const [mediaError, setMediaError] = useState('')
   const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
   const photoInput = useRef(null)
+  const sitePhotoInput = useRef(null)
   const videoInput = useRef(null)
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = getThemePalettes(theme)
@@ -1862,11 +1872,35 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const previewPhotoUrl = mediaUrls[previewCoverId]
   const previewVideoUrl = mediaUrls[config.coverVideoId]
   const previewHasCover = Boolean(previewVideoUrl || previewPhotoUrl)
+  const uploadedImages = siteMedia.filter((item) => item.mediaType === 'image')
+  const siteGallery = config.siteGallery || []
+  const remainingPhotoSlots = Math.max(0, 8 - uploadedImages.length)
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const selectTheme = (themeId) => update({ theme: themeId, paletteIndex: 0, ...(THEME_PRESETS[themeId] || THEME_PRESETS.garden) })
   const toggleStory = () => update({ enabledSections: storyEnabled ? ['Eventos', 'Confirmação de presença'] : ['Nossa história', 'Eventos', 'Confirmação de presença'] })
   const updateStory = (value) => update({ storyMessages: { ...DEFAULT_SITE_CONFIG.storyMessages, ...config.storyMessages, [language]: value } })
   const updateCoverMessage = (value) => update({ coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...config.coverMessages, [language]: value } })
+  const selectCoverPhoto = (id) => setConfig((current) => ({ ...current, coverPhotoId: id, coverGallery: current.coverCarouselEnabled ? [...new Set([id, ...(current.coverGallery || []).filter((item) => item !== id)])] : current.coverGallery || [] }))
+  const toggleCarouselPhoto = (id, included) => setConfig((current) => {
+    const selected = current.coverGallery || []
+    const next = included ? [...new Set([...selected, id])] : selected.filter((item) => item !== id)
+    if (current.coverPhotoId && !next.includes(current.coverPhotoId)) next.unshift(current.coverPhotoId)
+    return { ...current, coverGallery: next, coverCarouselEnabled: next.length > 1 && (current.coverCarouselEnabled || included) }
+  })
+  const toggleSitePhoto = (id, included) => setConfig((current) => {
+    const selected = current.siteGallery || []
+    const next = included ? [...new Set([...selected, id])] : selected.filter((item) => item !== id)
+    const enabledSections = next.length
+      ? [...new Set([...(current.enabledSections || []), 'Galeria de fotos'])]
+      : (current.enabledSections || []).filter((section) => section !== 'Galeria de fotos')
+    return { ...current, siteGallery: next, enabledSections }
+  })
+  const handlePhotoUpload = (event, usage) => {
+    const input = event.currentTarget
+    const files = [...input.files].slice(0, remainingPhotoSlots)
+    files.reduce((queue, file) => queue.then(() => uploadSiteMedia(file, 'image', usage)), Promise.resolve()).finally(() => { input.value = '' })
+  }
+  const toggleCoverCarousel = (enabled) => update({ coverCarouselEnabled: enabled && (config.coverGallery || []).length > 1 })
   const style = {
     '--forest': selectedPalette[0],
     '--ink': selectedPalette[0],
@@ -1893,7 +1927,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
 
   useEffect(() => {
     let active = true
-    const ids = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+    const ids = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.siteGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])]
     Promise.all(ids.map(async (id) => {
       const response = await fetch(`/api/site-media/${id}`)
       if (!response.ok) return [id, '']
@@ -1906,7 +1940,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
       })
     }).catch(() => {})
     return () => { active = false }
-  }, [wedding.id, config.coverPhotoId, JSON.stringify(config.coverGallery || []), config.coverVideoId])
+  }, [wedding.id, config.coverPhotoId, JSON.stringify(config.coverGallery || []), JSON.stringify(config.siteGallery || []), config.coverVideoId])
 
   useEffect(() => {
     setPreviewCoverIndex(0)
@@ -1915,7 +1949,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     return () => window.clearInterval(timer)
   }, [config.coverCarouselEnabled, JSON.stringify(config.coverGallery || [])])
 
-  async function uploadSiteMedia(file, mediaType) {
+  async function uploadSiteMedia(file, mediaType, usage = 'cover') {
     if (!file) return
     setMediaError('')
     setMediaBusy(true)
@@ -1929,7 +1963,8 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
       setSiteMedia((current) => [...current, result])
       const url = URL.createObjectURL(file)
       setMediaUrls((current) => ({ ...current, [result.id]: url }))
-      if (mediaType === 'image') setConfig((current) => ({ ...current, coverPhotoId: current.coverPhotoId || result.id }))
+      if (mediaType === 'image' && usage === 'site') setConfig((current) => ({ ...current, siteGallery: [...new Set([...(current.siteGallery || []), result.id])], enabledSections: [...new Set([...(current.enabledSections || []), 'Galeria de fotos'])] }))
+      else if (mediaType === 'image') setConfig((current) => ({ ...current, coverPhotoId: current.coverPhotoId || result.id, coverGallery: current.coverCarouselEnabled ? [...new Set([...(current.coverGallery || []), result.id])] : current.coverGallery || [] }))
       else setConfig((current) => ({ ...current, coverVideoId: result.id, coverLayout: 'video' }))
     } catch (error) {
       setMediaError(error.message)
@@ -1948,7 +1983,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
         <div className="wedding-profile-fields"><label>Nome 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Nome 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
-        <div className="customizer-upload-panel customizer-cover-photo-panel"><div><strong>Comecem com uma foto de vocês</strong><p>Ela será a imagem principal do convite. As fotos de exemplo saíram da capa.</p></div><input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => { const files = [...event.target.files].slice(0, Math.max(0, 8 - siteMedia.filter((item) => item.mediaType === 'image').length)); files.reduce((queue, file) => queue.then(() => uploadSiteMedia(file, 'image')), Promise.resolve()).finally(() => { event.target.value = '' }) }} /><button type="button" className="button-outline" onClick={() => photoInput.current?.click()} disabled={mediaBusy || siteMedia.filter((item) => item.mediaType === 'image').length >= 8}><Camera size={17} /> {mediaBusy ? 'Guardando a foto…' : config.coverPhotoId ? 'Adicionar mais fotos' : 'Escolher a foto do convite'}</button>{siteMedia.filter((item) => item.mediaType === 'image').length > 0 && <div className="customizer-upload-grid">{siteMedia.filter((item) => item.mediaType === 'image').map((item) => <article className="customizer-cover-photo-choice" key={item.id}><button type="button" className={config.coverPhotoId === item.id ? 'active' : ''} aria-pressed={config.coverPhotoId === item.id} onClick={() => update({ coverPhotoId: item.id, ...(config.coverCarouselEnabled ? { coverGallery: [...new Set([item.id, ...(config.coverGallery || []).filter((id) => id !== item.id)])] } : {}) })}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><span>{config.coverPhotoId === item.id ? 'Foto principal' : 'Usar na capa'}</span></button>{config.coverCarouselEnabled && <label><input type="checkbox" checked={config.coverGallery?.includes(item.id) || false} onChange={(event) => update({ coverGallery: event.target.checked ? [...new Set([...(config.coverGallery || []), item.id])] : (config.coverGallery || []).filter((id) => id !== item.id) })} /> Incluir no carrossel</label>}</article>)}</div>}{mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}</div>
+        <SitePhotoLibrary images={uploadedImages} mediaUrls={mediaUrls} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} remaining={remainingPhotoSlots} coverInput={photoInput} siteInput={sitePhotoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} />
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
         <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button>{mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}</div>
@@ -1961,7 +1996,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <label className="font-pair-label">Mensagem para os convidados · {languageName}<textarea rows="2" maxLength="140" value={coverMessage} onChange={(event) => updateCoverMessage(event.target.value)} placeholder={language === 'en' ? 'For example: We are happy to celebrate with you.' : language === 'es' ? 'Por ejemplo: Nos alegra celebrar con ustedes.' : 'Ex.: Vai ser uma alegria celebrar com você.'} /><small>{coverMessage.length}/140 caracteres</small></label>
         <label className="customizer-story-toggle"><input type="checkbox" checked={storyEnabled} onChange={toggleStory} /><span><strong>Contar um pouco da nossa história</strong><small>Opcional. Um parágrafo já é suficiente.</small></span></label>
         {storyEnabled && <label className="font-pair-label">Como tudo começou · {languageName}<textarea rows="3" maxLength="360" value={storyMessage} onChange={(event) => updateStory(event.target.value)} placeholder={language === 'en' ? 'Tell briefly how you met.' : language === 'es' ? 'Cuenten brevemente cómo se conocieron.' : 'Contem em poucas linhas como se conheceram.'} /><small>{storyMessage.length}/360 caracteres</small></label>}
-        <details className="customizer-extra-fields"><summary>Mais fotos no convite, opcional</summary><div><label className="customizer-story-toggle"><input type="checkbox" checked={config.coverCarouselEnabled || false} onChange={(event) => update({ coverCarouselEnabled: event.target.checked, ...(event.target.checked && config.coverPhotoId ? { coverGallery: [...new Set([config.coverPhotoId, ...(config.coverGallery || [])])] } : {}) })} /><span><strong>Alternar a foto de abertura</strong><small>Escolham as fotos na etapa Aparência. Sem esta opção, o convite mantém uma foto fixa.</small></span></label>{config.coverCarouselEnabled && !config.coverGallery?.length && <p className="customizer-step-note">Na etapa Aparência, marquem quais fotos entram no carrossel.</p>}</div></details>
+        <p className="customizer-step-note">A foto principal, o carrossel e a galeria do site são organizados na etapa Aparência.</p>
         <details className="customizer-extra-fields"><summary>Cardápio e traje, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="280" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="100" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label></div></details>
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
@@ -1976,6 +2011,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         {storyEnabled && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}
         {(config.weddingDetails?.menu || config.weddingDetails?.dressCode) && <div className="browser-story-preview"><span>ORIENTAÇÕES</span><p>{[config.weddingDetails.menu, config.weddingDetails.dressCode].filter(Boolean).join(' · ')}</p></div>}
       </div>
+      {siteGallery.length > 0 && <section className="browser-site-gallery-preview"><span>GALERIA DO SITE</span><div>{siteGallery.map((id) => mediaUrls[id] && <img key={id} src={mediaUrls[id]} alt="Foto escolhida para a galeria do site" />)}</div></section>}
       <div className="preview-notice"><CircleHelp size={15} /> {!previewHasCover ? 'Sem foto ainda: a capa usa as cores do tema e mostra como o texto ficará.' : publishedAt ? `Última publicação: ${published}. As mudanças aparecem para os convidados depois de publicar.` : 'Esta prévia é privada até vocês publicarem o convite.'}</div>
     </div>
   </div>
@@ -2223,11 +2259,13 @@ function GuestPortal({ notify, setView }) {
   const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': invitation?.siteConfig?.fontScale === 'small' ? '.92' : invitation?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
   const coverLayout = invitation?.siteConfig?.coverVideoId ? 'video' : ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
   const coverGallery = invitation?.siteConfig?.coverGallery || []
+  const siteGallery = invitation?.siteConfig?.siteGallery || []
   const activeCoverId = invitation?.siteConfig?.coverCarouselEnabled && coverGallery.length ? coverGallery[coverIndex] : invitation?.siteConfig?.coverPhotoId || coverGallery[0]
   const activeCoverUrl = invitationMedia[activeCoverId] || ''
   const hasMoreInvitationContent = Boolean(
     invitation?.siteConfig?.weddingDetails?.menu
     || invitation?.siteConfig?.weddingDetails?.dressCode
+    || siteGallery.length > 0
     || (invitation?.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']))
   )
 
@@ -2261,7 +2299,7 @@ function GuestPortal({ notify, setView }) {
   useEffect(() => {
     if (!invitation?.siteConfig) return
     let active = true
-    const ids = [...new Set([...(invitation.siteConfig.coverPhotoId ? [invitation.siteConfig.coverPhotoId] : []), ...(invitation.siteConfig.coverGallery || []), ...(invitation.siteConfig.coverVideoId ? [invitation.siteConfig.coverVideoId] : [])])]
+    const ids = [...new Set([...(invitation.siteConfig.coverPhotoId ? [invitation.siteConfig.coverPhotoId] : []), ...(invitation.siteConfig.coverGallery || []), ...(invitation.siteConfig.siteGallery || []), ...(invitation.siteConfig.coverVideoId ? [invitation.siteConfig.coverVideoId] : [])])]
     Promise.all(ids.map(async (id) => {
       const response = await fetch(`/api/site-media/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       if (!response.ok) return [id, '']
@@ -2271,7 +2309,7 @@ function GuestPortal({ notify, setView }) {
       setInvitationMedia(Object.fromEntries(entries.filter(([, url]) => url)))
     }).catch(() => {})
     return () => { active = false }
-  }, [invitation?.siteConfig?.coverPhotoId, invitation?.siteConfig?.coverVideoId, JSON.stringify(invitation?.siteConfig?.coverGallery || []), token])
+  }, [invitation?.siteConfig?.coverPhotoId, invitation?.siteConfig?.coverVideoId, JSON.stringify(invitation?.siteConfig?.coverGallery || []), JSON.stringify(invitation?.siteConfig?.siteGallery || []), token])
 
   useEffect(() => {
     const gallery = invitation?.siteConfig?.coverGallery || []
@@ -2307,6 +2345,7 @@ function GuestPortal({ notify, setView }) {
       <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt="Foto escolhida pelo casal para o convite" /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary" onClick={() => setSiteOpen(true)}>Abrir site do casamento <ArrowRight size={16} /></button><button type="button" className="button-outline" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}>Confirmar presença</button></div></section>
       {siteOpen && <div className="guest-full-site-heading"><div><span className="eyebrow">SITE DO CASAMENTO</span><h2>Informações para celebrar com vocês</h2></div><button type="button" className="button-outline" onClick={() => { setSiteOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Voltar ao convite</button></div>}
       {siteOpen && hasMoreInvitationContent && <details className="guest-extra-details" open><summary>História e outros detalhes</summary>
+      {siteGallery.length > 0 && invitation.siteConfig?.enabledSections?.includes('Galeria de fotos') && <section className="role-card guest-couple-gallery"><span className="eyebrow">FOTOS DO CASAL</span><h2>Um pouco da nossa história em imagens</h2><div>{siteGallery.map((id) => invitationMedia[id] && <img key={id} src={invitationMedia[id]} alt="Foto do casal" loading="lazy" />)}</div></section>}
       {invitation.siteConfig?.weddingDetails?.menu && <section className="role-card guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
       {invitation.siteConfig?.weddingDetails?.dressCode && <section className="role-card guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2><div className="customizer-preview-swatches">{activePalette?.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</div></section>}
       {invitation.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']) && <section className="role-card guest-story-section"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']}</p></section>}
