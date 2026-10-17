@@ -525,4 +525,4 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 
 - O dono autorizou levar alterações concluídas para produção depois de validar. Para esta entrega, rodar `npm test`, `npm run lint` e `npm run build`; se passarem, integrar a branch de trabalho em `main` e enviar pelo Git para o deploy automático do Cloudflare Pages. Não fazer deploy manual nem criar pipeline.
 - O teste da equipe do evento falhava porque o mock da base não respondia à consulta reduzida da rota de `event_staff`. A fixture em `tests/wedding-role-access.test.js` agora responde a essa consulta com apenas `id` e `name`; a implementação de autorização não foi alterada.
-- Validação desta promoção: `npm test` passou com 11/11 testes; `npm run lint` e `npm run build` também passaram. Registrar abaixo o commit integrado e o resultado do Pages após o push de `main`.
+- Validação desta promoção: `npm test` passou com 11/11 testes; `npm run lint` e `npm run build` também passaram. O commit `6335794` foi integrado e enviado a `main`; depois do push, `https://tudocomecoudeumsim.pages.dev` respondeu HTTP 200 e serviu o novo bundle de produção.
