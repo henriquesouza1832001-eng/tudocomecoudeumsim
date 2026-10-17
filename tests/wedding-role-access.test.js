@@ -3,11 +3,11 @@ import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 
 const origin = 'https://tudocomecoudeumsim.pages.dev'
-const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)] }
+const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)], guestCamera: { enabled: true, photoLimit: 5 } }
 const publishedEvent = { id: 'event-published', name: 'Cerimônia', event_type: 'ceremony', starts_at: null, venue_name: 'Jardim', address: null, group_ids: [] }
 const restrictedEvent = { id: 'event-restricted', name: 'Ensaio', event_type: 'rehearsal', starts_at: null, venue_name: 'Salão', address: null, group_ids: ['group-private'] }
 
-function database(role) {
+function database(role, options = {}) {
   return {
     prepare(query) {
       let parameters = []
@@ -26,19 +26,23 @@ function database(role) {
             const allowedRoles = parameters.slice(2)
             return parameters[0] === 'event-1' && allowedRoles.includes(role) ? { event_id: 'event-1', wedding_id: 'wedding-1', membership_id: 'membership-1', role } : null
           }
-          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(siteConfig), published_events_json: '[]' }
+          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent]) }
+          if (query.includes('SELECT published_events_json FROM weddings')) return { published_events_json: JSON.stringify([publishedEvent]) }
+          if (query.includes('SELECT COUNT(*) AS total FROM guest_photos')) return { total: 0 }
           if (query.includes('SELECT site_config_json, published_site_config_json')) return { site_config_json: JSON.stringify(siteConfig), published_site_config_json: JSON.stringify(siteConfig), site_published_at: '2026-10-14T12:00:00.000Z' }
           if (query.includes('SELECT slug,') && query.includes('published_site_config_json')) return { slug: 'casal-teste', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', event_time: '16:00', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent, restrictedEvent]), site_published_at: '2026-10-14T12:00:00.000Z' }
           if (query.includes('SELECT COUNT(*) AS total FROM events')) return { total: 0 }
           return null
         },
         async all() {
+          if (query.includes('SELECT w.id FROM weddings w JOIN wedding_memberships')) return { results: [{ id: 'wedding-1' }] }
           if (query.includes('SELECT g.id, g.name') && !query.includes('LEFT JOIN')) return { results: [{ id: 'guest-1', name: 'Convidada' }] }
           if (query.includes('FROM godparent_tasks')) return { results: [{ id: 'task-1', title: 'Levar as alianças', details: '', due_at: null, status: 'open' }] }
           if (query.includes('FROM guests g LEFT JOIN guest_groups gg')) return { results: [{ id: 'guest-1', name: 'Convidada', party_size: 2, rsvp_status: 'confirmed', dietary_notes: null, group_name: 'Família', checked_in_at: null }] }
           return { results: [] }
         },
         async run() {
+          if (options.failGuestPhotoInsert && query.includes('INSERT INTO guest_photos')) throw new Error('test insert failure')
           return { meta: { changes: 1 } }
         },
       }
@@ -49,13 +53,41 @@ function database(role) {
   }
 }
 
-async function call(path, role, { method = 'GET', body } = {}) {
+async function call(path, role, { method = 'GET', body, formData, headers = {}, env = {}, databaseOptions = {} } = {}) {
   const request = new Request(`${origin}${path}`, {
     method,
-    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers },
+    body: formData || (body ? JSON.stringify(body) : undefined),
   })
-  return onRequest({ request, env: { DB: database(role) } })
+  return onRequest({ request, env: { DB: database(role, databaseOptions), ...env } })
+}
+
+function memoryBucket({ failPut = false } = {}) {
+  const objects = new Map()
+  return {
+    objects,
+    async list({ prefix }) {
+      return { objects: [...objects.entries()].filter(([key]) => key.startsWith(prefix)).map(([key, value]) => ({ key, size: value.bytes.length, customMetadata: value.options.customMetadata, httpMetadata: value.options.httpMetadata })) }
+    },
+    async put(key, body, options) {
+      if (failPut) throw new Error('test storage failure')
+      objects.set(key, { bytes: new Uint8Array(body), options })
+    },
+    async get(key) {
+      const value = objects.get(key)
+      return value ? { body: new Blob([value.bytes]).stream(), httpMetadata: value.options.httpMetadata } : null
+    },
+    async delete(key) {
+      for (const item of Array.isArray(key) ? key : [key]) objects.delete(item)
+    },
+  }
+}
+
+function uploadForm(name, type, bytes, mediaType) {
+  const body = new FormData()
+  body.set('file', new File([Uint8Array.from(bytes)], name, { type }))
+  body.set('mediaType', mediaType)
+  return body
 }
 
 test('editors can access drafts and update events', async () => {
@@ -136,4 +168,118 @@ test('site media is scoped to wedding editors and hidden from readers', async ()
   const reader = await call('/api/couple/weddings/wedding-1/site-media', 'reader')
   assert.equal(editor.status, 200)
   assert.equal(reader.status, 404)
+})
+
+test('couple photo and video uploads persist supported media in object storage', async () => {
+  const bucket = memoryBucket()
+  const imageFiles = [
+    ['cover.jpg', 'image/jpeg', [255, 216, 255]],
+    ['site.png', 'image/png', [137, 80, 78, 71, 13, 10, 26, 10]],
+    ['gallery.webp', 'image/webp', [82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80]],
+  ]
+  const imageIds = []
+  for (const [name, type, bytes] of imageFiles) {
+    const response = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm(name, type, bytes, 'image'), env: { GUEST_PHOTOS: bucket } })
+    assert.equal(response.status, 201, name)
+    const result = await response.json()
+    assert.equal(result.mediaType, 'image')
+    imageIds.push(result.id)
+  }
+  for (let index = 0; index < 5; index += 1) {
+    const response = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm(`extra-${index}.jpg`, 'image/jpeg', [255, 216, 255], 'image'), env: { GUEST_PHOTOS: bucket } })
+    assert.equal(response.status, 201)
+  }
+  const overLimit = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm('ninth.jpg', 'image/jpeg', [255, 216, 255], 'image'), env: { GUEST_PHOTOS: bucket } })
+  assert.equal(overLimit.status, 409)
+  assert.equal((await overLimit.json()).error, 'gallery_limit_reached')
+  assert.equal(bucket.objects.size, 8)
+
+  const videoBytes = new Uint8Array(16)
+  videoBytes.set([102, 116, 121, 112], 4)
+  const video = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm('opening.mp4', 'video/mp4', videoBytes, 'video'), env: { GUEST_PHOTOS: bucket } })
+  assert.equal(video.status, 201)
+  const videoResult = await video.json()
+  assert.equal(videoResult.mediaType, 'video')
+  const secondVideo = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm('second.mp4', 'video/mp4', videoBytes, 'video'), env: { GUEST_PHOTOS: bucket } })
+  assert.equal(secondVideo.status, 409)
+  assert.equal((await secondVideo.json()).error, 'video_limit_reached')
+
+  const config = { ...siteConfig, coverLayout: 'video', coverPhotoId: imageIds[0], coverCarouselEnabled: true, coverGallery: imageIds.slice(0, 2), siteGallery: [imageIds[2]], coverVideoId: videoResult.id }
+  const savedConfig = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config, env: { GUEST_PHOTOS: bucket } })
+  assert.equal(savedConfig.status, 200)
+  assert.equal((await savedConfig.json()).draft.coverVideoId, videoResult.id)
+  const readBack = await call(`/api/site-media/${videoResult.id}`, 'couple_admin', { env: { GUEST_PHOTOS: bucket } })
+  assert.equal(readBack.status, 200)
+  assert.equal(readBack.headers.get('Content-Type'), 'video/mp4')
+  assert.equal((await readBack.arrayBuffer()).byteLength, videoBytes.byteLength)
+})
+
+test('couple file uploads reject unsupported, forged, and oversized files', async () => {
+  const bucket = memoryBucket()
+  const cases = [
+    { form: uploadForm('photo.gif', 'image/gif', [71, 73, 70, 56], 'image'), status: 400, error: 'unsupported_media_type' },
+    { form: uploadForm('photo.jpg', 'image/jpeg', [0, 0, 0, 0], 'image'), status: 400, error: 'invalid_media_content' },
+    { form: uploadForm('opening.mp4', 'video/mp4', [0, 0, 0, 0, 0, 0, 0, 0], 'video'), status: 400, error: 'invalid_media_content' },
+  ]
+  for (const item of cases) {
+    const response = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: item.form, env: { GUEST_PHOTOS: bucket } })
+    assert.equal(response.status, item.status)
+    assert.equal((await response.json()).error, item.error)
+  }
+  const huge = new File([new Uint8Array(8_388_609)], 'large.webp', { type: 'image/webp' })
+  const body = new FormData()
+  body.set('file', huge)
+  body.set('mediaType', 'image')
+  const oversized = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: body, env: { GUEST_PHOTOS: bucket } })
+  assert.equal(oversized.status, 413)
+  assert.equal((await oversized.json()).error, 'invalid_media_size')
+  const oversizedVideo = new File([new Uint8Array(15_728_641)], 'large.mp4', { type: 'video/mp4' })
+  const videoBody = new FormData()
+  videoBody.set('file', oversizedVideo)
+  videoBody.set('mediaType', 'video')
+  const oversizedVideoResponse = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: videoBody, env: { GUEST_PHOTOS: bucket } })
+  assert.equal(oversizedVideoResponse.status, 413)
+  assert.equal((await oversizedVideoResponse.json()).error, 'invalid_media_size')
+  assert.equal(bucket.objects.size, 0)
+})
+
+test('couple uploads report an R2 write failure as a retryable storage response', async () => {
+  const originalError = console.error
+  console.error = () => {}
+  try {
+    const response = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm('cover.webp', 'image/webp', [82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80], 'image'), env: { GUEST_PHOTOS: memoryBucket({ failPut: true }) } })
+    assert.equal(response.status, 503)
+    assert.equal((await response.json()).error, 'media_storage_write_failed')
+  } finally {
+    console.error = originalError
+  }
+})
+
+test('guest camera photos save with event access and remove the object if the D1 save fails', async () => {
+  const bucket = memoryBucket()
+  const token = 'a'.repeat(43)
+  const headers = { Authorization: `Bearer ${token}` }
+  const guestImages = [
+    ['moment.jpg', 'image/jpeg', [255, 216, 255]],
+    ['moment.png', 'image/png', [137, 80, 78, 71, 13, 10, 26, 10]],
+    ['moment.webp', 'image/webp', [82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80]],
+  ]
+  for (const [name, type, bytes] of guestImages) {
+    const body = new FormData()
+    body.set('photo', new File([Uint8Array.from(bytes)], name, { type }))
+    body.set('eventId', publishedEvent.id)
+    const saved = await call('/api/invitation/photos', 'guest', { method: 'POST', formData: body, headers, env: { GUEST_PHOTOS: bucket } })
+    assert.equal(saved.status, 201, name)
+    assert.equal((await saved.json()).saved, true)
+  }
+  assert.equal(bucket.objects.size, 3)
+
+  const failingBucket = memoryBucket()
+  const failedBody = new FormData()
+  failedBody.set('photo', new File([Uint8Array.from([255, 216, 255])], 'moment.jpg', { type: 'image/jpeg' }))
+  failedBody.set('eventId', publishedEvent.id)
+  const failed = await call('/api/invitation/photos', 'guest', { method: 'POST', formData: failedBody, headers, env: { GUEST_PHOTOS: failingBucket }, databaseOptions: { failGuestPhotoInsert: true } })
+  assert.equal(failed.status, 500)
+  assert.equal((await failed.json()).error, 'photo_save_failed')
+  assert.equal(failingBucket.objects.size, 0)
 })

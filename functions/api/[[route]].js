@@ -899,7 +899,12 @@ app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (co
   const id = crypto.randomUUID()
   const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'mp4'
   const objectKey = `${weddingId}/site/${id}.${extension}`
-  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: file.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId, mediaType } })
+  try {
+    await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: file.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId, mediaType } })
+  } catch (error) {
+    console.error('site_media_save_failed', { weddingId, mediaType, error: error instanceof Error ? error.message : 'unknown' })
+    return jsonError(context, 503, 'media_storage_write_failed')
+  }
   return context.json({ id, mediaType, contentType: file.type, sizeBytes: file.size }, 201)
 })
 
@@ -1683,7 +1688,12 @@ app.post('/api/invitation/photos', async (context) => {
   const id = crypto.randomUUID()
   const extension = photo.type === 'image/jpeg' ? 'jpg' : photo.type === 'image/png' ? 'png' : 'webp'
   const objectKey = `${guest.wedding_id}/${eventId}/${guest.id}/${id}.${extension}`
-  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: photo.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId: guest.wedding_id, guestId: guest.id, eventId } })
+  try {
+    await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: photo.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId: guest.wedding_id, guestId: guest.id, eventId } })
+  } catch (error) {
+    console.error('guest_photo_storage_failed', { weddingId: guest.wedding_id, eventId, error: error instanceof Error ? error.message : 'unknown' })
+    return jsonError(context, 503, 'photo_storage_failed')
+  }
   try {
     const result = await context.env.DB.prepare(`
       INSERT INTO guest_photos (id, wedding_id, event_id, guest_id, object_key, content_type, size_bytes)
@@ -1695,8 +1705,9 @@ app.post('/api/invitation/photos', async (context) => {
       await context.env.GUEST_PHOTOS.delete(objectKey)
       return jsonError(context, 409, 'photo_limit_reached')
     }
-  } catch {
+  } catch (error) {
     await context.env.GUEST_PHOTOS.delete(objectKey)
+    console.error('guest_photo_record_failed', { weddingId: guest.wedding_id, eventId, error: error instanceof Error ? error.message : 'unknown' })
     return jsonError(context, 500, 'photo_save_failed')
   }
   return context.json({ saved: true }, 201)
