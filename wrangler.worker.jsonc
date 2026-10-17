@@ -9,7 +9,7 @@
     "not_found_handling": "single-page-application"
   },
   "vars": {
-    "BASE_DOMAIN": "tudocomecoudeumsim.com.br",
+    "BASE_DOMAIN": "",
     "ACCESS_TEAM_DOMAIN": "https://quarta-amstel-pages.cloudflareaccess.com",
     "ACCESS_APPLICATION_AUD": "1db573da6440a8939d5a164852d6ff202d9e1721fb43cc219b6720740e496e3e"
   },
