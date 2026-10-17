@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { handle } from 'hono/cloudflare-pages'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import {
   authenticate,
@@ -2220,4 +2219,6 @@ app.put('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (
   return context.json({ policy: { enabled: Number(body.enabled), rate_basis_points: body.rateBasisPoints, minimum_fee_cents: body.minimumFeeCents, maximum_fee_cents: body.maximumFeeCents, paid_by: body.paidBy } })
 })
 
-export const onRequest = handle(app)
+export { app }
+
+export const onRequest = (context) => app.fetch(context.request, context.env, context)

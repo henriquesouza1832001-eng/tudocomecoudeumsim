@@ -1,0 +1,30 @@
+{
+  "name": "tudocomecoudeumsim",
+  "main": "./src/worker.js",
+  "compatibility_date": "2026-10-12",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "BASE_DOMAIN": "tudocomecoudeumsim.com.br",
+    "ACCESS_TEAM_DOMAIN": "https://quarta-amstel-pages.cloudflareaccess.com",
+    "ACCESS_APPLICATION_AUD": "1db573da6440a8939d5a164852d6ff202d9e1721fb43cc219b6720740e496e3e"
+  },
+  "r2_buckets": [
+    {
+      "binding": "GUEST_PHOTOS",
+      "bucket_name": "tudocomecoudeumsim-guest-photos"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tudocomecoudeumsim-db",
+      "database_id": "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
