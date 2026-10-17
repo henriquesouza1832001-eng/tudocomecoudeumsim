@@ -533,4 +533,4 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - O campo `fontScale` já era aceito e persistido pela API, mas não tinha controle visível no personalizador e a prévia do painel forçava tamanho padrão.
 - `FontScalePicker` oferece Compacto, Padrão e Ampliado tanto em `/criar-site` quanto no editor autenticado, dentro da etapa Aparência. As escolhas atualizam as prévias na hora e são guardadas no mesmo rascunho.
 - A escala também é aplicada ao convite individual publicado, incluindo capa, recado e detalhes. Valores permitidos continuam sendo `small`, `medium` e `large`, validados pela API.
-- Validação: `npm test` passou com 11/11 testes, `npm run lint`, `npm run build` e `git diff --check` passaram. A integração em `main` foi autorizada pelo dono; registrar o commit e a resposta do Cloudflare depois do push.
+- Validação: `npm test` passou com 11/11 testes, `npm run lint`, `npm run build` e `git diff --check` passaram. O commit `5f1c6eb` foi enviado por `hen` e integrado por fast-forward a `main`. A página de produção respondeu HTTP 200 e serviu o bundle com o seletor de tamanho e as regras CSS correspondentes.
