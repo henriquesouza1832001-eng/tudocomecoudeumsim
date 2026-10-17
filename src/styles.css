@@ -530,6 +530,7 @@ img { display: block; max-width: 100%; }
 .browser-bar > div { height: 15px; margin-left: 8px; padding: 3px 8px; flex: 1; border-radius: 2px; color: #a5aaa2; background: #fff; font-size: 6px; text-align: center; }
 .browser-bar > svg { color: #9da49a; }
 .browser-content { height: 295px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+.browser-content.cover-no-photo { background: linear-gradient(145deg, #d8ded2, #a7b49c 58%, #7c8d77); }
 .browser-content > img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: 60% center; }
 .browser-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(22,33,26,.62), rgba(31,42,34,.16)); }
 .browser-date, .browser-content > strong, .browser-content > small, .browser-content > button { z-index: 1; }
@@ -961,6 +962,7 @@ img { display: block; max-width: 100%; }
 .role-card .button-outline, .role-actions .button-outline { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 10px; }
 .guest-pass-card { position: relative; overflow: hidden; }
 .guest-invitation-cover { min-height: clamp(250px, 42vw, 390px); margin: -20px -20px 18px; position: relative; display: grid; align-items: end; overflow: hidden; color: #fff; background: var(--forest); }
+.guest-invitation-cover.guest-cover-no-photo { background: linear-gradient(145deg, #d8ded2, #a7b49c 58%, #7c8d77); }
 .guest-invitation-cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
 .guest-invitation-cover::after { position: absolute; inset: 30% 0 0; content: ''; background: linear-gradient(transparent, rgba(22,32,25,.78)); }
 .guest-invitation-cover > div { max-width: 620px; padding: 28px clamp(20px, 5vw, 46px); position: relative; z-index: 1; }
@@ -1237,6 +1239,18 @@ img { display: block; max-width: 100%; }
 .password-capslock { position: absolute; z-index: 4; top: calc(100% + 4px); right: 42px; width: max-content; max-width: min(300px, calc(100vw - 48px)); padding: 7px 10px; border: 1px solid rgba(117,82,50,.24); border-radius: 4px; color: #654727; background: #fffdf8; box-shadow: 0 5px 16px rgba(48,55,47,.14); font-size: 12px; font-weight: 500; line-height: 1.4; pointer-events: none; }
 .admin-login-form .button-primary { min-height: 42px; justify-content: center; }
 .signup-name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.signup-event-fields { display: grid; gap: 10px; }
+.signup-event-fields > span { color: var(--ink, #34453b); font-size: 13px; font-weight: 650; }
+.signup-event-fields > span small { display: block; margin-top: 4px; color: var(--muted, #788078); font-size: 12px; font-weight: 400; }
+.signup-event-fields > div, .wedding-profile-date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.wedding-profile-fields { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line, #ded8ce); border-radius: 14px; background: rgba(255,255,255,.56); }
+.wedding-profile-fields label { display: grid; gap: 6px; color: var(--ink, #34453b); font-size: 13px; font-weight: 600; }
+.wedding-profile-fields input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--line, #ded8ce); border-radius: 8px; color: var(--ink, #34453b); background: white; font: inherit; }
+.couple-cover-upload { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line, #ded8ce); border-radius: 14px; background: rgba(255,255,255,.56); }
+.couple-cover-upload > span { color: var(--ink, #34453b); font-size: 14px; font-weight: 650; }
+.couple-cover-upload p, .couple-cover-upload small { margin: 0; color: var(--muted, #788078); font-size: 12px; line-height: 1.5; }
+.couple-cover-upload-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.couple-cover-upload .admin-form-error { color: #9a3d34; }
 .couple-type-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .couple-type-field legend { margin-bottom: 8px; color: #6d7167; font-size: 10px; }
 .couple-type-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
@@ -1306,6 +1320,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 700px) {
   .role-main { width: min(94%, 560px); padding: 27px 0 38px; }
   .signup-name-grid { grid-template-columns: 1fr; gap: 13px; }
+  .signup-event-fields > div, .wedding-profile-date-grid { grid-template-columns: 1fr; gap: 10px; }
   .role-grid.two { grid-template-columns: 1fr; }
   .invitation-rsvp-form { grid-template-columns: 1fr; }
   .couple-guest-form, .couple-group-form { grid-template-columns: 1fr 1fr; }

@@ -462,7 +462,7 @@ function resolveCurrentView() {
   const path = window.location.pathname
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
   if (path === '/cadastro') return 'couple-signup'
-  if (path === '/criar-site') return 'public-customizer'
+  if (path === '/criar-site') return 'couple-signup'
   if (path === '/ajuda') return 'help-center'
   if (path === '/painel/demo') return 'dashboard-preview'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
@@ -480,7 +480,7 @@ function resolveCurrentView() {
 
 function HelpCenter() {
   return <RoleFrame icon={CircleHelp} eyebrow="AJUDA PARA ORGANIZAR COM CALMA" title="Um passo de cada vez." description="Encontre o próximo passo do convite e saiba quem pode ajudar. As respostas são curtas; os detalhes ficam onde você precisa deles." className="help-center-page" publicPage secureName="Central de ajuda" secureFooter="Ajuda da plataforma" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
-    <section className="role-card help-center-start"><span className="eyebrow">POR ONDE COMEÇAR</span><h2>Montem primeiro o convite.</h2><p>Escolham um tema, coloquem os nomes e a data. Depois, acrescentem endereço, horário e traje. A prévia acompanha cada mudança.</p><div className="help-center-actions"><a className="button-primary" href="/criar-site">Abrir o personalizador <ArrowRight size={15} /></a><a className="button-outline" href="/painel">Entrar no painel</a></div></section>
+    <section className="role-card help-center-start"><span className="eyebrow">POR ONDE COMEÇAR</span><h2>Comecem criando o acesso do casal.</h2><p>Depois de confirmar o e-mail, definam nomes, data e fotos dentro do painel. Endereço, horários e traje podem ser acrescentados na personalização.</p><div className="help-center-actions"><a className="button-primary" href="/cadastro">Criar acesso <ArrowRight size={15} /></a><a className="button-outline" href="/painel">Entrar no painel</a></div></section>
     <section className="help-center-topics" aria-label="Ajuda por assunto">
       <details className="role-card"><summary>Como escolher e ajustar um tema</summary><p>O tema define as cores de fundo, os detalhes, os títulos e a composição inicial da capa. Escolham uma opção pela prévia; depois, se quiserem, ajustem a paleta, a fonte e o formato da foto.</p></details>
       <details className="role-card"><summary>O que informar aos convidados</summary><p>Comecem pelo essencial: data, local, horário e confirmação de presença. Traje, paleta, programação, cardápio e dicas para quem vem de longe podem ser adicionados em “Detalhes”.</p></details>
@@ -552,7 +552,7 @@ function GuestSite({ theme, setTheme, notify }) {
           <a href="#presentes" onClick={() => setMenuOpen(false)}>Presentes</a>
           <a href="#presenca" onClick={() => setMenuOpen(false)}>Presença</a>
         </nav>
-        <a className="nav-rsvp nav-signup" href="/criar-site">Criar meu site <ArrowRight size={15} /></a>
+        <a className="nav-rsvp nav-signup" href="/cadastro">Criar acesso <ArrowRight size={15} /></a>
       </header>
 
       <section className="guest-hero" id="inicio">
@@ -707,10 +707,6 @@ function GuestCameraSettings({ settings = DEFAULT_SITE_CONFIG.guestCamera, onCha
   return <section className="guest-camera-settings" id={id}><div><span className="eyebrow">LEMBRANÇAS DOS CONVIDADOS</span><h3>Uma câmera para cada pessoa</h3><p>O convidado tira uma foto, confere a prévia e decide se quer guardar ou tentar outra vez. As fotos ficam privadas para o casal; cada convidado só vê a contagem que ainda pode enviar.</p></div><label className="guest-camera-toggle"><input type="checkbox" checked={camera.enabled} onChange={(event) => onChange({ ...camera, enabled: event.target.checked })} /><span>Ativar a câmera do casamento</span></label>{camera.enabled && <label className="font-pair-label">Limite de fotos por convidado<input type="number" min="1" max="50" step="1" value={camera.photoLimit} onChange={(event) => onChange({ ...camera, photoLimit: Math.max(1, Math.min(50, Number(event.target.value) || 1)) })} /><small>Escolham qualquer quantidade entre uma e cinquenta fotos.</small></label>}<small>Depois da celebração, o casal pode rever as fotos com o nome de quem registrou cada momento.</small></section>
 }
 
-function createCoupleSlug(firstName, secondName) {
-  return `${firstName}-${secondName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30).replace(/-$/g, '')
-}
-
 function PublicSiteCustomizer() {
   const savedDraft = readPublicSiteDraft()
   const [draft, setDraft] = useState(() => ({
@@ -829,27 +825,16 @@ function PasswordInput(props) {
 }
 
 function CoupleSignup() {
-  const publicDraft = readPublicSiteDraft()
-  const selectedDraftTheme = THEMES.find((item) => item.id === publicDraft.siteConfig?.theme) || THEMES[0]
-  const draftPalettes = getThemePalettes(selectedDraftTheme)
-  const selectedDraftPalette = draftPalettes[publicDraft.siteConfig?.paletteIndex] || draftPalettes[0]
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
-  const [partnerOneName, setPartnerOneName] = useState(publicDraft.partnerOneName || '')
-  const [partnerTwoName, setPartnerTwoName] = useState(publicDraft.partnerTwoName || '')
-  const [coupleType, setCoupleType] = useState('bride-groom')
+  const [eventDate, setEventDate] = useState('')
+  const [eventTime, setEventTime] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
-  const [slug, setSlug] = useState(createCoupleSlug(publicDraft.partnerOneName || '', publicDraft.partnerTwoName || ''))
-  const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-
-  function createSlug(firstName, secondName) {
-    return `${firstName}-${secondName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30).replace(/-$/g, '')
-  }
 
   async function signup(event) {
     event.preventDefault()
@@ -863,11 +848,10 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, partnerOneName, partnerTwoName, slug, eventDate: eventDate || null, siteConfig: publicDraft.siteConfig, turnstileToken }),
+        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'signup_failed')
-      window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
       setSubmitted(true)
       setPassword('')
       setConfirmation('')
@@ -875,10 +859,10 @@ function CoupleSignup() {
       setError(cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
         : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
           : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.'
-        : cause.message === 'email_or_slug_unavailable' ? 'Este e-mail ou endereço já está cadastrado. Confira os dados e tente entrar.'
-          : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
-            : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
-              : 'Não foi possível criar o cadastro. Confira os campos e tente novamente.')
+            : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confira os dados e tente entrar.'
+              : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
+                : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
+                  : 'Não foi possível criar o acesso. Confira os campos e tente novamente.')
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -886,25 +870,20 @@ function CoupleSignup() {
     }
   }
 
-  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Comecem a planejar juntos.'} description={submitted ? `Enviamos um link de confirmação para ${email}. Ele vale por 24 horas.` : 'Crie o acesso do casal e reserve o endereço curto do site de vocês.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o endereço, vocês poderão abrir o painel e configurar um autenticador no primeiro acesso.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/criar-site">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
-      <div className="signup-customization-summary"><strong>O convite que vocês começaram</strong><p>{publicDraft.partnerOneName || 'Nomes'} &amp; {publicDraft.partnerTwoName || 'nomes'} · {selectedDraftTheme.name}{publicDraft.eventDate ? ` · ${new Date(`${publicDraft.eventDate}T12:00:00`).toLocaleDateString('pt-BR')}` : ''}</p><span className="signup-customization-colors" aria-label="Cores escolhidas">{selectedDraftPalette.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</span><a href="/criar-site">Voltar e ajustar o convite</a></div>
-      <label>E-mail do casal<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-      <fieldset className="couple-type-field"><legend>Como vocês preferem identificar o casal?</legend><div className="couple-type-options">{[['bride-groom', 'Noiva e noivo'], ['two-brides', 'Duas noivas'], ['two-grooms', 'Dois noivos'], ['neutral', 'Nomes neutros']].map(([value, label]) => <label className={coupleType === value ? 'selected' : ''} key={value}><input type="radio" name="couple-type" value={value} checked={coupleType === value} onChange={() => setCoupleType(value)} /><span>{label}</span></label>)}</div></fieldset>
-      <div className="signup-name-grid"><label>{({ 'bride-groom': 'Nome da noiva', 'two-brides': 'Nome da primeira noiva', 'two-grooms': 'Nome do primeiro noivo', neutral: 'Nome da pessoa 1' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => { setPartnerOneName(event.target.value); setSlug(createSlug(event.target.value, partnerTwoName)) }} required /></label><label>{({ 'bride-groom': 'Nome do noivo', 'two-brides': 'Nome da segunda noiva', 'two-grooms': 'Nome do segundo noivo', neutral: 'Nome da pessoa 2' })[coupleType]}<input autoComplete="given-name" maxLength="100" value={partnerTwoName} onChange={(event) => { setPartnerTwoName(event.target.value); setSlug(createSlug(partnerOneName, event.target.value)) }} required /></label></div>
-      <label>Endereço curto do site<input autoComplete="url" minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))} required /><small className="signup-hint">Um endereço simples para compartilhar o convite depois.</small></label>
-      <label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : 'Cadastrem o e-mail e a senha para entrar no painel. O convite será criado depois, dentro da conta.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel, proteger a conta com um autenticador e criar o convite com as próprias fotos.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+      <label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
       <label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       <label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
       <TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />
       {!TURNSTILE_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}
       {error && <p className="admin-form-error" role="alert">{error}</p>}
-      <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando cadastro…' : 'Criar meu espaço'} <ArrowRight size={15} /></button>
+      <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando acesso…' : 'Criar acesso'} <ArrowRight size={15} /></button>
       <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
     </form>}
   </RoleFrame>
 }
-
 function CoupleEmailConfirmation() {
   const [status, setStatus] = useState('confirming')
   const token = window.location.hash.match(/^#confirmar-email\/([A-Za-z0-9_-]{40,60})$/)?.[1] || ''
@@ -923,7 +902,7 @@ function CoupleEmailConfirmation() {
 
   const verified = status === 'verified'
   return <RoleFrame icon={verified ? Check : Shield} eyebrow="CONFIRMAÇÃO DE E-MAIL" title={status === 'confirming' ? 'Validando seu cadastro.' : verified ? 'Cadastro confirmado.' : 'Este link não está mais válido.'} description={status === 'confirming' ? 'Só um instante enquanto ativamos o acesso do casal.' : verified ? 'Seu espaço está pronto. No primeiro acesso, configure o autenticador para proteger a conta.' : 'O link pode ter expirado ou já ter sido utilizado. Volte ao cadastro para começar novamente.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
-    <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/criar-site">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
+    <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/cadastro">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
   </RoleFrame>
 }
 
@@ -1195,10 +1174,17 @@ function CouplePanel({ notify }) {
     setSiteConfigLoading(false)
   }
 
-  async function saveSiteDraft() {
+  async function saveWeddingProfile(profile) {
+    const result = await request(`/api/couple/weddings/${weddingId}/profile`, { method: 'PATCH', body: JSON.stringify(profile) })
+    setWeddings((current) => current.map((item) => item.id === weddingId ? { ...item, ...result.wedding } : item))
+    return result.wedding
+  }
+
+  async function saveSiteDraft(profile) {
     setSiteConfigLoading(true)
     setError('')
     try {
+      if (profile) await saveWeddingProfile(profile)
       const result = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
       setSiteConfig(result.draft)
       setSavedSiteConfig(result.draft)
@@ -1210,11 +1196,12 @@ function CouplePanel({ notify }) {
     }
   }
 
-  async function publishSite() {
+  async function publishSite(profile) {
     if (!window.confirm('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?')) return
     setSiteConfigLoading(true)
     setError('')
     try {
+      if (profile) await saveWeddingProfile(profile)
       let draft = siteConfig
       if (JSON.stringify(siteConfig) !== JSON.stringify(savedSiteConfig)) {
         const saved = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
@@ -1704,7 +1691,7 @@ function CouplePanel({ notify }) {
 
   if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/criar-site">Cadastrem o casamento</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -1830,6 +1817,10 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
 function CoupleSiteEditor({ wedding, events = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
   const [step, setStep] = useState('visual')
+  const [partnerOneName, setPartnerOneName] = useState(wedding?.partner_one_name || '')
+  const [partnerTwoName, setPartnerTwoName] = useState(wedding?.partner_two_name || '')
+  const [eventDate, setEventDate] = useState(wedding?.event_date || '')
+  const [eventTime, setEventTime] = useState(wedding?.event_time || '')
   const [siteMedia, setSiteMedia] = useState([])
   const [mediaUrls, setMediaUrls] = useState({})
   const [mediaBusy, setMediaBusy] = useState(false)
@@ -1844,6 +1835,8 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const coverLayouts = [{ id: 'full', label: 'Foto em destaque' }, { id: 'split', label: 'Foto ao lado' }, { id: 'arch', label: 'Foto em moldura' }]
   const coverLayout = coverLayouts.some((item) => item.id === config.coverLayout) ? config.coverLayout : 'full'
   const draftChanged = JSON.stringify(config) !== JSON.stringify(savedConfig)
+  const profile = { partnerOneName, partnerTwoName, eventDate: eventDate || null, eventTime: eventTime || null }
+  const profileChanged = partnerOneName !== (wedding?.partner_one_name || '') || partnerTwoName !== (wedding?.partner_two_name || '') || eventDate !== (wedding?.event_date || '') || eventTime !== (wedding?.event_time || '')
   const published = publishedAt ? new Date(publishedAt).toLocaleString('pt-BR') : ''
   const language = ['pt-BR', 'en', 'es'].includes(config.language) ? config.language : 'pt-BR'
   const locale = { 'pt-BR': 'pt-BR', en: 'en-US', es: 'es-ES' }[language]
@@ -1871,6 +1864,13 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     '--font-body': selectedFonts[1],
     '--site-text-scale': config.fontScale === 'small' ? '.92' : config.fontScale === 'large' ? '1.1' : '1',
   }
+
+  useEffect(() => {
+    setPartnerOneName(wedding?.partner_one_name || '')
+    setPartnerTwoName(wedding?.partner_two_name || '')
+    setEventDate(wedding?.event_date || '')
+    setEventTime(wedding?.event_time || '')
+  }, [wedding?.id])
 
   useEffect(() => {
     let active = true
@@ -1933,6 +1933,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
       </div>
       {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
+        <div className="wedding-profile-fields"><label>Nome 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Nome 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
         <div className="customizer-upload-panel customizer-cover-photo-panel"><div><strong>Comecem com uma foto de vocês</strong><p>Ela será a imagem principal do convite. As fotos de exemplo saíram da capa.</p></div><input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => { const files = [...event.target.files].slice(0, Math.max(0, 8 - siteMedia.filter((item) => item.mediaType === 'image').length)); files.reduce((queue, file) => queue.then(() => uploadSiteMedia(file, 'image')), Promise.resolve()).finally(() => { event.target.value = '' }) }} /><button type="button" className="button-outline" onClick={() => photoInput.current?.click()} disabled={mediaBusy || siteMedia.filter((item) => item.mediaType === 'image').length >= 8}><Camera size={17} /> {mediaBusy ? 'Guardando a foto…' : config.coverPhotoId ? 'Adicionar mais fotos' : 'Escolher a foto do convite'}</button>{siteMedia.filter((item) => item.mediaType === 'image').length > 0 && <div className="customizer-upload-grid">{siteMedia.filter((item) => item.mediaType === 'image').map((item) => <article className="customizer-cover-photo-choice" key={item.id}><button type="button" className={config.coverPhotoId === item.id ? 'active' : ''} aria-pressed={config.coverPhotoId === item.id} onClick={() => update({ coverPhotoId: item.id, ...(config.coverCarouselEnabled ? { coverGallery: [...new Set([item.id, ...(config.coverGallery || []).filter((id) => id !== item.id)])] } : {}) })}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><span>{config.coverPhotoId === item.id ? 'Foto principal' : 'Usar na capa'}</span></button>{config.coverCarouselEnabled && <label><input type="checkbox" checked={config.coverGallery?.includes(item.id) || false} onChange={(event) => update({ coverGallery: event.target.checked ? [...new Set([...(config.coverGallery || []), item.id])] : (config.coverGallery || []).filter((id) => id !== item.id) })} /> Incluir no carrossel</label>}</article>)}</div>}{mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}</div>
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
@@ -1952,11 +1953,11 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
       </section>}
-      <div className="site-editor-actions"><button className="button-primary save-customize" onClick={onSave} disabled={saving || !draftChanged}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={onPublish} disabled={saving}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
+      <div className="site-editor-actions"><button className="button-primary save-customize" onClick={() => onSave(profile)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={() => onPublish(profile)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
     <div className={`customize-preview theme-${theme.id}`} style={style}>
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>
-      <div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout}${previewHasCover ? '' : ' cover-empty'}`}>{previewVideoUrl ? <video src={previewVideoUrl} autoPlay muted loop playsInline /> : previewPhotoUrl ? <img src={previewPhotoUrl} alt="Foto escolhida pelo casal para o convite" /> : null}{config.coverCarouselEnabled && (config.coverGallery || []).length > 1 && <span className="invite-gallery-dots" aria-label="Carrossel de fotos ativado">{config.coverGallery.map((id, index) => <i className={index === previewCoverIndex ? 'active' : ''} key={id} />)}</span>}<div className="browser-overlay" /><span className="browser-date">{wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : language === 'en' ? 'Date to be announced' : language === 'es' ? 'Fecha por confirmar' : 'Data a definir'}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong>{coverMessage && <small>{coverMessage}</small>}<button type="button">{language === 'en' ? 'View invitation' : language === 'es' ? 'Ver invitación' : 'Ver convite'} <ArrowRight size={13} /></button></div>
+      <div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout}${previewHasCover ? '' : ' cover-empty'}`}>{previewVideoUrl ? <video src={previewVideoUrl} autoPlay muted loop playsInline /> : previewPhotoUrl ? <img src={previewPhotoUrl} alt="Foto escolhida pelo casal para o convite" /> : null}{!previewHasCover && <div className="browser-cover-placeholder"><Camera size={30} /><span>A foto de vocês aparecerá aqui</span></div>}{config.coverCarouselEnabled && (config.coverGallery || []).length > 1 && <span className="invite-gallery-dots" aria-label="Carrossel de fotos ativado">{config.coverGallery.map((id, index) => <i className={index === previewCoverIndex ? 'active' : ''} key={id} />)}</span>}<div className="browser-overlay" /><span className="browser-date">{eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : language === 'en' ? 'Date to be announced' : language === 'es' ? 'Fecha por confirmar' : 'Data a definir'}{eventTime ? ` · ${eventTime}` : ''}</span><strong>{partnerOneName || 'Nome'} <i>&</i><br />{partnerTwoName || 'Nome'}</strong>{coverMessage && <small>{coverMessage}</small>}<button type="button">{language === 'en' ? 'View invitation' : language === 'es' ? 'Ver invitación' : 'Ver convite'} <ArrowRight size={13} /></button></div>
         <div className="browser-below"><span>{language === 'en' ? 'Event' : language === 'es' ? 'Evento' : 'Evento'}</span><i>·</i><span>{language === 'en' ? 'RSVP' : language === 'es' ? 'Confirmar asistencia' : 'Confirmação de presença'}</span></div>
         {previewEvent && <div className="browser-story-preview"><span>{previewEvent.event_type}</span><p><strong>{previewEvent.name}</strong>{previewEvent.starts_at ? ` · ${new Date(previewEvent.starts_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{previewEvent.venue_name ? ` · ${previewEvent.venue_name}` : ''}</p></div>}
         {storyEnabled && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}
@@ -2002,9 +2003,9 @@ function Dashboard({ theme, setTheme, page, setPage, notify, demo = false }) {
       </aside>
 
       <div className="dashboard-main">
-        <header className="dashboard-topbar"><div className="dash-breadcrumb"><span>Meu espaço</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div><div className="dash-top-actions"><span className="save-state"><span /> Prévia local</span><button className="icon-button" aria-label="Notificações" onClick={() => notify('Nenhuma notificação de demonstração')}><Bell size={18} /><i /></button><button className="preview-site-button" onClick={() => demo ? window.location.assign('/criar-site') : notify('A prévia pública está na aba Site do casal')}>{demo ? 'Personalizar convite' : 'Ver meu site'} <ExternalLink size={14} /></button></div></header>
+        <header className="dashboard-topbar"><div className="dash-breadcrumb"><span>Meu espaço</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div><div className="dash-top-actions"><span className="save-state"><span /> Prévia local</span><button className="icon-button" aria-label="Notificações" onClick={() => notify('Nenhuma notificação de demonstração')}><Bell size={18} /><i /></button><button className="preview-site-button" onClick={() => demo ? window.location.assign('/cadastro') : notify('A prévia pública está na aba Site do casal')}>{demo ? 'Criar acesso' : 'Ver meu site'} <ExternalLink size={14} /></button></div></header>
         <div className="dashboard-content">
-          {demo && <aside className="dashboard-demo-notice"><span><Eye size={17} /> Demonstração do painel</span><p>Explore os menus e teste os controles com dados fictícios. Para personalizar o convite com um rascunho salvo neste aparelho, use o personalizador completo; a conta será necessária apenas para guardar online e publicar.</p><a href="/criar-site">Abrir o personalizador completo <ArrowRight size={14} /></a></aside>}
+          {demo && <aside className="dashboard-demo-notice"><span><Eye size={17} /> Demonstração do painel</span><p>Explore os menus e teste os controles com dados fictícios. Para criar o convite, crie seu acesso, confirme o e-mail e personalize dentro do painel.</p><a href="/cadastro">Criar acesso <ArrowRight size={14} /></a></aside>}
           <div className="dash-page-head"><div><span className="eyebrow">ÁREA DOS NOIVOS · DEMONSTRAÇÃO</span><h1>{page === 'overview' ? 'Um espaço para organizar tudo.' : pageTitle}</h1><p>{pageSubtitle(page)}</p></div><button className="more-button" onClick={() => notify('Ações de demonstração')}><span>•••</span></button></div>
           {page === 'overview' && <Overview setPage={setPage} notify={notify} />}
           {page === 'site' && <SiteSettings setPage={setPage} notify={notify} />}
@@ -2290,7 +2291,7 @@ function GuestPortal({ notify, setView }) {
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className="role-card guest-pass-card"><div className={`guest-invitation-cover guest-cover-${coverLayout}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]}  autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt="Foto escolhida pelo casal para o convite" /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary" onClick={() => setSiteOpen(true)}>Abrir site do casamento <ArrowRight size={16} /></button><button type="button" className="button-outline" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}>Confirmar presença</button></div></section>
+      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt="Foto escolhida pelo casal para o convite" /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary" onClick={() => setSiteOpen(true)}>Abrir site do casamento <ArrowRight size={16} /></button><button type="button" className="button-outline" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}>Confirmar presença</button></div></section>
       {siteOpen && <div className="guest-full-site-heading"><div><span className="eyebrow">SITE DO CASAMENTO</span><h2>Informações para celebrar com vocês</h2></div><button type="button" className="button-outline" onClick={() => { setSiteOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Voltar ao convite</button></div>}
       {siteOpen && hasMoreInvitationContent && <details className="guest-extra-details" open><summary>História e outros detalhes</summary>
       {invitation.siteConfig?.weddingDetails?.menu && <section className="role-card guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
