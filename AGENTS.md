@@ -11,6 +11,10 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 ## 2. Regras de trabalho (obrigatórias)
 
 - O repositório serve apenas para versionar. O deploy é feito pela integração Git do Cloudflare. Não criar pipelines de deploy próprios.
+- O dono do projeto autoriza commits diretos em `main` neste repositório. Antes de qualquer commit ou merge, atualizar as referências remotas e conferir o estado de `main`, `hen` e `lar`, as alterações locais e se já existe um merge em andamento.
+- Antes de integrar branches, revisar os commits e arquivos que cada uma altera e verificar conflitos. Não presumir que uma branch está atualizada nem descartar alterações com resolução automática ampla (`ours` ou `theirs`).
+- Se houver alterações pendentes de outra pessoa, merge em andamento, conflito ou arquivo/instrução que contradiga outra fonte do projeto, parar a ação afetada e perguntar ao dono do projeto como proceder antes de editar, sobrescrever, resolver ou enviar. Continuar apenas trabalho independente que não dependa dessa decisão.
+- Depois de resolver uma integração, revisar o diff completo e executar build, lint e os testes existentes antes de atualizar `main` ou enviar a branch. Nunca usar force push para contornar divergências.
 - O banco D1 é criado pelo dono do projeto no painel da Cloudflare. Deixar o binding no arquivo de configuração do Wrangler com identificador a preencher e nunca inventar IDs.
 - Código limpo, sem nenhum tipo de comentário, em nenhum arquivo.
 - Criar o mínimo de arquivos .md. Os únicos permitidos são este AGENTS.md e, se estritamente necessário, um README curto. Não criar documentação extra.
