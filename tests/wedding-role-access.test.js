@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
+import { SITE_MEDIA_LIMITS } from '../src/site-media-config.js'
 
 const origin = 'https://tudocomecoudeumsim.pages.dev'
 const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)], guestCamera: { enabled: true, photoLimit: 5 } }
@@ -185,14 +186,15 @@ test('couple photo and video uploads persist supported media in object storage',
     assert.equal(result.mediaType, 'image')
     imageIds.push(result.id)
   }
-  for (let index = 0; index < 5; index += 1) {
+  for (let index = 0; index < SITE_MEDIA_LIMITS.photosPerWedding - imageFiles.length; index += 1) {
     const response = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm(`extra-${index}.jpg`, 'image/jpeg', [255, 216, 255], 'image'), env: { GUEST_PHOTOS: bucket } })
     assert.equal(response.status, 201)
+    imageIds.push((await response.json()).id)
   }
   const overLimit = await call('/api/couple/weddings/wedding-1/site-media', 'couple_admin', { method: 'POST', formData: uploadForm('ninth.jpg', 'image/jpeg', [255, 216, 255], 'image'), env: { GUEST_PHOTOS: bucket } })
   assert.equal(overLimit.status, 409)
   assert.equal((await overLimit.json()).error, 'gallery_limit_reached')
-  assert.equal(bucket.objects.size, 8)
+  assert.equal(bucket.objects.size, SITE_MEDIA_LIMITS.photosPerWedding)
 
   const videoBytes = new Uint8Array(16)
   videoBytes.set([102, 116, 121, 112], 4)
@@ -204,7 +206,7 @@ test('couple photo and video uploads persist supported media in object storage',
   assert.equal(secondVideo.status, 409)
   assert.equal((await secondVideo.json()).error, 'video_limit_reached')
 
-  const config = { ...siteConfig, coverLayout: 'video', coverPhotoId: imageIds[0], coverCarouselEnabled: true, coverGallery: imageIds.slice(0, 2), siteGallery: [imageIds[2]], coverVideoId: videoResult.id }
+  const config = { ...siteConfig, coverLayout: 'video', coverPhotoId: imageIds[0], coverCarouselEnabled: true, coverGallery: imageIds, siteGallery: [imageIds[2]], coverVideoId: videoResult.id }
   const savedConfig = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config, env: { GUEST_PHOTOS: bucket } })
   assert.equal(savedConfig.status, 200)
   assert.equal((await savedConfig.json()).draft.coverVideoId, videoResult.id)

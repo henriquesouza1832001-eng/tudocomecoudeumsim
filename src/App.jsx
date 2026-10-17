@@ -1,5 +1,6 @@
 import './styles.css'
 import { useEffect, useRef, useState } from 'react'
+import { SITE_MEDIA_LIMITS } from './site-media-config.js'
 import QRCode from 'qrcode'
 import {
   ArrowDown,
@@ -1860,7 +1861,7 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
 
 function SitePhotoLibrary({ images, mediaUrls, coverPhotoId, coverGallery, siteGallery, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, siteInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle }) {
   return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
-    <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até oito imagens no total.</p></div><span className="customizer-photo-count">{images.length}/8 fotos</span></div>
+    <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{images.length}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
     <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><input ref={siteInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'site')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto(s) da capa</button><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => siteInput.current?.click()}><Image size={17} /> Adicionar foto(s) do site</button></div>
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
     {mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}
@@ -1907,7 +1908,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const previewHasCover = Boolean(previewVideoUrl || previewPhotoUrl)
   const uploadedImages = siteMedia.filter((item) => item.mediaType === 'image')
   const siteGallery = config.siteGallery || []
-  const remainingPhotoSlots = Math.max(0, 8 - uploadedImages.length)
+  const remainingPhotoSlots = Math.max(0, SITE_MEDIA_LIMITS.photosPerWedding - uploadedImages.length)
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const selectTheme = (themeId) => update({ theme: themeId, paletteIndex: 0, ...(THEME_PRESETS[themeId] || THEME_PRESETS.garden) })
   const toggleStory = () => update({ enabledSections: storyEnabled ? ['Eventos', 'Confirmação de presença'] : ['Nossa história', 'Eventos', 'Confirmação de presença'] })
@@ -2018,7 +2019,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
       body.set('mediaType', mediaType)
       const response = await fetch(`/api/couple/weddings/${wedding.id}/site-media`, { method: 'POST', body })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error === 'gallery_limit_reached' ? 'A galeria aceita até oito fotos.' : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : result.error === 'invalid_media_size' ? 'O arquivo excede o limite permitido. Imagens até 8 MB e vídeos MP4 até 15 MB.' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? 'Formato não compatível. Use JPG, PNG ou WebP para fotos e MP4 para vídeo.' : result.error === 'media_storage_unavailable' || result.error === 'media_storage_write_failed' ? 'O armazenamento está indisponível agora. Tente novamente em alguns minutos.' : 'Não foi possível guardar este arquivo. Tente novamente.')
+      if (!response.ok) throw new Error(result.error === 'gallery_limit_reached' ? `A galeria aceita até ${SITE_MEDIA_LIMITS.photosPerWedding} fotos.` : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : result.error === 'invalid_media_size' ? 'O arquivo excede o limite permitido. Imagens até 8 MB e vídeos MP4 até 15 MB.' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? 'Formato não compatível. Use JPG, PNG ou WebP para fotos e MP4 para vídeo.' : result.error === 'media_storage_unavailable' || result.error === 'media_storage_write_failed' ? 'O armazenamento está indisponível agora. Tente novamente em alguns minutos.' : 'Não foi possível guardar este arquivo. Tente novamente.')
       setSiteMedia((current) => [...current, result])
       const url = URL.createObjectURL(uploadFile)
       setMediaUrls((current) => ({ ...current, [result.id]: url }))

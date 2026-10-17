@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import {
   authenticate,
   checkLoginLimit,
@@ -96,8 +97,8 @@ function parseSiteConfig(value) {
     if (!weddingDetails) return null
     const guestCamera = validGuestCamera(config.guestCamera)
     if (!guestCamera) return null
-    if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > 8 || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
-    if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > 8 || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+    if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+    if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
     return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
@@ -123,8 +124,8 @@ function validateSiteConfig(body) {
   if (!weddingDetails) return null
   const guestCamera = validGuestCamera(body.guestCamera)
   if (!guestCamera) return null
-  if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > 8 || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
-  if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > 8 || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+  if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+  if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
   return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
@@ -890,7 +891,7 @@ app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (co
   if ((mediaType === 'image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) || (mediaType === 'video' && file.type !== 'video/mp4')) return jsonError(context, 400, 'unsupported_media_type')
   const current = await context.env.GUEST_PHOTOS.list({ prefix: `${weddingId}/site/`, limit: 100 })
   const media = current.objects.map((object) => object.customMetadata?.mediaType || (object.key.endsWith('.mp4') ? 'video' : 'image'))
-  if (mediaType === 'image' && media.filter((type) => type === 'image').length >= 8) return jsonError(context, 409, 'gallery_limit_reached')
+  if (mediaType === 'image' && media.filter((type) => type === 'image').length >= SITE_MEDIA_LIMITS.photosPerWedding) return jsonError(context, 409, 'gallery_limit_reached')
   if (mediaType === 'video' && media.includes('video')) return jsonError(context, 409, 'video_limit_reached')
   const bytes = new Uint8Array(await file.arrayBuffer())
   const isMp4 = mediaType === 'video' && String.fromCharCode(...bytes.slice(4, 8)) === 'ftyp'
