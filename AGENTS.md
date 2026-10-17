@@ -520,3 +520,9 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - O editor autenticado continua com duas áreas. Foi removido um bloco duplicado de cardápio e traje encontrado durante a revisão.
 - A API ainda aceita seis layouts antigos para compatibilidade, embora o fluxo novo mostre somente os três layouts que foram alinhados à composição do convite publicado. Não reintroduzir controles antigos sem validar a saída real.
 - `npm run lint`, `npm run build` e `git diff --check` passaram após essas alterações. Não foi feita publicação de produção; continuar nesta branch de prévia até validação ponta a ponta e aprovação do dono.
+
+## Publicação após validação — 17/10/2026
+
+- O dono autorizou levar alterações concluídas para produção depois de validar. Para esta entrega, rodar `npm test`, `npm run lint` e `npm run build`; se passarem, integrar a branch de trabalho em `main` e enviar pelo Git para o deploy automático do Cloudflare Pages. Não fazer deploy manual nem criar pipeline.
+- O teste da equipe do evento falhava porque o mock da base não respondia à consulta reduzida da rota de `event_staff`. A fixture em `tests/wedding-role-access.test.js` agora responde a essa consulta com apenas `id` e `name`; a implementação de autorização não foi alterada.
+- Validação desta promoção: `npm test` passou com 11/11 testes; `npm run lint` e `npm run build` também passaram. Registrar abaixo o commit integrado e o resultado do Pages após o push de `main`.

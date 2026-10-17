@@ -33,6 +33,7 @@ function database(role) {
           return null
         },
         async all() {
+          if (query.includes('SELECT g.id, g.name') && !query.includes('LEFT JOIN')) return { results: [{ id: 'guest-1', name: 'Convidada' }] }
           if (query.includes('FROM godparent_tasks')) return { results: [{ id: 'task-1', title: 'Levar as alianças', details: '', due_at: null, status: 'open' }] }
           if (query.includes('FROM guests g LEFT JOIN guest_groups gg')) return { results: [{ id: 'guest-1', name: 'Convidada', party_size: 2, rsvp_status: 'confirmed', dietary_notes: null, group_name: 'Família', checked_in_at: null }] }
           return { results: [] }
