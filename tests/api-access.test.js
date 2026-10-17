@@ -51,6 +51,26 @@ test('couple and event staff mutations require an authenticated session', async 
   assert.equal(staff.response.status, 401)
 })
 
+test('couple signup accepts account details without invitation names or a slug', async () => {
+  const { response } = await callApi('/api/auth/couple-signup', {
+    method: 'POST',
+    origin: base,
+    body: { email: 'casal@example.com', password: 'a-strong-password-123', eventDate: '2027-09-18', eventTime: '16:30' },
+  })
+  assert.equal(response.status, 503)
+  assert.deepEqual(await response.json(), { error: 'email_service_unconfigured' })
+})
+
+test('couple signup rejects an invalid optional event time', async () => {
+  const { response } = await callApi('/api/auth/couple-signup', {
+    method: 'POST',
+    origin: base,
+    body: { email: 'casal@example.com', password: 'a-strong-password-123', eventTime: '25:90' },
+  })
+  assert.equal(response.status, 400)
+  assert.deepEqual(await response.json(), { error: 'invalid_signup' })
+})
+
 test('guest and godparent endpoints reject requests without an individual invitation', async () => {
   const guest = await callApi('/api/invitation')
   const godparent = await callApi('/api/godparent/tasks')

@@ -28,7 +28,7 @@ function database(role) {
           }
           if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(siteConfig), published_events_json: '[]' }
           if (query.includes('SELECT site_config_json, published_site_config_json')) return { site_config_json: JSON.stringify(siteConfig), published_site_config_json: JSON.stringify(siteConfig), site_published_at: '2026-10-14T12:00:00.000Z' }
-          if (query.includes('SELECT slug, partner_one_name')) return { slug: 'casal-teste', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent, restrictedEvent]), site_published_at: '2026-10-14T12:00:00.000Z' }
+          if (query.includes('SELECT slug,') && query.includes('published_site_config_json')) return { slug: 'casal-teste', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', event_time: '16:00', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent, restrictedEvent]), site_published_at: '2026-10-14T12:00:00.000Z' }
           if (query.includes('SELECT COUNT(*) AS total FROM events')) return { total: 0 }
           return null
         },

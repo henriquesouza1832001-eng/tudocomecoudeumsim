@@ -401,7 +401,11 @@ async function invitationGuest(context) {
   if (!match) return null
   return context.env.DB.prepare(`
     SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type,
-      w.partner_one_name, w.partner_two_name, w.event_date, w.timezone, w.status AS wedding_status,
+      CASE WHEN w.site_published_at IS NULL THEN w.partner_one_name ELSE w.published_partner_one_name END AS partner_one_name,
+      CASE WHEN w.site_published_at IS NULL THEN w.partner_two_name ELSE w.published_partner_two_name END AS partner_two_name,
+      CASE WHEN w.site_published_at IS NULL THEN w.event_date ELSE w.published_event_date END AS event_date,
+      CASE WHEN w.site_published_at IS NULL THEN w.event_time ELSE w.published_event_time END AS event_time,
+      w.timezone, w.status AS wedding_status,
       w.published_site_config_json, w.published_events_json
     FROM guests g JOIN weddings w ON w.id = g.wedding_id
     WHERE g.access_token_hash = ? AND g.deleted_at IS NULL AND w.status = 'active'
@@ -448,19 +452,14 @@ app.post('/api/auth/couple-signup', async (context) => {
   const body = await context.req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
   const password = typeof body?.password === 'string' ? body.password : ''
-  const partnerOneName = typeof body?.partnerOneName === 'string' ? body.partnerOneName.trim() : ''
-  const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
-  const slug = typeof body?.slug === 'string' ? body.slug.trim().toLowerCase() : ''
   const eventDate = body?.eventDate || null
-  const siteConfig = body?.siteConfig === undefined ? defaultSiteConfig : validateSiteConfig(body.siteConfig)
-  const reservedSlugs = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
-  const slugIsValid = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(slug) && !reservedSlugs.includes(slug)
+  const eventTime = body?.eventTime || null
   const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
+  const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
   if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
-    || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100
-    || !slugIsValid || !dateIsValid || !siteConfig) return jsonError(context, 400, 'invalid_signup')
+    || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_signup')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
   const challenge = await verifyTurnstile(context, body.turnstileToken)
@@ -470,6 +469,7 @@ app.post('/api/auth/couple-signup', async (context) => {
   const weddingId = crypto.randomUUID()
   const membershipId = crypto.randomUUID()
   const challengeId = crypto.randomUUID()
+  const slug = `rascunho-${weddingId.slice(0, 8)}`
   const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
   const challengeHash = await tokenHash(token)
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -478,15 +478,15 @@ app.post('/api/auth/couple-signup', async (context) => {
     await context.env.DB.batch([
       context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status)
         VALUES (?, ?, ?, 'pending')`).bind(accountId, email, passwordHash),
-      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, timezone, status, site_config_json)
-        VALUES (?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, partnerOneName, partnerTwoName, eventDate, JSON.stringify(siteConfig)),
+      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, event_date, event_time, timezone, status, site_config_json)
+        VALUES (?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, eventDate, eventTime, JSON.stringify(defaultSiteConfig)),
       context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status)
         VALUES (?, ?, ?, 'couple_admin', 'pending')`).bind(membershipId, weddingId, accountId),
       context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
         VALUES (?, ?, 'email_verification', ?, ?, ?)`).bind(challengeId, accountId, challengeHash, expiresAt, membershipId),
     ])
   } catch {
-    return jsonError(context, 409, 'email_or_slug_unavailable')
+    return jsonError(context, 409, 'email_unavailable')
   }
   let sent = false
   try {
@@ -504,7 +504,7 @@ app.post('/api/auth/couple-signup', async (context) => {
     return jsonError(context, 503, 'verification_email_failed')
   }
   await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
-    VALUES (?, ?, ?, 'couple_signup_created', 'wedding', ?, '{}')`).bind(crypto.randomUUID(), accountId, weddingId, weddingId).run()
+    VALUES (?, ?, ?, 'couple_signup_created', 'account', ?, '{}')`).bind(crypto.randomUUID(), accountId, weddingId, accountId).run()
   return context.json({ status: 'pending_email_verification' }, 201)
 })
 
@@ -817,12 +817,42 @@ app.post('/api/superadmin/bootstrap', requireCloudflareAccess, async (context) =
 
 app.get('/api/couple/weddings', requireSession, async (context) => {
   const result = await context.env.DB.prepare(`
-    SELECT w.id, w.slug, w.partner_one_name, w.partner_two_name, w.event_date, w.status, m.role
+    SELECT w.id, w.slug, w.partner_one_name, w.partner_two_name, w.event_date, w.event_time, w.status, m.role
     FROM wedding_memberships m JOIN weddings w ON w.id = m.wedding_id
     WHERE m.account_id = ? AND m.status = 'active' AND m.role IN ('couple_admin', 'editor', 'reader') AND w.status != 'deleted'
     ORDER BY w.created_at DESC
   `).bind(context.get('session').account_id).all()
   return context.json({ weddings: result.results })
+})
+
+app.patch('/api/couple/weddings/:weddingId/profile', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const body = await context.req.json().catch(() => null)
+  const partnerOneName = typeof body?.partnerOneName === 'string' ? body.partnerOneName.trim() : ''
+  const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
+  const eventDate = body?.eventDate || null
+  const eventTime = body?.eventTime || null
+  const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
+  const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+    && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
+  const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
+  if (!body || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100 || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_wedding_profile')
+  const wedding = await context.env.DB.prepare('SELECT slug, site_published_at FROM weddings WHERE id = ?').bind(weddingId).first()
+  if (!wedding) return jsonError(context, 404, 'wedding_not_found')
+  let slug = wedding.slug
+  if (!wedding.site_published_at) {
+    const base = `${partnerOneName}-${partnerTwoName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 21).replace(/-$/g, '')
+    const reserved = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
+    slug = base.length >= 3 && !reserved.includes(base) ? base : `casal-${weddingId.slice(0, 8)}`
+    const conflict = await context.env.DB.prepare('SELECT 1 AS found FROM weddings WHERE slug = ? COLLATE NOCASE AND id != ?').bind(slug, weddingId).first()
+    if (conflict) slug = `${slug.slice(0, 20)}-${weddingId.slice(0, 8)}`
+  }
+  await context.env.DB.prepare(`UPDATE weddings SET partner_one_name = ?, partner_two_name = ?, event_date = ?, event_time = ?, slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+    .bind(partnerOneName, partnerTwoName, eventDate, eventTime, slug, weddingId).run()
+  return context.json({ wedding: { id: weddingId, slug, partner_one_name: partnerOneName, partner_two_name: partnerTwoName, event_date: eventDate, event_time: eventTime } })
 })
 
 app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {
@@ -906,12 +936,16 @@ app.get('/api/couple/weddings/:weddingId/published', requireSession, async (cont
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['reader'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
-  const wedding = await context.env.DB.prepare(`SELECT slug, partner_one_name, partner_two_name, event_date,
+  const wedding = await context.env.DB.prepare(`SELECT slug,
+    CASE WHEN site_published_at IS NULL THEN partner_one_name ELSE published_partner_one_name END AS partner_one_name,
+    CASE WHEN site_published_at IS NULL THEN partner_two_name ELSE published_partner_two_name END AS partner_two_name,
+    CASE WHEN site_published_at IS NULL THEN event_date ELSE published_event_date END AS event_date,
+    CASE WHEN site_published_at IS NULL THEN event_time ELSE published_event_time END AS event_time,
     published_site_config_json, published_events_json, site_published_at
     FROM weddings WHERE id = ?`).bind(weddingId).first()
   if (!wedding?.site_published_at) return jsonError(context, 404, 'published_site_not_found')
   return context.json({
-    wedding: { slug: wedding.slug, partner_one_name: wedding.partner_one_name, partner_two_name: wedding.partner_two_name, event_date: wedding.event_date },
+    wedding: { slug: wedding.slug, partner_one_name: wedding.partner_one_name, partner_two_name: wedding.partner_two_name, event_date: wedding.event_date, event_time: wedding.event_time },
     siteConfig: parseSiteConfig(wedding.published_site_config_json),
     events: JSON.parse(wedding.published_events_json || '[]').filter((event) => !event.group_ids.length).map((event) => {
       const publicEvent = { ...event }
@@ -954,7 +988,8 @@ app.post('/api/couple/weddings/:weddingId/site-config/publish', requireSession, 
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   if (membership.wedding_status === 'completed') return jsonError(context, 409, 'wedding_not_publishable')
-  const configRow = await context.env.DB.prepare('SELECT site_config_json FROM weddings WHERE id = ?').bind(weddingId).first()
+  const configRow = await context.env.DB.prepare('SELECT site_config_json, partner_one_name, partner_two_name, event_date, event_time FROM weddings WHERE id = ?').bind(weddingId).first()
+  if (!configRow?.partner_one_name || !configRow?.partner_two_name) return jsonError(context, 400, 'wedding_profile_incomplete')
   const config = parseSiteConfig(configRow?.site_config_json) || defaultSiteConfig
   const eventsResult = await context.env.DB.prepare(`SELECT e.id, e.name, e.event_type, e.starts_at, e.venue_name, e.address,
     (SELECT json_group_array(x.group_id) FROM event_group_access x WHERE x.event_id = e.id) AS group_ids_json
@@ -962,8 +997,8 @@ app.post('/api/couple/weddings/:weddingId/site-config/publish', requireSession, 
   const publishedEvents = eventsResult.results.map((event) => ({ ...event, group_ids: JSON.parse(event.group_ids_json || '[]') }))
   const publishedAt = new Date().toISOString()
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, published_events_json = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-      .bind(JSON.stringify(config), JSON.stringify(publishedEvents), publishedAt, weddingId),
+    context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, published_events_json = ?, published_partner_one_name = ?, published_partner_two_name = ?, published_event_date = ?, published_event_time = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+      .bind(JSON.stringify(config), JSON.stringify(publishedEvents), configRow.partner_one_name, configRow.partner_two_name, configRow.event_date, configRow.event_time, publishedAt, weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'wedding_site_published', 'wedding', ?, ?)`)
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, weddingId, JSON.stringify({ theme: config.theme, coverLayout: config.coverLayout })),
@@ -1604,7 +1639,7 @@ app.get('/api/invitation', async (context) => {
   ])
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
-    wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, timezone: guest.timezone },
+    wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, eventTime: guest.event_time, timezone: guest.timezone },
     siteConfig: parseSiteConfig(guest.published_site_config_json),
     events: publishedEvents.filter((event) => !event.group_ids.length || event.group_ids.includes(guest.group_id)).map((event) => {
       const publicEvent = { ...event }
@@ -2102,7 +2137,7 @@ app.post('/api/superadmin/weddings/:weddingId/anonymize', requireSession, requir
   await purgeR2Prefix(context.env.GUEST_PHOTOS, `${weddingId}/`)
   const auditId = crypto.randomUUID()
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE weddings SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP, slug = ?, partner_one_name = 'Dados anonimizados', partner_two_name = 'Dados anonimizados', event_date = NULL, site_config_json = '{}', published_site_config_json = '{}', published_events_json = '[]', site_published_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status != 'deleted'`)
+    context.env.DB.prepare(`UPDATE weddings SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP, slug = ?, partner_one_name = 'Dados anonimizados', partner_two_name = 'Dados anonimizados', event_date = NULL, event_time = NULL, published_partner_one_name = NULL, published_partner_two_name = NULL, published_event_date = NULL, published_event_time = NULL, site_config_json = '{}', published_site_config_json = '{}', published_events_json = '[]', site_published_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status != 'deleted'`)
       .bind(`removido-${weddingId}`, weddingId),
     context.env.DB.prepare('UPDATE gift_contributions SET guest_id = NULL, payer_name = NULL, message = NULL WHERE wedding_id = ?').bind(weddingId),
     context.env.DB.prepare(`UPDATE gifts SET title = 'Presente anonimizado', description = '', status = 'archived', updated_at = CURRENT_TIMESTAMP WHERE wedding_id = ?`).bind(weddingId),
