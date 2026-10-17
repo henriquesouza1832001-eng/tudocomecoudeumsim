@@ -614,6 +614,27 @@ function GuestSite({ theme, setTheme, notify }) {
   )
 }
 
+function TotpSetupQr({ enrollment }) {
+  const [qrCode, setQrCode] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setQrCode('')
+    QRCode.toDataURL(enrollment.uri, { width: 224, margin: 2, errorCorrectionLevel: 'M' }).then((value) => {
+      if (active) setQrCode(value)
+    }).catch(() => {
+      if (active) setQrCode('')
+    })
+    return () => { active = false }
+  }, [enrollment.uri])
+
+  return <div className="totp-setup-qr">
+    <p className="admin-mfa-instructions">Escaneie este QR code com Google Authenticator, Microsoft Authenticator ou outro aplicativo compatível.</p>
+    {qrCode ? <img src={qrCode} alt="QR code para configurar o autenticador" width="224" height="224" /> : <p className="admin-mfa-instructions">Preparando o QR code…</p>}
+    <details><summary>Precisa configurar manualmente?</summary><div><p className="admin-mfa-instructions">Digite esta chave no aplicativo autenticador.</p><code>{enrollment.secret}</code></div></details>
+  </div>
+}
+
 function AccountMfaSetup({ onComplete }) {
   const [enrollment, setEnrollment] = useState(null)
   const [code, setCode] = useState('')
@@ -644,7 +665,7 @@ function AccountMfaSetup({ onComplete }) {
     }
   }
 
-  return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><label>Chave do autenticador<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Adicione esta chave em um aplicativo autenticador, como Google Authenticator, Microsoft Authenticator ou Authy.</p><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
+  return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><TotpSetupQr enrollment={enrollment} /><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
 }
 
 const PUBLIC_SITE_DRAFT_KEY = 'wedding-site-customizer-draft'
@@ -1009,7 +1030,7 @@ function PasswordReset() {
   }
 
   return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={complete ? 'Senha atualizada.' : invalid ? 'Solicite um novo link.' : 'Escolha uma nova senha.'} description={complete ? 'As sessões anteriores foram encerradas. Entre novamente e use seu autenticador, quando estiver configurado.' : invalid ? 'O link informado expirou, já foi utilizado ou está incompleto.' : 'O link é de uso único e válido por 30 minutos.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
-    {complete ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/painel">Entrar no painel dos noivos <ArrowRight size={15} /></a><a className="text-link reset-admin-link" href="/superadmin">Entrar como superadmin</a></section> : invalid ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/recuperar-senha">Solicitar outro link <ArrowRight size={15} /></a></section> : <form className="role-card admin-login-form" onSubmit={resetPassword}><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Atualizando…' : 'Redefinir senha'} <Shield size={15} /></button></form>}
+    {complete ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/painel">Entrar no painel dos noivos <ArrowRight size={15} /></a></section> : invalid ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/recuperar-senha">Solicitar outro link <ArrowRight size={15} /></a></section> : <form className="role-card admin-login-form" onSubmit={resetPassword}><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Atualizando…' : 'Redefinir senha'} <Shield size={15} /></button></form>}
   </RoleFrame>
 }
 
@@ -2958,8 +2979,8 @@ function SuperAdminPanel({ notify }) {
   if (stage === 'login') return <SuperAdminAccessFrame title="Acesso administrativo." description="Entre com sua conta. Cloudflare Access e a autenticação do produto são verificados separadamente.">
     <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} placeholder="6 dígitos, se já configurado" /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">{busy ? 'Verificando…' : 'Entrar'} <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a></form>
   </SuperAdminAccessFrame>
-  if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Adicione esta chave em um aplicativo autenticador e confirme o código de seis dígitos. A chave fica visível somente nesta etapa.">
-    <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><label>Chave de configuração<input readOnly value={enrollment.secret} onFocus={(event) => event.target.select()} /></label><p className="admin-mfa-instructions">Abra seu autenticador, adicione uma conta manualmente e use esta chave. O segredo é cifrado antes de ser gravado no D1.</p><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>
+  if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Escaneie o QR code com seu aplicativo autenticador e confirme o código de seis dígitos.">
+    <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><TotpSetupQr enrollment={enrollment} /><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>
   </SuperAdminAccessFrame>
   return <SuperAdminWorkspace notify={notify} account={account} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setStage('login') }} />
 }

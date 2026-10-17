@@ -1282,6 +1282,12 @@ img { display: block; max-width: 100%; }
 .admin-login-form .signup-submit { width: 100%; text-decoration: none; }
 .admin-form-error { margin: 0; padding: 11px 13px; color: #8a423b; background: #f7e9e5; font-size: 10px; line-height: 1.5; }
 .admin-mfa-instructions { margin: 0; color: #77796f; font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }
+.totp-setup-qr { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.totp-setup-qr > img { width: min(224px, 100%); height: auto; padding: 10px; border: 1px solid rgba(48,55,47,.12); background: #fff; image-rendering: pixelated; }
+.totp-setup-qr details { width: 100%; text-align: left; }
+.totp-setup-qr summary { color: var(--forest); cursor: pointer; font-size: 12px; }
+.totp-setup-qr details > div { margin-top: 10px; padding: 12px; background: #f2efe8; }
+.totp-setup-qr code { display: block; color: #414940; font-size: 13px; letter-spacing: .08em; overflow-wrap: anywhere; user-select: all; }
 .role-header > .button-outline { min-height: 31px; padding: 0 11px; font-size: 9px; }
 .superadmin-tabs { margin: 10px 0 20px; padding: 5px; display: flex; gap: 5px; overflow-x: auto; border: 1px solid rgba(48,55,47,.1); background: #f0eee7; scrollbar-width: thin; }
 .superadmin-tabs button { min-height: 42px; padding: 0 15px; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; color: #6a6f66; background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
