@@ -2814,7 +2814,7 @@ img { display: block; max-width: 100%; }
 .public-customizer .browser-content.cover-empty > strong i { color: var(--customizer-accent); }
 .public-customizer .browser-content.cover-empty > button { border-color: color-mix(in srgb, var(--customizer-ink) 45%, transparent); color: var(--customizer-ink); background: color-mix(in srgb, var(--customizer-paper) 80%, white); }
 
-.couple-role-page .couple-panel-tabs { justify-content: center; }
-@media (max-width: 1100px) {
-  .couple-role-page .couple-panel-tabs { justify-content: flex-start; }
+.couple-role-page .couple-panel-tabs { flex-wrap: wrap; justify-content: center; overflow-x: visible; }
+@media (max-width: 760px) {
+  .couple-role-page .couple-panel-tabs { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; }
 }
