@@ -1,11 +1,10 @@
-﻿import './styles.css'
+import './styles.css'
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  ArrowUp,
   Bell,
   CalendarDays,
   Camera,
@@ -19,7 +18,6 @@ import {
   EyeOff,
   ExternalLink,
   Gift,
-  GripVertical,
   Heart,
   House,
   Image,
@@ -61,17 +59,24 @@ const THEMES = [
 const THEME_PRESETS = {
   garden: { fontPair: 'Floral delicado', coverLayout: 'arch' },
   editorial: { fontPair: 'Clássico editorial', coverLayout: 'split' },
-  minimal: { fontPair: 'Contemporâneo humanista', coverLayout: 'type' },
-  floral: { fontPair: 'Floral delicado', coverLayout: 'collage' },
+  minimal: { fontPair: 'Contemporâneo humanista', coverLayout: 'split' },
+  floral: { fontPair: 'Floral delicado', coverLayout: 'arch' },
   rustic: { fontPair: 'Rústico acolhedor', coverLayout: 'full' },
   beach: { fontPair: 'Romântico leve', coverLayout: 'split' },
-  tropical: { fontPair: 'Contemporâneo humanista', coverLayout: 'collage' },
+  tropical: { fontPair: 'Contemporâneo humanista', coverLayout: 'full' },
   night: { fontPair: 'Elegante de alto contraste', coverLayout: 'full' },
 }
 const PALETTE_NAMES = ['Original', 'Areia', 'Terracota', 'Rosé', 'Oliva', 'Dourado']
 const SITE_COVER_PHOTOS = [{ id: 'wedding-pexels', name: 'Jardim ao entardecer', src: '/images/wedding-pexels.webp', credit: 'Kanishka M Gunathunga · Pexels' }, { id: 'wedding-moments', name: 'Caminhada entre árvores', src: '/images/wedding-moments.webp', credit: 'Jonathan Borba · Pexels' }]
 function getThemePalettes(theme) {
-  return [theme.colors, [theme.colors[0], '#d2b994', '#fbf8f1'], [theme.colors[0], '#bf8b67', '#f6ece2'], [theme.colors[0], '#d08e91', '#f5ebec'], [theme.colors[0], '#9d9c70', '#f1efe3'], [theme.colors[0], '#d7b862', '#faf5dd']]
+  return [
+    theme.colors,
+    ['#4f514b', '#c9b18b', '#eee9de'],
+    ['#644738', '#c2825d', '#f3e7dc'],
+    ['#664851', '#c9808f', '#f4e8eb'],
+    ['#47563f', '#9fa477', '#edf0e8'],
+    ['#5d512f', '#d2b65f', '#f5efd9'],
+  ]
 }
 const SITE_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
 const SITE_FONT_PAIRS = {
@@ -480,12 +485,14 @@ function HelpCenter() {
   </RoleFrame>
 }
 
-function ThemePicker({ theme, setTheme, compact = false }) {
+function ThemePicker({ theme, setTheme, compact = false, limit = THEMES.length }) {
+  const [showAll, setShowAll] = useState(false)
+  const visibleThemes = showAll ? THEMES : THEMES.slice(0, limit)
   return (
     <div className={`theme-picker ${compact ? 'theme-picker-compact' : ''}`} aria-label="Escolha uma opção visual">
       {!compact && <div className="theme-picker-intro"><span className="eyebrow">OITO TEMAS DE PARTIDA</span><span className="theme-picker-caption">A estrutura é a mesma; cores, tipografia e detalhes mudam.</span></div>}
       <div className="theme-options">
-        {THEMES.map((item, index) => (
+        {visibleThemes.map((item, index) => (
           <button className={`theme-option ${theme === item.id ? 'active' : ''}`} key={item.id} onClick={() => setTheme(item.id)} aria-pressed={theme === item.id}>
             <span className={`theme-option-preview preview-${item.id}`} style={{ '--theme-ink': item.colors[0], '--theme-accent': item.colors[1], '--theme-paper': item.colors[2] }}><img src={SITE_COVER_PHOTOS[index % SITE_COVER_PHOTOS.length].src} alt="" loading="lazy" /><b>Ana <i>&amp;</i> Rafa</b><em /></span>
             <span className="theme-option-copy"><strong>{item.name}</strong>{!compact && <small>{item.note}</small>}</span>
@@ -494,6 +501,7 @@ function ThemePicker({ theme, setTheme, compact = false }) {
           </button>
         ))}
       </div>
+      {THEMES.length > limit && <button type="button" className="theme-picker-more" onClick={() => setShowAll((current) => !current)}>{showAll ? 'Mostrar menos estilos' : 'Ver todos os estilos'}</button>}
     </div>
   )
 }
@@ -1732,7 +1740,7 @@ function CouplePanel({ notify }) {
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
 
-  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><a className="button-outline" href="/ajuda">Ajuda</a><button className="button-outline" onClick={() => setTab('site')}>{isEditor ? 'Editar site' : 'Editar meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
+  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Painel dos noivos</strong></a><span className="role-preview">Acesso: {account?.email}</span><a className="button-outline" href="/ajuda">Ajuda</a><button className="button-outline" onClick={() => setTab('site')}>{isEditor ? 'Editar site' : 'Editar meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados, grupos e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     {!isEditor && <div className="role-stat-grid"><div className="role-stat"><span>Convidados ativos</span><strong>{guests.length}</strong></div><div className="role-stat"><span>Grupos</span><strong>{groups.length}</strong></div><div className="role-stat"><span>Eventos</span><strong>{events.length}</strong></div><div className="role-stat"><span>Confirmações</span><strong>{rsvps.filter((item) => item.status === 'confirmed').length}</strong></div></div>}
@@ -1787,7 +1795,7 @@ function CouplePanel({ notify }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} />}
-    {tab === 'site' && <CoupleSiteEditor wedding={wedding} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} />}
+    {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
@@ -1851,93 +1859,79 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function CoupleSiteEditor({ wedding, config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
+function CoupleSiteEditor({ wedding, events = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
   const [device, setDevice] = useState('desktop')
-  const [previewLanguage, setPreviewLanguage] = useState(config.language)
-  const [draggedSection, setDraggedSection] = useState('')
-  const pointerDragSection = useRef('')
-  const pointerDropSection = useRef('')
+  const [step, setStep] = useState('visual')
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = getThemePalettes(theme)
   const selectedPalette = palettes[config.paletteIndex] || palettes[0]
-  const layoutNames = [{ id: 'full', label: 'Foto em tela cheia' }, { id: 'split', label: 'Foto ao lado' }, { id: 'arch', label: 'Moldura ou arco' }, { id: 'type', label: 'Só tipografia' }, { id: 'video', label: 'Vídeo curto' }, { id: 'collage', label: 'Colagem de fotos' }]
-  const languageCopy = {
-    'pt-BR': { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('pt-BR') : 'Data a definir', message: 'Com alegria, convidamos você.', button: 'Descobrir o convite' },
-    en: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('en-US') : 'Date to be announced', message: 'With joy, we invite you.', button: 'Explore the invitation' },
-    es: { date: wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString('es') : 'Fecha por definir', message: 'Con alegría, te invitamos.', button: 'Descubre la invitación' },
-  }[previewLanguage]
-  const coverMessage = config.coverMessages?.[previewLanguage] || languageCopy.message
-  const storyMessage = config.storyMessages?.[previewLanguage] || config.storyMessages?.['pt-BR'] || ''
+  const selectedFonts = SITE_FONT_PAIRS[config.fontPair] || SITE_FONT_PAIRS[THEME_PRESETS[theme.id]?.fontPair] || SITE_FONT_PAIRS['Clássico editorial']
+  const coverLayouts = [{ id: 'full', label: 'Foto em destaque' }, { id: 'split', label: 'Foto ao lado' }, { id: 'arch', label: 'Foto em moldura' }]
+  const coverLayout = coverLayouts.some((item) => item.id === config.coverLayout) ? config.coverLayout : 'full'
   const draftChanged = JSON.stringify(config) !== JSON.stringify(savedConfig)
   const published = publishedAt ? new Date(publishedAt).toLocaleString('pt-BR') : ''
+  const language = ['pt-BR', 'en', 'es'].includes(config.language) ? config.language : 'pt-BR'
+  const locale = { 'pt-BR': 'pt-BR', en: 'en-US', es: 'es-ES' }[language]
+  const languageName = { 'pt-BR': 'Português', en: 'English', es: 'Español' }[language]
+  const coverMessage = config.coverMessages?.[language] || config.coverMessages?.['pt-BR'] || ''
+  const storyMessage = config.storyMessages?.[language] || config.storyMessages?.['pt-BR'] || ''
+  const storyEnabled = (config.enabledSections || []).includes('Nossa história')
+  const previewEvent = events[0]
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const selectTheme = (themeId) => update({ theme: themeId, paletteIndex: 0, ...(THEME_PRESETS[themeId] || THEME_PRESETS.garden) })
-  const customizableSections = config.enabledSections.filter((section) => !['Nossa história', 'Eventos', 'Lista de presentes', 'Confirmação de presença'].includes(section))
-  const updateSectionContent = (section, language, field, value) => update({ sectionContent: { ...config.sectionContent, [section]: { ...config.sectionContent?.[section], [language]: { ...config.sectionContent?.[section]?.[language], [field]: value } } } })
-  const getSectionContent = (section) => {
-    const sectionData = config.sectionContent?.[section] || {}
-    const translated = sectionData[previewLanguage] || {}
-    const fallback = sectionData['pt-BR'] || {}
-    return { title: translated.title || fallback.title || section, body: translated.body || fallback.body || '' }
-  }
-  const toggleSection = (section) => update({ enabledSections: config.enabledSections.includes(section) ? config.enabledSections.filter((item) => item !== section) : [...config.enabledSections, section] })
-  const orderedSections = [...SITE_SECTIONS].sort((first, second) => {
-    const firstPosition = config.enabledSections.indexOf(first)
-    const secondPosition = config.enabledSections.indexOf(second)
-    if (firstPosition < 0 && secondPosition < 0) return SITE_SECTIONS.indexOf(first) - SITE_SECTIONS.indexOf(second)
-    if (firstPosition < 0) return 1
-    if (secondPosition < 0) return -1
-    return firstPosition - secondPosition
-  })
-  const reorderSection = (section, targetSection) => {
-    const nextSections = [...config.enabledSections]
-    const position = nextSections.indexOf(section)
-    const target = nextSections.indexOf(targetSection)
-    if (position < 0 || target < 0 || target === position) return
-    nextSections.splice(position, 1)
-    nextSections.splice(target, 0, section)
-    update({ enabledSections: nextSections })
-  }
-  const moveSection = (section, direction) => {
-    const position = config.enabledSections.indexOf(section)
-    const target = position + direction
-    if (position < 0 || target < 0 || target >= config.enabledSections.length) return
-    reorderSection(section, config.enabledSections[target])
-  }
-  const startPointerDrag = (event, section) => {
-    if (event.pointerType === 'mouse') return
-    event.preventDefault()
-    event.currentTarget.setPointerCapture(event.pointerId)
-    pointerDragSection.current = section
-    pointerDropSection.current = section
-    setDraggedSection(section)
-  }
-  const updatePointerDrag = (event) => {
-    if (!pointerDragSection.current) return
-    const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-section-id]')
-    if (targetRow) pointerDropSection.current = targetRow.dataset.sectionId
-  }
-  const finishPointerDrag = () => {
-    if (pointerDragSection.current && pointerDropSection.current) reorderSection(pointerDragSection.current, pointerDropSection.current)
-    pointerDragSection.current = ''
-    pointerDropSection.current = ''
-    setDraggedSection('')
+  const toggleStory = () => update({ enabledSections: storyEnabled ? ['Eventos', 'Confirmação de presença'] : ['Nossa história', 'Eventos', 'Confirmação de presença'] })
+  const updateStory = (value) => update({ storyMessages: { ...DEFAULT_SITE_CONFIG.storyMessages, ...config.storyMessages, [language]: value } })
+  const updateCoverMessage = (value) => update({ coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...config.coverMessages, [language]: value } })
+  const style = {
+    '--forest': selectedPalette[0],
+    '--ink': selectedPalette[0],
+    '--accent': selectedPalette[1],
+    '--paper': selectedPalette[2],
+    '--deep': selectedPalette[0],
+    '--font-heading': selectedFonts[0],
+    '--font-body': selectedFonts[1],
+    '--site-text-scale': '1',
   }
 
-  return <div className="customize-layout"><div className="customize-controls">
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">RASCUNHO DO CASAMENTO</span><h3>Temas curados</h3></div><span className="step-counter">Temas para escolher</span></div><p>Escolha uma base visual segura. As alterações ficam privadas até publicar.</p><p className="theme-impact-note">A prévia ao lado mostra a paleta, a capa e as fontes escolhidas.</p><ThemePicker theme={config.theme} setTheme={selectTheme} compact /><div className="palette-picker"><div className="palette-heading"><strong>Paletas deste tema</strong><small>Combinações curadas</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div><label className="font-pair-label">Par de fontes<select value={config.fontPair} onChange={(event) => update({ fontPair: event.target.value })}><option>Clássico editorial</option><option>Romântico leve</option><option>Moderno sem serifa</option><option>Elegante de alto contraste</option><option>Contemporâneo humanista</option><option>Floral delicado</option><option>Minimalista geométrico</option><option>Rústico acolhedor</option></select></label><label className="font-pair-label">Tamanho do texto<select value={config.fontScale || 'medium'} onChange={(event) => update({ fontScale: event.target.value })}><option value="small">Compacto</option><option value="medium">Padrão</option><option value="large">Ampliado</option></select></label></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">CAPA DO CONVITE</span><h3>Escolha um layout</h3></div><span className="step-counter">Modelos de capa</span></div><div className="cover-layout-grid">{layoutNames.map((layout) => <button type="button" key={layout.id} className={config.coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })} aria-pressed={config.coverLayout === layout.id}><span className={`layout-thumb layout-thumb-${layout.id}`}><i /><b /><em /></span><small>{layout.label}</small></button>)}</div><label className="font-pair-label">Foto da capa<select value={config.coverImage || 'wedding-pexels'} onChange={(event) => update({ coverImage: event.target.value })}>{SITE_COVER_PHOTOS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">SE&#231;&#213;ES DO CONVITE</span><h3>Mostrem o que importa</h3></div><span className="step-counter">{config.enabledSections.length} ativas</span></div><p>Ativem, desativem e organizem as partes do convite. Arrastem uma se&#231;&#227;o ou usem as setas.</p><div className="customizer-section-list">{orderedSections.map((section) => { const active = config.enabledSections.includes(section); const position = config.enabledSections.indexOf(section); return <div className={'customizer-section-row' + (active ? ' active' : '') + (draggedSection === section ? ' dragging' : '')} data-section-id={section} key={section} draggable={active} onDragStart={(event) => { setDraggedSection(section); event.dataTransfer.setData('text/plain', section) }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const source = event.dataTransfer.getData('text/plain'); if (source) reorderSection(source, section); setDraggedSection('') }} onDragEnd={() => setDraggedSection('')} onPointerDown={(event) => startPointerDrag(event, section)} onPointerMove={updatePointerDrag} onPointerUp={finishPointerDrag}><button type="button" className="customizer-section-drag" aria-label={'Mover ' + section} disabled={!active}><GripVertical size={16} /></button><label><input type="checkbox" checked={active} onChange={() => toggleSection(section)} /><span>{section}{section === 'Quiz dos noivos' ? '\u00b7 opcional' : ''}</span></label>{active && <div className="customizer-section-actions"><button type="button" aria-label={'Mover ' + section + ' para cima'} disabled={position === 0} onClick={() => moveSection(section, -1)}><ArrowUp size={15} /></button><button type="button" aria-label={'Mover ' + section + ' para baixo'} disabled={position === config.enabledSections.length - 1} onClick={() => moveSection(section, 1)}><ArrowDown size={15} /></button></div>}</div>})}</div></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">DETALHES DA FESTA</span><h3>Programação, cardápio e traje</h3></div></div><p>Os eventos, locais e horários são definidos em Eventos e respeitam o acesso de cada grupo.</p><label className="font-pair-label">Programação<textarea rows="3" maxLength="1200" value={config.weddingDetails?.schedule || ""} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, schedule: event.target.value } })} /></label><label className="font-pair-label">Cardápio<textarea rows="3" maxLength="1200" value={config.weddingDetails?.menu || ""} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} /></label><label className="font-pair-label">Traje sugerido<input maxLength="120" value={config.weddingDetails?.dressCode || ""} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} /></label></section>
-    <GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} />
-    <section className="dash-card customize-card animation-card"><div className="card-heading"><div><span className="eyebrow">MOVIMENTO E IDIOMA</span><h3>Preferências do convite</h3></div><Sparkles size={17} /></div><div className="segmented-control">{['Suave', 'Elegante', 'Festivo', 'Nenhum'].map((preset) => <button type="button" key={preset} className={config.animationPreset === preset ? 'selected' : ''} onClick={() => update({ animationPreset: preset })}>{preset}</button>)}</div><label className="font-pair-label">Idioma principal<select value={config.language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">TEXTO DA CAPA</span><h3>Mensagem do convite</h3></div></div><p>Escreva uma mensagem por idioma. Ela aparece na prévia e no convite publicado.</p>{[['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']].map(([language, label]) => <label className="font-pair-label" key={language}>{label}<textarea rows="2" maxLength="240" value={config.coverMessages?.[language] || ''} onChange={(event) => update({ coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...config.coverMessages, [language]: event.target.value } })} /></label>)}</section>
-    {config.enabledSections.includes('Nossa história') && <section className="dash-card customize-card couple-story-editor"><div className="card-heading"><div><span className="eyebrow">HISTÓRIA DO CASAL</span><h3>Contem como tudo começou</h3></div></div><p>Este texto aparece na prévia e no convite publicado. Se um idioma ficar vazio, o site usa a versão em português.</p>{[['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']].map(([language, label]) => <label className="font-pair-label" key={language}>{label}<textarea rows="4" maxLength="3000" value={config.storyMessages?.[language] || ''} onChange={(event) => update({ storyMessages: { ...DEFAULT_SITE_CONFIG.storyMessages, ...config.storyMessages, [language]: event.target.value } })} /></label>)}</section>}
-    {customizableSections.length > 0 && <section className="dash-card customize-card section-content-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO DO CONVITE</span><h3>Personalizem as seções</h3></div></div><p>Adicionem títulos e textos em cada idioma. Se uma tradução estiver vazia, o convite usa o português.</p>{customizableSections.map((section) => <details className="section-content-editor" key={section}><summary>{section}</summary>{[['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']].map(([language, label]) => <fieldset key={language}><legend>{label}</legend><label className="font-pair-label">Título<input maxLength="120" value={config.sectionContent?.[section]?.[language]?.title || ''} onChange={(event) => updateSectionContent(section, language, 'title', event.target.value)} /></label><label className="font-pair-label">Texto<textarea rows="3" maxLength="4000" value={config.sectionContent?.[section]?.[language]?.body || ''} onChange={(event) => updateSectionContent(section, language, 'body', event.target.value)} /></label></fieldset>)}</details>)}</section>}
-    <div className="site-editor-actions"><button className="button-primary save-customize" onClick={onSave} disabled={saving || !draftChanged}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={onPublish} disabled={saving}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar site'}</button></div>
-  </div><div className={`customize-preview theme-${config.theme || 'garden'}`} style={{ '--forest': selectedPalette[0], '--accent': selectedPalette[1], '--paper': selectedPalette[2], '--font-heading': SITE_FONT_PAIRS[config.fontPair]?.[0] || SITE_FONT_PAIRS['Clássico editorial'][0], '--font-body': SITE_FONT_PAIRS[config.fontPair]?.[1] || SITE_FONT_PAIRS['Clássico editorial'][1], '--site-text-scale': config.fontScale === 'small' ? '.92' : config.fontScale === 'large' ? '1.1' : '1' }}><div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'RASCUNHO PRIVADO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div><select aria-label="Idioma da prévia" value={previewLanguage} onChange={(event) => setPreviewLanguage(event.target.value)}><option value="pt-BR">PT</option><option value="en">EN</option><option value="es">ES</option></select></div><div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.dominio-a-definir</div><ExternalLink size={12} /></div><div className={`browser-content cover-${config.coverLayout}`}><img src={SITE_COVER_PHOTOS.find((item) => item.id === config.coverImage)?.src || SITE_COVER_PHOTOS[0].src} alt="Prévia do tema do convite" /><div className="browser-overlay" /><span className="browser-date">{languageCopy.date}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong><small>{coverMessage}</small><button type="button">{languageCopy.button} <ArrowRight size={13} /></button>{config.coverLayout === 'video' && <span className="video-preview-tag">Vídeo de capa · silencioso</span>}{config.coverLayout === 'collage' && <div className="browser-collage-pair">{SITE_COVER_PHOTOS.map((item) => <img key={item.id} src={item.src} alt="" />)}</div>}</div>{config.enabledSections.includes('Nossa história') && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}{customizableSections.map((section) => { const content = getSectionContent(section); return content.body && <section className="browser-story-preview" key={section}><span>{content.title}</span><p>{content.body}</p></section> })}<div className="browser-below">{config.enabledSections.slice(0, 3).map((section) => <span key={section}>{section}</span>)}</div></div>{config.enabledSections.includes("Eventos") && [config.weddingDetails?.schedule, config.weddingDetails?.menu].some(Boolean) && <section className="browser-story-preview"><span>DETALHES DA FESTA</span><p>{[config.weddingDetails.schedule, config.weddingDetails.menu].filter(Boolean).join(" ? ")}</p></section>}{config.enabledSections.includes("Dress code") && config.weddingDetails?.dressCode && <section className="browser-story-preview"><span>TRAJE</span><p>{config.weddingDetails.dressCode}</p></section>}<div className="preview-notice"><CircleHelp size={15} /> {publishedAt ? `Última publicação: ${published}. Novas alterações só aparecem após publicar novamente.` : 'Rascunho privado no D1. A publicação ativa os convites individuais.'}</div></div></div>
+  return <div className="customize-layout simplified-customizer">
+    <div className="customize-controls">
+      <div className="customizer-wizard-nav" role="tablist" aria-label="Etapas para personalizar o convite">
+        <button type="button" role="tab" aria-selected={step === 'visual'} className={step === 'visual' ? 'active' : ''} onClick={() => setStep('visual')}><span>1</span> Aparência</button>
+        <button type="button" role="tab" aria-selected={step === 'content'} className={step === 'content' ? 'active' : ''} onClick={() => setStep('content')}><span>2</span> Recado e detalhes</button>
+      </div>
+      {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
+        <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Escolham o visual</h3></div></div>
+        <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
+        <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} />
+        <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
+        <div className="customizer-photo-options"><span>Foto de capa</span><div>{SITE_COVER_PHOTOS.map((photo) => <button type="button" key={photo.id} className={config.coverImage === photo.id ? 'active' : ''} onClick={() => update({ coverImage: photo.id })} aria-pressed={config.coverImage === photo.id}><img src={photo.src} alt="" loading="lazy" /><span>{photo.name}</span></button>)}</div></div>
+        <div className="customizer-layout-options" role="group" aria-label="Composição da capa"><span>Composição da foto</span><div>{coverLayouts.map((layout) => <button type="button" key={layout.id} className={coverLayout === layout.id ? 'active' : ''} onClick={() => update({ coverLayout: layout.id })} aria-pressed={coverLayout === layout.id}>{layout.label}</button>)}</div></div>
+      </section> : <section className="dash-card customize-card customizer-step-card">
+        <div className="card-heading"><div><span className="eyebrow">PASSO DOIS</span><h3>Contem só o que importa</h3></div></div>
+        <p>Nomes, data e eventos vêm do cadastro do casamento. Acrescentem um recado curto, se quiserem.</p>
+        <label className="font-pair-label">Idioma do convite<select value={language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label>
+        <label className="font-pair-label">Mensagem para os convidados · {languageName}<textarea rows="2" maxLength="140" value={coverMessage} onChange={(event) => updateCoverMessage(event.target.value)} placeholder={language === 'en' ? 'For example: We are happy to celebrate with you.' : language === 'es' ? 'Por ejemplo: Nos alegra celebrar con ustedes.' : 'Ex.: Vai ser uma alegria celebrar com você.'} /><small>{coverMessage.length}/140 caracteres</small></label>
+        <label className="customizer-story-toggle"><input type="checkbox" checked={storyEnabled} onChange={toggleStory} /><span><strong>Contar um pouco da nossa história</strong><small>Opcional. Um parágrafo já é suficiente.</small></span></label>
+        {storyEnabled && <label className="font-pair-label">Como tudo começou · {languageName}<textarea rows="3" maxLength="360" value={storyMessage} onChange={(event) => updateStory(event.target.value)} placeholder={language === 'en' ? 'Tell briefly how you met.' : language === 'es' ? 'Cuenten brevemente cómo se conocieron.' : 'Contem em poucas linhas como se conheceram.'} /><small>{storyMessage.length}/360 caracteres</small></label>}
+        <details className="customizer-extra-fields"><summary>Cardápio e traje, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="280" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="100" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label></div></details>
+        <details className="customizer-extra-fields"><summary>Cardápio e traje, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="280" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="100" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label></div></details>
+        <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
+        <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
+      </section>}
+      <div className="site-editor-actions"><button className="button-primary save-customize" onClick={onSave} disabled={saving || !draftChanged}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button className="button-outline" onClick={onPublish} disabled={saving}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
+    </div>
+    <div className={`customize-preview theme-${theme.id}`} style={style}>
+      <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>
+      <div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout}`}><img src={SITE_COVER_PHOTOS.find((item) => item.id === config.coverImage)?.src || SITE_COVER_PHOTOS[0].src} alt="Foto escolhida para a capa do convite" /><div className="browser-overlay" /><span className="browser-date">{wedding?.event_date ? new Date(`${wedding.event_date}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : language === 'en' ? 'Date to be announced' : language === 'es' ? 'Fecha por confirmar' : 'Data a definir'}</span><strong>{wedding?.partner_one_name || 'Nome'} <i>&</i><br />{wedding?.partner_two_name || 'Nome'}</strong>{coverMessage && <small>{coverMessage}</small>}<button type="button">{language === 'en' ? 'View invitation' : language === 'es' ? 'Ver invitación' : 'Ver convite'} <ArrowRight size={13} /></button></div>
+        <div className="browser-below"><span>{language === 'en' ? 'Event' : language === 'es' ? 'Evento' : 'Evento'}</span><i>·</i><span>{language === 'en' ? 'RSVP' : language === 'es' ? 'Confirmar asistencia' : 'Confirmação de presença'}</span></div>
+        {previewEvent && <div className="browser-story-preview"><span>{previewEvent.event_type}</span><p><strong>{previewEvent.name}</strong>{previewEvent.starts_at ? ` · ${new Date(previewEvent.starts_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{previewEvent.venue_name ? ` · ${previewEvent.venue_name}` : ''}</p></div>}
+        {storyEnabled && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}
+        {(config.weddingDetails?.menu || config.weddingDetails?.dressCode) && <div className="browser-story-preview"><span>ORIENTAÇÕES</span><p>{[config.weddingDetails.menu, config.weddingDetails.dressCode].filter(Boolean).join(' · ')}</p></div>}
+      </div>
+      <div className="preview-notice"><CircleHelp size={15} /> {publishedAt ? `Última publicação: ${published}. As mudanças aparecem para os convidados depois de publicar.` : 'Esta prévia é privada até vocês publicarem o convite.'}</div>
+    </div>
+  </div>
 }
-
 function InvitationShare({ share, onClose, notify }) {
   const [qr, setQr] = useState('')
   useEffect(() => { QRCode.toDataURL(share.url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr('')) }, [share.url])
@@ -2176,17 +2170,11 @@ function GuestPortal({ notify, setView }) {
   const siteFonts = SITE_FONT_PAIRS[invitation?.siteConfig?.fontPair] || SITE_FONT_PAIRS['Clássico editorial'];
   const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': invitation?.siteConfig?.fontScale === 'small' ? '.92' : invitation?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
   const coverPhoto = SITE_COVER_PHOTOS.find((photo) => photo.id === invitation?.siteConfig?.coverImage) || SITE_COVER_PHOTOS[0]
-  const moreSections = invitation?.siteConfig?.enabledSections?.filter((section) => !['Nossa história', 'Eventos', 'Lista de presentes', 'Confirmação de presença'].includes(section)) || []
-  const moreSectionHasContent = moreSections.some((section) => {
-    const translated = invitation.siteConfig.sectionContent?.[section]?.[invitation.siteConfig.language] || {}
-    const fallback = invitation.siteConfig.sectionContent?.[section]?.['pt-BR'] || {}
-    return Boolean(translated.body || fallback.body)
-  })
+  const coverLayout = ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
   const hasMoreInvitationContent = Boolean(
-    (invitation?.siteConfig?.enabledSections?.includes('Eventos') && (invitation.siteConfig.weddingDetails?.schedule || invitation.siteConfig.weddingDetails?.menu))
-    || (invitation?.siteConfig?.enabledSections?.includes('Dress code') && invitation.siteConfig.weddingDetails?.dressCode)
+    invitation?.siteConfig?.weddingDetails?.menu
+    || invitation?.siteConfig?.weddingDetails?.dressCode
     || (invitation?.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']))
-    || moreSectionHasContent
   )
 
   async function loadInvitation() {
@@ -2234,16 +2222,15 @@ function GuestPortal({ notify, setView }) {
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className="role-card guest-pass-card"><div className="guest-invitation-cover"><img src={coverPhoto.src} alt={`Foto pública de referência: ${coverPhoto.name}`} /><div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}</p><small>Foto pública de referência</small></div></div><div className="role-card-heading"><span className="eyebrow">Este convite é para {invitation.guest.name}</span><span className="status-pill confirmed"><i /> Individual</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}{invitation.siteConfig?.guestCamera?.enabled && <a className="guest-camera-invite-link" href="#guest-camera"><Camera size={17} /> Registrar um momento da celebração</a>}</section>
+      <section className="role-card guest-pass-card"><div className={`guest-invitation-cover guest-cover-${coverLayout}`}><img src={coverPhoto.src} alt={coverPhoto.name} /><div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}{invitation.siteConfig?.guestCamera?.enabled && <a className="guest-camera-invite-link" href="#guest-camera"><Camera size={17} /> Registrar um momento da celebração</a>}</section>
       {hasMoreInvitationContent && <details className="guest-extra-details"><summary>História e outros detalhes</summary>
-      {invitation.siteConfig?.enabledSections?.includes("Eventos") && (invitation.siteConfig.weddingDetails?.schedule || invitation.siteConfig.weddingDetails?.menu) && <section className="role-card guest-story-section"><span className="eyebrow">DETALHES DA FESTA</span>{invitation.siteConfig.weddingDetails.schedule && <p><strong>Programação</strong><br />{invitation.siteConfig.weddingDetails.schedule}</p>}{invitation.siteConfig.weddingDetails.menu && <p><strong>Cardápio</strong><br />{invitation.siteConfig.weddingDetails.menu}</p>}</section>}
-      {invitation.siteConfig?.enabledSections?.includes("Dress code") && invitation.siteConfig.weddingDetails?.dressCode && <section className="role-card guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2><p>Paleta sugerida pelo casal</p><div className="customizer-preview-swatches">{activePalette?.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</div></section>}
+      {invitation.siteConfig?.weddingDetails?.menu && <section className="role-card guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
+      {invitation.siteConfig?.weddingDetails?.dressCode && <section className="role-card guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2><div className="customizer-preview-swatches">{activePalette?.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</div></section>}
       {invitation.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']) && <section className="role-card guest-story-section"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']}</p></section>}
-      {invitation.siteConfig?.enabledSections?.filter((section) => !['Nossa história', 'Eventos', 'Lista de presentes', 'Confirmação de presença'].includes(section)).map((section) => { const translated = invitation.siteConfig.sectionContent?.[section]?.[invitation.siteConfig.language] || {}; const fallback = invitation.siteConfig.sectionContent?.[section]?.['pt-BR'] || {}; const title = translated.title || fallback.title || section; const body = translated.body || fallback.body || ''; return body && <section className="role-card guest-story-section" key={section}><span className="eyebrow">{title}</span><p>{body}</p></section> })}
       </details>}
       {invitation.guest.guestType === 'godparent' && <section className="role-card"><span className="eyebrow">ESPAÇO DOS PADRINHOS</span><h2>Orientações individuais</h2><p>Consulte as tarefas e os combinados enviados a você.</p><button className="button-outline" onClick={() => setView('godparent')}>Abrir minha área <ArrowRight size={14} /></button></section>}
       {invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} limit={invitation.siteConfig.guestCamera.photoLimit} notify={notify} />}
-      {invitation.events.length ? invitation.events.map((event) => <InvitationEventCard key={event.id} event={event} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}
+      {invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}
     </>}
   </RoleFrame>
 }
@@ -2324,7 +2311,7 @@ function GuestCamera({ token, events, limit, notify }) {
   return <section className="role-card guest-camera-card" id="guest-camera"><div className="role-card-heading"><div><span className="eyebrow">UMA LEMBRANÇA PELOS SEUS OLHOS</span><h2>A câmera do casamento</h2></div><Camera size={20} /></div><p>Tire uma foto espontânea da celebração. Confira a prévia e escolha se quer guardar ou tentar outra vez. Depois de enviar, ela fica só com o casal — você não verá as fotos da galeria.</p>{events.length > 1 && <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)}>{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}{pending ? <div className="guest-camera-preview"><img src={pending.url} alt="Prévia da foto antes de enviar" /><label className="guest-camera-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /> Autorizo o casal a guardar esta foto no álbum com meu nome.</label><div><button className="button-outline" type="button" onClick={retake} disabled={busy}>Tirar outra</button><button className="button-primary" type="button" onClick={keepPhoto} disabled={busy || !consent}>{busy ? 'Guardando…' : 'Guardar foto'} <Check size={15} /></button></div></div> : <><label className="guest-camera-action">{status?.remaining > 0 ? <><Camera size={17} /> Tirar uma foto</> : 'Limite de fotos enviado'}<input ref={fileInput} type="file" accept="image/*" capture="environment" onChange={(event) => preparePhoto(event.target.files?.[0])} disabled={busy || !status?.remaining} /></label><small>{status ? `${status.remaining} de ${limit} fotos restantes para você` : 'A câmera abre no seu celular e mostra a prévia antes de enviar.'}</small></>}{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
 }
 
-function InvitationEventCard({ event, maxPartySize, onSubmit }) {
+function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = false }) {
   const [status, setStatus] = useState(event.rsvp?.status || 'confirmed')
   const [partySize, setPartySize] = useState(String(event.rsvp?.party_size || maxPartySize))
   const [dietaryNotes, setDietaryNotes] = useState(event.rsvp?.dietary_notes || '')
@@ -2352,7 +2339,7 @@ function InvitationEventCard({ event, maxPartySize, onSubmit }) {
     }
   }
 
-  return <section className="role-card invitation-event-card"><div className="role-card-heading"><div><span className="eyebrow">{event.event_type}</span><h2>{event.name}</h2></div>{event.rsvp && <span className="status-pill confirmed"><i /> Resposta registrada</span>}</div><div className="guest-pass-details">{event.starts_at && <span><CalendarDays size={16} /> {new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</span>}{event.venue_name && <span><MapPin size={16} /> {event.venue_name}{event.address ? ` · ${event.address}` : ''}</span>}</div><form className="invitation-rsvp-form" onSubmit={submit}><label>Resposta<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Confirmo presença</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label>Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Salvar resposta'} <Check size={15} /></button></form></section>
+  return <details className="role-card invitation-event-card" open={initialOpen}><summary><span><small>{event.event_type}</small><strong>{event.name}</strong>{event.starts_at && <em>{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</em>}</span>{event.rsvp ? <b>Presença confirmada</b> : <b>Responder</b>}<ChevronDown size={17} /></summary><div className="invitation-event-content">{event.venue_name && <p className="invitation-event-venue"><MapPin size={16} /> <span>{event.venue_name}{event.address ? ` · ${event.address}` : ''}</span></p>}<form className="invitation-rsvp-form" onSubmit={submit}><label>Você vai participar?<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Sim, estarei lá</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label className="invitation-rsvp-wide">Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><div className="invitation-rsvp-wide"><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} /></div>{error && <p className="admin-form-error invitation-rsvp-wide" role="alert">{error}</p>}<button className="button-primary invitation-rsvp-wide" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Confirmar presença'} <Check size={15} /></button></form></div></details>
 }
 function TurnstileChallenge({ onToken, resetKey, action = 'account' }) {
   const container = useRef(null)

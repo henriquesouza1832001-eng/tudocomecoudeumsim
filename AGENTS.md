@@ -478,3 +478,34 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Em 15/10/2026, `/criar-site` foi ampliado para permitir a escolha de tema, paleta, par tipográfico, escala de leitura, formato da capa, foto pública de referência e seções antes do cadastro. A prévia acompanha as escolhas em computador, tablet e celular; os campos `fontScale` e `coverImage` são validados e persistidos pela API para a edição no painel.
 - O catálogo mantém oito temas curados. `Rock & romance` e `Festa no jardim` atendem casais que querem uma estética mais marcante sem liberar CSS ou cores sem limite. Os seis layouts usam CSS e fotos já disponíveis no projeto, sem novas bibliotecas ou fontes externas.
 - O personalizador permite escolher entre fotos públicas de referência. Upload das fotos próprias para R2 continua pendente; não afirmar que o envio de fotos já está disponível.
+
+## Continuidade de trabalho — personalizador e convite compacto
+
+Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado da branch `preview` para quem continuar o projeto.
+
+### Pedido confirmado
+
+- O personalizador deve começar com uma tela visual coerente com a identidade do painel e do convite: jardim editorial, tons pastéis, leitura confortável e poucas escolhas por vez.
+- Conferir cada opção de personalização. Toda opção apresentada precisa alterar de forma perceptível a prévia e, quando aplicável, o convite publicado. Remover controles sem efeito ou deixar claro onde se aplicam.
+- Corrigir as paletas: no estado anterior, várias opções pareciam iguais. A cor selecionada deve aparecer na prévia e no site real, preservando contraste e legibilidade.
+- Simplificar o convite do convidado. Deve apresentar o casal, data e local/evento, uma mensagem curta, fotos escolhidas e ações claras. Evitar um convite longo com blocos de texto redundantes; história, cardápio e traje são informações opcionais e resumidas.
+- Reduzir campos no personalizador e evitar despejar muitas configurações em uma tela. Separar o essencial de informações opcionais, com linguagem direta.
+- Não pedir ao casal para escrever o mesmo texto em três idiomas. A interface mantém o idioma normal do produto; não replicar campos de conteúdo por idioma neste fluxo simplificado sem uma decisão nova do dono.
+- Carrossel ou galeria de fotos deve ser opcional e compacto. Não exigir detalhes íntimos ou perguntas sobre o casal para concluir um convite.
+
+### Estado da branch `preview`
+
+- A branch local `preview` foi criada a partir de `main` em 17/10/2026. Ela é a única branch adicional solicitada para pré-visualização. Antes de integrar mudanças, confirmar o destino com o dono; não alterar `main` diretamente.
+- Há alterações de trabalho em `src/App.jsx` e `src/styles.css` que simplificam o editor autenticado do painel para duas áreas, aparência e recado/detalhes. O editor reduz a escolha inicial de temas, permite expandir os demais e mostra na prévia a paleta, foto, composição, mensagem, história curta e informações do evento.
+- A lista de paletas foi alterada para produzir cores visivelmente distintas; o tema noturno deixou de impor um fundo que anulava a paleta escolhida.
+- O convite publicado recebeu ajustes para usar a composição selecionada e manter detalhes opcionais recolhidos. Eventos e RSVP foram compactados em linhas expansíveis; o convite deve continuar sendo conferido visualmente em celular e desktop.
+- Esses ajustes são trabalho em andamento até a conferência ponta a ponta. Não declarar o personalizador concluído apenas porque os controles aparecem na prévia.
+- O fluxo público `/criar-site` é separado do editor autenticado e ainda precisa ser revisado para receber a mesma simplificação: poucas etapas, conteúdo em um idioma de entrada, opções com efeito real e prévia compacta. Não deixar que o fluxo aberto e o painel ofereçam modelos incompatíveis.
+- Conferir o ciclo completo: criar/alterar rascunho, recarregar, salvar, publicar e abrir o convite do convidado. Verificar especialmente tema, paleta, foto, composição, mensagem, história curta e detalhes do evento.
+- Verificar responsividade, contraste, controles de toque e ausência de rolagem horizontal. Não ampliar novamente o convite ou o personalizador sem necessidade demonstrável.
+
+### Validação registrada nesta continuação
+
+- `npm run lint`, `npm run build` e `git diff --check` passaram para as alterações em andamento de `src/App.jsx` e `src/styles.css`.
+- `npm test` teve 10 de 11 testes aprovados. O teste `event staff can read only assigned event rosters without contact fields` falhou em `tests/wedding-role-access.test.js:101`, ao acessar `name` na linha 107. O fluxo testado não foi alterado nesta continuação; investigar a falha antes de atribuí-la às mudanças de interface.
+- Ainda não há confirmação de commit, push ou publicação Cloudflare desta branch. A publicação continua obedecendo à integração Git do Cloudflare e à regra de expor somente trabalho concluído e validado.
