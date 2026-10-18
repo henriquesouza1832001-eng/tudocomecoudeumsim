@@ -35,7 +35,7 @@ function database({ role = 'couple_admin', draftConfig = {}, publishedConfig = {
 async function call(path, { method = 'GET', role, draftConfig, publishedConfig, invitationConfig, bucket } = {}) {
   const request = new Request(`${origin}${path}`, {
     method,
-    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(path === '/api/invitation' ? { Authorization: `Bearer ${'a'.repeat(40)}` } : {}) },
+    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(path === '/api/invitation' || path.startsWith('/api/site-media/') ? { Authorization: `Bearer ${'a'.repeat(40)}` } : {}) },
   })
   return onRequest({ request, env: { DB: database({ role, draftConfig, publishedConfig, invitationConfig }), GUEST_PHOTOS: bucket } })
 }
@@ -48,12 +48,12 @@ test('site media deletion refuses files referenced by draft or published invitat
   }
   const response = await call(`/api/couple/weddings/wedding-1/site-media/${mediaId}`, {
     method: 'DELETE',
-    draftConfig: { coverGallery: [mediaId] },
+    draftConfig: { coverGallery: [mediaId], timeline: [{ id: '22222222-2222-4222-8222-222222222222', title: 'Marco', date: '', description: '', photoId: mediaId }], giftPresentation: { '33333333-3333-4333-8333-333333333333': { category: 'Experiências', photoId: mediaId } } },
     publishedConfig: { coverPhotoId: mediaId },
     bucket,
   })
   assert.equal(response.status, 409)
-  assert.deepEqual(await response.json(), { error: 'site_media_in_use', references: ['rascunho: carrossel da capa', 'convite publicado: foto principal da capa'] })
+  assert.deepEqual(await response.json(), { error: 'site_media_in_use', references: ['rascunho: carrossel da capa', 'rascunho: linha do tempo', 'rascunho: foto de presente', 'convite publicado: foto principal da capa'] })
   assert.equal(deleted, false)
 })
 
@@ -116,4 +116,22 @@ test('public invitation reveals the Pix key when enabled independently of the gi
   assert.equal((await visibleWithoutGifts.json()).siteConfig.pix.key, 'chave-copia-cola')
   const hidden = await call('/api/invitation', { invitationConfig: { ...baseConfig, pix: { ...baseConfig.pix, enabled: false } } })
   assert.deepEqual((await hidden.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
+})
+
+test('individual invitations can load photos referenced by the timeline and gift cards', async () => {
+  const timelinePhotoId = '44444444-4444-4444-8444-444444444444'
+  const giftPhotoId = '55555555-5555-4555-8555-555555555555'
+  const invitationConfig = {
+    theme: 'garden', paletteIndex: 0, coverLayout: 'full', animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR',
+    enabledSections: ['Linha do tempo', 'Lista de presentes'],
+    coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' },
+    timeline: [{ id: '22222222-2222-4222-8222-222222222222', title: 'Primeiro encontro', date: '', description: '', photoId: timelinePhotoId }],
+    giftPresentation: { '33333333-3333-4333-8333-333333333333': { category: 'Lua de mel', photoId: giftPhotoId } },
+  }
+  const response = await call(`/api/site-media/${timelinePhotoId}`, {
+    invitationConfig,
+    bucket: { async get(key) { return key.endsWith('.jpg') ? { body: new Uint8Array([1]), httpMetadata: { contentType: 'image/jpeg' } } : null } },
+  })
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('Content-Type'), 'image/jpeg')
 })

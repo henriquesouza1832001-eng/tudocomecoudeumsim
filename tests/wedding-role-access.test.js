@@ -280,10 +280,13 @@ test('couple photo and video uploads persist supported media in object storage',
   assert.equal(secondVideo.status, 409)
   assert.equal((await secondVideo.json()).error, 'video_limit_reached')
 
-  const config = { ...siteConfig, coverLayout: 'video', coverPhotoId: imageIds[0], coverCarouselEnabled: true, coverGallery: imageIds, siteGallery: [imageIds[2]], coverVideoId: videoResult.id }
+  const config = { ...siteConfig, coverLayout: 'video', coverPhotoId: imageIds[0], coverCarouselEnabled: true, coverGallery: imageIds, siteGallery: [imageIds[2]], coverVideoId: videoResult.id, enabledSections: [...siteConfig.enabledSections, 'Linha do tempo', 'Contagem regressiva'], timeline: [{ id: '22222222-2222-4222-8222-222222222222', title: 'Onde nos conhecemos', date: '2020-02-14', description: 'Foi em uma festa de amigos.', photoId: imageIds[1] }], giftPresentation: { '33333333-3333-4333-8333-333333333333': { category: 'Experiências', photoId: imageIds[2] } } }
   const savedConfig = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config, env: { GUEST_PHOTOS: bucket } })
   assert.equal(savedConfig.status, 200)
-  assert.equal((await savedConfig.json()).draft.coverVideoId, videoResult.id)
+  const savedDraft = (await savedConfig.json()).draft
+  assert.equal(savedDraft.coverVideoId, videoResult.id)
+  assert.deepEqual(savedDraft.timeline, config.timeline)
+  assert.deepEqual(savedDraft.giftPresentation, config.giftPresentation)
   const readBack = await call(`/api/site-media/${videoResult.id}`, 'couple_admin', { env: { GUEST_PHOTOS: bucket } })
   assert.equal(readBack.status, 200)
   assert.equal(readBack.headers.get('Content-Type'), 'video/mp4')

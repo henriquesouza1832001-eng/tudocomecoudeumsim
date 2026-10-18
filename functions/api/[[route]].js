@@ -25,8 +25,9 @@ const siteCoverLayouts = ['full', 'split', 'arch', 'type', 'video', 'collage']
 const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
-const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const siteSections = ['Nossa história', 'Linha do tempo', 'Contagem regressiva', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
+const siteGiftCategories = ['Cozinha', 'Eletrodomésticos', 'Casa e decoração', 'Quarto e banho', 'Experiências', 'Lua de mel', 'Outros']
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, timeline: [], giftPresentation: {}, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const guestPhotoConsentVersion = 'guest-camera-v1'
 function validPixSettings(pix) {
   if (pix === undefined) return defaultSiteConfig.pix
@@ -55,6 +56,8 @@ function siteMediaReferences(value, id) {
   if (config.coverPhotoId === id) uses.push('foto principal da capa')
   if (Array.isArray(config.coverGallery) && config.coverGallery.includes(id)) uses.push('carrossel da capa')
   if (Array.isArray(config.siteGallery) && config.siteGallery.includes(id)) uses.push('galeria do site')
+  if (Array.isArray(config.timeline) && config.timeline.some((item) => item.photoId === id)) uses.push('linha do tempo')
+  if (config.giftPresentation && Object.values(config.giftPresentation).some((item) => item?.photoId === id)) uses.push('foto de presente')
   if (config.coverVideoId === id) uses.push('vídeo de abertura')
   return uses
 }
@@ -99,6 +102,37 @@ function validSectionContent(content) {
   return result
 }
 
+function validTimeline(timeline) {
+  if (timeline === undefined) return []
+  if (!Array.isArray(timeline) || timeline.length > 6) return null
+  const result = []
+  for (const item of timeline) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null
+    const { id, title, date, description, photoId } = item
+    const parsedDate = typeof date === 'string' && date ? new Date(`${date}T00:00:00.000Z`) : null
+    if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)
+      || typeof title !== 'string' || title.length > 100
+      || typeof date !== 'string' || date.length > 10 || (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date))
+      || typeof description !== 'string' || description.length > 1200
+      || (photoId !== null && photoId !== undefined && (typeof photoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(photoId)))) return null
+    result.push({ id, title: title.trim(), date, description: description.trim(), photoId: photoId || null })
+  }
+  return result
+}
+
+function validGiftPresentation(presentation) {
+  if (presentation === undefined) return {}
+  if (!presentation || typeof presentation !== 'object' || Array.isArray(presentation) || Object.keys(presentation).length > 60) return null
+  const result = {}
+  for (const [giftId, item] of Object.entries(presentation)) {
+    if (!/^[0-9a-f-]{36}$/i.test(giftId) || !item || typeof item !== 'object' || Array.isArray(item)
+      || !siteGiftCategories.includes(item.category || 'Outros')
+      || (item.photoId !== null && item.photoId !== undefined && (typeof item.photoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(item.photoId)))) return null
+    result[giftId] = { category: item.category || 'Outros', photoId: item.photoId || null }
+  }
+  return result
+}
+
 function validWeddingDetails(details) {
   const fallback = { schedule: '', menu: '', dressCode: '' }
   if (details === undefined) return fallback
@@ -128,6 +162,10 @@ function parseSiteConfig(value) {
     if (!storyMessages) return null
     const sectionContent = validSectionContent(config.sectionContent)
     if (!sectionContent) return null
+    const timeline = validTimeline(config.timeline)
+    if (!timeline) return null
+    const giftPresentation = validGiftPresentation(config.giftPresentation)
+    if (!giftPresentation) return null
     const weddingDetails = validWeddingDetails(config.weddingDetails)
     if (!weddingDetails) return null
     const guestCamera = validGuestCamera(config.guestCamera)
@@ -138,7 +176,7 @@ function parseSiteConfig(value) {
     if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
-    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
+    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -157,6 +195,10 @@ function validateSiteConfig(body) {
   if (!storyMessages) return null
   const sectionContent = validSectionContent(body.sectionContent)
   if (!sectionContent) return null
+  const timeline = validTimeline(body.timeline)
+  if (!timeline) return null
+  const giftPresentation = validGiftPresentation(body.giftPresentation)
+  if (!giftPresentation) return null
   const weddingDetails = validWeddingDetails(body.weddingDetails)
   if (!weddingDetails) return null
   const guestCamera = validGuestCamera(body.guestCamera)
@@ -167,7 +209,7 @@ function validateSiteConfig(body) {
   if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {
@@ -1247,7 +1289,8 @@ app.get('/api/site-media/:mediaId', async (context) => {
   for (const weddingId of weddingIds) {
     if (guest) {
       const config = parseSiteConfig(guest.published_site_config_json)
-      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && !config?.siteGallery?.includes(id) && config?.coverVideoId !== id) continue
+      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && !config?.siteGallery?.includes(id) && config?.coverVideoId !== id
+        && !config?.timeline?.some((item) => item.photoId === id) && !Object.values(config?.giftPresentation || {}).some((item) => item?.photoId === id)) continue
     }
     for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
       object = await context.env.GUEST_PHOTOS?.get(`${weddingId}/site/${id}.${extension}`)
@@ -1292,7 +1335,7 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const config = validateSiteConfig(await context.req.json().catch(() => null))
   if (!config) return jsonError(context, 400, 'invalid_site_config')
-  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...config.siteGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...config.siteGallery, ...(config.coverVideoId ? [config.coverVideoId] : []), ...config.timeline.map((item) => item.photoId).filter(Boolean), ...Object.values(config.giftPresentation).map((item) => item.photoId).filter(Boolean)])]
   if (mediaIds.length) {
     if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
     for (const id of mediaIds) {
@@ -2202,7 +2245,7 @@ app.get('/api/public/weddings/:slug/media/:mediaId', async (context) => {
   const mediaId = context.req.param('mediaId')
   if (!/^[0-9a-f-]{36}$/i.test(mediaId)) return jsonError(context, 404, 'media_not_found')
   const config = parseSiteConfig(wedding.published_site_config_json)
-  if (!config || ![config.coverPhotoId, config.coverVideoId, ...config.coverGallery, ...config.siteGallery].includes(mediaId)) return jsonError(context, 404, 'media_not_found')
+  if (!config || ![config.coverPhotoId, config.coverVideoId, ...config.coverGallery, ...config.siteGallery, ...(config.timeline || []).map((item) => item.photoId), ...Object.values(config.giftPresentation || {}).map((item) => item.photoId)].includes(mediaId)) return jsonError(context, 404, 'media_not_found')
   let object
   for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
     object = await context.env.GUEST_PHOTOS.get(`${wedding.id}/site/${mediaId}.${extension}`)
