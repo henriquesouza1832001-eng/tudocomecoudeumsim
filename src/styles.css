@@ -40,21 +40,21 @@ img { display: block; max-width: 100%; }
 .prototype-switch button { border: 0; border-radius: 99px; display: inline-flex; gap: 7px; align-items: center; padding: 8px 12px; color: rgba(255,255,255,.62); background: transparent; font-size: 11px; transition: .2s ease; }
 .prototype-switch button:hover, .prototype-switch button.selected { color: #293a31; background: #f6f2e9; }
 .prototype-badge { border: 1px solid rgba(255,255,255,.19); border-radius: 99px; padding: 6px 10px; color: rgba(255,255,255,.64); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
-.toast { position: fixed; bottom: 24px; left: 50%; z-index: 60; display: flex; align-items: center; gap: 9px; padding: 13px 18px; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; background: #27382f; color: #fff; box-shadow: 0 12px 35px rgba(32,43,36,.2); font-size: 12px; transform: translateX(-50%); animation: toast-in .25s ease both; }
+.toast { position: fixed; bottom: 24px; left: 50%; z-index: 60; display: flex; align-items: center; gap: 9px; max-width: min(480px, calc(100% - 32px)); padding: 11px 15px; border: 1px solid rgba(64,84,71,.2); border-radius: 3px; background: #f7f5ef; color: #35483b; box-shadow: 0 8px 24px rgba(32,43,36,.14); font-size: 13px; line-height: 1.45; transform: translateX(-50%); animation: toast-in .25s ease both; }
 .identity-dialog-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: rgba(35,45,38,.38); backdrop-filter: blur(2px); }
-.identity-dialog { width: min(470px, 100%); padding: 27px 28px 24px; border: 1px solid rgba(99,117,99,.24); background: var(--paper, #fbfaf6); color: var(--ink, #28382f); box-shadow: 0 16px 48px rgba(25,34,28,.2); animation: modal-in .18s ease both; }
-.identity-dialog h2 { margin: 0 0 9px; color: var(--forest, #293a31); font-family: var(--serif, Georgia, serif); font-size: 27px; font-weight: 400; line-height: 1.22; }
-.identity-dialog > p { margin: 0; color: #59645c; font-size: 14px; line-height: 1.55; }
+.identity-dialog { width: min(450px, 100%); padding: 23px 24px 21px; border: 1px solid rgba(99,117,99,.24); background: var(--paper, #fbfaf6); color: var(--ink, #28382f); box-shadow: 0 14px 38px rgba(25,34,28,.17); animation: modal-in .18s ease both; }
+.identity-dialog h2 { margin: 0 0 8px; color: var(--forest, #293a31); font-family: var(--serif, Georgia, serif); font-size: 24px; font-weight: 400; line-height: 1.25; }
+.identity-dialog > p { margin: 0; color: #59645c; font-size: 14px; line-height: 1.5; }
 .identity-dialog > .identity-dialog-notice { margin-top: 10px; padding: 2px 0 2px 10px; border-left: 2px solid #cdb89d; color: #687168; font-size: 13px; line-height: 1.45; }
 .identity-dialog-field { display: grid; gap: 7px; margin-top: 16px; color: #465449; font-size: 12px; }
 .identity-dialog-field input { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid #d7d9d1; background: #fff; color: #28382f; font: inherit; font-size: 16px; letter-spacing: .18em; }
-.identity-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(48,55,47,.1); }
-.identity-dialog-actions button { min-height: 42px; padding: 0 16px; border-radius: 2px; font-size: 13px; font-weight: 600; line-height: 1.25; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+.identity-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+.identity-dialog-actions button { min-height: 40px; padding: 0 15px; border-radius: 2px; font-size: 13px; font-weight: 600; line-height: 1.25; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
 .identity-dialog-actions button:hover { transform: translateY(-1px); }
-.identity-dialog-danger { border: 1px solid #875257; background: #875257; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
-.identity-dialog-danger:hover { border-color: #70434a; background: #70434a; }
+.identity-dialog-danger { border: 1px solid #865b57; background: #865b57; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.identity-dialog-danger:hover { border-color: #714945; background: #714945; }
 .identity-dialog :focus-visible { outline: 3px solid #bd8d72; outline-offset: 3px; }
-@media (max-width: 520px) { .identity-dialog { padding: 22px 20px 19px; } .identity-dialog h2 { font-size: 24px; } .identity-dialog-actions { gap: 8px; margin-top: 17px; padding-top: 13px; } .identity-dialog-actions button { flex: 1; padding-inline: 10px; } }
+@media (max-width: 520px) { .identity-dialog { padding: 21px 19px 18px; } .identity-dialog h2 { font-size: 22px; } .identity-dialog-actions { gap: 8px; margin-top: 16px; } .identity-dialog-actions button { flex: 1; padding-inline: 10px; } }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .demo-ribbon { height: 29px; padding: 0 6.1%; display: flex; align-items: center; gap: 12px; color: #697268; background: #ede9df; font-size: 9px; letter-spacing: .1em; }
 .demo-ribbon span:first-child { color: var(--forest); font-weight: 700; }
@@ -264,20 +264,21 @@ img { display: block; max-width: 100%; }
 .guest-footer p { margin: 6px 0 11px; color: rgba(255,255,255,.6); font-family: var(--serif); font-size: 13px; }
 .guest-footer > a { display: flex; align-items: center; gap: 5px; color: #e0c6a6; font-size: 9px; }
 .footer-demo { margin-top: 13px; color: rgba(255,255,255,.34); font-size: 7px; letter-spacing: .13em; }
-.modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 20px; display: grid; place-items: center; background: rgba(27,38,31,.68); backdrop-filter: blur(4px); }
-.gift-modal { width: min(430px, 100%); padding: 34px; position: relative; background: var(--paper); box-shadow: 0 22px 70px rgba(0,0,0,.22); animation: modal-in .22s ease both; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 20px; display: grid; place-items: center; background: rgba(35,45,38,.4); backdrop-filter: blur(2px); }
+.gift-modal { width: min(430px, 100%); padding: 25px; position: relative; border: 1px solid rgba(99,117,99,.2); color: var(--ink); background: var(--paper); box-shadow: 0 14px 38px rgba(25,34,28,.17); animation: modal-in .18s ease both; }
 @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .modal-close { width: 32px; height: 32px; position: absolute; right: 14px; top: 14px; display: grid; place-items: center; border: 0; color: #74786f; background: transparent; }
-.modal-flower { width: 48px; height: 48px; margin-bottom: 20px; display: grid; place-items: center; color: var(--forest); background: #e8e9e0; font-family: var(--serif); font-size: 25px; }
+.modal-flower { display: none; }
 .gift-modal .eyebrow { color: var(--accent); }
-.gift-modal h3 { margin: 8px 0; font-family: var(--serif); font-size: 28px; font-weight: 400; }
-.gift-modal > p { margin: 0 0 18px; color: #777b72; font-size: 10px; line-height: 1.7; }
-.payment-choice { min-height: 50px; padding: 0 12px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); }
-.payment-choice > span:first-child { display: flex; align-items: center; gap: 9px; font-size: 10px; }
+.gift-modal h3 { margin: 0 0 8px; font-family: var(--serif); font-size: 24px; font-weight: 400; line-height: 1.25; }
+.gift-modal > p { margin: 0 0 16px; color: #626b63; font-size: 13px; line-height: 1.5; }
+.payment-choice { min-height: 46px; padding: 0 11px; margin-top: 7px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); }
+.payment-choice > span:first-child { display: flex; align-items: center; gap: 9px; font-size: 12px; }
 .payment-choice > span:first-child svg { color: var(--forest); }
-.future-tag { padding: 5px 7px; border-radius: 2px; color: #977551; background: #f1e8d9; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; }
-.gift-modal .button-primary { width: 100%; margin-top: 17px; }
-.gift-modal > small { margin-top: 9px; display: block; color: #9b9d95; font-size: 8px; text-align: center; }
+.future-tag { padding: 5px 7px; border-radius: 2px; color: #806b52; background: #f1e8d9; font-size: 9px; letter-spacing: .02em; }
+.gift-modal .button-primary { min-height: 40px; margin: 16px 0 0 auto; padding-inline: 16px; display: flex; width: fit-content; font-size: 12px; }
+.gift-modal > small { margin-top: 10px; display: block; color: #737b73; font-size: 11px; line-height: 1.4; text-align: right; }
+@media (max-width: 520px) { .gift-modal { padding: 22px 19px; } .gift-modal h3 { font-size: 22px; } .payment-choice { gap: 8px; } .future-tag { font-size: 8px; } }
 
 .dashboard-layout { min-height: calc(100vh - 48px); display: grid; grid-template-columns: 244px minmax(0,1fr); color: #353a35; background: #f5f6f3; }
 .dashboard-sidebar { min-height: 100%; padding: 25px 15px 16px; display: flex; flex-direction: column; border-right: 1px solid #e5e8e3; background: #fbfcfa; }
@@ -2957,4 +2958,592 @@ img { display: block; max-width: 100%; }
   .guest-gift-action > strong { text-align: left; }
   .guest-gift-action .button-outline { justify-content: center; }
   .couple-role-page .couple-gift-list article { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+.published-invite-share,
+.attendance-policy-card,
+.attendance-request-list,
+.guest-companion-manager {
+  border: 1px solid rgba(62, 83, 69, .18);
+  background: rgba(255, 254, 250, .96);
+}
+
+.published-invite-share {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 28px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.published-invite-share h2,
+.attendance-policy-card h2,
+.attendance-request-list h2,
+.guest-companion-manager h2 {
+  margin: 6px 0 10px;
+}
+
+.published-invite-share p,
+.guest-companion-manager > p {
+  color: var(--muted, #647268);
+  line-height: 1.6;
+}
+
+.published-invite-share label,
+.attendance-policy-form > label,
+.attendance-request-row label,
+.guest-companion-manager form > label,
+.guest-companion-name-form label {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.published-invite-share img {
+  display: block;
+  width: min(100%, 180px);
+  margin: 0 auto 12px;
+  background: #fff;
+}
+
+.published-invite-share > div:last-child {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.published-invite-share .role-actions,
+.attendance-request-row .role-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.attendance-policy-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px 24px;
+  border-top: 1px solid rgba(62, 83, 69, .14);
+  padding-top: 14px;
+}
+
+.attendance-policy-form .attendance-policy-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
+
+.attendance-policy-form > label:not(.attendance-policy-toggle) {
+  min-width: 190px;
+}
+
+.attendance-policy-form input[type="number"] {
+  width: 120px;
+}
+
+.attendance-request-row,
+.guest-companion-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  border-top: 1px solid rgba(62, 83, 69, .13);
+  padding: 18px 0;
+}
+
+.attendance-request-row > div:first-child,
+.guest-companion-status > div:first-child {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.attendance-request-row small,
+.attendance-request-row span,
+.guest-companion-status small {
+  color: var(--muted, #647268);
+  line-height: 1.45;
+}
+
+.attendance-request-row .role-actions {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.attendance-request-row input {
+  max-width: 340px;
+}
+
+.guest-companion-manager form {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+  margin: 16px 0 22px;
+}
+
+.guest-companion-manager .public-wedding-contact-fields {
+  margin: 0;
+}
+
+.guest-companion-manager .guest-companion-status {
+  border-top: 1px solid rgba(62, 83, 69, .13);
+}
+
+.guest-companion-name-form {
+  display: flex !important;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px !important;
+}
+
+.guest-companion-name-form label {
+  width: min(100%, 340px);
+}
+
+@media (max-width: 680px) {
+  .published-invite-share {
+    grid-template-columns: 1fr;
+  }
+
+  .published-invite-share > div:last-child {
+    justify-self: start;
+  }
+
+  .attendance-request-row,
+  .guest-companion-status {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .attendance-request-row .role-actions {
+    flex-wrap: wrap;
+  }
+}
+
+.guest-authorization-manager .guest-authorization-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+  align-items: end;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.guest-authorization-manager .guest-authorization-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.guest-authorization-list {
+  border-top: 1px solid rgba(62, 83, 69, .13);
+}
+
+.guest-authorization-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(62, 83, 69, .1);
+}
+
+.guest-authorization-list span {
+  display: grid;
+  gap: 5px;
+}
+
+.guest-authorization-list small {
+  color: var(--muted, #647268);
+}
+
+@media (max-width: 760px) {
+  .guest-authorization-manager .guest-authorization-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.public-wedding-page {
+  min-height: 100vh;
+  color: var(--ink, #31443a);
+  background: var(--paper, #f7f4ed);
+  font-family: var(--font-body, inherit);
+  font-size: calc(1rem * var(--site-text-scale, 1));
+}
+
+.public-wedding-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 17px max(24px, calc((100vw - 1160px) / 2));
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 94%, white);
+}
+
+.public-wedding-header > a:first-child {
+  color: var(--forest, #40594a);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+
+.public-wedding-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.public-wedding-header nav a,
+.public-wedding-header > a:last-child,
+.public-wedding-footer a {
+  color: inherit;
+  font-size: .83rem;
+  text-decoration: none;
+}
+
+.public-wedding-header nav a:hover,
+.public-wedding-header nav a:focus-visible,
+.public-wedding-footer a:hover {
+  color: var(--forest, #40594a);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.public-wedding-cover {
+  position: relative;
+  display: grid;
+  min-height: min(760px, 84vh);
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent, #c6ad8a) 25%, var(--paper, #f7f4ed));
+}
+
+.public-wedding-cover > img,
+.public-wedding-cover > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-wedding-cover::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 27, 23, .08), rgba(20, 27, 23, .47));
+  content: '';
+}
+
+.public-wedding-cover-copy {
+  position: relative;
+  z-index: 1;
+  width: min(900px, calc(100% - 40px));
+  padding: 72px 24px;
+  color: white;
+  text-align: center;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .28);
+}
+
+.public-wedding-cover-copy > span,
+.public-wedding-cover-copy > p {
+  letter-spacing: .14em;
+}
+
+.public-wedding-cover-copy h1 {
+  margin: 20px 0 10px;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-weight: 400;
+  line-height: .98;
+}
+
+.public-wedding-cover-copy h1 i {
+  color: var(--accent, #d6b99a);
+  font-style: italic;
+}
+
+.public-wedding-cover-copy > p {
+  font-size: 1rem;
+}
+
+.public-wedding-cover-copy > div {
+  margin: 20px 0;
+  font-size: 1.06rem;
+}
+
+.public-wedding-cover-copy .button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  border-color: var(--forest, #40594a);
+  background: var(--forest, #40594a);
+  color: #fff;
+  text-shadow: none;
+}
+
+.public-wedding-story,
+.public-wedding-events,
+.public-wedding-details,
+.public-wedding-gallery,
+.public-wedding-gifts,
+.public-wedding-pix,
+.public-wedding-rsvp {
+  width: min(100% - 40px, 920px);
+  margin: 0 auto;
+  padding: clamp(40px, 7vw, 82px) 0;
+}
+
+.public-wedding-story {
+  max-width: 760px;
+  text-align: center;
+}
+
+.public-wedding-story > p {
+  margin: 18px auto 0;
+  color: var(--forest, #40594a);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.6;
+}
+
+.public-wedding-events > h2,
+.public-wedding-gifts > h2,
+.public-wedding-pix > h2,
+.public-wedding-rsvp > h2 {
+  margin: 10px 0 24px;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-weight: 400;
+}
+
+.public-wedding-events > article,
+.public-wedding-gifts > div > article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 20%, transparent);
+  padding: 20px 0;
+}
+
+.public-wedding-events > article h3,
+.public-wedding-gifts h3 {
+  margin: 5px 0;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.45rem;
+  font-weight: 400;
+}
+
+.public-wedding-events > article p,
+.public-wedding-events > article small,
+.public-wedding-gifts p,
+.public-wedding-details p {
+  color: color-mix(in srgb, var(--ink, #31443a) 72%, transparent);
+  line-height: 1.55;
+}
+
+.public-wedding-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+.public-wedding-details article > p {
+  margin-bottom: 0;
+}
+
+.public-wedding-gallery > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.public-wedding-gallery img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.public-wedding-gifts,
+.public-wedding-pix,
+.public-wedding-rsvp {
+  max-width: 840px;
+  border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+.public-wedding-gifts > div > article > a,
+.public-wedding-gifts > div > article > span {
+  flex-shrink: 0;
+  color: var(--forest, #40594a);
+}
+
+.public-wedding-gifts > div > article > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-wedding-pix > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.public-wedding-pix input,
+.public-wedding-rsvp input,
+.public-wedding-rsvp select,
+.public-wedding-gifts input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 25%, transparent);
+  border-radius: 2px;
+  padding: 10px 13px;
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 62%, white);
+  color: var(--ink, #31443a);
+  font: inherit;
+}
+
+.public-wedding-pix .button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 48px;
+  border: 1px solid var(--forest, #40594a);
+  background: var(--forest, #40594a);
+  color: white;
+}
+
+.public-wedding-rsvp > p,
+.public-wedding-pix > p {
+  color: color-mix(in srgb, var(--ink, #31443a) 72%, transparent);
+  line-height: 1.6;
+}
+
+.public-wedding-rsvp form {
+  display: grid;
+  gap: 18px;
+}
+
+.public-wedding-rsvp form > label,
+.public-wedding-contact-fields label {
+  display: grid;
+  gap: 8px;
+}
+
+.public-wedding-rsvp .button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  justify-self: start;
+  min-height: 48px;
+  border: 1px solid var(--forest, #40594a);
+  background: var(--forest, #40594a);
+  color: white;
+}
+
+.public-wedding-contact-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.public-wedding-companions {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+.public-wedding-companions > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.public-wedding-companions > div:first-child span {
+  color: color-mix(in srgb, var(--ink, #31443a) 70%, transparent);
+}
+
+.public-wedding-companions fieldset {
+  display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 16%, transparent);
+  padding: 14px;
+}
+
+.public-wedding-request-success {
+  display: grid;
+  gap: 12px;
+  max-width: 620px;
+}
+
+.public-wedding-request-success .button-primary {
+  justify-self: start;
+  padding: 12px 16px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.public-wedding-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px max(24px, calc((100vw - 1160px) / 2));
+  border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+@media (max-width: 720px) {
+  .public-wedding-header {
+    flex-wrap: wrap;
+    padding: 14px 18px;
+  }
+
+  .public-wedding-header nav {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .public-wedding-header > a:last-child {
+    font-size: .72rem;
+  }
+
+  .public-wedding-cover {
+    min-height: 72vh;
+  }
+
+  .public-wedding-events > article,
+  .public-wedding-gifts > div > article {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .public-wedding-details,
+  .public-wedding-gallery > div,
+  .public-wedding-contact-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .public-wedding-pix > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-wedding-footer {
+    flex-direction: column;
+    padding: 20px;
+  }
 }

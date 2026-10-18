@@ -231,6 +231,11 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`
 }
 
+function createOpaqueToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32))
+  return btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+}
+
 async function requestWithRecentMfa(request, path, options, requestPrompt) {
   try {
     return await request(path, options)
@@ -503,6 +508,8 @@ function App() {
       {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} demo />}
       {view === 'customization-study' && <CustomizationStudy />}
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
+      {view === 'public-wedding' && <GeneralWeddingSite notify={notify} />}
+      {view === 'attendance-request' && <AttendanceRequestPortal notify={notify} confirmAction={confirmAction} />}
       {view === 'godparent' && <GodparentPortal notify={notify} />}
       {view === 'event-staff' && <EventStaffPanel notify={notify} />}
       {view === 'superadmin' && <SuperAdminPanel notify={notify} promptAction={promptAction} />}
@@ -532,6 +539,8 @@ function resolveCurrentView() {
   if (path === '/ajuda') return 'help-center'
   if (path === '/painel/demo') return 'dashboard-preview'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
+  if (path === '/confirmar-presenca') return 'attendance-request'
+  if (path.startsWith('/casamento/')) return 'public-wedding'
   if (path === '/recuperar-senha') return 'password-reset-request'
   if (path === '/redefinir-senha' || window.location.hash.startsWith('#redefinir-senha/')) return 'password-reset'
   if (path === '/painel') return 'dashboard'
@@ -1067,6 +1076,11 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
   const [weddings, setWeddings] = useState([])
   const [weddingId, setWeddingId] = useState('')
   const [guests, setGuests] = useState([])
+  const [guestPolicy, setGuestPolicy] = useState({ companionsAllowed: false, maxCompanions: 0 })
+  const [attendanceRequests, setAttendanceRequests] = useState([])
+  const [companionRequests, setCompanionRequests] = useState([])
+  const [guestAuthorizations, setGuestAuthorizations] = useState([])
+  const [companionNameDrafts, setCompanionNameDrafts] = useState({})
   const [guestImportResults, setGuestImportResults] = useState([])
   const [guestImportErrors, setGuestImportErrors] = useState([])
   const [groups, setGroups] = useState([])
@@ -1176,6 +1190,10 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       const result = await request(`${base}/published`)
       const config = result.siteConfig || DEFAULT_SITE_CONFIG
       setGuests([])
+      setGuestPolicy({ companionsAllowed: false, maxCompanions: 0 })
+      setAttendanceRequests([])
+      setCompanionRequests([])
+      setGuestAuthorizations([])
       setGroups([])
       setEvents(result.events)
       setRsvps([])
@@ -1197,6 +1215,10 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
         request(`${base}/site-config`),
       ])
       setGuests([])
+      setGuestPolicy({ companionsAllowed: false, maxCompanions: 0 })
+      setAttendanceRequests([])
+      setCompanionRequests([])
+      setGuestAuthorizations([])
       setGroups(groupResult.groups)
       setEvents(eventResult.events)
       setRsvps([])
@@ -1211,7 +1233,7 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       setSiteConfigLoading(false)
       return
     }
-    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, memberResult, assignmentResult, taskResult, siteConfigResult] = await Promise.all([
+    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, memberResult, assignmentResult, taskResult, siteConfigResult, guestPolicyResult, attendanceResult, authorizationResult] = await Promise.all([
       request(`${base}/guests`),
       request(`${base}/groups`),
       request(`${base}/events`),
@@ -1221,8 +1243,15 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       request(`${base}/event-assignments`),
       request(`${base}/godparent-tasks`),
       request(`${base}/site-config`),
+      request(`${base}/guest-policy`),
+      request(`${base}/attendance-requests`),
+      request(`${base}/guest-authorizations`),
     ])
     setGuests(guestResult.guests)
+    setGuestPolicy(guestPolicyResult.policy)
+    setAttendanceRequests(attendanceResult.requests)
+    setCompanionRequests(attendanceResult.companions)
+    setGuestAuthorizations(authorizationResult.authorizations)
     setGroups(groupResult.groups)
     setEvents(eventResult.events)
     setRsvps(rsvpResult.rsvps)
@@ -1350,6 +1379,60 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       notify('Convidado salvo no D1. O link individual foi gerado.')
     } catch {
       setError('Não foi possível salvar o convidado. Confira os campos e tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveGuestPolicy(event) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const result = await request(`/api/couple/weddings/${weddingId}/guest-policy`, { method: 'PUT', body: JSON.stringify(guestPolicy) })
+      setGuestPolicy(result.policy)
+      notify('Limites de acompanhantes atualizados.')
+    } catch {
+      setError('Não foi possível salvar os limites de acompanhantes.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function reviewAttendanceRequest(item, decision) {
+    const action = decision === 'approved' ? 'aprovar' : 'recusar'
+    if (!await confirmAction(`Deseja ${action} a solicitação de ${item.name} para ${item.event_name}?`, decision === 'approved' ? 'Aprovar solicitação' : 'Recusar solicitação', decision === 'approved' ? 'Aprovar' : 'Recusar', decision === 'rejected')) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/attendance-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision }) })
+      await loadWeddingData(weddingId)
+      notify(decision === 'approved' ? 'Solicitação aprovada. O pedido geral não libera a entrada sem a credencial individual.' : 'Solicitação recusada; o registro foi mantido.')
+    } catch (cause) {
+      setError(cause.message === 'matching_guest_requires_individual_invitation' ? 'Este contato já está em um convite. Para evitar duplicidade, envie o link individual já criado para essa pessoa.' : 'Não foi possível analisar esta solicitação.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function reviewCompanionRequest(item, decision) {
+    const action = decision === 'approved' ? 'aprovar' : 'recusar'
+    const name = companionNameDrafts[item.id] ?? item.name
+    if (decision === 'approved' && !name?.trim()) {
+      setError('Informe o nome da pessoa antes de aprovar e emitir a credencial individual.')
+      return
+    }
+    if (!await confirmAction(`Deseja ${action} ${name?.trim() || 'este acompanhante'} para ${item.event_name}?`, decision === 'approved' ? 'Aprovar acompanhante' : 'Recusar acompanhante', decision === 'approved' ? 'Aprovar' : 'Recusar', decision === 'rejected')) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/companion-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision, name }) })
+      setCompanionNameDrafts((current) => { const next = { ...current }; delete next[item.id]; return next })
+      await loadWeddingData(weddingId)
+      notify(decision === 'approved' ? 'Acompanhante aprovado com uma credencial própria.' : 'Acompanhante recusado; a solicitação foi mantida.')
+    } catch (cause) {
+      const messages = { companion_limit_reached: 'O limite de acompanhantes definido para este convite foi atingido.', attendance_request_not_approved: 'Aprove primeiro a solicitação principal.', companion_not_ready: 'Confirme a solicitação principal e identifique o acompanhante antes de aprovar.', host_not_confirmed: 'O convidado responsável precisa confirmar presença neste evento.' }
+      setError(messages[cause.message] || 'Não foi possível analisar esta solicitação de acompanhante.')
     } finally {
       setBusy(false)
     }
@@ -1793,9 +1876,11 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       </>}
     </nav>    {tab === 'guests' && <>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO CONVITE</span><h2>Adicionar convidado</h2></div></div><form className="couple-guest-form" onSubmit={createGuest}><label>Nome<input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength="160" required /></label><label>E-mail<input type="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} /></label><label>Telefone<input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} /></label><label>Grupo<select value={guestGroup} onChange={(event) => setGuestGroup(event.target.value)}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>Pessoas<input type="number" min="1" max="20" value={guestPartySize} onChange={(event) => setGuestPartySize(event.target.value)} required /></label><label>Perfil<select value={guestType} onChange={(event) => setGuestType(event.target.value)}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={guestDietaryNotes} maxLength="1000" onChange={(event) => setGuestDietaryNotes(event.target.value)} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar e gerar link individual <QrCode size={15} /></button></form></section>
+      <AttendanceRequestManager policy={guestPolicy} setPolicy={setGuestPolicy} requests={attendanceRequests} companions={companionRequests} companionNameDrafts={companionNameDrafts} setCompanionNameDrafts={setCompanionNameDrafts} onSavePolicy={saveGuestPolicy} onReviewRequest={reviewAttendanceRequest} onReviewCompanion={reviewCompanionRequest} busy={busy} />
+      <GuestAuthorizationManager weddingId={weddingId} guests={guests} events={events} authorizations={guestAuthorizations} onReload={() => loadWeddingData(weddingId)} confirmAction={confirmAction} notify={notify} busy={busy} />
       <section className="role-card guest-import-card"><div className="role-card-heading"><div><span className="eyebrow">IMPORTAÇÃO EM LOTE</span><h2>Adicionar convidados por CSV</h2></div><Users size={18} /></div><p className="team-access-note">Use o modelo com cabeçalho em português ou inglês. Os grupos precisam existir neste casamento. Até 100 convidados por arquivo; nenhuma linha é salva se houver erro.</p><div className="guest-import-actions"><button type="button" className="button-outline" onClick={downloadGuestCsvTemplate}>Baixar modelo CSV</button><label className="button-primary guest-import-file">{busy ? 'Importando…' : 'Selecionar arquivo CSV'}<input type="file" accept=".csv,text/csv" onChange={importGuestCsv} disabled={busy} /></label></div>{guestImportErrors.length > 0 && <div className="guest-import-errors" role="alert"><strong>Revise o arquivo</strong>{guestImportErrors.map((item) => <span key={item.row}>Linha {item.row}: {item.fields.join(', ')}</span>)}</div>}{guestImportResults.length > 0 && <div className="guest-import-success"><span>{guestImportResults.length} convidados importados. Os links individuais foram criados.</span><button type="button" className="button-outline" onClick={downloadImportedGuestLinks}>Baixar links dos convites <QrCode size={14} /></button></div>}</section>      {editingGuest && <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">EDITAR CONVITE</span><h2>{editingGuest.name}</h2></div></div><form className="couple-guest-form" onSubmit={saveGuest}><label>Nome<input value={editingGuest.name} onChange={(event) => setEditingGuest({ ...editingGuest, name: event.target.value })} maxLength="160" required /></label><label>E-mail<input type="email" value={editingGuest.email || ''} onChange={(event) => setEditingGuest({ ...editingGuest, email: event.target.value })} /></label><label>Telefone<input type="tel" value={editingGuest.phone || ''} onChange={(event) => setEditingGuest({ ...editingGuest, phone: event.target.value })} /></label><label>Grupo<select value={editingGuest.group_id || ''} onChange={(event) => setEditingGuest({ ...editingGuest, group_id: event.target.value })}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>Pessoas<input type="number" min="1" max="20" value={editingGuest.party_size} onChange={(event) => setEditingGuest({ ...editingGuest, party_size: event.target.value })} required /></label><label>Perfil<select value={editingGuest.guest_type} onChange={(event) => setEditingGuest({ ...editingGuest, guest_type: event.target.value })}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={editingGuest.dietary_notes || ''} maxLength="1000" onChange={(event) => setEditingGuest({ ...editingGuest, dietary_notes: event.target.value })} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar alterações <Check size={15} /></button><button type="button" className="button-outline" disabled={busy} onClick={() => setEditingGuest(null)}>Cancelar</button></form></section>}
       {share && <InvitationShare share={share} onClose={() => setShare(null)} notify={notify} />}
-      <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">LISTA PRIVADA</span><h2>Convidados</h2></div><span className="task-count">{guests.length} registros</span></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>NOME</th><th>GRUPO</th><th>PESSOAS</th><th>RESPOSTA</th><th>PERFIL</th><th>AÇÕES</th></tr></thead><tbody>{guests.map((guest) => <tr key={guest.id}><td><strong>{guest.name}</strong><small>{guest.email || guest.phone || 'Sem contato cadastrado'}</small></td><td>{guest.group_name || '—'}</td><td>{guest.party_size}</td><td>{guest.rsvp_status}</td><td>{guest.guest_type === 'godparent' ? 'Padrinho' : 'Convidado'}</td><td><div className="guest-admin-actions"><button className="button-outline" disabled={busy} onClick={() => setEditingGuest({ ...guest })} aria-label={`Editar ${guest.name}`}><Pencil size={14} /></button><button className="button-outline" disabled={busy} onClick={() => rotateGuestLink(guest)} aria-label={`Gerar novo link para ${guest.name}`}><QrCode size={14} /></button><button className="button-outline guest-remove-button" disabled={busy} onClick={() => removeGuest(guest)} aria-label={`Remover ${guest.name}`}><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div></section>
+      <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">LISTA PRIVADA</span><h2>Convidados</h2></div><span className="task-count">{guests.length} registros</span></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>NOME</th><th>GRUPO</th><th>PESSOAS</th><th>RESPOSTA</th><th>PERFIL</th><th>AÇÕES</th></tr></thead><tbody>{guests.map((guest) => <tr key={guest.id}><td><strong>{guest.name}</strong><small>{guest.email || guest.phone || 'Sem contato cadastrado'} · {{ manual: 'Cadastro manual', csv_import: 'Importação CSV', public_request: 'Pedido pelo site', companion: 'Acompanhante' }[guest.source] || 'Cadastro manual'}</small></td><td>{guest.group_name || '—'}</td><td>{guest.party_size}</td><td>{guest.rsvp_status}</td><td>{guest.guest_type === 'godparent' ? 'Padrinho' : 'Convidado'}</td><td><div className="guest-admin-actions"><button className="button-outline" disabled={busy} onClick={() => setEditingGuest({ ...guest })} aria-label={`Editar ${guest.name}`}><Pencil size={14} /></button><button className="button-outline" disabled={busy} onClick={() => rotateGuestLink(guest)} aria-label={`Gerar novo link para ${guest.name}`}><QrCode size={14} /></button><button className="button-outline guest-remove-button" disabled={busy} onClick={() => removeGuest(guest)} aria-label={`Remover ${guest.name}`}><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div></section>
     </>}
     {tab === 'guests' && <details className="role-card couple-inline-rsvps"><summary>Respostas de presença</summary><div>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">REGISTRO MANUAL</span><h2>{editingRsvp ? 'Corrigir confirmação' : 'Registrar resposta recebida'}</h2></div><ListChecks size={18} /></div><p className="team-access-note">Use quando o convidado responder por telefone ou mensagem. A alteração fica registrada na auditoria do casamento.</p><form className="couple-guest-form" onSubmit={saveManualRsvp}>
@@ -2150,6 +2235,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
       </section>}
+      <PublishedInviteShare wedding={wedding} publishedAt={publishedAt} notify={notify} />
       <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
     <div className={`customize-preview theme-${theme.id}`} style={style}>
@@ -2167,6 +2253,62 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     </div>
   </div>
 }
+function PublishedInviteShare({ wedding, publishedAt, notify }) {
+  const [qr, setQr] = useState('')
+  const url = wedding?.slug ? `${window.location.origin}/casamento/${encodeURIComponent(wedding.slug)}` : ''
+  useEffect(() => {
+    if (url) QRCode.toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr(''))
+  }, [url])
+  if (!publishedAt || !url) return null
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(url)
+      notify('Link público copiado.')
+    } catch {
+      notify('Selecione o endereço para copiá-lo.')
+    }
+  }
+  return <section className="role-card published-invite-share"><div><span className="eyebrow">CONVITE PUBLICADO</span><h2>Compartilhar convite</h2><p>Este link permite consultar o convite e solicitar presença. O acesso à entrada depende da aprovação dos noivos e da credencial individual.</p><label>Link público<input readOnly value={url} onFocus={(event) => event.target.select()} /></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyLink}><Copy size={15} /> Copiar link</button><a className="button-outline" href={url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Visualizar convite</a></div></div>{qr && <div><img src={qr} alt="QR Code geral do convite" /><a className="button-outline" href={qr} download={`convite-${wedding.slug}.png`}>Baixar QR Code</a></div>}</section>
+}
+
+function AttendanceRequestManager({ policy, setPolicy, requests, companions, companionNameDrafts, setCompanionNameDrafts, onSavePolicy, onReviewRequest, onReviewCompanion, busy }) {
+  const pendingRequests = requests.filter((item) => item.review_status === 'pending')
+  const pendingCompanions = companions.filter((item) => item.status === 'pending')
+  const labelStatus = (status) => ({ pending: 'Aguardando aprovação', approved: 'Aprovado', rejected: 'Recusado' }[status] || status)
+  return <>
+    <section className="role-card attendance-policy-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO E ACOMPANHANTES</span><h2>Pedidos pelo convite público</h2></div><span className="task-count">{pendingRequests.length + pendingCompanions.length} pendentes</span></div><p className="team-access-note">O link geral aceita pedidos, mas não libera entrada. Cada solicitação precisa ser analisada por vocês.</p><form className="attendance-policy-form" onSubmit={onSavePolicy}><label className="attendance-policy-toggle"><input type="checkbox" checked={policy.companionsAllowed} onChange={(event) => setPolicy((current) => ({ companionsAllowed: event.target.checked, maxCompanions: event.target.checked ? Math.max(current.maxCompanions, 1) : 0 }))} /> Permitir solicitação de acompanhantes</label>{policy.companionsAllowed && <label>Máximo por convite<input type="number" min="1" max="19" value={policy.maxCompanions} onChange={(event) => setPolicy((current) => ({ ...current, maxCompanions: Number(event.target.value) }))} required /></label>}<button type="submit" className="button-outline" disabled={busy}>Salvar limite</button></form></section>
+    <section className="role-card attendance-request-list"><div className="role-card-heading"><div><span className="eyebrow">RESPOSTAS RECEBIDAS</span><h2>Solicitações de presença</h2></div></div>{requests.length ? requests.map((item) => <article className="attendance-request-row" key={item.id}><div><strong>{item.name}</strong><small>{item.event_name} · {item.email || item.phone} · {item.attendance_status === 'confirmed' ? 'Vai comparecer' : 'Não poderá comparecer'}</small><span>{labelStatus(item.review_status)}{item.possible_existing_guest ? ' · contato já consta na lista; use o link individual existente' : ''}</span>{item.guest_id && <small>Cadastro individual criado. Use a lista abaixo para abrir ou renovar o QR.</small>}</div>{item.review_status === 'pending' && <div className="role-actions"><button type="button" className="button-primary" disabled={busy || Boolean(item.possible_existing_guest)} onClick={() => onReviewRequest(item, 'approved')}>Aprovar</button><button type="button" className="button-outline" disabled={busy} onClick={() => onReviewRequest(item, 'rejected')}>Recusar</button></div>}</article>) : <p className="buffet-empty">Nenhum pedido recebido pelo convite público.</p>}</section>
+    <section className="role-card attendance-request-list"><div className="role-card-heading"><div><span className="eyebrow">AUTORIZAÇÃO INDIVIDUAL</span><h2>Acompanhantes</h2></div></div>{companions.length ? companions.map((item) => <article className="attendance-request-row" key={item.id}><div><strong>{item.name || 'Nome ainda não informado'}</strong><small>{item.requester_name} · {item.event_name}{item.email ? ` · ${item.email}` : ''}{item.phone ? ` · ${item.phone}` : ''}</small><span>{labelStatus(item.status)}</span>{item.status === 'pending' && <label>Nome para a credencial<input maxLength="160" value={companionNameDrafts[item.id] ?? item.name ?? ''} onChange={(event) => setCompanionNameDrafts((current) => ({ ...current, [item.id]: event.target.value }))} required /></label>}{item.guest_id && <small>Credencial individual emitida. O convidado responsável pode recuperá-la pelo link individual.</small>}</div>{item.status === 'pending' && <div className="role-actions"><button type="button" className="button-primary" disabled={busy || !(companionNameDrafts[item.id] ?? item.name)?.trim()} onClick={() => onReviewCompanion(item, 'approved')}>Aprovar</button><button type="button" className="button-outline" disabled={busy} onClick={() => onReviewCompanion(item, 'rejected')}>Recusar</button></div>}</article>) : <p className="buffet-empty">Nenhum acompanhante solicitado.</p>}</section>
+  </>
+}
+
+function GuestAuthorizationManager({ weddingId, guests, events, authorizations, onReload, confirmAction, notify, busy }) {
+  const [guestId, setGuestId] = useState('')
+  const [eventId, setEventId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  async function setAuthorization(guest, event, status) {
+    const action = status === 'revoked' ? 'revogar' : 'restaurar'
+    if (!await confirmAction(`Deseja ${action} o acesso de ${guest.name} a ${event.name}?`, status === 'revoked' ? 'Revogar acesso' : 'Restaurar acesso', status === 'revoked' ? 'Revogar' : 'Restaurar', status === 'revoked')) return
+    setSaving(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${weddingId}/guest-authorizations`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ guestId: guest.id, eventId: event.id, status }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'guest_authorization_failed')
+      await onReload()
+      notify(status === 'revoked' ? 'Acesso revogado para este evento.' : 'Acesso restaurado para este evento.')
+    } catch {
+      setError('Não foi possível atualizar a autorização deste evento.')
+    } finally {
+      setSaving(false)
+    }
+  }
+  const selectedGuest = guests.find((item) => item.id === guestId)
+  const selectedEvent = events.find((item) => item.id === eventId)
+  return <section className="role-card guest-authorization-manager"><div className="role-card-heading"><div><span className="eyebrow">PERMISSÕES POR EVENTO</span><h2>Revogar ou restaurar acesso</h2></div></div><p className="team-access-note">A alteração vale só para o evento escolhido. Um QR revogado deixa de ser aceito pelo servidor.</p><div className="guest-authorization-form"><label>Convidado<select value={guestId} onChange={(event) => setGuestId(event.target.value)}><option value="">Selecione</option>{guests.map((guest) => <option key={guest.id} value={guest.id}>{guest.name}</option>)}</select></label><label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)}><option value="">Selecione</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label><button type="button" className="button-outline" disabled={busy || saving || !selectedGuest || !selectedEvent} onClick={() => setAuthorization(selectedGuest, selectedEvent, 'revoked')}>Revogar acesso</button><button type="button" className="button-primary" disabled={busy || saving || !selectedGuest || !selectedEvent} onClick={() => setAuthorization(selectedGuest, selectedEvent, 'authorized')}>Restaurar acesso</button></div>{error && <p className="admin-form-error" role="alert">{error}</p>}{authorizations.length > 0 && <div className="guest-authorization-list">{authorizations.map((item) => <div key={`${item.guest_id}-${item.event_id}`}><span><strong>{item.guest_name}</strong><small>{item.event_name} · {item.status === 'revoked' ? 'Acesso revogado' : 'Acesso autorizado'}</small></span>{item.status === 'revoked' && <button type="button" className="button-outline" disabled={busy || saving} onClick={() => setAuthorization({ id: item.guest_id, name: item.guest_name }, { id: item.event_id, name: item.event_name }, 'authorized')}>Restaurar</button>}</div>)}</div>}</section>
+}
+
 function InvitationShare({ share, onClose, notify }) {
   const [qr, setQr] = useState('')
   useEffect(() => { QRCode.toDataURL(share.url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr('')) }, [share.url])
@@ -2394,6 +2536,183 @@ function TeamInvitationAcceptance() {
   </RoleFrame>
 }
 
+function GeneralWeddingSite({ notify }) {
+  const slug = decodeURIComponent(window.location.pathname.split('/')[2] || '')
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [eventId, setEventId] = useState('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [attendanceStatus, setAttendanceStatus] = useState('confirmed')
+  const [companions, setCompanions] = useState([])
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [requestUrl, setRequestUrl] = useState('')
+  const siteTheme = THEMES.find((item) => item.id === data?.siteConfig?.theme)
+  const sitePalettes = siteTheme ? getThemePalettes(siteTheme) : []
+  const activePalette = sitePalettes[data?.siteConfig?.paletteIndex] || sitePalettes[0]
+  const siteFonts = SITE_FONT_PAIRS[data?.siteConfig?.fontPair] || SITE_FONT_PAIRS['Clássico editorial']
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': data?.siteConfig?.fontScale === 'small' ? '.92' : data?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
+  const config = data?.siteConfig
+  const eventList = data?.events || []
+  const giftList = data?.gifts || []
+  const showPix = Boolean(config?.pix?.enabled && config.pix.key?.trim())
+  const showGifts = config?.enabledSections?.includes('Lista de presentes') && giftList.length > 0
+  const maxCompanions = data?.guestPolicy?.companionsAllowed ? data.guestPolicy.maxCompanions : 0
+  const coverId = config?.coverPhotoId || config?.coverGallery?.[0] || ''
+  const coverUrl = coverId ? `/api/public/weddings/${encodeURIComponent(slug)}/media/${coverId}` : ''
+  const coverVideoUrl = config?.coverVideoId ? `/api/public/weddings/${encodeURIComponent(slug)}/media/${config.coverVideoId}` : ''
+  const idempotencyKey = useRef('')
+  const requestTokenRef = useRef('')
+
+  useEffect(() => {
+    let active = true
+    fetch(`/api/public/weddings/${encodeURIComponent(slug)}`).then(async (response) => {
+      const result = await response.json()
+      if (!response.ok) throw new Error('Não foi possível abrir este convite. Confira o link enviado pelos noivos.')
+      if (!active) return
+      setData(result)
+      setEventId(result.events[0]?.id || '')
+    }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [slug])
+
+  function changeCompanion(index, value) {
+    setCompanions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item))
+  }
+
+  async function copyPixKey() {
+    try {
+      await navigator.clipboard.writeText(config.pix.key)
+      notify('Chave Pix copiada.')
+    } catch {
+      notify('Selecione a chave para copiá-la.')
+    }
+  }
+
+  async function submitRsvp(event) {
+    event.preventDefault()
+    if (!turnstileToken) {
+      setError('Conclua a verificação de segurança para enviar a solicitação.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID()
+      if (!requestTokenRef.current) requestTokenRef.current = createOpaqueToken()
+      const response = await fetch(`/api/public/weddings/${encodeURIComponent(slug)}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, name, email, phone, attendanceStatus, companions: attendanceStatus === 'confirmed' ? companions : [], idempotencyKey: idempotencyKey.current, requestToken: requestTokenRef.current, turnstileToken }),
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        const messages = { too_many_requests: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', turnstile_unavailable: 'A validação de segurança não está disponível agora.', turnstile_verification_failed: 'A validação expirou. Faça-a novamente.', event_not_available: 'Este evento não está disponível para solicitações pelo convite geral.', companion_limit_reached: 'A quantidade de acompanhantes ultrapassa o limite definido pelos noivos.', rsvp_unavailable: 'A confirmação não está disponível neste convite.' }
+        throw new Error(messages[result.error] || 'Não foi possível enviar a solicitação. Confira os dados e tente novamente.')
+      }
+      const token = result.requestToken || (requestUrl ? requestUrl.split('#solicitacao/')[1] : '')
+      if (token) setRequestUrl(`${window.location.origin}/confirmar-presenca#solicitacao/${token}`)
+      idempotencyKey.current = ''
+      requestTokenRef.current = ''
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
+      notify('Solicitação enviada aos noivos para análise.')
+    } catch (cause) {
+      setError(cause.message || 'Não foi possível enviar a solicitação.')
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (loading) return <RoleFrame icon={Heart} eyebrow="CONVITE DO CASAMENTO" title="Abrindo o convite." description="Carregando as informações publicadas pelos noivos." publicPage secureName="Convite do casamento" secureFooter="Link do convite" />
+  if (error && !data) return <RoleFrame icon={Heart} eyebrow="CONVITE DO CASAMENTO" title="Este convite não está disponível." description={error} publicPage secureName="Convite do casamento" secureFooter="Link do convite" />
+
+  return <main className="public-wedding-page" style={siteStyle}>
+    <header className="public-wedding-header"><a href="#inicio" aria-label="Início do convite">{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><nav aria-label="Navegação do convite">{config?.enabledSections?.includes('Eventos') && <a href="#eventos">Eventos</a>}{config?.enabledSections?.includes('Confirmação de presença') && <a href="#confirmar-presenca">Confirmar presença</a>}{showGifts && <a href="#presentes">Presentes</a>}{showPix && <a href="#pix">Pix</a>}</nav><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>
+    <section className={`public-wedding-cover public-wedding-cover-${config?.coverLayout || 'full'}`} id="inicio">
+      {coverVideoUrl ? <video src={coverVideoUrl} autoPlay muted loop playsInline aria-label="Vídeo do casal" /> : coverUrl ? <img src={coverUrl} alt="Foto escolhida pelo casal" /> : <div className="public-wedding-cover-placeholder" />}
+      <div className="public-wedding-cover-copy"><span>CONVITE</span><h1>{data.wedding.partnerOneName} <i>&amp;</i><br />{data.wedding.partnerTwoName}</h1><p>{data.wedding.eventDate ? new Date(`${data.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{data.wedding.eventTime ? ` · ${data.wedding.eventTime}` : ''}</p><div>{config?.coverMessages?.[config?.language] || config?.coverMessages?.['pt-BR']}</div>{config?.enabledSections?.includes('Confirmação de presença') && <a className="button-primary" href="#confirmar-presenca">Confirmar presença <ArrowRight size={15} /></a>}</div>
+    </section>
+    {config?.enabledSections?.includes('Nossa história') && (config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR']) && <section className="public-wedding-story"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{config.storyMessages?.[config.language] || config.storyMessages?.['pt-BR']}</p></section>}
+    {config?.enabledSections?.includes('Eventos') && <section className="public-wedding-events" id="eventos"><span className="eyebrow">A CELEBRAÇÃO</span><h2>Esperamos vocês</h2>{eventList.length ? eventList.map((item) => <article key={item.id}><div><small>{item.event_type}</small><h3>{item.name}</h3></div><p>{item.starts_at ? new Date(item.starts_at).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) : 'Data a definir'}{item.venue_name ? ` · ${item.venue_name}` : ''}</p>{item.address && <small>{item.address}</small>}</article>) : <p>Os detalhes dos eventos ainda não foram publicados.</p>}</section>}
+    {config?.enabledSections?.includes('Eventos') && (config.weddingDetails?.schedule || config.weddingDetails?.menu || config.weddingDetails?.dressCode) && <section className="public-wedding-details">{config.weddingDetails.schedule && <article><span className="eyebrow">ORIENTAÇÕES</span><p>{config.weddingDetails.schedule}</p></article>}{config.weddingDetails.dressCode && <article><span className="eyebrow">TRAJE</span><p>{config.weddingDetails.dressCode}</p></article>}{config.weddingDetails.menu && <article><span className="eyebrow">CARDÁPIO</span><p>{config.weddingDetails.menu}</p></article>}</section>}
+    {config?.enabledSections?.includes('Galeria de fotos') && config.siteGallery?.length > 0 && <section className="public-wedding-gallery"><span className="eyebrow">FOTOS DO CASAL</span><div>{config.siteGallery.map((id) => <img key={id} src={`/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} alt="Foto escolhida pelo casal" />)}</div></section>}
+    {showGifts && <section className="public-wedding-gifts" id="presentes"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2><div>{giftList.map((gift) => <article key={gift.id}><div><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}{gift.fulfillment_type === 'store_link' && <small>A compra e a entrega são concluídas com a loja.</small>}</div>{gift.fulfillment_type === 'store_link' ? <a href={gift.store_url} target="_blank" rel="noopener noreferrer">Abrir loja <ExternalLink size={14} /></a> : <span>{gift.gift_type === 'custom' ? 'Valor livre' : `Sugestão: ${formatBrlCents(gift.amount_cents)}`}</span>}</article>)}</div></section>}
+    {showPix && <section className="public-wedding-pix" id="pix"><span className="eyebrow">PRESENTE DIRETO AOS NOIVOS</span><h2>Contribuir via Pix</h2><p>Copie a chave e transfira pelo aplicativo do seu banco. A plataforma não recebe nem confirma pagamentos.</p>{config.pix.holderName && <p>Titular: {config.pix.holderName}</p>}<div><input readOnly aria-label="Chave Pix dos noivos" value={config.pix.key} onFocus={(event) => event.target.select()} /><button className="button-primary" type="button" onClick={copyPixKey}><Copy size={15} /> Copiar chave</button></div></section>}
+    {config?.enabledSections?.includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Este link geral registra uma solicitação para os noivos analisarem. Ele não autoriza a entrada no evento.</p>{requestUrl ? <div className="public-wedding-request-success"><strong>Solicitação enviada</strong><p>Os noivos precisam aprovar o pedido. Guarde o link seguro para consultar o andamento e, se aprovado, acessar as credenciais individuais.</p><a className="button-primary" href={requestUrl}>Acompanhar solicitação <ArrowRight size={15} /></a><input readOnly value={requestUrl} aria-label="Link seguro para acompanhar a solicitação" onFocus={(event) => event.target.select()} /></div> : <form onSubmit={submitRsvp}>
+      <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)} required><option value="">Selecione um evento</option>{eventList.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label>Nome completo<input value={name} onChange={(event) => setName(event.target.value)} maxLength="160" autoComplete="name" required /></label>
+      <div className="public-wedding-contact-fields"><label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength="254" autoComplete="email" /></label><label>Telefone<input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength="40" autoComplete="tel" /></label></div>
+      <label>Você poderá comparecer?<select value={attendanceStatus} onChange={(event) => { setAttendanceStatus(event.target.value); if (event.target.value === 'declined') setCompanions([]) }}><option value="confirmed">Vou comparecer</option><option value="declined">Não poderei comparecer</option></select></label>
+      {attendanceStatus === 'confirmed' && maxCompanions > 0 && <div className="public-wedding-companions"><div><strong>Acompanhantes</strong><span>Os noivos analisarão cada solicitação. O nome é necessário antes da emissão do QR individual.</span></div>{companions.map((person, index) => <fieldset key={index}><legend>Acompanhante {index + 1}</legend><label>Nome, se já souber<input value={person.name} onChange={(event) => changeCompanion(index, { name: event.target.value })} maxLength="160" /></label><div className="public-wedding-contact-fields"><label>E-mail opcional<input value={person.email} onChange={(event) => changeCompanion(index, { email: event.target.value })} maxLength="254" /></label><label>Telefone opcional<input value={person.phone} onChange={(event) => changeCompanion(index, { phone: event.target.value })} maxLength="40" /></label></div></fieldset>)}{companions.length < maxCompanions && <button type="button" className="button-outline" onClick={() => setCompanions((current) => [...current, { name: '', email: '', phone: '' }])}>Solicitar acompanhante</button>}</div>}
+      <TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !eventId || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Enviar solicitação'} <Check size={15} /></button>
+    </form>}</section>}
+    <footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
+  </main>
+}
+
+function AttendanceRequestPortal({ notify, confirmAction }) {
+  const requestToken = window.location.hash.startsWith('#solicitacao/') ? window.location.hash.slice(13) : ''
+  const [data, setData] = useState(null)
+  const [credentials, setCredentials] = useState([])
+  const [loading, setLoading] = useState(Boolean(requestToken))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    if (!requestToken) {
+      setLoading(false)
+      setError('Abra o link seguro que apareceu após enviar a solicitação.')
+      return undefined
+    }
+    fetch('/api/public/attendance-requests/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
+      .then(async (response) => {
+        const result = await response.json()
+        if (!response.ok) throw new Error('Este link não é válido ou não está mais disponível.')
+        if (active) setData(result)
+      }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [requestToken])
+
+  async function recoverCredentials() {
+    if (!await confirmAction('Vamos emitir novos QR codes individuais. Os códigos anteriores deixarão de funcionar.', 'Recuperar credenciais', 'Emitir novos QR codes')) return
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch('/api/public/attendance-requests/credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error('As credenciais ainda não estão disponíveis.')
+      setCredentials(result.credentials)
+      notify('Novas credenciais individuais emitidas.')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const request = data?.request
+  const reviewLabel = request?.reviewStatus === 'pending' ? 'Aguardando análise dos noivos' : request?.reviewStatus === 'rejected' ? 'Solicitação não aprovada' : 'Solicitação aprovada'
+  return <RoleFrame icon={QrCode} eyebrow="ACOMPANHAMENTO DO CONVITE" title={loading ? 'Abrindo solicitação.' : request ? `Olá, ${request.name}.` : 'Solicitação de presença.'} description={loading ? 'Consultando o andamento.' : request ? `${request.partnerOneName} e ${request.partnerTwoName} · ${request.eventName}` : error} secure secureName="Acompanhamento da presença" secureFooter="Link individual e privado">
+    {request && <section className="role-card attendance-request-card"><span className={`admin-state ${request.reviewStatus === 'approved' ? 'admin-state-active' : ''}`}>{reviewLabel}</span><p>Resposta: {request.attendanceStatus === 'confirmed' ? 'Vou comparecer' : 'Não poderei comparecer'}.</p>{request.reviewStatus === 'pending' && <p>Este link geral não libera a entrada. Os noivos precisam analisar o pedido.</p>}{request.reviewStatus === 'rejected' && <p>Fale diretamente com os noivos se precisar revisar esta resposta.</p>}{data.companions.length > 0 && <div className="attendance-request-companions"><strong>Acompanhantes solicitados</strong>{data.companions.map((item) => <span key={item.id}>{item.name || 'Nome ainda não informado'} · {item.status === 'pending' ? 'Aguardando análise' : item.status === 'approved' ? 'Aprovado' : 'Não aprovado'}</span>)}</div>}{request.reviewStatus === 'approved' && request.attendanceStatus === 'confirmed' && <><p>Você pode recuperar os QR codes individuais aprovados. Ao emitir novamente, os códigos anteriores serão revogados.</p><button type="button" className="button-primary" disabled={busy} onClick={recoverCredentials}>{busy ? 'Preparando…' : 'Recuperar credenciais'} <QrCode size={15} /></button></>}</section>}
+    {credentials.map((item) => <CredentialCard key={item.guestId} credential={item} />)}
+    {error && !loading && <p className="admin-form-error" role="alert">{error}</p>}
+  </RoleFrame>
+}
+
+function CredentialCard({ credential }) {
+  const [qr, setQr] = useState('')
+  useEffect(() => { QRCode.toDataURL(credential.accessUrl, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr('')) }, [credential.accessUrl])
+  return <section className="role-card individual-credential-card"><div><span className="eyebrow">CREDENCIAL INDIVIDUAL</span><h2>{credential.name}</h2><p>Este QR code vale somente para esta pessoa. Apresente-o à equipe na entrada do evento.</p><input readOnly aria-label={`Link individual de ${credential.name}`} value={credential.accessUrl} onFocus={(event) => event.target.select()} /></div>{qr && <div><img src={qr} alt={`QR code individual de ${credential.name}`} /><a className="button-outline" href={qr} download={`qr-${credential.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`}>Baixar QR code</a></div>}</section>
+}
+
 function GuestPortal({ notify, setView }) {
   const [invitation, setInvitation] = useState(null)
   const [invitationMedia, setInvitationMedia] = useState({})
@@ -2419,6 +2738,7 @@ function GuestPortal({ notify, setView }) {
   const showEvents = publicSections.includes('Eventos')
   const showRsvp = publicSections.includes('Confirmação de presença')
   const showPix = Boolean(invitation?.siteConfig?.pix?.enabled && invitation.siteConfig.pix.key?.trim())
+  const maxInvitedCompanions = invitation?.guestPolicy?.companionsAllowed ? Math.min(Math.max(0, invitation.guest.partySize - 1), invitation.guestPolicy.maxCompanions) : 0
   const publicGifts = (invitation?.gifts || []).filter((gift) => gift.fulfillment_type === 'store_link' || showPix)
   const showGifts = publicSections.includes('Lista de presentes') && publicGifts.length > 0
   const hasMoreInvitationContent = Boolean(
@@ -2527,12 +2847,99 @@ function GuestPortal({ notify, setView }) {
       {siteOpen && invitation.guest.guestType === 'godparent' && <section className="role-card"><span className="eyebrow">ESPAÇO DOS PADRINHOS</span><h2>Orientações individuais</h2><p>Consulte as tarefas e os combinados enviados a você.</p><button className="button-outline" onClick={() => setView('godparent')}>Abrir minha área <ArrowRight size={14} /></button></section>}
       {siteOpen && invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} limit={invitation.siteConfig.guestCamera.photoLimit} notify={notify} />}
       {siteOpen && showEvents && !showRsvp && <section className="guest-site-events guest-site-events-readonly"><span className="eyebrow">PROGRAMAÇÃO</span>{invitation.events.length ? invitation.events.map((event) => <article className="guest-public-event" key={event.id}><div><small>{event.event_type}</small><h3>{event.name}</h3></div><p>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) : 'Data a definir'}{event.venue_name ? ` · ${event.venue_name}` : ''}</p>{event.address && <small>{event.address}</small>}</article>) : <p>Os detalhes dos eventos ainda não foram publicados.</p>}</section>}
-      {siteOpen && showRsvp && <section id="guest-site-rsvp" className="guest-site-events"><span className="eyebrow">EVENTOS E CONFIRMAÇÃO</span>{invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}</section>}
+      {siteOpen && showRsvp && <section id="guest-site-rsvp" className="guest-site-events"><span className="eyebrow">EVENTOS E CONFIRMAÇÃO</span>{invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={maxInvitedCompanions} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}</section>}
+      {siteOpen && showRsvp && <GuestCompanionManager token={token} events={invitation.events} partySize={invitation.guest.partySize} notify={notify} />}
       {siteOpen && publicSections.includes('Galeria de fotos') && siteGallery.length > 0 && <section className="guest-story-section guest-site-gallery-public"><span className="eyebrow">FOTOS DO CASAL</span><div>{siteGallery.map((id) => invitationMedia[id] && <img key={id} src={invitationMedia[id]} alt="Foto escolhida pelo casal" />)}</div></section>}
       {siteOpen && showGifts && <section id="guest-site-gifts" className="guest-site-gifts"><div className="guest-site-section-heading"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2><p>Escolha uma ideia. O Pix vai diretamente aos noivos; compras e entregas de itens físicos são combinadas fora do site.</p></div><div className="guest-public-gifts">{publicGifts.map((gift) => <article className="guest-public-gift" key={gift.id}><div><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}{gift.fulfillment_type === 'store_link' && <small>A compra e a entrega são concluídas com a loja.</small>}</div>{gift.fulfillment_type === 'store_link' && gift.store_url ? <a href={gift.store_url} target="_blank" rel="noopener noreferrer">Abrir loja <ArrowRight size={14} /></a> : <div className="guest-gift-action">{gift.gift_type === 'custom' ? <strong>Qualquer valor</strong> : <strong>Valor sugerido: {formatBrlCents(gift.amount_cents)}</strong>}{showPix && <button type="button" className="button-outline" onClick={() => { setFocusPix(true); document.getElementById('guest-site-pix')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>Presentear via Pix <ArrowRight size={14} /></button>}</div>}</article>)}</div></section>}
       {siteOpen && showPix && <section id="guest-site-pix" className="guest-site-pix"><span className="eyebrow">PRESENTE DIRETO AOS NOIVOS</span><h2>Pix direto, sem intermediação</h2><p>Copie a chave e transfira pelo aplicativo do seu banco. Se escolheu um item com valor sugerido, digite esse valor no banco e confira o nome do titular antes de confirmar. A plataforma não recebe nem registra a transferência.</p>{invitation.siteConfig.pix.holderName && <p className="guest-pix-holder">Titular: {invitation.siteConfig.pix.holderName}</p>}<div className="guest-pix-copy-row"><input readOnly aria-label="Chave Pix dos noivos" value={invitation.siteConfig.pix.key} onFocus={(event) => event.target.select()} /><button type="button" className="button-primary" onClick={copyPixKey}><Copy size={15} /> Copiar chave</button></div></section>}
     </>}
   </RoleFrame>
+}
+
+function GuestCompanionManager({ token, events, partySize, notify }) {
+  const [companions, setCompanions] = useState([])
+  const [policy, setPolicy] = useState({ companionsAllowed: false, maxCompanions: 0 })
+  const [remaining, setRemaining] = useState(0)
+  const [eventId, setEventId] = useState('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [share, setShare] = useState(null)
+  const confirmedEvents = events.filter((event) => event.rsvp?.status === 'confirmed')
+  async function load() {
+    const response = await fetch('/api/invitation/companions', { headers: { Authorization: `Bearer ${token}` } })
+    const result = await response.json()
+    if (!response.ok) throw new Error('Não foi possível carregar as solicitações de acompanhantes.')
+    setCompanions(result.companions)
+    setPolicy(result.policy)
+    setRemaining(result.remaining)
+    setEventId((current) => current || confirmedEvents[0]?.id || '')
+  }
+  useEffect(() => { load().catch((cause) => setError(cause.message)) }, [token, events.length])
+  async function submit(event) {
+    event.preventDefault()
+    setError('')
+    if (!turnstileToken) return setError('Conclua a verificação de segurança.')
+    setBusy(true)
+    try {
+      const response = await fetch('/api/invitation/companions', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, idempotencyKey: crypto.randomUUID(), turnstileToken, companions: [{ name, email, phone }] }) })
+      const result = await response.json()
+      if (!response.ok) {
+        const messages = { companion_limit_reached: 'O limite de acompanhantes deste convite foi atingido.', host_not_confirmed: 'Confirme primeiro sua presença no evento.', turnstile_unavailable: 'A validação de segurança não está disponível agora.', turnstile_verification_failed: 'A validação expirou. Faça-a novamente.' }
+        throw new Error(messages[result.error] || 'Não foi possível solicitar o acompanhante.')
+      }
+      setName('')
+      setEmail('')
+      setPhone('')
+      await load()
+      notify('Pedido de acompanhante enviado aos noivos.')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
+      setBusy(false)
+    }
+  }
+  async function saveName(companionId, value) {
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/invitation/companions/${companionId}`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: value }) })
+      if (!response.ok) throw new Error('Não foi possível atualizar o nome.')
+      await load()
+      notify('Nome atualizado para análise dos noivos.')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function recover(companion) {
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/invitation/companions/${companion.id}/credential`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      const result = await response.json()
+      if (!response.ok) throw new Error('A credencial ainda não está disponível.')
+      setShare({ name: companion.approved_name || companion.name, url: result.accessUrl })
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (!policy.companionsAllowed || !partySize || !confirmedEvents.length) return null
+  return <section className="role-card guest-companion-manager"><div className="role-card-heading"><div><span className="eyebrow">ACOMPANHANTES</span><h2>Solicitar acompanhantes</h2></div><span className="task-count">{remaining} disponíveis</span></div><p>Os noivos analisam cada pedido. A pessoa só recebe o próprio QR após aprovação e identificação.</p>{remaining > 0 && <form onSubmit={submit}><label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)} required>{confirmedEvents.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label><label>Nome, se já souber<input value={name} onChange={(event) => setName(event.target.value)} maxLength="160" /></label><div className="public-wedding-contact-fields"><label>E-mail opcional<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength="254" /></label><label>Telefone opcional<input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength="40" /></label></div><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !eventId || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Enviar solicitação'}</button></form>}{companions.map((item) => <article className="guest-companion-status" key={item.id}><div><strong>{item.approved_name || item.name || 'Acompanhante sem nome'}</strong><small>{item.event_name} · {item.status === 'pending' ? 'Aguardando aprovação' : item.status === 'approved' ? 'Aprovado' : 'Recusado'}</small>{item.status === 'pending' && !item.name && <NameCompletion onSave={(value) => saveName(item.id, value)} busy={busy} />}</div>{item.status === 'approved' && <button type="button" className="button-outline" disabled={busy} onClick={() => recover(item)}>Recuperar QR individual <QrCode size={14} /></button>}</article>)}{error && !remaining && <p className="admin-form-error" role="alert">{error}</p>}{share && <InvitationShare share={share} onClose={() => setShare(null)} notify={notify} />}</section>
+}
+
+function NameCompletion({ onSave, busy }) {
+  const [name, setName] = useState('')
+  return <form className="guest-companion-name-form" onSubmit={(event) => { event.preventDefault(); if (name.trim()) onSave(name.trim()) }}><label>Informe o nome antes da aprovação<input value={name} onChange={(event) => setName(event.target.value)} maxLength="160" required /></label><button className="button-outline" disabled={busy || !name.trim()}>Salvar nome</button></form>
 }
 
 function GuestCamera({ token, events, notify }) {
@@ -2677,7 +3084,6 @@ function GuestCamera({ token, events, notify }) {
 
 function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = false }) {
   const [status, setStatus] = useState(event.rsvp?.status || 'confirmed')
-  const [partySize, setPartySize] = useState(String(event.rsvp?.party_size || maxPartySize))
   const [dietaryNotes, setDietaryNotes] = useState(event.rsvp?.dietary_notes || '')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -2693,7 +3099,7 @@ function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = fals
     setBusy(true)
     setError('')
     try {
-      await onSubmit({ eventId: event.id, status, partySize: Number(partySize), dietaryNotes, turnstileToken })
+      await onSubmit({ eventId: event.id, status, partySize: 1, dietaryNotes, turnstileToken })
     } catch (cause) {
       setError(cause.message)
     } finally {
@@ -2703,7 +3109,7 @@ function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = fals
     }
   }
 
-  return <details className="role-card invitation-event-card" open={initialOpen}><summary><span><small>{event.event_type}</small><strong>{event.name}</strong>{event.starts_at && <em>{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</em>}</span>{event.rsvp ? <b>{event.rsvp.status === 'declined' ? 'Não poderá comparecer' : 'Resposta registrada'}</b> : <b>Responder</b>}<ChevronDown size={17} /></summary><div className="invitation-event-content">{event.venue_name && <p className="invitation-event-venue"><MapPin size={16} /> <span>{event.venue_name}{event.address ? ` · ${event.address}` : ''}</span></p>}<form className="invitation-rsvp-form" onSubmit={submit}><label>Você vai participar?<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Sim, estarei lá</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label className="invitation-rsvp-wide">Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><div className="invitation-rsvp-wide"><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} /></div>{error && <p className="admin-form-error invitation-rsvp-wide" role="alert">{error}</p>}<button className="button-primary invitation-rsvp-wide" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Confirmar presença'} <Check size={15} /></button></form></div></details>
+  return <details className="role-card invitation-event-card" open={initialOpen}><summary><span><small>{event.event_type}</small><strong>{event.name}</strong>{event.starts_at && <em>{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</em>}</span>{event.rsvp ? <b>{event.rsvp.status === 'declined' ? 'Não poderá comparecer' : 'Resposta registrada'}</b> : <b>Responder</b>}<ChevronDown size={17} /></summary><div className="invitation-event-content">{event.venue_name && <p className="invitation-event-venue"><MapPin size={16} /> <span>{event.venue_name}{event.address ? ` · ${event.address}` : ''}</span></p>}<form className="invitation-rsvp-form" onSubmit={submit}><label>Você vai participar?<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Sim, estarei lá</option><option value="declined">Não poderei ir</option></select></label><p className="invitation-rsvp-wide guest-rsvp-person-count">Esta resposta confirma você. Cada acompanhante deve ser solicitado e autorizado separadamente para receber seu próprio QR code. Vocês podem solicitar até {Math.max(0, maxPartySize - 1)} acompanhante(s), conforme o limite do convite.</p><label className="invitation-rsvp-wide">Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><div className="invitation-rsvp-wide"><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} /></div>{error && <p className="admin-form-error invitation-rsvp-wide" role="alert">{error}</p>}<button className="button-primary invitation-rsvp-wide" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Confirmar presença'} <Check size={15} /></button></form></div></details>
 }
 function TurnstileChallenge({ onToken, resetKey, action = 'account' }) {
   const container = useRef(null)
@@ -3129,7 +3535,7 @@ function EventStaffPanel({ notify }) {
       try {
         const response = await fetch(`/api/staff/events/${selectedEvent}/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
         const result = await response.json()
-        if (!response.ok) throw new Error(result.error === 'already_checked_in' ? 'Este convite ja teve a entrada registrada.' : result.error === 'invitation_declined' ? 'Este convite foi recusado para este evento.' : result.error === 'invitation_not_found' ? 'Convite invalido ou nao autorizado para este evento.' : 'Nao foi possivel registrar a entrada.')
+        if (!response.ok) throw new Error(result.error === 'already_checked_in' ? `Este convite ja teve a entrada registrada${result.checkedInAt ? ` em ${new Date(result.checkedInAt).toLocaleString('pt-BR')}` : ''}.` : result.error === 'invitation_declined' ? 'Este convite foi recusado para este evento.' : result.error === 'invitation_not_confirmed' ? 'Aguarde a confirmação dos noivos antes de liberar a entrada.' : result.error === 'invitation_not_found' ? 'Convite invalido ou nao autorizado para este evento.' : 'Nao foi possivel registrar a entrada.')
         await loadEventGuests(selectedEvent)
         notify(`Entrada registrada: ${result.guest.name} · ${result.guest.partySize} pessoas`)
       } catch (cause) {
@@ -3158,7 +3564,7 @@ function EventStaffPanel({ notify }) {
     {currentEvent && <>
       {checkinAllowed && <div className="role-stat-grid"><div className="role-stat"><span>Confirmados neste evento</span><strong>{confirmedCount}</strong></div><div className="role-stat"><span>Pessoas previstas no buffet</span><strong>{peopleCount}</strong></div><div className="role-stat"><span>Entradas registradas</span><strong>{checkinCount}</strong></div></div>}
       {checkinAllowed && <section className="role-card staff-scanner-card"><div className="role-card-heading"><div><span className="eyebrow">LEITOR DO EVENTO</span><h2>Entrada por QR code</h2></div><QrCode size={20} /></div>{scannerOpen ? <QrCamera onDecode={scanInvitation} onError={(message) => { setError(message); setScannerOpen(false) }} /> : <button className="button-primary" disabled={busy} onClick={() => { setError(''); setScannerOpen(true) }}><Camera size={16} /> Abrir câmera para ler convite</button>}<p>O QR é validado no servidor, limitado a este evento e registrado uma única vez.</p></section>}
-      <section className="role-card staff-list-card print-list"><div className="role-card-heading"><div><span className="eyebrow">{eventDate}</span><h2>{currentEvent.name}</h2></div><button className="button-outline print-button" onClick={() => printReport('list')}><Printer size={15} /> Exportar lista em PDF</button></div><label className="search-field"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome" /></label><div className="staff-guest-list">{(printMode === 'list' ? guests : visibleGuests).map((guest) => <div className="staff-guest-row" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name}</strong>{checkinAllowed && <small>{guest.group_name || 'Sem grupo'} · {guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.rsvp_status}</small>}</div>{checkinAllowed && (guest.rsvp_status === 'declined' ? <span className="status-pill declined"><i /> Recusado</span> : guest.checked_in_at ? <span className="status-pill confirmed"><i /> Entrada registrada</span> : <button className="checkin-toggle" disabled={busy} onClick={() => checkIn(guest.id)}>Registrar entrada</button>)}</div>)}</div>{checkinAllowed && walkIns.map((guest) => <div className="staff-guest-row walkin-entry" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name} <span>Entrada manual</span></strong><small>{guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleString('pt-BR') : 'Agora'}</small></div><span className="status-pill confirmed"><i /> Buffet atualizado</span></div>)}</section>
+      <section className="role-card staff-list-card print-list"><div className="role-card-heading"><div><span className="eyebrow">{eventDate}</span><h2>{currentEvent.name}</h2></div><button className="button-outline print-button" onClick={() => printReport('list')}><Printer size={15} /> Exportar lista em PDF</button></div><label className="search-field"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome" /></label><div className="staff-guest-list">{(printMode === 'list' ? guests : visibleGuests).map((guest) => <div className="staff-guest-row" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name}</strong>{checkinAllowed && <small>{guest.group_name || 'Sem grupo'} · {guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.rsvp_status}</small>}</div>{checkinAllowed && (guest.rsvp_status === 'declined' ? <span className="status-pill declined"><i /> Recusado</span> : guest.checked_in_at ? <span className="status-pill confirmed"><i /> Entrada registrada</span> : guest.rsvp_status !== 'confirmed' ? <span className="status-pill waiting"><i /> Aguardando confirmação</span> : <button className="checkin-toggle" disabled={busy} onClick={() => checkIn(guest.id)}>Registrar entrada</button>)}</div>)}</div>{checkinAllowed && walkIns.map((guest) => <div className="staff-guest-row walkin-entry" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name} <span>Entrada manual</span></strong><small>{guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleString('pt-BR') : 'Agora'}</small></div><span className="status-pill confirmed"><i /> Buffet atualizado</span></div>)}</section>
       {checkinAllowed && <section className="role-card walkin-staff-card"><div><span className="eyebrow">CHEGADA SEM QR CODE</span><h2>Adicionar convidado de última hora</h2><p>O total de pessoas é atualizado para o buffet.</p></div><form className="walkin-form staff-walkin-form" onSubmit={addWalkIn}><label>Nome<input value={walkInName} onChange={(event) => setWalkInName(event.target.value)} maxLength="160" required placeholder="Nome completo" /></label><label>Pessoas<input type="number" min="1" max="20" value={walkInParty} onChange={(event) => setWalkInParty(event.target.value)} required /></label><label>Restrição alimentar<input value={walkInDietaryNotes} onChange={(event) => setWalkInDietaryNotes(event.target.value)} maxLength="1000" placeholder="Opcional" /></label><button className="button-primary" type="submit" disabled={busy}>Adicionar <Check size={15} /></button></form></section>}
     </>}
   </RoleFrame>
