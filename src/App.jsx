@@ -402,6 +402,7 @@ async function hashInvitationToken(token) {
 function IdentityDialog({ config, onResolve }) {
   const [value, setValue] = useState('')
   const input = useRef(null)
+  const [message, supplementalMessage] = config.message.split('\n\n', 2)
 
   useEffect(() => {
     if (config.type === 'prompt') input.current?.focus()
@@ -418,10 +419,9 @@ function IdentityDialog({ config, onResolve }) {
   }
 
   return <div className="identity-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onResolve(config.type === 'prompt' ? null : false)}><form className={`identity-dialog${config.type === 'confirm' ? ' identity-dialog-confirm' : ''}`} role="alertdialog" aria-modal="true" aria-labelledby="identity-dialog-title" onSubmit={submit}>
-    <span className="identity-dialog-flower" aria-hidden="true">✿</span>
-    <span className="eyebrow">TUDO COMEÇOU DE UM SIM</span>
     <h2 id="identity-dialog-title">{config.title}</h2>
-    <p>{config.message}</p>
+    <p>{message}</p>
+    {supplementalMessage && <p className="identity-dialog-notice">{supplementalMessage}</p>}
     {config.type === 'prompt' && <label className="identity-dialog-field">{config.label}<input ref={input} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={value} onChange={(event) => setValue(event.target.value.replace(/\D/g, '').slice(0, 6))} required /></label>}
     <div className="identity-dialog-actions"><button type="button" className="button-outline" onClick={() => onResolve(config.type === 'prompt' ? null : false)}>Cancelar</button><button type="submit" className={config.danger ? 'identity-dialog-danger' : 'button-primary'}>{config.confirmLabel || 'Continuar'}</button></div>
   </form></div>
@@ -1264,7 +1264,7 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     setSiteConfigLoading(true)
     setError('')
     try {
-      if (!await confirmAction('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?', 'Publicar convite', 'Publicar convite')) return
+      if (!await confirmAction('Seu convite ficará disponível para os convidados que receberem o link individual. Deseja continuar?', 'Publicar convite', 'Publicar convite')) return
       if (profile) await saveWeddingProfile(profile)
       let draft = configOverride
       if (JSON.stringify(configOverride) !== JSON.stringify(savedSiteConfig)) {
@@ -2089,15 +2089,19 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       if (current.siteGallery?.includes(item.id)) usages.push(`${label}: galeria do site`)
       if (current.coverVideoId === item.id) usages.push(`${label}: vídeo de abertura`)
     }
-    const usageText = usages.length ? ` Ela está sendo usada em ${usages.join(' e ')}. Se estiver no convite publicado, substituam a foto e publiquem a alteração antes de tentar excluir.` : ''
-    if (!await confirmAction(`Excluir esta foto enviada pelo casal?${usageText}`, 'Excluir foto', 'Excluir foto', true)) return
+    const isPublished = usages.some((usage) => usage.startsWith('convite publicado:'))
+    const usageText = usages.length ? `\n\nEsta foto está sendo utilizada na capa ou na galeria do convite. ${isPublished ? 'Substitua-a e publique a alteração antes de excluí-la.' : 'Remova-a desses locais e salve o rascunho antes de excluí-la.'}` : ''
+    if (!await confirmAction(`Deseja excluir esta foto? Essa ação não poderá ser desfeita.${usageText}`, 'Excluir foto', 'Excluir foto', true)) return
     setMediaBusy(true)
     setMediaError('')
     try {
       const response = await fetch(`/api/couple/weddings/${wedding.id}/site-media/${item.id}`, { method: 'DELETE' })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) {
-        if (result.error === 'site_media_in_use') throw new Error(`Não foi possível excluir. A foto ainda está em uso: ${(result.references || []).join('; ')}. Escolham outra foto principal ou removam esta do carrossel, salvem e publiquem a alteração antes de tentar novamente.`)
+        if (result.error === 'site_media_in_use') {
+          const isPublished = (result.references || []).some((reference) => reference.startsWith('convite publicado:'))
+          throw new Error(isPublished ? 'Esta foto ainda está sendo usada no convite publicado. Escolham outra foto, salvem e publiquem a alteração antes de excluí-la.' : 'Esta foto ainda está sendo usada no rascunho. Escolham outra foto ou removam-na da capa e da galeria; depois salvem o rascunho antes de excluí-la.')
+        }
         throw new Error('Não foi possível excluir esta foto. Atualize a página e tente novamente.')
       }
       const url = mediaUrls[item.id]
