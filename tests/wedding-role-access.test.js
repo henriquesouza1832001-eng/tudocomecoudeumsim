@@ -4,7 +4,7 @@ import { onRequest } from '../functions/api/[[route]].js'
 import { SITE_MEDIA_LIMITS } from '../src/site-media-config.js'
 
 const origin = 'https://tudocomecoudeumsim.pages.dev'
-const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)], guestCamera: { enabled: true, photoLimit: 5 } }
+const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)], guestCamera: { enabled: true, photoLimit: 200 } }
 const publishedEvent = { id: 'event-published', name: 'Cerimônia', event_type: 'ceremony', starts_at: null, venue_name: 'Jardim', address: null, group_ids: [] }
 const restrictedEvent = { id: 'event-restricted', name: 'Ensaio', event_type: 'rehearsal', starts_at: null, venue_name: 'Salão', address: null, group_ids: ['group-private'] }
 
@@ -30,9 +30,9 @@ function database(role, options = {}) {
             const allowedRoles = parameters.slice(2)
             return parameters[0] === 'event-1' && allowedRoles.includes(role) ? { event_id: 'event-1', wedding_id: 'wedding-1', membership_id: 'membership-1', role } : null
           }
-          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent]) }
+          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', photo_consent_at: options.photoConsentAt === null ? null : '2026-10-17T12:00:00.000Z', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(options.guestPhotoLimit === undefined ? siteConfig : { ...siteConfig, guestCamera: { enabled: true, photoLimit: options.guestPhotoLimit } }), published_events_json: JSON.stringify([publishedEvent]) }
           if (query.includes('SELECT published_events_json FROM weddings')) return { published_events_json: JSON.stringify([publishedEvent]) }
-          if (query.includes('SELECT COUNT(*) AS total FROM guest_photos')) return { total: 0 }
+          if (query.includes('SELECT COUNT(*) AS total FROM guest_photos')) return { total: options.guestPhotoCount || 0 }
           if (query.includes('SELECT site_config_json, published_site_config_json')) return { site_config_json: JSON.stringify(siteConfig), published_site_config_json: JSON.stringify(siteConfig), site_published_at: '2026-10-14T12:00:00.000Z' }
           if (query.includes('SELECT slug,') && query.includes('published_site_config_json')) return { slug: 'casal-teste', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', event_time: '16:00', published_site_config_json: JSON.stringify(siteConfig), published_events_json: JSON.stringify([publishedEvent, restrictedEvent]), site_published_at: '2026-10-14T12:00:00.000Z' }
           if (query.includes('SELECT COUNT(*) AS total FROM events')) return { total: 0 }
@@ -47,6 +47,7 @@ function database(role, options = {}) {
         },
         async run() {
           if (options.failGuestPhotoInsert && query.includes('INSERT INTO guest_photos')) throw new Error('test insert failure')
+          if (query.includes('INSERT INTO guest_photos') && options.guestPhotoCount >= parameters.at(-1)) return { meta: { changes: 0 } }
           return { meta: { changes: 1 } }
         },
       }
@@ -302,4 +303,39 @@ test('guest camera photos save with event access and remove the object if the D1
   assert.equal(failed.status, 500)
   assert.equal((await failed.json()).error, 'photo_save_failed')
   assert.equal(failingBucket.objects.size, 0)
+})
+
+test('guest camera uses a shared wedding album cap and requires one-time consent before automatic uploads', async () => {
+  const token = 'a'.repeat(43)
+  const headers = { Authorization: `Bearer ${token}` }
+  const status = await call('/api/invitation/photos', 'guest', { headers, databaseOptions: { guestPhotoCount: 199 } })
+  assert.equal(status.status, 200)
+  assert.deepEqual(await status.json(), { saved: 199, limit: 200, remaining: 1, consented: true })
+
+  const maximumStatus = await call('/api/invitation/photos', 'guest', { headers, databaseOptions: { guestPhotoCount: 299, guestPhotoLimit: 300 } })
+  assert.equal(maximumStatus.status, 200)
+  assert.deepEqual(await maximumStatus.json(), { saved: 299, limit: 300, remaining: 1, consented: true })
+
+  const customStatus = await call('/api/invitation/photos', 'guest', { headers, databaseOptions: { guestPhotoCount: 0, guestPhotoLimit: 1 } })
+  assert.equal(customStatus.status, 200)
+  assert.deepEqual(await customStatus.json(), { saved: 0, limit: 1, remaining: 1, consented: true })
+
+  const body = new FormData()
+  body.set('photo', new File([Uint8Array.from([255, 216, 255])], 'moment.jpg', { type: 'image/jpeg' }))
+  body.set('eventId', publishedEvent.id)
+  const bucket = memoryBucket()
+  const capped = await call('/api/invitation/photos', 'guest', { method: 'POST', formData: body, headers, env: { GUEST_PHOTOS: bucket }, databaseOptions: { guestPhotoCount: 200 } })
+  assert.equal(capped.status, 409)
+  assert.equal((await capped.json()).error, 'photo_limit_reached')
+  assert.equal(bucket.objects.size, 0)
+
+  const noConsentBucket = memoryBucket()
+  const noConsent = await call('/api/invitation/photos', 'guest', { method: 'POST', formData: body, headers, env: { GUEST_PHOTOS: noConsentBucket }, databaseOptions: { photoConsentAt: null } })
+  assert.equal(noConsent.status, 403)
+  assert.equal((await noConsent.json()).error, 'photo_consent_required')
+  assert.equal(noConsentBucket.objects.size, 0)
+
+  const accepted = await call('/api/invitation/photos/consent', 'guest', { method: 'POST', body: { accepted: true }, headers, databaseOptions: { photoConsentAt: null } })
+  assert.equal(accepted.status, 200)
+  assert.deepEqual(await accepted.json(), { consented: true })
 })
