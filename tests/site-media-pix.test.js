@@ -108,10 +108,12 @@ test('public invitation hides a disabled Pix key', async () => {
   assert.deepEqual((await response.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
 })
 
-test('public invitation reveals the Pix key only when enabled and the gifts section is visible', async () => {
+test('public invitation reveals the Pix key when enabled independently of the gifts section', async () => {
   const baseConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Lista de presentes'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' }, pix: { enabled: true, key: '  chave-copia-cola  ' } }
   const visible = await call('/api/invitation', { invitationConfig: baseConfig })
   assert.equal((await visible.json()).siteConfig.pix.key, 'chave-copia-cola')
-  const hidden = await call('/api/invitation', { invitationConfig: { ...baseConfig, enabledSections: [] } })
+  const visibleWithoutGifts = await call('/api/invitation', { invitationConfig: { ...baseConfig, enabledSections: [] } })
+  assert.equal((await visibleWithoutGifts.json()).siteConfig.pix.key, 'chave-copia-cola')
+  const hidden = await call('/api/invitation', { invitationConfig: { ...baseConfig, pix: { ...baseConfig.pix, enabled: false } } })
   assert.deepEqual((await hidden.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
 })

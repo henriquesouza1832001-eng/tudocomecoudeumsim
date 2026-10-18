@@ -37,7 +37,7 @@ function validPixSettings(pix) {
 
 function publicSiteConfig(config) {
   if (!config) return config
-  const pixEnabled = config.pix?.enabled && config.enabledSections?.includes('Lista de presentes')
+  const pixEnabled = config.pix?.enabled
   return { ...config, pix: pixEnabled ? config.pix : { enabled: false, key: '', holderName: '' } }
 }
 
