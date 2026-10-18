@@ -23,9 +23,8 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const guestPhotoConsentVersion = 'guest-camera-v1'
-
 function validPixSettings(pix) {
   if (pix === undefined) return defaultSiteConfig.pix
   if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key) || (pix.holderName !== undefined && (typeof pix.holderName !== 'string' || pix.holderName.length > 120 || /\p{Cc}/u.test(pix.holderName)))) return null
@@ -1401,7 +1400,7 @@ app.get('/api/couple/weddings/:weddingId/gifts', requireSession, async (context)
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
-  const result = await context.env.DB.prepare(`SELECT id, gift_type, title, description, amount_cents, goal_cents, status, display_order, created_at, updated_at
+  const result = await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents, status, display_order, created_at, updated_at
     FROM gifts WHERE wedding_id = ? ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, display_order, created_at`).bind(weddingId).all()
   return context.json({ gifts: result.results })
 })
@@ -1414,6 +1413,16 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
+  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
+  let safeStoreUrl = null
+  if (fulfillmentType === 'store_link') {
+    try {
+      const parsed = new URL(storeUrl)
+      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
+      safeStoreUrl = parsed.toString()
+    } catch { return jsonError(context, 400, 'invalid_store_url') }
+  }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -1424,14 +1433,14 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const id = crypto.randomUUID()
   const actorId = context.get('session').account_id
   await context.env.DB.batch([
-    context.env.DB.prepare(`INSERT INTO gifts (id, wedding_id, gift_type, title, description, amount_cents, goal_cents, display_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, weddingId, body.giftType, title, description, amountCents, goalCents, count.total),
+    context.env.DB.prepare(`INSERT INTO gifts (id, wedding_id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents, display_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, weddingId, body.giftType, fulfillmentType, safeStoreUrl, title, description, amountCents, goalCents, count.total),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'gift_created', 'gift', ?, ?)`)
-      .bind(crypto.randomUUID(), actorId, weddingId, id, JSON.stringify({ giftType: body.giftType, amountCents, goalCents })),
+      .bind(crypto.randomUUID(), actorId, weddingId, id, JSON.stringify({ giftType: body.giftType, fulfillmentType, amountCents, goalCents })),
   ])
-  return context.json({ gift: { id, gift_type: body.giftType, title, description, amount_cents: amountCents, goal_cents: goalCents, status: 'active', display_order: count.total } }, 201)
+  return context.json({ gift: { id, gift_type: body.giftType, fulfillment_type: fulfillmentType, store_url: safeStoreUrl, title, description, amount_cents: amountCents, goal_cents: goalCents, status: 'active', display_order: count.total } }, 201)
 })
 
 app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async (context) => {
@@ -1443,6 +1452,16 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
+  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
+  let safeStoreUrl = null
+  if (fulfillmentType === 'store_link') {
+    try {
+      const parsed = new URL(storeUrl)
+      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
+      safeStoreUrl = parsed.toString()
+    } catch { return jsonError(context, 400, 'invalid_store_url') }
+  }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -1452,13 +1471,13 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   if (!current) return jsonError(context, 404, 'gift_not_found')
   const actorId = context.get('session').account_id
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE gifts SET gift_type = ?, title = ?, description = ?, amount_cents = ?, goal_cents = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?`)
-      .bind(body.giftType, title, description, amountCents, goalCents, body.status, giftId, weddingId),
+    context.env.DB.prepare(`UPDATE gifts SET gift_type = ?, fulfillment_type = ?, store_url = ?, title = ?, description = ?, amount_cents = ?, goal_cents = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?`)
+      .bind(body.giftType, fulfillmentType, safeStoreUrl, title, description, amountCents, goalCents, body.status, giftId, weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'gift_updated', 'gift', ?, ?)`)
-      .bind(crypto.randomUUID(), actorId, weddingId, giftId, JSON.stringify({ giftType: body.giftType, amountCents, goalCents, status: body.status })),
+      .bind(crypto.randomUUID(), actorId, weddingId, giftId, JSON.stringify({ giftType: body.giftType, fulfillmentType, amountCents, goalCents, status: body.status })),
   ])
-  return context.json({ gift: { id: giftId, gift_type: body.giftType, title, description, amount_cents: amountCents, goal_cents: goalCents, status: body.status } })
+  return context.json({ gift: { id: giftId, gift_type: body.giftType, fulfillment_type: fulfillmentType, store_url: safeStoreUrl, title, description, amount_cents: amountCents, goal_cents: goalCents, status: body.status } })
 })
 
 app.delete('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async (context) => {
@@ -1748,7 +1767,7 @@ app.get('/api/invitation', async (context) => {
   const publishedEvents = JSON.parse(guest.published_events_json || '[]')
   const [rsvps, gifts] = await Promise.all([
     context.env.DB.prepare('SELECT event_id, status, party_size, dietary_notes FROM guest_rsvps WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
-    context.env.DB.prepare(`SELECT id, gift_type, title, description, amount_cents, goal_cents
+    context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents
       FROM gifts WHERE wedding_id = ? AND status = 'active' ORDER BY display_order, created_at`).bind(guest.wedding_id).all(),
   ])
   return context.json({

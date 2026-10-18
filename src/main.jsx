@@ -4,7 +4,9 @@ import { createRoot } from 'react-dom/client'
 const App = lazy(() => import('./App.jsx'))
 const MarketingLanding = lazy(() => import('./MarketingLanding.jsx'))
 const MarketingConcepts = lazy(() => import('./MarketingConcepts.jsx'))
+const GiftConcepts = lazy(() => import('./GiftConcepts.jsx'))
 const isMarketingConcepts = window.location.pathname === '/estudo-identidade'
+const isGiftConcepts = window.location.pathname === '/estudo-presentes'
 const isMarketingLanding = import.meta.env.PROD && window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
 
 if (isMarketingLanding) {
@@ -45,7 +47,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Suspense fallback={<div className="page-loading" aria-label="Carregando página" />}>
-      {isMarketingConcepts ? <MarketingConcepts /> : isMarketingLanding ? <MarketingLanding /> : <App />}
+      {isMarketingConcepts ? <MarketingConcepts /> : isGiftConcepts ? <GiftConcepts /> : isMarketingLanding ? <MarketingLanding /> : <App />}
     </Suspense>
   </React.StrictMode>,
 )
