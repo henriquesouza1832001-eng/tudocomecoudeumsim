@@ -534,3 +534,4 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - Presentes: Pix diretamente aos noivos ou redirecionamento para loja externa. A plataforma não realiza a compra, não recebe ou repassa valores e não cobra taxa no piloto.
 - Priorizar a experiência real do casal e dos convidados, especialmente site público, mobile, compartilhamento por link/QR, informações do evento, RSVP e presentes configurados pelo casal.
 - Não confundir mockups, dados de demonstração ou controles visuais com recursos persistidos e funcionais.
+- Histórico remoto do D1 conferido: `0014_wedding_invitation_profile.sql` e `0014_guest_album_limit_and_consent.sql` constam como aplicadas; a primeira foi registrada antes da segunda. As duas alteram tabelas/colunas distintas. Não renomear nem reaplicar esses arquivos, pois o D1 registra o nome exato e isso poderia tentar executar os `ALTER TABLE` outra vez. Não há migrations pendentes; a próxima deve usar o prefixo `0016`.
