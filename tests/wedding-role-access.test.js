@@ -19,6 +19,7 @@ function database(role, options = {}) {
           return this
         },
         async first() {
+          if (query.includes('SELECT COUNT(*) AS total FROM gifts')) return { total: 0 }
           if (query.includes('SELECT id FROM events WHERE id = ? AND wedding_id = ?')) return eventDeletion.exists === false ? null : { id: parameters[0] }
           if (query.includes('SELECT') && query.includes('FROM guest_rsvps WHERE event_id = ?')) return eventDeletion.relatedData || { rsvps: 0, checkins: 0, photos: 0, staff: 0 }
           if (query.includes('FROM auth_sessions s')) return { id: 'session-1', account_id: 'account-1', mfa_verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'editor@example.com', status: 'active', mfa_enabled_at: new Date().toISOString() }
@@ -101,6 +102,26 @@ test('editors can access drafts and update events', async () => {
   assert.equal(site.status, 200)
   assert.ok((await site.json()).draft)
   assert.equal(event.status, 201)
+})
+
+test('couple can save a HTTPS store link for a physical gift', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
+    method: 'POST',
+    body: { title: 'Vasos de cerâmica', description: 'Conjunto para a casa', giftType: 'fixed', fulfillmentType: 'store_link', storeUrl: 'https://loja.example/produtos/vasos', amountCents: 15990 },
+  })
+  assert.equal(response.status, 201)
+  const result = await response.json()
+  assert.equal(result.gift.fulfillment_type, 'store_link')
+  assert.equal(result.gift.store_url, 'https://loja.example/produtos/vasos')
+})
+
+test('couple gift links reject non-HTTPS destinations', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
+    method: 'POST',
+    body: { title: 'Vaso', giftType: 'fixed', fulfillmentType: 'store_link', storeUrl: 'http://loja.example/produtos/vaso', amountCents: 15990 },
+  })
+  assert.equal(response.status, 400)
+  assert.deepEqual(await response.json(), { error: 'invalid_store_url' })
 })
 
 test('editors can delete an event with no linked records', async () => {

@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { zipSync, zlibSync } from 'fflate'
+import { createOpenSslCompatiblePkcs7Signature } from '@swapnanildhol/passkit-pkcs7-signature'
 import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import {
   authenticate,
@@ -512,6 +514,149 @@ async function invitationGuest(context) {
     FROM guests g JOIN weddings w ON w.id = g.wedding_id
     WHERE g.access_token_hash = ? AND g.deleted_at IS NULL AND w.status = 'active'
   `).bind(await tokenHash(match[1])).first()
+}
+
+function walletReady(env, provider) {
+  if (provider === 'google') return Boolean(env.GOOGLE_WALLET_ISSUER_ID && env.GOOGLE_WALLET_CLASS_ID && env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL && env.GOOGLE_WALLET_PRIVATE_KEY)
+  return Boolean(env.APPLE_WALLET_PASS_TYPE_IDENTIFIER && env.APPLE_WALLET_TEAM_IDENTIFIER && env.APPLE_WALLET_SIGNER_CERTIFICATE && env.APPLE_WALLET_PRIVATE_KEY_PKCS8 && env.APPLE_WALLET_WWDR_CERTIFICATE)
+}
+
+async function invitationEvents(context, guest) {
+  const [eventsRow, authorizations] = await Promise.all([
+    context.env.DB.prepare('SELECT published_events_json FROM weddings WHERE id = ? AND status = \'active\'').bind(guest.wedding_id).first(),
+    context.env.DB.prepare('SELECT event_id, status FROM guest_event_authorizations WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
+  ])
+  const events = JSON.parse(eventsRow?.published_events_json || '[]')
+  const statuses = new Map(authorizations.results.map((item) => [item.event_id, item.status]))
+  return events.filter((event) => statuses.get(event.id) !== 'revoked' && (statuses.get(event.id) === 'authorized' || !event.group_ids.length || event.group_ids.includes(guest.group_id)))
+}
+
+function base64Url(value) {
+  const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+}
+
+function pemBytes(pem) {
+  return Uint8Array.from(atob(pem.replace(/-----[^-]+-----/g, '').replace(/\s/g, '')), (character) => character.charCodeAt(0))
+}
+
+async function googleWalletUrl(env, guest, wedding, token, events) {
+  const issuerId = env.GOOGLE_WALLET_ISSUER_ID.trim()
+  const classId = env.GOOGLE_WALLET_CLASS_ID.trim()
+  const objectSuffix = `${wedding.id}-${guest.id}`.replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 64)
+  const payload = {
+    iss: env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL.trim(),
+    aud: 'google',
+    typ: 'savetowallet',
+    iat: Math.floor(Date.now() / 1000),
+    origins: [],
+    payload: {
+      genericObjects: [{
+        id: `${issuerId}.${objectSuffix}`,
+        classId,
+        state: 'ACTIVE',
+        cardTitle: { defaultValue: { language: 'pt-BR', value: `${wedding.partner_one_name} & ${wedding.partner_two_name}` } },
+        header: { defaultValue: { language: 'pt-BR', value: 'Convite de casamento' } },
+        subheader: { defaultValue: { language: 'pt-BR', value: guest.name } },
+        textModulesData: [
+          { id: 'data', header: 'Data', body: wedding.event_date || 'Consulte o convite' },
+          { id: 'eventos', header: 'Eventos', body: events.slice(0, 3).map((event) => event.name).join(' · ') || 'Consulte o convite' },
+        ],
+        barcode: { type: 'QR_CODE', value: token, alternateText: 'Convite individual' },
+        hexBackgroundColor: '#405849',
+      }],
+    },
+  }
+  const header = base64Url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+  const body = base64Url(JSON.stringify(payload))
+  const signingInput = `${header}.${body}`
+  const privateKey = env.GOOGLE_WALLET_PRIVATE_KEY.replace(/\\n/g, '\n')
+  const key = await crypto.subtle.importKey('pkcs8', pemBytes(privateKey), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signingInput))
+  return `https://pay.google.com/gp/v/save/${signingInput}.${base64Url(new Uint8Array(signature))}`
+}
+
+function walletIconPng() {
+  const width = 128
+  const height = 128
+  const pixels = new Uint8Array(width * height * 4)
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4
+      const dx = x - width / 2
+      const dy = y - height / 2
+      const radius = Math.hypot(dx, dy)
+      const heartX = Math.abs(dx) / 24
+      const heartY = dy / 23
+      const heart = (heartX * heartX + heartY * heartY - 1) ** 3 - heartX * heartX * heartY ** 3 <= 0
+      const insideCircle = radius < 55
+      const color = heart && insideCircle ? [255, 253, 249] : [64, 88, 73]
+      pixels.set([...color, 255], index)
+    }
+  }
+  const rows = new Uint8Array(height * (width * 4 + 1))
+  for (let y = 0; y < height; y += 1) rows.set(pixels.subarray(y * width * 4, (y + 1) * width * 4), y * (width * 4 + 1) + 1)
+  const checksum = (bytes) => {
+    let crc = 0xffffffff
+    for (const byte of bytes) {
+      crc ^= byte
+      for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)
+    }
+    return (crc ^ 0xffffffff) >>> 0
+  }
+  const chunk = (name, data) => {
+    const type = new TextEncoder().encode(name)
+    const output = new Uint8Array(data.length + 12)
+    const view = new DataView(output.buffer)
+    view.setUint32(0, data.length)
+    output.set(type, 4)
+    output.set(data, 8)
+    view.setUint32(output.length - 4, checksum(output.subarray(4, output.length - 4)))
+    return output
+  }
+  const header = new Uint8Array(13)
+  new DataView(header.buffer).setUint32(0, width)
+  new DataView(header.buffer).setUint32(4, height)
+  header.set([8, 6, 0, 0, 0], 8)
+  const chunks = [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlibSync(rows, { level: 6 })), chunk('IEND', new Uint8Array())]
+  const result = new Uint8Array(chunks.reduce((sum, item) => sum + item.length, 0))
+  let offset = 0
+  for (const item of chunks) { result.set(item, offset); offset += item.length }
+  return result
+}
+
+async function appleWalletPass(env, guest, wedding, token, events) {
+  const pass = {
+    formatVersion: 1,
+    passTypeIdentifier: env.APPLE_WALLET_PASS_TYPE_IDENTIFIER.trim(),
+    serialNumber: `${wedding.id}-${guest.id}`,
+    teamIdentifier: env.APPLE_WALLET_TEAM_IDENTIFIER.trim(),
+    organizationName: `${wedding.partner_one_name} & ${wedding.partner_two_name}`,
+    description: 'Convite individual de casamento',
+    logoText: `${wedding.partner_one_name} & ${wedding.partner_two_name}`,
+    foregroundColor: 'rgb(255, 253, 249)',
+    backgroundColor: 'rgb(64, 88, 73)',
+    labelColor: 'rgb(224, 193, 159)',
+    eventTicket: {
+      primaryFields: [{ key: 'casal', label: 'CASAMENTO', value: `${wedding.partner_one_name} & ${wedding.partner_two_name}` }],
+      secondaryFields: [{ key: 'convidado', label: 'CONVIDADO', value: guest.name }],
+      auxiliaryFields: [{ key: 'data', label: 'DATA', value: wedding.event_date || 'Consulte o convite' }],
+      backFields: events.slice(0, 6).map((event, index) => ({ key: `evento-${index}`, label: event.name, value: [event.event_date, event.start_time, event.venue_name].filter(Boolean).join(' · ') || 'Consulte os detalhes no convite' })),
+    },
+    barcodes: [{ format: 'PKBarcodeFormatQR', message: token, messageEncoding: 'iso-8859-1', altText: 'Convite individual' }],
+  }
+  const files = {
+    'pass.json': new TextEncoder().encode(JSON.stringify(pass)),
+    'icon.png': walletIconPng(),
+  }
+  const manifest = {}
+  for (const [name, bytes] of Object.entries(files)) manifest[name] = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', bytes)), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  const manifestJson = JSON.stringify(manifest)
+  files['manifest.json'] = new TextEncoder().encode(manifestJson)
+  files.signature = await createOpenSslCompatiblePkcs7Signature({ manifest: manifestJson, signerCertPem: env.APPLE_WALLET_SIGNER_CERTIFICATE, privateKeyPkcs8Pem: env.APPLE_WALLET_PRIVATE_KEY_PKCS8, wwdrPem: env.APPLE_WALLET_WWDR_CERTIFICATE })
+  return zipSync(files, { level: 6 })
 }
 
 async function guestCanAccessEvent(context, guest, eventId) {
@@ -2332,18 +2477,52 @@ app.get('/api/invitation', async (context) => {
     context.env.DB.prepare('SELECT companions_allowed, max_companions FROM wedding_guest_policies WHERE wedding_id = ?').bind(guest.wedding_id).first(),
   ])
   const eventAuthorization = new Map(authorizations.results.map((item) => [item.event_id, item.status]))
+  const guestEvents = publishedEvents.filter((event) => eventAuthorization.get(event.id) !== 'revoked' && (eventAuthorization.get(event.id) === 'authorized' || !event.group_ids.length || event.group_ids.includes(guest.group_id)))
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, eventTime: guest.event_time, timezone: guest.timezone },
     siteConfig: publicSiteConfig(parseSiteConfig(guest.published_site_config_json)),
-    events: publishedEvents.filter((event) => eventAuthorization.get(event.id) !== 'revoked' && (eventAuthorization.get(event.id) === 'authorized' || !event.group_ids.length || event.group_ids.includes(guest.group_id))).map((event) => {
+    events: guestEvents.map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids
       return { ...publicEvent, rsvp: rsvps.results.find((rsvp) => rsvp.event_id === event.id) || null }
     }),
     guestPolicy: { companionsAllowed: Boolean(guestPolicy?.companions_allowed), maxCompanions: guestPolicy?.max_companions || 0 },
     gifts: gifts.results,
+    wallets: { apple: walletReady(context.env, 'apple'), google: walletReady(context.env, 'google') },
   })
+})
+
+app.post('/api/invitation/wallet/google', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  if (!walletReady(context.env, 'google')) return jsonError(context, 503, 'wallet_not_configured')
+  const token = (context.req.header('Authorization') || '').slice(7)
+  const events = await invitationEvents(context, guest)
+  const wedding = { id: guest.wedding_id, partner_one_name: guest.partner_one_name, partner_two_name: guest.partner_two_name, event_date: guest.event_date, event_time: guest.event_time }
+  try {
+    const url = await googleWalletUrl(context.env, guest, wedding, token, events)
+    if (url.length > 1800) return jsonError(context, 422, 'wallet_pass_too_large')
+    return context.json({ url }, 200, { 'Cache-Control': 'no-store' })
+  } catch {
+    return jsonError(context, 503, 'wallet_unavailable')
+  }
+})
+
+app.post('/api/invitation/wallet/apple', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  if (!walletReady(context.env, 'apple')) return jsonError(context, 503, 'wallet_not_configured')
+  const token = (context.req.header('Authorization') || '').slice(7)
+  const events = await invitationEvents(context, guest)
+  const wedding = { id: guest.wedding_id, partner_one_name: guest.partner_one_name, partner_two_name: guest.partner_two_name, event_date: guest.event_date, event_time: guest.event_time }
+  try {
+    const pass = await appleWalletPass(context.env, guest, wedding, token, events)
+    const filename = `convite-${guest.id}.pkpass`
+    return new Response(pass, { headers: { 'Content-Type': 'application/vnd.apple.pkpass', 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' } })
+  } catch {
+    return jsonError(context, 503, 'wallet_unavailable')
+  }
 })
 
 app.get('/api/invitation/photos', async (context) => {
