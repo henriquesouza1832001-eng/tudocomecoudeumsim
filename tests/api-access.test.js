@@ -46,8 +46,10 @@ test('mutations without a same-origin header stop before reaching storage', asyn
 
 test('couple and event staff mutations require an authenticated session', async () => {
   const couple = await callApi('/api/couple/weddings/wedding-1/guests', { method: 'POST', origin: base, body: {} })
+  const eventDelete = await callApi('/api/couple/weddings/wedding-1/events/event-1', { method: 'DELETE', origin: base })
   const staff = await callApi('/api/staff/events/event-1/checkins', { method: 'POST', origin: base, body: {} })
   assert.equal(couple.response.status, 401)
+  assert.equal(eventDelete.response.status, 401)
   assert.equal(staff.response.status, 401)
 })
 

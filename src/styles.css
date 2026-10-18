@@ -13,6 +13,7 @@
   --paper: #f7f5ef;
   --line: rgba(48, 55, 47, .12);
   --serif: 'Playfair Display', Georgia, serif;
+  --watercolor-floral-background: linear-gradient(rgba(246,244,239,.78), rgba(246,244,239,.78)), url('/images/floral-watercolor-overlay.png');
 }
 
 * { box-sizing: border-box; }
@@ -1051,24 +1052,42 @@ img { display: block; max-width: 100%; }
 .team-invitation-result > div { display: flex; gap: 8px; margin-top: 5px; }
 .team-invitation-result input { min-width: 0; flex: 1; min-height: 36px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #596259; background: white; font-size: 8px; }
 .team-invitation-result button { flex: 0 0 auto; }
-.wedding-event-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.wedding-event-form > label { display: grid; gap: 5px; color: #77796f; font-size: 9px; }
-.wedding-event-form input, .wedding-event-form select { width: 100%; min-height: 38px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
-.wedding-event-form .event-form-wide, .wedding-event-form .event-group-access, .wedding-event-form > .button-primary, .wedding-event-form .event-form-actions { grid-column: 1 / -1; }
-.event-form-actions { display: flex; gap: 8px; }
-.event-form-actions .button-primary { min-height: 42px; justify-content: center; }
-.event-group-access { padding: 10px; border: 1px solid rgba(48,55,47,.13); }
-.event-group-access legend { padding: 0 5px; color: #77796f; font-size: 9px; }
-.event-group-access > div { display: flex; flex-wrap: wrap; gap: 9px 16px; }
-.event-group-access label { display: inline-flex; align-items: center; gap: 6px; color: #646a60; font-size: 9px; }
-.event-group-access input { width: 15px; min-height: 15px; accent-color: var(--forest); }
-.wedding-event-form > .button-primary { justify-content: center; min-height: 42px; }
-.wedding-event-list { display: grid; }
-.wedding-event-list article { padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid rgba(48,55,47,.08); }
-.wedding-event-list article > div { min-width: 0; display: grid; gap: 4px; }
-.wedding-event-list article > .wedding-event-actions { display: flex; align-items: center; gap: 8px; }
-.wedding-event-list article strong { color: #434b43; font-size: 10px; }
-.wedding-event-list article small { color: #8b8d83; font-size: 8px; line-height: 1.5; }
+.couple-events-tab { display: grid; gap: 0; }
+.couple-events-tab .role-card { padding: 23px clamp(18px, 3vw, 28px); }
+.couple-events-tab .role-card-heading { margin-bottom: 0; }
+.event-management-actions { display: flex; align-items: center; gap: 12px; }
+.event-management-actions .button-primary { min-height: 44px; }
+.event-editor-panel { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(48,55,47,.1); }
+.event-editor-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.event-editor-heading h3 { margin: 0; color: #3f4f43; font: 500 19px/1.3 var(--font-heading, var(--serif)); }
+.event-editor-heading p { margin: 4px 0 0; color: #77796f; font-size: 13px; line-height: 1.5; }
+.event-editor-heading .button-outline { min-height: 44px; }
+.couple-events-tab .wedding-event-form { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 16px; }
+.couple-events-tab .wedding-event-form > label { display: grid; align-content: start; gap: 6px; color: #596259; font-size: 13px; }
+.couple-events-tab .wedding-event-form input, .couple-events-tab .wedding-event-form select { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid rgba(48,55,47,.18); border-radius: 3px; color: #4e554c; background: white; font: inherit; }
+.couple-events-tab .wedding-event-form input:focus, .couple-events-tab .wedding-event-form select:focus { border-color: #526957; outline: 2px solid rgba(82,105,87,.16); outline-offset: 1px; }
+.couple-events-tab .wedding-event-form .event-form-wide, .couple-events-tab .wedding-event-form .event-group-access, .couple-events-tab .wedding-event-form .event-form-actions { grid-column: 1 / -1; }
+.couple-events-tab .event-date-note { color: #77796f; font-size: 12px; line-height: 1.45; }
+.couple-events-tab .event-form-actions { display: flex; gap: 8px; }
+.couple-events-tab .event-form-actions .button-primary, .couple-events-tab .event-form-actions .button-outline { min-height: 40px; justify-content: center; }
+.couple-events-tab .event-group-access { padding: 10px; border: 1px solid rgba(48,55,47,.13); }
+.couple-events-tab .event-group-access legend { padding: 0 5px; color: #596259; font-size: 12px; }
+.couple-events-tab .event-group-access p { margin: 0 0 8px; color: #77796f; font-size: 12px; line-height: 1.45; }
+.couple-events-tab .event-group-access > div { display: flex; flex-wrap: wrap; gap: 9px 16px; }
+.couple-events-tab .event-group-access label { min-height: 40px; padding: 3px 0; display: inline-flex; align-items: center; gap: 7px; color: #646a60; font-size: 13px; }
+.couple-events-tab .event-group-access input { width: 15px; min-height: 15px; accent-color: var(--forest); }
+.couple-events-tab .event-page-error { margin: 14px 0 0; }
+.couple-events-tab .wedding-event-list { display: grid; }
+.couple-events-tab .wedding-event-list { margin-top: 20px; border-top: 1px solid rgba(48,55,47,.1); }
+.couple-events-tab .wedding-event-list article { padding: 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(48,55,47,.08); }
+.couple-events-tab .wedding-event-list article > div { min-width: 0; display: grid; gap: 4px; }
+.couple-events-tab .wedding-event-list article > .wedding-event-actions { display: flex; align-items: center; gap: 8px; }
+.couple-events-tab .wedding-event-actions .button-outline { min-height: 44px; }
+.couple-events-tab .wedding-event-list article strong { color: #3f4b41; font-size: 15px; font-weight: 600; }
+.couple-events-tab .wedding-event-list article small { color: #77796f; font-size: 12px; line-height: 1.5; }
+.couple-events-tab .wedding-event-list .event-delete-button { border-color: rgba(150,70,65,.3); color: #8e514b; }
+.couple-events-tab .wedding-event-list .event-delete-button:hover { border-color: #8e514b; color: white; background: #8e514b; }
+.couple-events-tab .event-empty-state { margin: 0; padding: 20px 0 2px; border: 0; color: #77796f; font-size: 13px; }
 .guest-admin-actions { display: flex; align-items: center; gap: 5px; }
 .guest-admin-actions .button-outline { width: 34px; min-height: 34px; padding: 0; }
 .guest-admin-actions .guest-remove-button { border-color: rgba(150,70,65,.28); color: #945c56; }
@@ -1339,9 +1358,14 @@ img { display: block; max-width: 100%; }
   .team-invite-form { grid-template-columns: 1fr; }
   .superadmin-wedding-form { grid-template-columns: 1fr; }
   .superadmin-wedding-form > .button-primary { grid-column: auto; }
-  .wedding-event-form { grid-template-columns: 1fr; }
-  .wedding-event-form .event-form-wide, .wedding-event-form .event-group-access, .wedding-event-form > .button-primary { grid-column: auto; }
-  .wedding-event-form .event-form-actions { grid-column: auto; flex-wrap: wrap; }
+  .couple-events-tab .role-card { padding: 17px; }
+  .couple-events-tab .wedding-event-form { grid-template-columns: 1fr; }
+  .couple-events-tab .wedding-event-form .event-form-wide, .couple-events-tab .wedding-event-form .event-group-access, .couple-events-tab .wedding-event-form .event-form-actions { grid-column: auto; }
+  .couple-events-tab .wedding-event-form .event-form-actions { flex-wrap: wrap; }
+  .couple-events-tab .event-management-actions { align-items: flex-end; flex-direction: column-reverse; gap: 8px; }
+  .couple-events-tab .event-management-actions .button-primary { min-height: 44px; }
+  .couple-events-tab .wedding-event-list article { align-items: stretch; flex-direction: column; gap: 10px; }
+  .couple-events-tab .wedding-event-list article > .wedding-event-actions { flex-wrap: wrap; }
   .team-invitation-result > div { align-items: stretch; flex-direction: column; }
   .team-invitation-result button { justify-content: center; min-height: 40px; }
   .team-assignment-list article { grid-template-columns: 1fr; gap: 8px; }
@@ -2784,6 +2808,10 @@ img { display: block; max-width: 100%; }
 .guest-full-site-heading h2 { margin: 6px 0 0; font: 400 clamp(25px, 3vw, 34px)/1.2 Georgia, 'Times New Roman', serif; }
 .guest-site-events { scroll-margin-top: 20px; }
 .guest-site-events > .eyebrow { margin: 16px 0; display: block; }
+
+.app-shell, .guest-page, .role-page, .checkin-page { background-image: var(--watercolor-floral-background); background-position: center top; background-size: 100% 100vh; background-repeat: no-repeat; background-attachment: fixed; }
+.checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-watercolor-overlay.png'); }
+@media (max-width: 600px) { .app-shell, .guest-page, .role-page, .checkin-page, .marketing-page { background-size: 100vw 100svh; } }
 @media (max-width: 760px) { .couple-role-page .customizer-workspace { grid-template-columns: 1fr; } .couple-role-page .customize-preview { position: static; } .couple-role-page .customizer-upload-panel .customizer-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .guest-full-site-heading { align-items: flex-start; flex-direction: column; } .guest-full-site-heading .button-outline { width: 100%; justify-content: center; } }
 @media (max-width: 480px) { .guest-invitation-actions { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } }
 

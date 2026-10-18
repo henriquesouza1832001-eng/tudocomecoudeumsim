@@ -1116,6 +1116,44 @@ app.patch('/api/couple/weddings/:weddingId/events/:eventId', requireSession, asy
   return context.json({ id: eventId, name, eventType, startsAt, venueName, address, groupIds })
 })
 
+app.delete('/api/couple/weddings/:weddingId/events/:eventId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const eventId = context.req.param('eventId')
+  const dependencies = `
+    NOT EXISTS (SELECT 1 FROM guest_rsvps WHERE event_id = events.id)
+    AND NOT EXISTS (SELECT 1 FROM check_ins WHERE event_id = events.id)
+    AND NOT EXISTS (SELECT 1 FROM guest_photos WHERE event_id = events.id)
+    AND NOT EXISTS (SELECT 1 FROM membership_event_access WHERE event_id = events.id)
+  `
+  const results = await context.env.DB.batch([
+    context.env.DB.prepare(`DELETE FROM events
+      WHERE id = ? AND wedding_id = ? AND ${dependencies}`).bind(eventId, weddingId),
+    context.env.DB.prepare(`UPDATE weddings
+      SET published_events_json = COALESCE((
+        SELECT json_group_array(json(value)) FROM json_each(weddings.published_events_json)
+        WHERE json_extract(value, '$.id') != ?
+      ), '[]'), updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND changes() = 1`).bind(eventId, weddingId),
+  ])
+  if (results[0]?.meta?.changes === 1) return context.json({ deleted: true })
+  const exists = await context.env.DB.prepare('SELECT id FROM events WHERE id = ? AND wedding_id = ?').bind(eventId, weddingId).first()
+  if (!exists) return jsonError(context, 404, 'event_not_found')
+  const relatedData = await context.env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM guest_rsvps WHERE event_id = ?) AS rsvps,
+      (SELECT COUNT(*) FROM check_ins WHERE event_id = ?) AS checkins,
+      (SELECT COUNT(*) FROM guest_photos WHERE event_id = ?) AS photos,
+      (SELECT COUNT(*) FROM membership_event_access WHERE event_id = ?) AS staff
+  `).bind(eventId, eventId, eventId, eventId).first()
+  if (Object.values(relatedData || {}).some((count) => Number(count) > 0)) {
+    return context.json({ error: 'event_has_related_data', relatedData }, 409, { 'Cache-Control': 'no-store' })
+  }
+  return jsonError(context, 409, 'event_delete_failed')
+})
+
 app.get('/api/couple/weddings/:weddingId/members', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
