@@ -1,4 +1,4 @@
-const protectedPath = (pathname) => pathname === '/superadmin'
+export const protectedPath = (pathname) => pathname === '/superadmin'
   || pathname.startsWith('/superadmin/')
   || pathname === '/api/superadmin'
   || pathname.startsWith('/api/superadmin/')
@@ -14,7 +14,7 @@ function decodeJson(value) {
   return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)))
 }
 
-async function verifyAccessAssertion(assertion, env) {
+export async function verifyAccessAssertion(assertion, env) {
   const teamDomainValue = env.ACCESS_TEAM_DOMAIN || env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
   const audienceValue = env.ACCESS_APPLICATION_AUD || env.CLOUDFLARE_ACCESS_AUD
   if (!teamDomainValue || !audienceValue || !env.SUPERADMIN_EMAIL) return false

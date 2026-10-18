@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { handle } from 'hono/cloudflare-pages'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import {
@@ -24,20 +23,22 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 }, pix: { enabled: false, key: '' } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const guestPhotoConsentVersion = 'guest-camera-v1'
 
 function validPixSettings(pix) {
   if (pix === undefined) return defaultSiteConfig.pix
-  if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key)) return null
+  if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key) || (pix.holderName !== undefined && (typeof pix.holderName !== 'string' || pix.holderName.length > 120 || /\p{Cc}/u.test(pix.holderName)))) return null
   const key = pix.key.trim()
+  const holderName = (pix.holderName || '').trim()
   if (pix.enabled && !key) return null
-  return { enabled: pix.enabled, key }
+  return { enabled: pix.enabled, key, holderName }
 }
 
 function publicSiteConfig(config) {
   if (!config) return config
   const pixEnabled = config.pix?.enabled && config.enabledSections?.includes('Lista de presentes')
-  return { ...config, pix: pixEnabled ? config.pix : { enabled: false, key: '' } }
+  return { ...config, pix: pixEnabled ? config.pix : { enabled: false, key: '', holderName: '' } }
 }
 
 function siteMediaReferences(value, id) {
@@ -51,13 +52,15 @@ function siteMediaReferences(value, id) {
   const uses = []
   if (config.coverPhotoId === id) uses.push('foto principal da capa')
   if (Array.isArray(config.coverGallery) && config.coverGallery.includes(id)) uses.push('carrossel da capa')
+  if (Array.isArray(config.siteGallery) && config.siteGallery.includes(id)) uses.push('galeria do site')
   if (config.coverVideoId === id) uses.push('vídeo de abertura')
   return uses
 }
 
 function validGuestCamera(camera) {
   if (camera === undefined) return defaultSiteConfig.guestCamera
-  if (!camera || typeof camera !== 'object' || Array.isArray(camera) || typeof camera.enabled !== 'boolean' || !Number.isInteger(camera.photoLimit) || camera.photoLimit < 1 || camera.photoLimit > 50) return null
+  if (!camera || typeof camera !== 'object' || Array.isArray(camera) || typeof camera.enabled !== 'boolean' || !Number.isInteger(camera.photoLimit)) return null
+  if (camera.photoLimit < 1 || camera.photoLimit > 300) return null
   return { enabled: camera.enabled, photoLimit: camera.photoLimit }
 }
 
@@ -130,9 +133,10 @@ function parseSiteConfig(value) {
     const pix = validPixSettings(config.pix)
     if (!pix) return null
     if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+    if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
-    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
+    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -158,9 +162,10 @@ function validateSiteConfig(body) {
   const pix = validPixSettings(body.pix)
   if (!pix) return null
   if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
+  if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {
@@ -434,7 +439,7 @@ async function invitationGuest(context) {
   const match = authorization.match(/^Bearer ([A-Za-z0-9_-]{40,60})$/)
   if (!match) return null
   return context.env.DB.prepare(`
-    SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type,
+    SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type, g.photo_consent_at,
       CASE WHEN w.site_published_at IS NULL THEN w.partner_one_name ELSE w.published_partner_one_name END AS partner_one_name,
       CASE WHEN w.site_published_at IS NULL THEN w.partner_two_name ELSE w.published_partner_two_name END AS partner_two_name,
       CASE WHEN w.site_published_at IS NULL THEN w.event_date ELSE w.published_event_date END AS event_date,
@@ -964,7 +969,12 @@ app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (co
   const id = crypto.randomUUID()
   const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'mp4'
   const objectKey = `${weddingId}/site/${id}.${extension}`
-  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: file.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId, mediaType } })
+  try {
+    await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: file.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId, mediaType } })
+  } catch (error) {
+    console.error('site_media_save_failed', { weddingId, mediaType, error: error instanceof Error ? error.message : 'unknown' })
+    return jsonError(context, 503, 'media_storage_write_failed')
+  }
   return context.json({ id, mediaType, contentType: file.type, sizeBytes: file.size }, 201)
 })
 
@@ -984,7 +994,7 @@ app.get('/api/site-media/:mediaId', async (context) => {
   for (const weddingId of weddingIds) {
     if (guest) {
       const config = parseSiteConfig(guest.published_site_config_json)
-      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && config?.coverVideoId !== id) continue
+      if (config?.coverPhotoId !== id && !config?.coverGallery?.includes(id) && !config?.siteGallery?.includes(id) && config?.coverVideoId !== id) continue
     }
     for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
       object = await context.env.GUEST_PHOTOS?.get(`${weddingId}/site/${id}.${extension}`)
@@ -1029,7 +1039,7 @@ app.put('/api/couple/weddings/:weddingId/site-config', requireSession, async (co
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const config = validateSiteConfig(await context.req.json().catch(() => null))
   if (!config) return jsonError(context, 400, 'invalid_site_config')
-  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+  const mediaIds = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...config.coverGallery, ...config.siteGallery, ...(config.coverVideoId ? [config.coverVideoId] : [])])]
   if (mediaIds.length) {
     if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
     for (const id of mediaIds) {
@@ -1759,8 +1769,19 @@ app.get('/api/invitation/photos', async (context) => {
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
   const config = parseSiteConfig(guest.published_site_config_json)
   if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
-  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).first()
-  return context.json({ saved: current?.total || 0, limit: config.guestCamera.photoLimit, remaining: Math.max(0, config.guestCamera.photoLimit - (current?.total || 0)) })
+  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ?').bind(guest.wedding_id).first()
+  return context.json({ saved: current?.total || 0, limit: config.guestCamera.photoLimit, remaining: Math.max(0, config.guestCamera.photoLimit - (current?.total || 0)), consented: Boolean(guest.photo_consent_at) })
+})
+
+app.post('/api/invitation/photos/consent', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  const config = parseSiteConfig(guest.published_site_config_json)
+  if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  const body = await context.req.json().catch(() => null)
+  if (body?.accepted !== true) return jsonError(context, 400, 'photo_consent_required')
+  await context.env.DB.prepare(`UPDATE guests SET photo_consent_at = COALESCE(photo_consent_at, CURRENT_TIMESTAMP), photo_consent_version = COALESCE(photo_consent_version, ?) WHERE id = ? AND wedding_id = ?`).bind(guestPhotoConsentVersion, guest.id, guest.wedding_id).run()
+  return context.json({ consented: true })
 })
 
 app.post('/api/invitation/photos', async (context) => {
@@ -1768,6 +1789,7 @@ app.post('/api/invitation/photos', async (context) => {
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
   const config = parseSiteConfig(guest.published_site_config_json)
   if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  if (!guest.photo_consent_at) return jsonError(context, 403, 'photo_consent_required')
   if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'photo_storage_unavailable')
   const contentLength = Number(context.req.header('Content-Length') || 0)
   if (contentLength > 7_000_000) return jsonError(context, 413, 'photo_too_large')
@@ -1778,6 +1800,8 @@ app.post('/api/invitation/photos', async (context) => {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) return jsonError(context, 400, 'unsupported_photo_type')
   const event = await guestCanAccessEvent(context, guest, eventId)
   if (!event) return jsonError(context, 404, 'event_not_found')
+  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ?').bind(guest.wedding_id).first()
+  if ((current?.total || 0) >= config.guestCamera.photoLimit) return jsonError(context, 409, 'photo_limit_reached')
   const bytes = new Uint8Array(await photo.arrayBuffer())
   const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
   const png = bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 && bytes[4] === 13 && bytes[5] === 10 && bytes[6] === 26 && bytes[7] === 10
@@ -1786,20 +1810,26 @@ app.post('/api/invitation/photos', async (context) => {
   const id = crypto.randomUUID()
   const extension = photo.type === 'image/jpeg' ? 'jpg' : photo.type === 'image/png' ? 'png' : 'webp'
   const objectKey = `${guest.wedding_id}/${eventId}/${guest.id}/${id}.${extension}`
-  await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: photo.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId: guest.wedding_id, guestId: guest.id, eventId } })
+  try {
+    await context.env.GUEST_PHOTOS.put(objectKey, bytes, { httpMetadata: { contentType: photo.type, cacheControl: 'private, no-store' }, customMetadata: { weddingId: guest.wedding_id, guestId: guest.id, eventId } })
+  } catch (error) {
+    console.error('guest_photo_storage_failed', { weddingId: guest.wedding_id, eventId, error: error instanceof Error ? error.message : 'unknown' })
+    return jsonError(context, 503, 'photo_storage_failed')
+  }
   try {
     const result = await context.env.DB.prepare(`
       INSERT INTO guest_photos (id, wedding_id, event_id, guest_id, object_key, content_type, size_bytes)
       SELECT ?, ?, ?, ?, ?, ?, ? WHERE (
-        SELECT COUNT(*) FROM guest_photos WHERE wedding_id = ? AND guest_id = ?
+        SELECT COUNT(*) FROM guest_photos WHERE wedding_id = ?
       ) < ?
-    `).bind(id, guest.wedding_id, eventId, guest.id, objectKey, photo.type, photo.size, guest.wedding_id, guest.id, config.guestCamera.photoLimit).run()
+    `).bind(id, guest.wedding_id, eventId, guest.id, objectKey, photo.type, photo.size, guest.wedding_id, config.guestCamera.photoLimit).run()
     if (!result.meta.changes) {
       await context.env.GUEST_PHOTOS.delete(objectKey)
       return jsonError(context, 409, 'photo_limit_reached')
     }
-  } catch {
+  } catch (error) {
     await context.env.GUEST_PHOTOS.delete(objectKey)
+    console.error('guest_photo_record_failed', { weddingId: guest.wedding_id, eventId, error: error instanceof Error ? error.message : 'unknown' })
     return jsonError(context, 500, 'photo_save_failed')
   }
   return context.json({ saved: true }, 201)
@@ -2359,4 +2389,6 @@ app.put('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (
   return context.json({ policy: { enabled: Number(body.enabled), rate_basis_points: body.rateBasisPoints, minimum_fee_cents: body.minimumFeeCents, maximum_fee_cents: body.maximumFeeCents, paid_by: body.paidBy } })
 })
 
-export const onRequest = handle(app)
+export { app }
+
+export const onRequest = (context) => app.fetch(context.request, context.env, context)
