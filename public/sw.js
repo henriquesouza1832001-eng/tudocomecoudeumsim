@@ -1,4 +1,5 @@
 const cachePrefix = 'wedding-shell-'
+const cacheRevision = '2'
 const currentShellMarker = '/__current-shell__'
 
 async function getShellCacheName() {
@@ -21,7 +22,7 @@ self.addEventListener('install', (event) => {
     const manifestCopy = manifestResponse.clone()
     const [manifest, html] = await Promise.all([manifestResponse.json(), response.clone()])
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(manifest))))
-    const cacheName = `${cachePrefix}${[...digest.slice(0, 8)].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
+    const cacheName = `${cachePrefix}${cacheRevision}-${[...digest.slice(0, 8)].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
     const entry = manifest['index.html']
     const assets = new Set()
     const addRequiredAssets = (asset, visited = new Set()) => {
