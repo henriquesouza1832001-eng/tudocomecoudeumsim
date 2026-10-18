@@ -104,6 +104,35 @@ test('editors can access drafts and update events', async () => {
   assert.equal(event.status, 201)
 })
 
+test('couple site config saves the new cover and display choices', async () => {
+  const config = { ...siteConfig, siteGallery: [], coverComposition: 'editorial', coverTextAlign: 'center', coverOverlayOpacity: 62, coverImagePosition: 'top', giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config })
+  const result = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(result.draft.coverComposition, 'editorial')
+  assert.equal(result.draft.coverTextAlign, 'center')
+  assert.equal(result.draft.coverOverlayOpacity, 62)
+  assert.equal(result.draft.coverImagePosition, 'top')
+  assert.equal(result.draft.giftDisplayMode, 'page')
+  assert.equal(result.draft.pixDisplayMode, 'page')
+  assert.equal(result.draft.pix.key, 'chave-pix')
+})
+
+test('couple site config rejects invalid cover and display choices', async () => {
+  for (const invalid of [
+    { coverComposition: 'freeform' },
+    { coverTextAlign: 'justify' },
+    { coverOverlayOpacity: 90 },
+    { coverImagePosition: 'random' },
+    { giftDisplayMode: 'external' },
+    { pixDisplayMode: 'external' },
+  ]) {
+    const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: { ...siteConfig, ...invalid } })
+    assert.equal(response.status, 400)
+    assert.deepEqual(await response.json(), { error: 'invalid_site_config' })
+  }
+})
+
 test('couple can save a HTTPS store link for a physical gift', async () => {
   const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
     method: 'POST',

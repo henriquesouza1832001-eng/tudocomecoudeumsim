@@ -96,6 +96,48 @@ test('public invitation is unavailable before the wedding site is published', as
   assert.deepEqual(await response.json(), { error: 'published_site_not_found' })
 })
 
+test('published invitation preserves the event name and venue details', async () => {
+  const eventName = 'CASAMENTO MELODY E PEDRO'
+  const address = 'Av. Exemplo, 500, Belo Horizonte - MG'
+  const configuredWedding = { ...wedding, published_events_json: JSON.stringify([{ id: eventId, name: eventName, event_type: 'ceremony', starts_at: '2027-11-28T19:00:00.000Z', venue_name: 'Colonial Pampulha', address, group_ids: [] }]) }
+  const { response } = await call('/api/public/weddings/ana-e-bia', { publishedWedding: configuredWedding })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.events[0].name, eventName)
+  assert.equal(body.events[0].venue_name, 'Colonial Pampulha')
+  assert.equal(body.events[0].address, address)
+})
+
+test('published invitation shows only the catalog entries allowed by its gift and Pix settings', async () => {
+  const pixGift = { id: 'gift-pix', gift_type: 'fixed', fulfillment_type: 'pix_direct', title: 'Jantar', description: '', amount_cents: 12000, goal_cents: null }
+  const storeGift = { id: 'gift-store', gift_type: 'fixed', fulfillment_type: 'store_link', store_url: 'https://shop.example/item', title: 'Vaso', description: '', amount_cents: 8000, goal_cents: null }
+  const config = { ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'chave-privada', holderName: 'Noivos' } }
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify(config) }
+  const { response } = await call('/api/public/weddings/ana-e-bia', {
+    publishedWedding: configuredWedding,
+    all(query, values) { return query.includes('FROM gifts') ? { results: values[1] ? [pixGift, storeGift] : [storeGift] } : { results: [] } },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.gifts.map((gift) => gift.id), ['gift-store'])
+  assert.equal(body.gifts[0].store_url, 'https://shop.example/item')
+  assert.deepEqual(body.siteConfig.pix, { enabled: false, key: '', holderName: '' })
+})
+
+test('published invitation does not query or expose gifts when their display mode is hidden', async () => {
+  let giftsQueried = false
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'chave-privada' } }) }
+  const { response } = await call('/api/public/weddings/ana-e-bia', {
+    publishedWedding: configuredWedding,
+    all(query) { if (query.includes('FROM gifts')) giftsQueried = true; return { results: [] } },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.gifts, [])
+  assert.deepEqual(body.siteConfig.pix, { enabled: false, key: '', holderName: '' })
+  assert.equal(giftsQueried, false)
+})
+
 test('public media endpoint never reads a file that is not referenced by the published invitation', async () => {
   let objectReads = 0
   const { response } = await call(`/api/public/weddings/ana-e-bia/media/44444444-4444-4444-8444-444444444444`, {
