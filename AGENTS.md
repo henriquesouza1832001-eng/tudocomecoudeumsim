@@ -342,13 +342,14 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 ## 15. Segurança e privacidade
 
 - LGPD: consentimento explícito, política de privacidade e exclusão de dados após o evento.
+- A minuta acessível em `/documentos-legais/rascunho` não é política ou termo vigente. Não adicionar links de aceite nem apresentá-la como final até confirmar a identidade do responsável, contato de privacidade, prazos de retenção e subprocessadores.
 - Dados de convidados visíveis somente aos noivos do respectivo casamento.
 - Limite de requisições e Turnstile nos formulários públicos.
 - Tokens de QR e links de acesso assinados, com expiração quando aplicável.
 - Superadmin protegido pelo Cloudflare Access com política para o e-mail autorizado e MFA independente. O middleware Pages valida assinatura, emissor, audiência, validade e identidade do token nas rotas `/superadmin/*` e `/api/superadmin/*`.
 - Configurar `ACCESS_TEAM_DOMAIN`, `ACCESS_APPLICATION_AUD` e `SUPERADMIN_EMAIL` como variáveis do Pages e `MFA_ENCRYPTION_KEY` como secret. A rota falha fechada se a configuração ou o token estiver ausente ou inválido.
 - Cloudflare Access é uma barreira adicional. A API ainda valida a sessão do produto, papel superadmin e autorização no D1 em cada operação.
-- Sessões do produto usam cookie seguro HttpOnly, hash do token no D1, validade limitada, senha PBKDF2, MFA TOTP cifrado em repouso e proteção contra reutilização do mesmo código. Tentativas de login e confirmação de MFA são limitadas por conta e endereço de origem.
+- Sessões do produto usam cookie seguro HttpOnly, hash do token no D1, validade limitada e senha PBKDF2. TOTP é obrigatório somente para superadmin; contas de noivos e equipe usam senha, limites de tentativa, escopo de papel e casamento e confirmação explícita nas ações destrutivas.
 - Anonimização global exige MFA validado nos últimos cinco minutos, frase com o ID do casamento e gravação de auditoria. Preservar as linhas financeiras e de auditoria.
 
 ## 16. Fases

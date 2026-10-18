@@ -53,6 +53,46 @@ test('couple and event staff mutations require an authenticated session', async 
   assert.equal(staff.response.status, 401)
 })
 
+test('authenticated couple sessions can be used without an MFA timestamp', async () => {
+  const session = { id: 'session-1', account_id: 'couple-1', mfa_verified_at: null, expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'couple@example.com', status: 'active', mfa_enabled_at: null, is_superadmin: 0 }
+  const env = {
+    DB: {
+      prepare(query) {
+        return {
+          bind() { return this },
+          async first() { return query.includes('FROM auth_sessions s') ? session : null },
+          async all() { return { results: [] } },
+        }
+      },
+    },
+  }
+  const request = new Request(`${base}/api/auth/session`, { headers: { Cookie: '__Host-wedding-session=session-token' } })
+  const response = await apiRequest({ request, env })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.mfaVerified, true)
+  assert.equal(body.mfaSetupRequired, false)
+})
+
+test('superadmin sessions without TOTP remain blocked from product operations', async () => {
+  const session = { id: 'session-1', account_id: 'admin-1', mfa_verified_at: null, expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'admin@example.com', status: 'active', mfa_enabled_at: null, is_superadmin: 1 }
+  const env = {
+    DB: {
+      prepare(query) {
+        return {
+          bind() { return this },
+          async first() { return query.includes('FROM auth_sessions s') ? session : null },
+          async all() { return { results: [] } },
+        }
+      },
+    },
+  }
+  const request = new Request(`${base}/api/couple/weddings/wedding-1/guests`, { headers: { Cookie: '__Host-wedding-session=session-token' } })
+  const response = await apiRequest({ request, env })
+  assert.equal(response.status, 403)
+  assert.deepEqual(await response.json(), { error: 'mfa_setup_required' })
+})
+
 test('couple signup accepts account details without invitation names or a slug', async () => {
   const { response } = await callApi('/api/auth/couple-signup', {
     method: 'POST',

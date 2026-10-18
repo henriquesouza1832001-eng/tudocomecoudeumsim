@@ -203,7 +203,8 @@ export async function loadSession(context) {
   const token = getCookie(context.req.raw, SESSION_COOKIE)
   if (!token) return null
   const row = await context.env.DB.prepare(`
-    SELECT s.id, s.account_id, s.mfa_verified_at, s.expires_at, a.email, a.status, m.enabled_at AS mfa_enabled_at
+    SELECT s.id, s.account_id, s.mfa_verified_at, s.expires_at, a.email, a.status, m.enabled_at AS mfa_enabled_at,
+      EXISTS (SELECT 1 FROM platform_admins p WHERE p.account_id = a.id AND p.role = 'superadmin') AS is_superadmin
     FROM auth_sessions s JOIN accounts a ON a.id = s.account_id
     LEFT JOIN account_mfa m ON m.account_id = a.id
     WHERE s.token_hash = ? AND s.revoked_at IS NULL
@@ -227,10 +228,10 @@ export async function authenticate(context, email, password, code) {
 
   const validPassword = await verifyPassword(password, account?.password_hash || 'pbkdf2-sha256$310000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
   if (!account || !validPassword || account.status !== 'active' || !account.email_verified_at) return { error: 'invalid_credentials' }
-  if (!account.enabled_at) return { error: 'mfa_setup_required', accountId: account.id, email: account.email, isSuperadmin: Boolean(account.is_superadmin) }
+  if (account.is_superadmin && !account.enabled_at) return { error: 'mfa_setup_required', accountId: account.id, email: account.email, isSuperadmin: true }
 
-  let mfaVerified = false
-  if (account.enabled_at) {
+  let mfaVerified = !account.is_superadmin
+  if (account.is_superadmin && account.enabled_at) {
     if (!account.totp_secret_ciphertext) return { error: 'mfa_unavailable' }
     try {
       const matchedCounter = await verifyTotp(account.totp_secret_ciphertext, context.env.MFA_ENCRYPTION_KEY, code)

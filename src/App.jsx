@@ -497,9 +497,10 @@ function App() {
       </div>}
 
       {view === 'guest' && import.meta.env.DEV && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
-      {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
+      {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} />}
       {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'help-center' && <HelpCenter />}
+      {view === 'legal-draft' && <LegalDraft />}
       {view === 'couple-signup' && <CoupleSignup />}
       {view === 'email-confirmation' && <CoupleEmailConfirmation />}
       {view === 'password-reset-request' && <PasswordResetRequest />}
@@ -537,6 +538,7 @@ function resolveCurrentView() {
   if (path === '/cadastro') return 'couple-signup'
   if (path === '/criar-site') return 'couple-signup'
   if (path === '/ajuda') return 'help-center'
+  if (path === '/documentos-legais/rascunho') return 'legal-draft'
   if (path === '/painel/demo') return 'dashboard-preview'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/confirmar-presenca') return 'attendance-request'
@@ -551,6 +553,28 @@ function resolveCurrentView() {
   if (window.location.hash.startsWith('#aceitar-equipe/')) return 'team-invitation'
   if (window.location.hash.startsWith('#convite/')) return 'guest-portal'
   return 'guest'
+}
+
+function LegalDraft() {
+  return <RoleFrame icon={Shield} eyebrow="DOCUMENTOS DA PLATAFORMA" title="Privacidade e termos" description="Minuta de trabalho alinhada aos recursos atuais. Este texto ainda precisa dos dados jurídicos do responsável e da definição dos prazos de retenção antes de ser publicado como documento vigente." publicPage secureName="Documentos legais" secureFooter="Minuta para revisão" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
+    <section className="role-card help-center-start"><span className="eyebrow">MINUTA · NÃO PUBLICAR COMO VERSÃO FINAL</span><p>Responsável pela plataforma: [NOME EMPRESARIAL OU NOME DO CONTROLADOR], [CNPJ/CPF], com endereço em [ENDEREÇO], contato de privacidade: [E-MAIL]. Esses dados precisam ser confirmados antes da publicação.</p></section>
+    <section className="role-card help-center-topics"><h2>Política de privacidade</h2>
+      <details open><summary>1. Dados e finalidades</summary><p>A plataforma trata dados de cadastro e autenticação para criar e proteger contas; dados do casamento, conteúdo, fotos e preferências para montar o site; e dados de convidados, contatos, grupos, eventos e respostas para entregar convites, RSVP e controle de entrada. Registros técnicos e de auditoria apoiam segurança, prevenção de abuso e funcionamento do serviço.</p></details>
+      <details open><summary>2. Papéis e compartilhamento</summary><p>Os noivos controlam os dados que cadastram sobre o casamento e os convidados. A plataforma trata esses dados para prestar os recursos solicitados. A plataforma também usa dados mínimos de conta, segurança e suporte para administrar o serviço. A infraestrutura pode envolver Cloudflare e, quando configurado, um provedor de envio de e-mail. A lista final de operadores, localidades e contratos deve ser confirmada pelo responsável.</p></details>
+      <details open><summary>3. Presentes e informações públicas</summary><p>Chaves Pix e links de lojas só são exibidos quando os noivos os habilitam. O Pix é pago diretamente aos noivos no aplicativo bancário do convidado; a plataforma não recebe nem confirma o pagamento. Links de loja abrem serviços externos, sujeitos às políticas deles. Endereços residenciais e dados privados de entrega não devem ser publicados.</p></details>
+      <details open><summary>4. Acesso, segurança e retenção</summary><p>O acesso é limitado por conta, papel e casamento. A plataforma aplica controles técnicos como sessão protegida, limitação de tentativas, verificação antiabuso e permissões no servidor. Fotos e conteúdo só ficam acessíveis conforme as configurações do serviço. Prazo de retenção após o evento, janela de aviso, cópias de segurança e prazo de exclusão: [DEFINIR E VALIDAR COM O RESPONSÁVEL].</p></details>
+      <details open><summary>5. Direitos e solicitações</summary><p>A pessoa titular pode solicitar confirmação e acesso, correção, informação sobre compartilhamento, oposição ou revisão quando aplicável e eliminação nos limites legais. Para solicitar atendimento, use [E-MAIL DO ENCARREGADO/CONTATO]. A plataforma pode pedir informações proporcionais para confirmar a identidade e encaminhar pedidos sobre dados de convidados aos noivos responsáveis.</p></details>
+      <details open><summary>6. Cookies, menores e mudanças</summary><p>Cookies estritamente necessários podem manter a sessão e a segurança. [CONFIRMAR ANALÍTICA, COOKIES OPCIONAIS E FERRAMENTAS DE TERCEIROS.] O serviço é voltado à organização de casamentos por adultos; eventual tratamento de dados de crianças ou adolescentes precisa de fluxo e salvaguardas próprios. Mudanças materiais serão comunicadas nesta página com a data de atualização.</p></details>
+    </section>
+    <section className="role-card help-center-topics"><h2>Termos de uso</h2>
+      <details open><summary>1. Uso da plataforma</summary><p>A plataforma oferece ferramentas para criar páginas de casamento, organizar convidados, convites, RSVP, tarefas e controle de entrada. O acesso do piloto é gratuito enquanto assim indicado no produto. O usuário deve manter os dados da conta corretos, proteger a senha e ter autorização para enviar conteúdo e dados de convidados.</p></details>
+      <details open><summary>2. Conteúdo e permissões</summary><p>O casal responde pelas informações, fotos, textos, convites, permissões de acesso, lista de convidados e dados que publica. Só deve enviar imagens e dados que tenha autorização para usar. Conteúdo público deve respeitar direitos de terceiros, privacidade e a lei.</p></details>
+      <details open><summary>3. Pix e lojas externas</summary><p>Pix é uma transferência entre convidado e casal, fora da plataforma. A plataforma não atua como instituição de pagamento, não recebe, guarda, divide ou repassa valores e não confirma transferências. Links de lojas apenas encaminham para outro site; compra, preço, disponibilidade, entrega e atendimento são responsabilidade da loja, do comprador e do casal.</p></details>
+      <details open><summary>4. Disponibilidade e encerramento</summary><p>O serviço pode receber manutenção e apresentar indisponibilidade. O encerramento de um site ou subdomínio não significa exclusão imediata dos dados: aviso, exportação, retenção, anonimização e exclusão precisam seguir a política de privacidade definitiva. Procedimento e prazos: [DEFINIR].</p></details>
+      <details open><summary>5. Contato, alterações e foro</summary><p>Suporte: [E-MAIL E CANAL DE ATENDIMENTO]. Identificação jurídica do fornecedor, data de vigência, regras completas de cancelamento, responsabilidade, foro e solução de conflitos: [PREENCHER E VALIDAR]. A versão final deve indicar quando os termos mudaram e como o usuário será informado.</p></details>
+    </section>
+    <p className="study-footer">Base legal a revisar: Lei nº 13.709/2018 (LGPD), direitos dos titulares e orientação da ANPD sobre controlador e operador. Documento em preparação; não substitui revisão jurídica.</p>
+  </RoleFrame>
 }
 
 function HelpCenter() {
@@ -733,39 +757,6 @@ function TotpSetupQr({ enrollment }) {
   </div>
 }
 
-function AccountMfaSetup({ onComplete }) {
-  const [enrollment, setEnrollment] = useState(null)
-  const [code, setCode] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/auth/mfa/enroll', { method: 'POST' }).then(async (response) => {
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'mfa_setup_unavailable')
-      setEnrollment(result)
-    }).catch(() => setError('Não foi possível iniciar o cadastro do autenticador. Entre novamente e tente outra vez.'))
-  }, [])
-
-  async function confirm(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    try {
-      const response = await fetch('/api/auth/mfa/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'invalid_mfa_code')
-      await onComplete()
-    } catch (cause) {
-      setError(cause.message === 'too_many_attempts' ? 'Muitas tentativas. Aguarde antes de tentar novamente.' : 'Código inválido ou cadastro indisponível. Confira o autenticador e tente novamente.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return <form className="role-card admin-login-form" onSubmit={confirm}>{enrollment ? <><TotpSetupQr enrollment={enrollment} /><label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro do segundo fator…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !enrollment}>Ativar segundo fator <Shield size={15} /></button></form>
-}
-
 const PUBLIC_SITE_DRAFT_KEY = 'wedding-site-customizer-draft'
 
 function readPublicSiteDraft() {
@@ -946,7 +937,7 @@ function CoupleSignup() {
   }
 
   return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : 'Cadastrem o e-mail e a senha para entrar no painel. O convite será criado depois, dentro da conta.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel, proteger a conta com um autenticador e criar o convite com as próprias fotos.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel, proteger o acesso por senha e permissões e criar o convite com as próprias fotos.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
       <label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
       <div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
       <label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
@@ -969,14 +960,13 @@ function CoupleEmailConfirmation() {
       return
     }
     fetch('/api/auth/verify-couple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).then(async (response) => {
-      const result = await response.json()
-      if (!response.ok || !result.mfaSetupRequired) throw new Error('invalid')
+      if (!response.ok) throw new Error('invalid')
       setStatus('verified')
     }).catch(() => setStatus('invalid'))
   }, [token])
 
   const verified = status === 'verified'
-  return <RoleFrame icon={verified ? Check : Shield} eyebrow="CONFIRMAÇÃO DE E-MAIL" title={status === 'confirming' ? 'Validando seu cadastro.' : verified ? 'Cadastro confirmado.' : 'Este link não está mais válido.'} description={status === 'confirming' ? 'Só um instante enquanto ativamos o acesso do casal.' : verified ? 'Seu espaço está pronto. No primeiro acesso, configure o autenticador para proteger a conta.' : 'O link pode ter expirado ou já ter sido utilizado. Volte ao cadastro para começar novamente.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
+  return <RoleFrame icon={verified ? Check : Shield} eyebrow="CONFIRMAÇÃO DE E-MAIL" title={status === 'confirming' ? 'Validando seu cadastro.' : verified ? 'Cadastro confirmado.' : 'Este link não está mais válido.'} description={status === 'confirming' ? 'Só um instante enquanto ativamos o acesso do casal.' : verified ? 'Seu espaço está pronto. Entre com seu e-mail e sua senha para abrir o painel.' : 'O link pode ter expirado ou já ter sido utilizado. Volte ao cadastro para começar novamente.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual">
     <section className="role-card admin-login-form">{status === 'confirming' && <p>Confirmando endereço de e-mail…</p>}{verified && <a className="button-primary signup-submit" href="/painel">Abrir painel dos noivos <ArrowRight size={15} /></a>}{status === 'invalid' && <a className="button-primary signup-submit" href="/cadastro">Voltar ao cadastro <ArrowRight size={15} /></a>}</section>
   </RoleFrame>
 }
@@ -1060,17 +1050,16 @@ function PasswordReset() {
     }
   }
 
-  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={complete ? 'Senha atualizada.' : invalid ? 'Solicite um novo link.' : 'Escolha uma nova senha.'} description={complete ? 'As sessões anteriores foram encerradas. Entre novamente e use seu autenticador, quando estiver configurado.' : invalid ? 'O link informado expirou, já foi utilizado ou está incompleto.' : 'O link é de uso único e válido por 30 minutos.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
+  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={complete ? 'Senha atualizada.' : invalid ? 'Solicite um novo link.' : 'Escolha uma nova senha.'} description={complete ? 'As sessões anteriores foram encerradas. Entre novamente e use seu e-mail e sua senha.' : invalid ? 'O link informado expirou, já foi utilizado ou está incompleto.' : 'O link é de uso único e válido por 30 minutos.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
     {complete ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/painel">Entrar no painel dos noivos <ArrowRight size={15} /></a></section> : invalid ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/recuperar-senha">Solicitar outro link <ArrowRight size={15} /></a></section> : <form className="role-card admin-login-form" onSubmit={resetPassword}><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Atualizando…' : 'Redefinir senha'} <Shield size={15} /></button></form>}
   </RoleFrame>
 }
 
-function CouplePanel({ notify, confirmAction, promptAction }) {
+function CouplePanel({ notify, confirmAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [code, setCode] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [weddings, setWeddings] = useState([])
@@ -1319,10 +1308,6 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       if (!response.ok) throw new Error('authentication_required')
       const session = await response.json()
       setAccount(session.account)
-      if (session.mfaSetupRequired) {
-        setStage('mfa-setup')
-        return
-      }
       if (!session.mfaVerified) {
         setError('Sua sessão precisa ser renovada com o código do autenticador.')
         setStage('login')
@@ -1341,14 +1326,10 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, turnstileToken }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, turnstileToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'invalid_credentials')
       setAccount(result.account)
-      if (result.mfaSetupRequired) {
-        setStage('mfa-setup')
-        return
-      }
       await loadWeddings()
     } catch (cause) {
       setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : cause.message)
@@ -1534,7 +1515,7 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' }, promptAction)
+      await request(`/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
       setEditingGuest(null)
       setShare(null)
       await loadWeddingData(weddingId)
@@ -1849,9 +1830,8 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     }
   }, [mobileNavOpen])
 
-  if (stage === 'mfa-setup') return <SuperAdminAccessFrame title="Proteja sua conta." description="Configure um autenticador para continuar ao painel dos noivos." eyebrow="SEGUNDO FATOR" brand="Painel dos noivos"><AccountMfaSetup onComplete={loadWeddings} /></SuperAdminAccessFrame>
-  if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com a conta vinculada ao seu casamento. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
+  if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com o e-mail e a senha da conta vinculada ao seu casamento." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -1916,12 +1896,12 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
-    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
+    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function GuestPhotoAlbum({ weddingId, notify, confirmAction, promptAction }) {
+function GuestPhotoAlbum({ weddingId, notify, confirmAction }) {
   const [photos, setPhotos] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -1953,16 +1933,7 @@ function GuestPhotoAlbum({ weddingId, notify, confirmAction, promptAction }) {
     if (!await confirmAction(`Remover a foto enviada por ${photo.guest_name}?`, 'Remover foto', 'Remover', true)) return
     setBusyPhoto(photo.id)
     try {
-      let response = await fetch(`/api/couple/weddings/${weddingId}/photos/${photo.id}`, { method: 'DELETE' })
-      let result = await response.json().catch(() => ({}))
-      if (response.status === 403 && result.error === 'recent_mfa_required') {
-        const code = await promptAction({ title: 'Confirme sua identidade', message: 'Digite o código de seis dígitos do autenticador para remover esta foto.', label: 'Código do autenticador', confirmLabel: 'Confirmar código' })
-        if (!code) throw new Error('A confirmação do autenticador foi cancelada.')
-        const verification = await fetch('/api/auth/mfa/reauth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
-        if (!verification.ok) throw new Error('O código do autenticador não foi aceito.')
-        response = await fetch(`/api/couple/weddings/${weddingId}/photos/${photo.id}`, { method: 'DELETE' })
-        result = await response.json().catch(() => ({}))
-      }
+      const response = await fetch(`/api/couple/weddings/${weddingId}/photos/${photo.id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Não foi possível remover esta foto.')
       setPhotos((current) => current.filter((item) => item.id !== photo.id))
       notify('Foto removida do álbum')
@@ -2457,15 +2428,11 @@ function TeamInvitationAcceptance() {
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
-  const [code, setCode] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [mfaSetup, setMfaSetup] = useState(false)
-  const [pendingMfaAcceptance, setPendingMfaAcceptance] = useState(false)
-  const [acceptedRole, setAcceptedRole] = useState('')
   const token = window.location.hash.match(/^#aceitar-equipe\/([A-Za-z0-9_-]{40,60})$/)?.[1] || ''
 
   useEffect(() => {
@@ -2485,12 +2452,6 @@ function TeamInvitationAcceptance() {
     const response = await fetch('/api/auth/accept-team-invitation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: invitation?.requiresLogin ? undefined : password }) })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error === 'invitation_expired_or_used' ? 'Este convite expirou ou já foi utilizado. Peça um novo link aos noivos.' : 'Não foi possível ativar o acesso. Entre em contato com os noivos.')
-    if (result.mfaSetupRequired) {
-      setAcceptedRole(result.role)
-      setPendingMfaAcceptance(false)
-      setMfaSetup(true)
-      return
-    }
     window.location.assign(['couple_admin', 'editor', 'reader'].includes(result.role) ? '/painel' : '/equipe')
   }
 
@@ -2504,14 +2465,8 @@ function TeamInvitationAcceptance() {
     setError('')
     try {
       if (invitation?.requiresLogin) {
-        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, code, turnstileToken }) })
-        const loginResult = await loginResponse.json()
-        if (!loginResponse.ok) throw new Error('Confira o e-mail, a senha e o código do autenticador da sua conta.')
-        if (loginResult.mfaSetupRequired) {
-          setPendingMfaAcceptance(true)
-          setMfaSetup(true)
-          return
-        }
+        const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: invitation.email, password: loginPassword, turnstileToken }) })
+        if (!loginResponse.ok) throw new Error('Confira o e-mail e a senha da sua conta.')
       }
       await finishInvitationAcceptance()
     } catch (cause) {
@@ -2523,16 +2478,12 @@ function TeamInvitationAcceptance() {
     }
   }
 
-  if (mfaSetup) return <RoleFrame icon={Shield} eyebrow="SEGUNDO FATOR" title="Proteja sua conta." description="Configure um autenticador antes de usar o acesso compartilhado pelos noivos." secure><AccountMfaSetup onComplete={async () => {
-    if (pendingMfaAcceptance) await finishInvitationAcceptance()
-    else window.location.assign(['couple_admin', 'editor', 'reader'].includes(acceptedRole) ? '/painel' : '/equipe')
-  }} /></RoleFrame>
 
   const isCoupleInvitation = ['couple_admin', 'editor', 'reader'].includes(invitation?.role)
   const invitationRoleName = ({ couple_admin: 'administrador do casamento', editor: 'editor do site e eventos', reader: 'leitor do conteúdo publicado', event_staff: 'equipe do evento', checkin_staff: 'equipe de entrada' })[invitation?.role] || 'equipe do evento'
-  const invitationDescription = invitation?.role === 'editor' ? 'Edite o site e os eventos deste casamento. O acesso exige autenticador.' : invitation?.role === 'reader' ? 'Consulte somente o conteúdo publicado. O acesso exige autenticador.' : invitation?.role === 'couple_admin' ? 'Acesse o painel completo deste casamento. O acesso exige autenticador.' : 'A permissão é limitada aos eventos escolhidos pelos noivos e exige autenticador.'
+  const invitationDescription = invitation?.role === 'editor' ? 'Edite o site e os eventos deste casamento. ' : invitation?.role === 'reader' ? 'Consulte somente o conteúdo publicado. ' : invitation?.role === 'couple_admin' ? 'Acesse o painel completo deste casamento. ' : 'A permissão é limitada aos eventos escolhidos pelos noivos.'
   return <RoleFrame icon={LockKeyhole} eyebrow={isCoupleInvitation ? "ACESSO DO CASAMENTO" : "ACESSO DA EQUIPE"} title={isCoupleInvitation ? "Ative seu acesso ao casamento." : "Ative seu acesso ao evento."} description={invitationDescription} secure secureName="Convite do casamento" secureFooter="Acesso individual">
-    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitationRoleName}.</p><label>Senha da conta<PasswordInput autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} /></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, cadastre também um autenticador.</p><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation || (invitation.requiresLogin && (!TURNSTILE_SITE_KEY || !turnstileToken))} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
+    <form className="role-card admin-login-form" onSubmit={acceptInvitation}>{loading && <p>Validando o convite…</p>}{invitation?.requiresLogin ? <><p>Este convite foi enviado para <strong>{invitation.email}</strong>. Entre com sua conta para aceitar o acesso de {invitationRoleName}.</p><label>Senha da conta<PasswordInput autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} /></> : invitation && <><p>Convite para <strong>{invitation.email}</strong>. Crie uma senha com pelo menos 12 caracteres. No primeiro acesso, confirme o convite e defina sua senha.</p><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label></>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || loading || !invitation || (invitation.requiresLogin && (!TURNSTILE_SITE_KEY || !turnstileToken))} type="submit">{busy ? 'Ativando…' : isCoupleInvitation ? 'Aceitar convite e abrir painel' : 'Aceitar convite e entrar'} <ArrowRight size={15} /></button></form>
   </RoleFrame>
 }
 
@@ -3245,7 +3196,6 @@ function EventStaffPanel({ notify }) {
   const [stage, setStage] = useState('checking')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [code, setCode] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [events, setEvents] = useState([])
@@ -3392,10 +3342,6 @@ function EventStaffPanel({ notify }) {
     fetch('/api/auth/session').then(async (response) => {
       if (!response.ok) throw new Error('authentication_required')
       const session = await response.json()
-      if (session.mfaSetupRequired) {
-        setStage('mfa-setup')
-        return null
-      }
       if (!session.mfaVerified) {
         setError('Entre novamente com o código do autenticador para validar sua sessão.')
         setStage('login')
@@ -3461,14 +3407,10 @@ function EventStaffPanel({ notify }) {
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, code, turnstileToken }) })
+      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, turnstileToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : result.error === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : 'E-mail, senha ou código inválido.')
       localStorage.removeItem('wedding-staff-locked')
-      if (result.mfaSetupRequired) {
-        setStage('mfa-setup')
-        return
-      }
       await loadEvents()
     } catch (cause) {
       setError(cause.message)
@@ -3591,9 +3533,8 @@ function EventStaffPanel({ notify }) {
       setBusy(false)
     }
   }
-  if (stage === 'mfa-setup') return <RoleFrame icon={Shield} eyebrow="SEGUNDO FATOR" title="Proteja sua conta." description="Configure um autenticador para continuar à área da equipe." secure><AccountMfaSetup onComplete={loadEvents} /></RoleFrame>
-  if (stage !== 'ready') return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Acesso ao evento." description="Entre com a conta atribuída pelos noivos. O primeiro acesso exige cadastrar um autenticador; nos próximos, use o código de seis dígitos." secure>
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Código do autenticador, se já cadastrado<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
+  if (stage !== 'ready') return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title="Acesso ao evento." description="Entre com o e-mail e a senha da conta atribuída pelos noivos." secure>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
   </RoleFrame>
 
   const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length

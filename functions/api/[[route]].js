@@ -16,6 +16,7 @@ import {
 } from '../../src/server/auth.js'
 
 const app = new Hono()
+const PRODUCT_NAME = 'Tudo começou de um sim'
 const accessKeySets = new Map()
 const siteThemes = ['garden', 'editorial', 'minimal', 'floral', 'rustic', 'beach', 'tropical', 'night']
 const siteCoverLayouts = ['full', 'split', 'arch', 'type', 'video', 'collage']
@@ -228,8 +229,8 @@ function validOrigin(context) {
 async function requireSession(context, next) {
   const session = await loadSession(context)
   if (!session) return jsonError(context, 401, 'authentication_required')
-  const setupAllowed = ['/api/auth/session', '/api/auth/logout', '/api/auth/mfa/enroll', '/api/auth/mfa/confirm', '/api/auth/mfa/reauth', '/api/superadmin/mfa/enroll', '/api/superadmin/mfa/confirm']
-  if (!session.mfa_verified_at && !setupAllowed.includes(context.req.path)) return jsonError(context, 403, session.mfa_enabled_at ? 'mfa_verification_required' : 'mfa_setup_required')
+  const setupAllowed = ['/api/auth/session', '/api/auth/logout', '/api/superadmin/mfa/enroll', '/api/superadmin/mfa/confirm']
+  if (session.is_superadmin && !session.mfa_verified_at && !setupAllowed.includes(context.req.path)) return jsonError(context, 403, session.mfa_enabled_at ? 'mfa_verification_required' : 'mfa_setup_required')
   context.set('session', session)
   return next()
 }
@@ -373,12 +374,17 @@ async function sendTransactionalEmail(context, { to, subject, text, html }) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html }),
+    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: brandedEmail(html) }),
   })
   if (!response.ok) return false
   const result = await response.json().catch(() => null)
   if (isResend) return typeof result?.id === 'string' && result.id.length > 0
   return result?.success === true && !result.result?.permanent_bounces?.includes(to)
+}
+
+function brandedEmail(content) {
+  const formattedContent = content.replace(/<a href="([^"]+)">([^<]+)<\/a>/, '<a href="$1" style="display:inline-block;margin:8px 0;padding:13px 22px;background:#40574a;color:#fffdf9;font-weight:bold;text-decoration:none">$2</a>')
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"><title>${PRODUCT_NAME}</title></head><body style="margin:0;background:#f3f0e9;color:#35483e;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f0e9;padding:32px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fffdf9;border:1px solid #e5ded2"><tr><td style="padding:26px 32px 20px;border-bottom:1px solid #e5ded2"><span style="display:inline-block;border:1px solid #d9d4c8;border-radius:50%;padding:12px 9px;color:#be8052;font-family:Georgia,serif;font-size:18px">e&amp;t</span><span style="margin-left:12px;color:#31483c;font-family:Georgia,serif;font-size:19px">${PRODUCT_NAME}</span><div style="height:2px;margin-top:22px;background:#d7c4a8"></div></td></tr><tr><td style="padding:34px 32px 38px;font-size:16px;line-height:1.7">${formattedContent}</td></tr><tr><td style="padding:20px 32px;background:#f7f5ef;border-top:1px solid #e5ded2;color:#667166;font-size:12px;line-height:1.7">Uma plataforma para celebrar histórias e organizar cada detalhe.<br>Esta mensagem é automática e não recebe respostas. Dúvidas? <a href="mailto:henriquesouza1832001@gmail.com" style="color:#40574a">Fale com a gente</a> · <a href="https://henriquesouzas.com" style="color:#40574a">henriquesouzas.com</a></td></tr></table></td></tr></table></body></html>`
 }
 
 async function sendAccountVerification(context, email, token) {
@@ -387,7 +393,7 @@ async function sendAccountVerification(context, email, token) {
   const contactHtml = '<hr><p>Esta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone <a href="tel:+5531988924409">(31) 98892-4409</a> ou pelo e-mail <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>.</p>'
   return sendTransactionalEmail(context, {
     to: email,
-    subject: 'Confirme seu cadastro | Tudo come\u00e7ou de um sim',
+    subject: `Confirme seu cadastro | ${PRODUCT_NAME}`,
     text: `Confirme seu endere\u00e7o de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.${contactText}`,
     html: `<p>Confirme seu endere\u00e7o de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>${contactHtml}`,
   })
@@ -399,7 +405,7 @@ async function sendPasswordReset(context, email, token) {
   const contactHtml = '<hr><p>Esta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone <a href="tel:+5531988924409">(31) 98892-4409</a> ou pelo e-mail <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>.</p>'
   return sendTransactionalEmail(context, {
     to: email,
-    subject: 'Redefina sua senha | Tudo come\u00e7ou de um sim',
+    subject: `Redefina sua senha | ${PRODUCT_NAME}`,
     text: `Use este link para redefinir sua senha. Ele expira em 30 minutos.\n\n${resetUrl}${contactText}`,
     html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>${contactHtml}`,
   })
@@ -671,8 +677,8 @@ app.post('/api/auth/verify-couple-email', async (context) => {
       VALUES (?, ?, ?, 'couple_email_verified', 'account', ?, '{}')`).bind(crypto.randomUUID(), challenge.account_id, challenge.wedding_id, challenge.account_id),
   ])
   if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1 || results[2].meta.changes !== 1) return jsonError(context, 400, 'verification_expired_or_used')
-  const session = await createSession(context, challenge.account_id, false)
-  return context.json({ account: { id: challenge.account_id, email: challenge.email }, expiresAt: session.expiresAt, mfaSetupRequired: true }, 201)
+  const session = await createSession(context, challenge.account_id, true)
+  return context.json({ account: { id: challenge.account_id, email: challenge.email }, expiresAt: session.expiresAt }, 201)
 })
 
 app.post('/api/auth/password-reset/request', async (context) => {
@@ -772,8 +778,9 @@ app.post('/api/auth/login', async (context) => {
   return context.json({ account: { id: result.accountId, email: result.email, isSuperadmin: result.isSuperadmin }, expiresAt: session.expiresAt })
 })
 
-app.post('/api/auth/mfa/enroll', requireSession, async (context) => {
+app.post('/api/auth/mfa/enroll', requireSession, requireSuperadminIdentity, async (context) => {
   const session = context.get('session')
+  if (!session.is_superadmin) return jsonError(context, 404, 'not_found')
   if (session.mfa_verified_at) return jsonError(context, 409, 'mfa_already_enabled')
   try {
     const enrollment = await startTotpEnrollment(context, session.account_id, session.email)
@@ -784,8 +791,9 @@ app.post('/api/auth/mfa/enroll', requireSession, async (context) => {
   }
 })
 
-app.post('/api/auth/mfa/confirm', requireSession, async (context) => {
+app.post('/api/auth/mfa/confirm', requireSession, requireSuperadminIdentity, async (context) => {
   const session = context.get('session')
+  if (!session.is_superadmin) return jsonError(context, 404, 'not_found')
   if (session.mfa_verified_at) return jsonError(context, 409, 'mfa_already_enabled')
   const body = await context.req.json().catch(() => null)
   if (!body || typeof body.code !== 'string') return jsonError(context, 400, 'invalid_request')
@@ -808,8 +816,9 @@ app.post('/api/auth/mfa/confirm', requireSession, async (context) => {
   return context.json({ mfaEnabled: true })
 })
 
-app.post('/api/auth/mfa/reauth', requireSession, async (context) => {
+app.post('/api/auth/mfa/reauth', requireSession, requireSuperadminIdentity, async (context) => {
   const session = context.get('session')
+  if (!session.is_superadmin) return jsonError(context, 404, 'not_found')
   const body = await context.req.json().catch(() => null)
   if (!body || typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) return jsonError(context, 400, 'invalid_mfa_code')
   const retryAfter = await checkLoginLimit(context, session.email)
@@ -885,23 +894,23 @@ app.post('/api/auth/accept-team-invitation', async (context) => {
   const membershipResult = results[passwordHash ? 2 : 1]
   if (results[0].meta.changes !== 1 || (passwordHash && results[1].meta.changes !== 1) || membershipResult.meta.changes !== 1) return jsonError(context, 400, 'invitation_expired_or_used')
   if (!session) {
-    session = await createSession(context, invitation.id, false)
-    return context.json({ account: { id: invitation.id, email: invitation.email }, role: invitation.role, expiresAt: session.expiresAt, mfaSetupRequired: true })
+    session = await createSession(context, invitation.id, true)
+    return context.json({ account: { id: invitation.id, email: invitation.email }, role: invitation.role, expiresAt: session.expiresAt })
   }
-  return context.json({ account: { id: invitation.id, email: invitation.email }, role: invitation.role, expiresAt: session.expires_at, mfaSetupRequired: !session.mfa_verified_at })
+  return context.json({ account: { id: invitation.id, email: invitation.email }, role: invitation.role, expiresAt: session.expires_at })
 })
 
 app.get('/api/auth/session', requireSession, async (context) => {
   const session = context.get('session')
   const sessionInfo = {
     account: { id: session.account_id, email: session.email },
-    mfaVerified: Boolean(session.mfa_verified_at),
-    mfaEnabled: Boolean(session.mfa_enabled_at),
-    mfaSetupRequired: !session.mfa_enabled_at,
-    mfaReauthenticationRequired: Boolean(session.mfa_enabled_at && !session.mfa_verified_at),
+    mfaVerified: !session.is_superadmin || Boolean(session.mfa_verified_at),
+    mfaEnabled: Boolean(session.is_superadmin && session.mfa_enabled_at),
+    mfaSetupRequired: Boolean(session.is_superadmin && !session.mfa_enabled_at),
+    mfaReauthenticationRequired: Boolean(session.is_superadmin && session.mfa_enabled_at && !session.mfa_verified_at),
   }
   const admin = await context.env.DB.prepare("SELECT 1 AS allowed FROM platform_admins WHERE account_id = ? AND role = 'superadmin'").bind(session.account_id).first()
-  if (!session.mfa_verified_at) return context.json({ ...sessionInfo, roles: [], isSuperadmin: Boolean(admin) })
+  if (session.is_superadmin && !session.mfa_verified_at) return context.json({ ...sessionInfo, roles: [], isSuperadmin: Boolean(admin) })
   const memberships = await context.env.DB.prepare(`
     SELECT m.wedding_id, m.role, m.status, w.slug
     FROM wedding_memberships m JOIN weddings w ON w.id = m.wedding_id
@@ -1840,9 +1849,6 @@ app.post('/api/couple/weddings/:weddingId/contributions/:contributionId/decision
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
-  const session = context.get('session')
-  const mfaVerifiedAt = Date.parse(session.mfa_verified_at)
-  if (!Number.isFinite(mfaVerifiedAt) || mfaVerifiedAt > Date.now() || Date.now() - mfaVerifiedAt > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const body = await context.req.json().catch(() => null)
   if (!body || !['confirmed', 'rejected'].includes(body.status)) return jsonError(context, 400, 'invalid_contribution_decision')
   const contribution = await context.env.DB.prepare(`SELECT id, payment_mode, status, amount_cents FROM gift_contributions WHERE id = ? AND wedding_id = ?`)
@@ -2034,8 +2040,6 @@ app.patch('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, asy
 })
 
 app.delete('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, async (context) => {
-  const session = context.get('session')
-  if (Date.now() - Date.parse(session.mfa_verified_at) > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const weddingId = context.req.param('weddingId')
   const guestId = context.req.param('guestId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
@@ -2493,8 +2497,6 @@ app.get('/api/couple/weddings/:weddingId/photos/:photoId/image', requireSession,
 })
 
 app.delete('/api/couple/weddings/:weddingId/photos/:photoId', requireSession, async (context) => {
-  const session = context.get('session')
-  if (Date.now() - Date.parse(session.mfa_verified_at) > 300000) return jsonError(context, 403, 'recent_mfa_required')
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
@@ -3016,7 +3018,7 @@ app.post('/api/superadmin/email-test', requireSession, requireSuperadmin, async 
   if (previousTest) return jsonError(context, 429, 'email_test_rate_limited')
   const sent = await sendTransactionalEmail(context, {
     to: recipient,
-    subject: 'Teste de envio | Tudo começou de um sim',
+    subject: `Teste de envio | ${PRODUCT_NAME}`,
     text: 'Este é um teste do envio de e-mails da plataforma. O endereço remetente não recebe respostas. Para suporte, use henriquesouza1832001@gmail.com ou (31) 98892-4409.',
     html: '<p>Este é um teste do envio de e-mails da plataforma.</p><p>O endereço remetente não recebe respostas. Para suporte, use <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a> ou <a href="tel:+5531988924409">(31) 98892-4409</a>.</p>',
   }).catch(() => false)
