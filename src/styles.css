@@ -1058,6 +1058,14 @@ img { display: block; max-width: 100%; }
 .invitation-share-card img { width: 144px; height: 144px; object-fit: contain; }
 .team-access-note { margin: 0 0 12px; color: #77796f; font-size: 9px; line-height: 1.6; }
 .team-member-list, .team-assignment-list, .godparent-admin-task-list { display: grid; }
+.team-invitation-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(170px, .75fr); align-items: end; gap: 12px; }
+.team-invitation-form > label { display: grid; gap: 6px; color: #596259; font-size: 12px; }
+.team-invitation-form > label input, .team-invitation-form > label select { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
+.team-invitation-form fieldset { grid-column: 1 / -1; margin: 0; padding: 12px; display: flex; flex-wrap: wrap; gap: 10px 18px; border: 1px solid rgba(48,55,47,.13); }
+.team-invitation-form legend { padding: 0 5px; color: #596259; font-size: 12px; }
+.team-invitation-form fieldset label { min-height: 36px; display: inline-flex; align-items: center; gap: 8px; color: #596259; font-size: 13px; }
+.team-invitation-form fieldset input, .team-assignment-list input { width: 18px; height: 18px; accent-color: var(--forest); }
+.team-invitation-form > button { grid-column: 1 / -1; min-height: 46px !important; justify-self: start; padding: 0 20px; }
 .team-invite-form { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(190px, .8fr) auto; align-items: end; gap: 10px; }
 .team-invite-form label { display: grid; gap: 5px; color: #77796f; font-size: 9px; }
 .team-invite-form input, .team-invite-form select { width: 100%; min-height: 38px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
@@ -1107,12 +1115,13 @@ img { display: block; max-width: 100%; }
 .guest-admin-actions .button-outline { width: 34px; min-height: 34px; padding: 0; }
 .guest-admin-actions .guest-remove-button { border-color: rgba(150,70,65,.28); color: #945c56; }
 .guest-admin-actions .guest-remove-button:hover { color: white; background: #945c56; }
-.team-member-row { padding: 11px 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(155px, .8fr) minmax(110px, .6fr); align-items: center; gap: 12px; border-top: 1px solid rgba(48,55,47,.08); }
+.team-member-row { padding: 11px 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(135px, .7fr) auto; align-items: center; gap: 12px; border-top: 1px solid rgba(48,55,47,.08); }
 .team-member-row > div, .godparent-admin-task-list article > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .team-member-row strong, .team-assignment-list strong, .godparent-admin-task-list strong { color: #434b43; font-size: 10px; font-weight: 600; overflow-wrap: anywhere; }
 .team-member-row small, .team-assignment-list strong small, .godparent-admin-task-list small { display: block; color: #8b8d83; font-size: 8px; font-weight: 400; }
 .team-member-row label, .godparent-task-form label { display: grid; gap: 5px; color: #77796f; font-size: 9px; }
 .team-member-row select, .godparent-task-form input, .godparent-task-form select, .godparent-task-form textarea { width: 100%; min-height: 36px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
+.team-member-row > .guest-remove-button { min-height: 40px; }
 .team-assignment-list article { padding: 12px 0; display: grid; grid-template-columns: minmax(150px, .7fr) minmax(0, 1.3fr); gap: 14px; border-top: 1px solid rgba(48,55,47,.08); }
 .team-assignment-list article > div { display: flex; flex-wrap: wrap; gap: 7px 14px; }
 .team-assignment-list article label { display: inline-flex; align-items: center; gap: 6px; color: #6f7369; font-size: 9px; }
@@ -1371,6 +1380,9 @@ img { display: block; max-width: 100%; }
   .team-member-row { grid-template-columns: 1fr 1fr; }
   .team-member-row > div { grid-column: 1 / -1; }
   .team-invite-form { grid-template-columns: 1fr; }
+  .team-invitation-form { grid-template-columns: 1fr; }
+  .team-invitation-form fieldset, .team-invitation-form > button { grid-column: auto; }
+  .team-invitation-form > button { width: 100%; }
   .superadmin-wedding-form { grid-template-columns: 1fr; }
   .superadmin-wedding-form > .button-primary { grid-column: auto; }
   .couple-events-tab .role-card { padding: 17px; }

@@ -23,6 +23,7 @@ function database(role, options = {}) {
           if (query.includes('SELECT id FROM events WHERE id = ? AND wedding_id = ?')) return eventDeletion.exists === false ? null : { id: parameters[0] }
           if (query.includes('SELECT') && query.includes('FROM guest_rsvps WHERE event_id = ?')) return eventDeletion.relatedData || { rsvps: 0, checkins: 0, photos: 0, staff: 0 }
           if (query.includes('FROM auth_sessions s')) return { id: 'session-1', account_id: 'account-1', mfa_verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'editor@example.com', status: 'active', mfa_enabled_at: new Date().toISOString() }
+          if (query.includes('SELECT id, role FROM wedding_memberships')) return options.teamMember || null
           if (query.includes('FROM wedding_memberships m JOIN weddings w')) {
             const allowedRoles = parameters.slice(2)
             return allowedRoles.includes(role) ? { id: 'membership-1', role, wedding_status: 'active' } : null
@@ -31,6 +32,9 @@ function database(role, options = {}) {
             const allowedRoles = parameters.slice(2)
             return parameters[0] === 'event-1' && allowedRoles.includes(role) ? { event_id: 'event-1', wedding_id: 'wedding-1', membership_id: 'membership-1', role } : null
           }
+          if (query.includes('SELECT g.id, g.name, 1 AS party_size') && query.includes('WHERE g.access_token_hash = ?')) return options.scanGuest || null
+          if (query.includes('SELECT g.id, COALESCE(r.status, g.rsvp_status) AS rsvp_status FROM guests g')) return options.visibleGuest || null
+          if (query.includes('SELECT checked_in_at FROM check_ins WHERE wedding_id = ? AND event_id = ? AND guest_id = ?')) return options.existingCheckIn || null
           if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', photo_consent_at: options.photoConsentAt === null ? null : '2026-10-17T12:00:00.000Z', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(options.invitationConfig || (options.guestPhotoLimit === undefined ? siteConfig : { ...siteConfig, guestCamera: { enabled: true, photoLimit: options.guestPhotoLimit } })), published_events_json: JSON.stringify([publishedEvent]) }
           if (query.includes('SELECT published_events_json FROM weddings')) return { published_events_json: JSON.stringify([publishedEvent]) }
           if (query.includes('SELECT COUNT(*) AS total FROM guest_photos')) return { total: options.guestPhotoCount || 0 }
@@ -40,10 +44,11 @@ function database(role, options = {}) {
           return null
         },
         async all() {
-          if (query.includes('SELECT w.id FROM weddings w JOIN wedding_memberships')) return { results: [{ id: 'wedding-1' }] }
+          if (query.includes('SELECT w.id FROM weddings w JOIN wedding_memberships')) return { results: ['couple_admin', 'editor', 'reader'].includes(role) ? [{ id: 'wedding-1' }] : [] }
+          if (query.includes('SELECT id FROM events WHERE wedding_id = ? AND id IN')) return { results: parameters.slice(1).map((id) => ({ id })) }
           if (query.includes('SELECT g.id, g.name') && !query.includes('LEFT JOIN')) return { results: [{ id: 'guest-1', name: 'Convidada' }] }
           if (query.includes('FROM godparent_tasks')) return { results: [{ id: 'task-1', title: 'Levar as alianças', details: '', due_at: null, status: 'open' }] }
-          if (query.includes('FROM guests g LEFT JOIN guest_groups gg')) return { results: [{ id: 'guest-1', name: 'Convidada', party_size: 2, rsvp_status: 'confirmed', dietary_notes: null, group_name: 'Família', checked_in_at: null }] }
+          if (query.includes('FROM guests g') && query.includes('LEFT JOIN guest_rsvps')) return { results: [{ id: 'guest-1', name: 'Convidada', party_size: 1, rsvp_status: 'confirmed', checked_in_at: null }] }
           return { results: [] }
         },
         async run() {
@@ -213,6 +218,88 @@ test('event staff can read only assigned event rosters without contact fields', 
   assert.equal(guest.name, 'Convidada')
   assert.equal('email' in guest, false)
   assert.equal('phone' in guest, false)
+})
+
+test('couple admins create individual entry staff invitations limited to selected events', async () => {
+  const eventId = '123e4567-e89b-42d3-a456-426614174000'
+  const response = await call('/api/couple/weddings/wedding-1/members/team-invitations', 'couple_admin', {
+    method: 'POST',
+    body: { name: 'Joana Silva', email: 'joana@example.com', profession: 'seguranca', eventIds: [eventId] },
+  })
+  const result = await response.json()
+  assert.equal(response.status, 201)
+  assert.equal(result.name, 'Joana Silva')
+  assert.equal(result.role, 'checkin_staff')
+  assert.equal(result.profession, 'seguranca')
+  assert.equal(result.status, 'pending')
+  assert.match(result.invitationUrl, /#aceitar-equipe\//)
+})
+
+test('event staff cannot access couple membership management', async () => {
+  const list = await call('/api/couple/weddings', 'checkin_staff')
+  const invitation = await call('/api/couple/weddings/wedding-1/members/team-invitations', 'checkin_staff', {
+    method: 'POST',
+    body: { name: 'Joana Silva', email: 'joana@example.com', profession: 'seguranca', eventIds: ['123e4567-e89b-42d3-a456-426614174000'] },
+  })
+  assert.deepEqual(await list.json(), { weddings: [] })
+  assert.equal(invitation.status, 404)
+})
+
+test('couple admins can delete only professional team memberships', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/members/member-1', 'couple_admin', {
+    method: 'DELETE',
+    databaseOptions: { teamMember: { id: 'member-1', role: 'checkin_staff' } },
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { id: 'member-1', deleted: true })
+})
+
+test('event staff cannot scan entry QR codes', async () => {
+  const response = await call('/api/staff/events/event-1/scan', 'event_staff', {
+    method: 'POST',
+    body: { token: 'a'.repeat(43) },
+  })
+  assert.equal(response.status, 404)
+})
+
+test('entry QR scan records a confirmed guest once for the assigned event', async () => {
+  const response = await call('/api/staff/events/event-1/scan', 'checkin_staff', {
+    method: 'POST',
+    body: { token: 'a'.repeat(43) },
+    databaseOptions: {
+      scanGuest: { id: 'guest-1', name: 'Convidada', party_size: 3, rsvp_status: 'confirmed' },
+      visibleGuest: { id: 'guest-1', rsvp_status: 'confirmed' },
+    },
+  })
+  const result = await response.json()
+  assert.equal(response.status, 201)
+  assert.equal(result.checkedIn, true)
+  assert.equal(result.guest.name, 'Convidada')
+  assert.equal(result.guest.partySize, 1)
+})
+
+test('entry QR scan rejects an unconfirmed or previously used invitation', async () => {
+  const unconfirmed = await call('/api/staff/events/event-1/scan', 'checkin_staff', {
+    method: 'POST',
+    body: { token: 'a'.repeat(43) },
+    databaseOptions: {
+      scanGuest: { id: 'guest-1', name: 'Convidada', rsvp_status: 'pending' },
+      visibleGuest: { id: 'guest-1', rsvp_status: 'pending' },
+    },
+  })
+  const duplicate = await call('/api/staff/events/event-1/scan', 'checkin_staff', {
+    method: 'POST',
+    body: { token: 'a'.repeat(43) },
+    databaseOptions: {
+      scanGuest: { id: 'guest-1', name: 'Convidada', rsvp_status: 'confirmed' },
+      visibleGuest: { id: 'guest-1', rsvp_status: 'confirmed' },
+      existingCheckIn: { checked_in_at: '2026-10-18 12:00:00' },
+    },
+  })
+  assert.equal(unconfirmed.status, 409)
+  assert.deepEqual(await unconfirmed.json(), { error: 'invitation_not_confirmed' })
+  assert.equal(duplicate.status, 409)
+  assert.deepEqual(await duplicate.json(), { error: 'already_checked_in', checkedInAt: '2026-10-18 12:00:00' })
 })
 
 test('only check-in staff can record last-minute attendees', async () => {

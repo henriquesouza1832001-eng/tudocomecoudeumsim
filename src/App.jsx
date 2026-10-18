@@ -1217,6 +1217,11 @@ function CouplePanel({ notify, confirmAction }) {
   const [rsvpPrintActive, setRsvpPrintActive] = useState(false)
   const [members, setMembers] = useState([])
   const [assignments, setAssignments] = useState([])
+  const [teamName, setTeamName] = useState('')
+  const [teamEmail, setTeamEmail] = useState('')
+  const [teamProfession, setTeamProfession] = useState('cerimonialista')
+  const [teamEventIds, setTeamEventIds] = useState([])
+  const [teamInvitation, setTeamInvitation] = useState(null)
   const [godparentTasks, setGodparentTasks] = useState([])
   const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG)
   const [savedSiteConfig, setSavedSiteConfig] = useState(DEFAULT_SITE_CONFIG)
@@ -1859,6 +1864,59 @@ function CouplePanel({ notify, confirmAction }) {
     }
   }
 
+  async function createTeamInvitation(event) {
+    event.preventDefault()
+    if (!teamEventIds.length) return
+    setBusy(true)
+    setError('')
+    try {
+      const invitation = await request(`/api/couple/weddings/${weddingId}/members/team-invitations`, {
+        method: 'POST',
+        body: JSON.stringify({ name: teamName, email: teamEmail, profession: teamProfession, eventIds: teamEventIds }),
+      })
+      setTeamInvitation(invitation)
+      setTeamName('')
+      setTeamEmail('')
+      setTeamEventIds([])
+      await loadWeddingData(weddingId)
+      notify('Acesso individual criado. Compartilhe o link com o profissional.')
+    } catch (cause) {
+      const messages = {
+        account_already_member: 'Este e-mail já possui acesso a este casamento.',
+        account_not_ready: 'A conta deste e-mail ainda não está ativa. Tente novamente depois que ela for confirmada.',
+        invalid_team_events: 'Revise os eventos selecionados.',
+      }
+      setError(messages[cause.message] || 'Não foi possível criar o acesso da equipe.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function deleteTeamMember(member) {
+    if (!await confirmAction(`Excluir o acesso de ${member.display_name || member.email}? A pessoa perderá imediatamente o acesso a todos os eventos deste casamento.`, 'Excluir acesso da equipe', 'Excluir acesso', true)) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/members/${member.id}`, { method: 'DELETE' })
+      await loadWeddingData(weddingId)
+      notify('Acesso da equipe excluído')
+    } catch {
+      setError('Não foi possível excluir este acesso.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function copyTeamInvitation() {
+    if (!teamInvitation?.invitationUrl) return
+    try {
+      await navigator.clipboard.writeText(teamInvitation.invitationUrl)
+      notify('Link individual copiado')
+    } catch {
+      setError('Não foi possível copiar o link. Selecione e copie o endereço exibido.')
+    }
+  }
+
   async function assignMember(eventId, membership, assigned) {
     setBusy(true)
     setError('')
@@ -1970,8 +2028,9 @@ function CouplePanel({ notify, confirmAction }) {
       </section>
     </div>}
     {tab === 'team' && <>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">MEMBROS DO CASAMENTO</span><h2>Permissões da equipe</h2></div><span className="task-count">{members.length} membros</span></div><p className="team-access-note">Cada pessoa mantém acesso apenas aos eventos atribuídos. Contas já vinculadas ao casamento aparecem nesta lista.</p><div className="team-member-list">{members.map((member) => <article className="team-member-row" key={member.id}><div><strong>{member.email}</strong><small>{member.account_id === account?.id ? 'Sua conta' : member.account_id}</small></div><label>Perfil<select value={member.role} disabled={busy} onChange={(event) => updateMember(member, { role: event.target.value })}><option value="couple_admin">Administrador do casal</option><option value="editor">Editor</option><option value="reader">Leitor</option><option value="event_staff">Equipe do evento</option><option value="checkin_staff">Equipe de entrada</option></select></label><label>Status<select value={member.status} disabled={busy} onChange={(event) => updateMember(member, { status: event.target.value })}><option value="active">Ativo</option><option value="revoked">Revogado</option><option value="pending" disabled>Pendente</option></select></label></article>)}{!members.length && <p className="buffet-empty">Nenhum membro adicional está vinculado a este casamento.</p>}</div></section>
-      {events.length > 0 && members.some((member) => ['event_staff', 'checkin_staff'].includes(member.role)) && <section className="role-card"><span className="eyebrow">ACESSO POR EVENTO</span><h2>Atribuir eventos</h2><div className="team-assignment-list">{members.filter((member) => ['event_staff', 'checkin_staff'].includes(member.role)).map((member) => <article key={member.id}><strong>{member.email}<small>{member.role === 'checkin_staff' ? 'Equipe de entrada' : 'Equipe do evento'}</small></strong><div>{events.map((event) => { const assigned = assignments.some((item) => item.membership_id === member.id && item.event_id === event.id); return <label key={event.id}><input type="checkbox" checked={assigned} disabled={busy || member.status !== 'active'} onChange={(input) => assignMember(event.id, member, input.target.checked)} />{event.name}</label> })}</div></article>)}</div></section>}
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO PROFISSIONAL</span><h2>Adicionar à equipe</h2></div><Shield size={18} /></div><p className="team-access-note">Cada profissional recebe um acesso próprio, limitado aos eventos selecionados e ao controle de entrada. O painel administrativo do casal não fica disponível para essa conta.</p><form className="team-invitation-form" onSubmit={createTeamInvitation}><label>Nome<input value={teamName} onChange={(event) => setTeamName(event.target.value)} maxLength="160" required /></label><label>E-mail<input type="email" value={teamEmail} onChange={(event) => setTeamEmail(event.target.value)} maxLength="254" required /></label><label>Função<select value={teamProfession} onChange={(event) => setTeamProfession(event.target.value)}><option value="cerimonialista">Cerimonialista</option><option value="seguranca">Segurança</option></select></label><fieldset><legend>Eventos autorizados</legend>{events.map((event) => <label key={event.id}><input type="checkbox" checked={teamEventIds.includes(event.id)} disabled={busy} onChange={(input) => setTeamEventIds((current) => input.target.checked ? [...current, event.id] : current.filter((id) => id !== event.id))} />{event.name}</label>)}{!events.length && <span>Cadastre um evento antes de convidar a equipe.</span>}</fieldset><button type="submit" className="button-primary" disabled={busy || !events.length || !teamEventIds.length}>{busy ? 'Criando acesso…' : 'Gerar link individual'} <ArrowRight size={15} /></button></form>{teamInvitation && <div className="team-invitation-result"><strong>Convite de {teamInvitation.name}</strong><span>{teamInvitation.email} · {teamInvitation.profession === 'seguranca' ? 'Segurança' : 'Cerimonialista'} · válido até {new Date(teamInvitation.expiresAt).toLocaleString('pt-BR')}</span><div><input readOnly value={teamInvitation.invitationUrl} aria-label="Link individual para acesso da equipe" onFocus={(event) => event.target.select()} /><button type="button" className="button-outline" onClick={copyTeamInvitation}><Copy size={14} /> Copiar link</button><a className="button-outline" href={`https://wa.me/?text=${encodeURIComponent(`Acesse a área segura da equipe do casamento: ${teamInvitation.invitationUrl}`)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Enviar pelo WhatsApp</a></div></div>}</section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">MEMBROS DO CASAMENTO</span><h2>Equipe cadastrada</h2></div><span className="task-count">{members.filter((member) => ['event_staff', 'checkin_staff'].includes(member.role)).length} profissionais</span></div><p className="team-access-note">Os acessos podem ser desativados ou excluídos a qualquer momento. Cada profissional só consulta os eventos que vocês liberaram.</p><div className="team-member-list">{members.filter((member) => ['event_staff', 'checkin_staff'].includes(member.role)).map((member) => <article className="team-member-row" key={member.id}><div><strong>{member.display_name || member.email}</strong><small>{member.email} · {member.profession === 'seguranca' ? 'Segurança' : member.profession === 'cerimonialista' ? 'Cerimonialista' : 'Equipe de entrada'}</small></div><label>Status<select value={member.status} disabled={busy || member.status === 'pending'} onChange={(event) => updateMember(member, { status: event.target.value })}><option value="active">Ativo</option><option value="revoked">Desativado</option><option value="pending" disabled>Pendente</option></select></label><button type="button" className="button-outline guest-remove-button" disabled={busy} onClick={() => deleteTeamMember(member)}><Trash2 size={14} /> Excluir</button></article>)}{!members.some((member) => ['event_staff', 'checkin_staff'].includes(member.role)) && <p className="buffet-empty">Nenhum profissional foi adicionado à equipe.</p>}</div></section>
+      {events.length > 0 && members.some((member) => ['event_staff', 'checkin_staff'].includes(member.role)) && <section className="role-card"><span className="eyebrow">ACESSO POR EVENTO</span><h2>Gerenciar eventos autorizados</h2><div className="team-assignment-list">{members.filter((member) => ['event_staff', 'checkin_staff'].includes(member.role)).map((member) => <article key={member.id}><strong>{member.display_name || member.email}<small>{member.email}</small></strong><div>{events.map((event) => { const assigned = assignments.some((item) => item.membership_id === member.id && item.event_id === event.id); return <label key={event.id}><input type="checkbox" checked={assigned} disabled={busy || member.status !== 'active'} onChange={(input) => assignMember(event.id, member, input.target.checked)} />{event.name}</label> })}</div></article>)}</div></section>}
     </>}
     {tab === 'gifts' && <>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">CATÁLOGO DO CASAMENTO</span><h2>{editingGift ? 'Editar presente' : 'Adicionar presente'}</h2></div><Gift size={18} /></div><p className="team-access-note">Pix vai direto à chave do casal. Para um presente físico, adicione o link da loja; a compra e a entrega são acertadas fora do site.</p><form className="gift-management-form" onSubmit={saveGift}><label>Nome do presente<input value={giftTitle} onChange={(event) => setGiftTitle(event.target.value)} maxLength="120" required /></label><label>Como presentear<select value={giftFulfillmentType} onChange={(event) => setGiftFulfillmentType(event.target.value)}><option value="pix_direct">Contribuição via Pix</option><option value="store_link">Presente físico em uma loja</option></select></label>{giftFulfillmentType === 'pix_direct' && <><label>Valor para sugerir<select value={giftType} onChange={(event) => setGiftType(event.target.value)}><option value="fixed">Sugerir um valor</option><option value="custom">Deixar livre</option></select></label>{giftType === 'fixed' && <label>Valor sugerido (R$)<input inputMode="decimal" value={giftAmount} onChange={(event) => setGiftAmount(event.target.value)} placeholder="150,00" required /></label>}</>}{giftFulfillmentType === 'store_link' && <label className="gift-form-wide">Link do produto na loja<input type="url" inputMode="url" value={giftStoreUrl} onChange={(event) => setGiftStoreUrl(event.target.value)} placeholder="https://loja.com/produto" required /></label>}<label className="gift-form-wide">Descrição<textarea rows="3" maxLength="500" value={giftDescription} onChange={(event) => setGiftDescription(event.target.value)} /></label>{editingGift && <label>Status<select value={editingGift.status} onChange={(event) => setEditingGift({ ...editingGift, status: event.target.value })}><option value="active">Ativo</option><option value="archived">Arquivado</option></select></label>}<div className="gift-form-actions"><button type="submit" className="button-primary" disabled={busy || (!editingGift && gifts.filter((item) => item.status === 'active').length >= 60) || (giftFulfillmentType === 'store_link' && !giftStoreUrl.trim())}>{editingGift ? 'Salvar presente' : 'Adicionar à lista'} <Check size={15} /></button>{editingGift && <button type="button" className="button-outline" disabled={busy} onClick={resetGiftForm}>Cancelar</button>}</div></form></section>
@@ -3532,9 +3591,11 @@ function EventStaffPanel({ notify }) {
   const [offlineRoster, setOfflineRoster] = useState([])
   const [pendingCheckins, setPendingCheckins] = useState([])
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const refreshRosterRef = useRef(null)
   const currentEvent = events.find((event) => event.id === selectedEvent)
   const visibleGuests = guests.filter((guest) => guest.name.toLowerCase().includes(query.toLowerCase()))
-  const peopleCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').reduce((total, guest) => total + guest.party_size, 0) + walkIns.reduce((total, guest) => total + guest.party_size, 0)
+  const peopleCount = guests.reduce((total, guest) => total + guest.party_size, 0) + walkIns.reduce((total, guest) => total + guest.party_size, 0)
+  const arrivedCount = guests.filter((guest) => guest.checked_in_at).reduce((total, guest) => total + guest.party_size, 0) + walkIns.reduce((total, guest) => total + guest.party_size, 0)
   const checkinAllowed = currentEvent?.role === 'checkin_staff'
   const printReport = (mode) => { setPrintMode(mode); window.setTimeout(() => { window.print(); setPrintMode('') }, 120) }
 
@@ -3579,6 +3640,8 @@ function EventStaffPanel({ notify }) {
     }
     setPendingCheckins(await readOfflineCheckins(eventId).catch(() => []))
   }
+
+  refreshRosterRef.current = loadEventGuests
 
   async function queueOfflineCheckin(entry) {
     await storeOfflineCheckin({ ...entry, eventId: selectedEvent, createdAt: new Date().toISOString() })
@@ -3687,6 +3750,34 @@ function EventStaffPanel({ notify }) {
   useEffect(() => {
     if (stage === 'ready' && selectedEvent) loadEventGuests(selectedEvent).catch((cause) => setError(cause.message))
   }, [stage, selectedEvent])
+
+  useEffect(() => {
+    if (stage !== 'ready' || !selectedEvent || !isOnline) return undefined
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch('/api/staff/events')
+        if (!response.ok) throw new Error('staff_access_revoked')
+        const result = await response.json()
+        setEvents(result.events)
+        if (!result.events.some((event) => event.id === selectedEvent)) {
+          setGuests([])
+          setWalkIns([])
+          setOfflineRoster([])
+          setSelectedEvent(result.events[0]?.id || '')
+          if (!result.events.length) setError('Seu acesso aos eventos foi revogado pelos noivos.')
+          return
+        }
+        await refreshRosterRef.current?.(selectedEvent)
+      } catch (cause) {
+        setGuests([])
+        setWalkIns([])
+        setOfflineRoster([])
+        if (cause.message === 'staff_access_revoked') setStage('login')
+        setError(cause.message === 'staff_access_revoked' ? 'Seu acesso foi revogado. Entre em contato com os noivos.' : cause.message)
+      }
+    }, 5000)
+    return () => window.clearInterval(timer)
+  }, [stage, selectedEvent, isOnline])
 
   useEffect(() => {
     const onOnline = () => {
@@ -3839,9 +3930,9 @@ function EventStaffPanel({ notify }) {
       try {
         const response = await fetch(`/api/staff/events/${selectedEvent}/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
         const result = await response.json()
-        if (!response.ok) throw new Error(result.error === 'already_checked_in' ? `Este convite ja teve a entrada registrada${result.checkedInAt ? ` em ${new Date(result.checkedInAt).toLocaleString('pt-BR')}` : ''}.` : result.error === 'invitation_declined' ? 'Este convite foi recusado para este evento.' : result.error === 'invitation_not_confirmed' ? 'Aguarde a confirmação dos noivos antes de liberar a entrada.' : result.error === 'invitation_not_found' ? 'Convite invalido ou nao autorizado para este evento.' : 'Nao foi possivel registrar a entrada.')
+        if (!response.ok) throw new Error(result.error === 'already_checked_in' ? `Entrada já realizada${result.checkedInAt ? ` em ${new Date(result.checkedInAt).toLocaleString('pt-BR')}` : ''}.` : result.error === 'invitation_declined' ? 'Entrada não autorizada: este convite foi recusado para o evento.' : result.error === 'invitation_not_confirmed' ? 'Entrada não autorizada: a presença ainda não foi confirmada pelos noivos.' : result.error === 'invitation_not_found' ? 'Entrada não autorizada: credencial inválida, revogada ou sem permissão para este evento.' : 'Não foi possível registrar a entrada.')
         await loadEventGuests(selectedEvent)
-        notify(`Entrada registrada: ${result.guest.name} · ${result.guest.partySize} pessoas`)
+        notify(`Entrada autorizada: ${result.guest.name}`)
       } catch (cause) {
         if (!(cause instanceof TypeError)) throw cause
         await queueScannedInvitation(token)
@@ -3856,18 +3947,16 @@ function EventStaffPanel({ notify }) {
     <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken} type="submit">Entrar <LockKeyhole size={15} /></button></form>
   </RoleFrame>
 
-  const confirmedCount = guests.filter((guest) => guest.rsvp_status === 'confirmed').length
-  const checkinCount = guests.filter((guest) => guest.checked_in_at).length + walkIns.length
   const eventDate = currentEvent?.starts_at ? new Date(currentEvent.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Data não definida'
-  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title={checkinAllowed ? 'Lista do evento, com acesso controlado.' : 'Nomes dos convidados do evento.'} description={checkinAllowed ? 'Esta lista contém os convidados autorizados para o evento selecionado.' : 'Você consulta somente os nomes da lista dos eventos atribuídos.'} className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy} onClick={logoutStaff} title={!isOnline ? 'Bloqueia esta tela e preserva as entradas offline pendentes' : ''}>{isOnline ? 'Sair' : 'Bloquear aparelho'}</button>}>
+  return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title={checkinAllowed ? 'Controle de entrada.' : 'Nomes dos convidados do evento.'} description={checkinAllowed ? 'A lista mostra somente presenças confirmadas e autorizadas para os eventos selecionados.' : 'Você consulta somente os nomes da lista dos eventos atribuídos.'} className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy} onClick={logoutStaff} title={!isOnline ? 'Bloqueia esta tela e preserva as entradas offline pendentes' : ''}>{isOnline ? 'Sair' : 'Bloquear aparelho'}</button>}>
     {events.length > 1 && <label className="staff-event-select">Evento<select value={selectedEvent} onChange={(event) => setSelectedEvent(event.target.value)}>{events.map((event) => <option key={event.id} value={event.id}>{event.name} · {event.starts_at ? new Date(event.starts_at).toLocaleDateString('pt-BR') : 'sem data'}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     {checkinAllowed && <div className="staff-offline-status" role="status"><span className={isOnline ? 'staff-online' : 'staff-offline'}>{isOnline ? 'Conexao ativa' : 'Modo offline'}</span><span>{pendingCheckins.length} entrada(s) aguardando sincronizacao</span>{offlineRoster.length > 0 && <span>Lista temporaria preparada neste dispositivo</span>}{isOnline && pendingCheckins.length > 0 && <button className="button-outline" disabled={busy} onClick={() => syncPendingCheckins().catch((cause) => setError(cause.message))}>Sincronizar agora</button>}</div>}
     {!events.length && <p className="buffet-empty">Nenhum evento foi atribuído a esta conta.</p>}
     {currentEvent && <>
-      {checkinAllowed && <div className="role-stat-grid"><div className="role-stat"><span>Confirmados neste evento</span><strong>{confirmedCount}</strong></div><div className="role-stat"><span>Pessoas previstas no buffet</span><strong>{peopleCount}</strong></div><div className="role-stat"><span>Entradas registradas</span><strong>{checkinCount}</strong></div></div>}
-      {checkinAllowed && <section className="role-card staff-scanner-card"><div className="role-card-heading"><div><span className="eyebrow">LEITOR DO EVENTO</span><h2>Entrada por QR code</h2></div><QrCode size={20} /></div>{scannerOpen ? <QrCamera onDecode={scanInvitation} onError={(message) => { setError(message); setScannerOpen(false) }} /> : <button className="button-primary" disabled={busy} onClick={() => { setError(''); setScannerOpen(true) }}><Camera size={16} /> Abrir câmera para ler convite</button>}<p>O QR é validado no servidor, limitado a este evento e registrado uma única vez.</p></section>}
-      <section className="role-card staff-list-card print-list"><div className="role-card-heading"><div><span className="eyebrow">{eventDate}</span><h2>{currentEvent.name}</h2></div><button className="button-outline print-button" onClick={() => printReport('list')}><Printer size={15} /> Exportar lista em PDF</button></div><label className="search-field"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome" /></label><div className="staff-guest-list">{(printMode === 'list' ? guests : visibleGuests).map((guest) => <div className="staff-guest-row" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name}</strong>{checkinAllowed && <small>{guest.group_name || 'Sem grupo'} · {guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.rsvp_status}</small>}</div>{checkinAllowed && (guest.rsvp_status === 'declined' ? <span className="status-pill declined"><i /> Recusado</span> : guest.checked_in_at ? <span className="status-pill confirmed"><i /> Entrada registrada</span> : guest.rsvp_status !== 'confirmed' ? <span className="status-pill waiting"><i /> Aguardando confirmação</span> : <button className="checkin-toggle" disabled={busy} onClick={() => checkIn(guest.id)}>Registrar entrada</button>)}</div>)}</div>{checkinAllowed && walkIns.map((guest) => <div className="staff-guest-row walkin-entry" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name} <span>Entrada manual</span></strong><small>{guest.party_size} {guest.party_size === 1 ? 'pessoa' : 'pessoas'} · {guest.dietary_notes || 'Sem restrição informada'} · {guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleString('pt-BR') : 'Agora'}</small></div><span className="status-pill confirmed"><i /> Buffet atualizado</span></div>)}</section>
+      {checkinAllowed && <div className="role-stat-grid"><div className="role-stat"><span>Total de pessoas esperadas</span><strong>{peopleCount}</strong></div><div className="role-stat"><span>Já entraram</span><strong>{arrivedCount}</strong></div><div className="role-stat"><span>Ainda aguardados</span><strong>{Math.max(0, peopleCount - arrivedCount)}</strong></div></div>}
+      {checkinAllowed && <section className="role-card staff-scanner-card"><div className="role-card-heading"><div><span className="eyebrow">LEITOR DO EVENTO</span><h2>Entrada por QR code</h2></div><QrCode size={20} /></div>{scannerOpen ? <QrCamera onDecode={scanInvitation} onError={(message) => { setError(message); setScannerOpen(false) }} /> : <button className="button-primary" disabled={busy} onClick={() => { setError(''); setScannerOpen(true) }}><Camera size={16} /> Escanear QR Code</button>}<p>O QR é validado no servidor, limitado a este evento e registrado uma única vez.</p></section>}
+      <section className="role-card staff-list-card print-list"><div className="role-card-heading"><div><span className="eyebrow">{eventDate}</span><h2>{currentEvent.name}</h2></div><button className="button-outline print-button" onClick={() => printReport('list')}><Printer size={15} /> Exportar lista em PDF</button></div><label className="search-field"><Search size={15} /><input aria-label="Pesquisar convidado pelo nome" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome" /></label><div className="staff-guest-list">{(printMode === 'list' ? guests : visibleGuests).map((guest) => <div className="staff-guest-row" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name}</strong>{checkinAllowed && <small>{guest.checked_in_at ? `Entrou às ${new Date(guest.checked_in_at).toLocaleString('pt-BR')}` : 'Presença confirmada · Ainda aguardado'}</small>}</div>{checkinAllowed && (guest.checked_in_at ? <span className="status-pill confirmed"><i /> Entrou</span> : <><span className="status-pill waiting"><i /> Aguardando</span><button className="checkin-toggle" disabled={busy} onClick={() => checkIn(guest.id)}>Registrar entrada</button></>)}</div>)}{!visibleGuests.length && query && <p className="buffet-empty">Nenhum convidado encontrado com esse nome.</p>}{!guests.length && <p className="buffet-empty">Nenhuma presença confirmada para este evento.</p>}</div>{checkinAllowed && walkIns.map((guest) => <div className="staff-guest-row walkin-entry" key={guest.id}><div className="staff-guest-copy"><strong>{guest.name} <span>Entrada manual</span></strong><small>{guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleString('pt-BR') : 'Agora'}</small></div><span className="status-pill confirmed"><i /> Entrou</span></div>)}</section>
       {checkinAllowed && <section className="role-card walkin-staff-card"><div><span className="eyebrow">CHEGADA SEM QR CODE</span><h2>Adicionar convidado de última hora</h2><p>O total de pessoas é atualizado para o buffet.</p></div><form className="walkin-form staff-walkin-form" onSubmit={addWalkIn}><label>Nome<input value={walkInName} onChange={(event) => setWalkInName(event.target.value)} maxLength="160" required placeholder="Nome completo" /></label><label>Pessoas<input type="number" min="1" max="20" value={walkInParty} onChange={(event) => setWalkInParty(event.target.value)} required /></label><label>Restrição alimentar<input value={walkInDietaryNotes} onChange={(event) => setWalkInDietaryNotes(event.target.value)} maxLength="1000" placeholder="Opcional" /></label><button className="button-primary" type="submit" disabled={busy}>Adicionar <Check size={15} /></button></form></section>}
     </>}
   </RoleFrame>

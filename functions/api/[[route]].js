@@ -1550,11 +1550,49 @@ app.get('/api/couple/weddings/:weddingId/members', requireSession, async (contex
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   const result = await context.env.DB.prepare(`
-    SELECT m.id, m.account_id, m.role, m.status, a.email
+    SELECT m.id, m.account_id, m.role, m.status, m.display_name, m.profession, a.email
     FROM wedding_memberships m JOIN accounts a ON a.id = m.account_id
     WHERE m.wedding_id = ? ORDER BY m.created_at
   `).bind(weddingId).all()
   return context.json({ members: result.results })
+})
+
+app.post('/api/couple/weddings/:weddingId/members/team-invitations', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const body = await context.req.json().catch(() => null)
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const profession = body?.profession
+  const eventIds = Array.isArray(body?.eventIds) ? [...new Set(body.eventIds)] : []
+  if (!body || name.length < 2 || name.length > 160 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254
+    || !['seguranca', 'cerimonialista'].includes(profession) || !eventIds.length || eventIds.length > 6
+    || eventIds.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) return jsonError(context, 400, 'invalid_team_invitation')
+  const events = await context.env.DB.prepare(`SELECT id FROM events WHERE wedding_id = ? AND id IN (${eventIds.map(() => '?').join(', ')})`).bind(weddingId, ...eventIds).all()
+  if (events.results.length !== eventIds.length) return jsonError(context, 400, 'invalid_team_events')
+  const existingAccount = await context.env.DB.prepare('SELECT id, status FROM accounts WHERE email = ? COLLATE NOCASE').bind(email).first()
+  if (existingAccount && existingAccount.status !== 'active') return jsonError(context, 409, 'account_not_ready')
+  const accountId = existingAccount?.id || crypto.randomUUID()
+  const previousMembership = existingAccount ? await context.env.DB.prepare('SELECT id FROM wedding_memberships WHERE wedding_id = ? AND account_id = ?').bind(weddingId, accountId).first() : null
+  if (previousMembership) return jsonError(context, 409, 'account_already_member')
+  const memberId = crypto.randomUUID()
+  const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  const statements = [
+    ...(!existingAccount ? [context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status) VALUES (?, ?, ?, 'pending')`)
+      .bind(accountId, email, await hashPassword(encodeToken(crypto.getRandomValues(new Uint8Array(32)))))] : []),
+    context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status, invited_by, display_name, profession)
+      VALUES (?, ?, ?, 'checkin_staff', 'pending', ?, ?, ?)`).bind(memberId, weddingId, accountId, context.get('session').account_id, name, profession),
+    ...eventIds.map((eventId) => context.env.DB.prepare('INSERT INTO membership_event_access (membership_id, event_id) VALUES (?, ?)').bind(memberId, eventId)),
+    context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
+      VALUES (?, ?, 'email_verification', ?, ?, ?)`).bind(crypto.randomUUID(), accountId, await tokenHash(token), expiresAt, memberId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'event_staff_invitation_created', 'membership', ?, ?)`).bind(crypto.randomUUID(), context.get('session').account_id, weddingId, memberId, JSON.stringify({ profession, eventIds, expiresAt })),
+  ]
+  await context.env.DB.batch(statements)
+  return context.json({ id: memberId, name, email, role: 'checkin_staff', profession, status: 'pending', expiresAt, invitationUrl: `${new URL(context.req.url).origin}/aceitar-equipe#aceitar-equipe/${token}` }, 201)
 })
 
 app.post('/api/couple/weddings/:weddingId/members/invitations', requireSession, async (context) => {
@@ -1631,6 +1669,23 @@ app.patch('/api/couple/weddings/:weddingId/members/:membershipId', requireSessio
       .bind(crypto.randomUUID(), actor, weddingId, membershipId, JSON.stringify({ fromRole: target.role, toRole: nextRole, fromStatus: target.status, toStatus: nextStatus })),
   ])
   return context.json({ id: membershipId, role: nextRole, status: nextStatus })
+})
+
+app.delete('/api/couple/weddings/:weddingId/members/:membershipId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const memberId = context.req.param('membershipId')
+  const target = await context.env.DB.prepare(`SELECT id, role FROM wedding_memberships
+    WHERE id = ? AND wedding_id = ? AND role IN ('event_staff', 'checkin_staff')`).bind(memberId, weddingId).first()
+  if (!target) return jsonError(context, 404, 'team_member_not_found')
+  await context.env.DB.batch([
+    context.env.DB.prepare('DELETE FROM wedding_memberships WHERE id = ? AND wedding_id = ?').bind(memberId, weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'event_staff_access_deleted', 'membership', ?, ?)`).bind(crypto.randomUUID(), context.get('session').account_id, weddingId, memberId, JSON.stringify({ role: target.role })),
+  ])
+  return context.json({ id: memberId, deleted: true })
 })
 
 app.put('/api/couple/weddings/:weddingId/events/:eventId/members/:membershipId', requireSession, async (context) => {
@@ -2776,23 +2831,35 @@ app.get('/api/staff/events/:eventId/guests', requireSession, async (context) => 
   if (!assignment) return jsonError(context, 404, 'event_not_found')
   if (assignment.role === 'event_staff') {
     const result = await context.env.DB.prepare(`
-      SELECT g.id, g.name
-      FROM guests g
-      WHERE g.wedding_id = ? AND g.deleted_at IS NULL AND (
+      SELECT g.id, g.name, COALESCE(r.status, g.rsvp_status) AS rsvp_status, c.checked_in_at
+      FROM guests g LEFT JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ?
+      LEFT JOIN check_ins c ON c.guest_id = g.id AND c.event_id = ?
+      WHERE g.wedding_id = ? AND g.deleted_at IS NULL AND COALESCE(r.status, g.rsvp_status) = 'confirmed'
+        AND NOT EXISTS (SELECT 1 FROM guest_event_authorizations x WHERE x.event_id = ? AND x.guest_id = g.id AND x.status = 'revoked')
+        AND (EXISTS (SELECT 1 FROM guest_event_authorizations x WHERE x.event_id = ? AND x.guest_id = g.id AND x.status = 'authorized')
+        OR (
         NOT EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = ?)
         OR EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = ? AND x.group_id = g.group_id)
-      ) ORDER BY g.name COLLATE NOCASE
-    `).bind(assignment.wedding_id, eventId, eventId).all()
+        ))
+        AND (g.source != 'companion' OR EXISTS (
+          SELECT 1 FROM guest_companion_requests c
+          LEFT JOIN guest_rsvp_requests pr ON pr.id = c.rsvp_request_id AND pr.wedding_id = c.wedding_id
+          JOIN guests h ON h.id = COALESCE(c.host_guest_id, pr.guest_id) AND h.wedding_id = c.wedding_id
+          LEFT JOIN guest_rsvps hr ON hr.guest_id = h.id AND hr.event_id = c.event_id
+          WHERE c.guest_id = g.id AND c.event_id = ? AND c.status = 'approved'
+            AND (c.host_guest_id IS NOT NULL OR pr.review_status = 'approved') AND COALESCE(hr.status, h.rsvp_status) = 'confirmed'
+        ))
+      ORDER BY g.name COLLATE NOCASE
+    `).bind(eventId, eventId, assignment.wedding_id, eventId, eventId, eventId, eventId, eventId).all()
     return context.json({ guests: result.results, walkIns: [] }, 200, { 'Cache-Control': 'no-store' })
   }
   const result = await context.env.DB.prepare(`
-    SELECT g.id, g.name, COALESCE(r.party_size, g.party_size) AS party_size,
-      COALESCE(r.status, g.rsvp_status) AS rsvp_status, COALESCE(r.dietary_notes, g.dietary_notes) AS dietary_notes,
-      gg.name AS group_name, c.checked_in_at
-    FROM guests g LEFT JOIN guest_groups gg ON gg.id = g.group_id
+    SELECT g.id, g.name, 1 AS party_size,
+      COALESCE(r.status, g.rsvp_status) AS rsvp_status, c.checked_in_at
+    FROM guests g
     LEFT JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ?
     LEFT JOIN check_ins c ON c.guest_id = g.id AND c.event_id = ?
-    WHERE g.wedding_id = ? AND g.deleted_at IS NULL
+    WHERE g.wedding_id = ? AND g.deleted_at IS NULL AND COALESCE(r.status, g.rsvp_status) = 'confirmed'
       AND NOT EXISTS (SELECT 1 FROM guest_event_authorizations x WHERE x.event_id = ? AND x.guest_id = g.id AND x.status = 'revoked')
       AND (EXISTS (SELECT 1 FROM guest_event_authorizations x WHERE x.event_id = ? AND x.guest_id = g.id AND x.status = 'authorized')
         OR NOT EXISTS (SELECT 1 FROM event_group_access x WHERE x.event_id = ?)
@@ -2808,7 +2875,7 @@ app.get('/api/staff/events/:eventId/guests', requireSession, async (context) => 
     ORDER BY g.name COLLATE NOCASE
   `).bind(eventId, eventId, assignment.wedding_id, eventId, eventId, eventId, eventId, eventId).all()
   const walkIns = await context.env.DB.prepare(`
-    SELECT id, manual_name AS name, party_size, dietary_notes, checked_in_at
+    SELECT id, manual_name AS name, party_size, checked_in_at
     FROM check_ins WHERE event_id = ? AND wedding_id = ? AND guest_id IS NULL ORDER BY checked_in_at
   `).bind(eventId, assignment.wedding_id).all()
   return context.json({ guests: result.results, walkIns: walkIns.results }, 200, { 'Cache-Control': 'no-store' })
@@ -2822,9 +2889,9 @@ app.post('/api/staff/events/:eventId/scan', requireSession, async (context) => {
   const token = typeof body?.token === 'string' ? body.token : ''
   if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return jsonError(context, 400, 'invalid_invitation')
   const guest = await context.env.DB.prepare(`
-    SELECT g.id, g.name, COALESCE(r.party_size, g.party_size) AS party_size,
-      COALESCE(r.status, g.rsvp_status) AS rsvp_status, gg.name AS group_name
-    FROM guests g LEFT JOIN guest_groups gg ON gg.id = g.group_id
+    SELECT g.id, g.name, 1 AS party_size,
+      COALESCE(r.status, g.rsvp_status) AS rsvp_status
+    FROM guests g
     LEFT JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ?
     WHERE g.access_token_hash = ? AND g.wedding_id = ? AND g.deleted_at IS NULL AND (
       EXISTS (SELECT 1 FROM guest_event_authorizations x WHERE x.wedding_id = g.wedding_id AND x.event_id = ? AND x.guest_id = g.id AND x.status = 'authorized')
@@ -2847,7 +2914,7 @@ app.post('/api/staff/events/:eventId/scan', requireSession, async (context) => {
     const previous = await context.env.DB.prepare('SELECT checked_in_at FROM check_ins WHERE wedding_id = ? AND event_id = ? AND guest_id = ?').bind(assignment.wedding_id, eventId, guest.id).first()
     return context.json({ error: 'already_checked_in', checkedInAt: previous?.checked_in_at || null }, 409, { 'Cache-Control': 'no-store' })
   }
-  return context.json({ id, checkedIn: true, guest: { id: guest.id, name: guest.name, partySize: guest.party_size, groupName: guest.group_name } }, 201)
+  return context.json({ id, checkedIn: true, guest: { id: guest.id, name: guest.name, partySize: 1 } }, 201)
 })
 
 app.post('/api/staff/events/:eventId/checkins', requireSession, async (context) => {
@@ -2886,10 +2953,9 @@ app.get('/api/staff/events/:eventId/offline-roster', requireSession, async (cont
   const assignment = await assignedStaff(context, eventId, ['checkin_staff'])
   if (!assignment) return jsonError(context, 404, 'event_not_found')
   const [result, walkIns] = await Promise.all([context.env.DB.prepare(`
-    SELECT g.id, g.name, g.access_token_hash, COALESCE(r.party_size, g.party_size) AS party_size,
-      gg.name AS group_name, COALESCE(r.status, g.rsvp_status) AS rsvp_status,
-      COALESCE(r.dietary_notes, g.dietary_notes) AS dietary_notes, c.checked_in_at
-    FROM guests g LEFT JOIN guest_groups gg ON gg.id = g.group_id
+    SELECT g.id, g.name, g.access_token_hash, 1 AS party_size,
+      COALESCE(r.status, g.rsvp_status) AS rsvp_status, c.checked_in_at
+    FROM guests g
     LEFT JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ?
     LEFT JOIN check_ins c ON c.guest_id = g.id AND c.event_id = ?
     WHERE g.wedding_id = ? AND g.deleted_at IS NULL AND g.access_token_hash IS NOT NULL
@@ -2908,7 +2974,7 @@ app.get('/api/staff/events/:eventId/offline-roster', requireSession, async (cont
       ))
     ORDER BY g.name COLLATE NOCASE
   `).bind(eventId, eventId, assignment.wedding_id, eventId, eventId, eventId, eventId, eventId).all(), context.env.DB.prepare(`
-    SELECT id, manual_name AS name, party_size, dietary_notes, checked_in_at
+    SELECT id, manual_name AS name, party_size, checked_in_at
     FROM check_ins WHERE event_id = ? AND wedding_id = ? AND guest_id IS NULL ORDER BY checked_in_at
   `).bind(eventId, assignment.wedding_id).all()])
   return context.json({ guests: result.results, walkIns: walkIns.results }, 200, { 'Cache-Control': 'no-store' })
