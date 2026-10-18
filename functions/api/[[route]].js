@@ -2238,20 +2238,37 @@ app.post('/api/public/attendance-requests/credentials', async (context) => {
     WHERE g.id = ? AND g.wedding_id = ? AND g.deleted_at IS NULL AND g.rsvp_status = 'confirmed'`)
     .bind(request.event_id, request.event_id, request.guest_id, request.wedding_id).first()
   if (!guest) return jsonError(context, 409, 'credentials_not_available')
-  let accessToken = await openGuestCredential(context, guest.access_token_ciphertext, guest.access_token_iv)
-  if (!accessToken) {
-    accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
-    const credential = await guestCredentialCipher(context, accessToken)
-    await context.env.DB.batch([
-      context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, access_token_ciphertext = ?, access_token_iv = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL AND rsvp_status = 'confirmed'`)
-      .bind(await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, guest.id, request.wedding_id),
-      context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
-        VALUES (?, NULL, ?, 'guest_credential_recovered', 'guest', ?, '{}')`)
-        .bind(crypto.randomUUID(), request.wedding_id, guest.id),
-    ])
+  const companions = await context.env.DB.prepare(`SELECT c.id AS companion_request_id, g.id, g.name, g.access_token_ciphertext, g.access_token_iv
+    FROM guest_companion_requests c
+    JOIN guests g ON g.id = c.guest_id AND g.wedding_id = c.wedding_id
+    JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = c.event_id AND r.wedding_id = c.wedding_id AND r.status = 'confirmed'
+    JOIN guest_event_authorizations a ON a.guest_id = g.id AND a.event_id = c.event_id AND a.wedding_id = c.wedding_id AND a.status = 'authorized'
+    WHERE c.rsvp_request_id = ? AND c.wedding_id = ? AND c.event_id = ? AND c.status = 'approved'
+      AND g.deleted_at IS NULL AND g.rsvp_status = 'confirmed'
+    ORDER BY c.created_at`).bind(request.id, request.wedding_id, request.event_id).all()
+  const credentials = []
+  for (const person of [guest, ...(companions.results || [])]) {
+    let accessToken = await openGuestCredential(context, person.access_token_ciphertext, person.access_token_iv)
+    if (!accessToken) {
+      accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+      const credential = await guestCredentialCipher(context, accessToken)
+      await context.env.DB.batch([
+        context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, access_token_ciphertext = ?, access_token_iv = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL AND rsvp_status = 'confirmed'`)
+        .bind(await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, person.id, request.wedding_id),
+        context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+          VALUES (?, NULL, ?, 'guest_credential_recovered', 'guest', ?, '{}')`)
+          .bind(crypto.randomUUID(), request.wedding_id, person.id),
+      ])
+    }
+    credentials.push({
+      guestId: person.id,
+      name: person.name || '',
+      ...(person.companion_request_id ? { companionRequestId: person.companion_request_id } : {}),
+      accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${accessToken}`,
+    })
   }
-  return context.json({ credentials: [{ guestId: guest.id, name: guest.name || '', accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${accessToken}` }] }, 200, { 'Cache-Control': 'no-store' })
+  return context.json({ credentials }, 200, { 'Cache-Control': 'no-store' })
 })
 
 app.get('/api/invitation/companions', async (context) => {

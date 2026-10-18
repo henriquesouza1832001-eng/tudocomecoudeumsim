@@ -2720,11 +2720,20 @@ function AttendanceRequestPortal({ notify }) {
     setBusy(true)
     setError('')
     try {
+      const statusResponse = await fetch('/api/public/attendance-requests/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
+      const statusResult = await statusResponse.json()
+      if (!statusResponse.ok) throw new Error('Não foi possível atualizar a situação da confirmação.')
+      setData(statusResult)
+      if (statusResult.request.reviewStatus !== 'approved' || statusResult.request.attendanceStatus !== 'confirmed') {
+        setCredentials([])
+        notify('A solicitação ainda está aguardando a análise dos noivos.')
+        return
+      }
       const response = await fetch('/api/public/attendance-requests/credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
       const result = await response.json()
       if (!response.ok) throw new Error('As credenciais ainda não estão disponíveis.')
       setCredentials(result.credentials)
-      notify('Seu QR individual foi recuperado.')
+      notify('Confirmação atualizada. Os QRs disponíveis foram carregados.')
     } catch (cause) {
       setError(cause.message)
     } finally {

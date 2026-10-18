@@ -42,7 +42,7 @@ const wedding = {
   site_published_at: '2026-10-18T12:00:00.000Z',
 }
 
-function database({ publishedWedding = wedding, batches = [], first = () => undefined } = {}) {
+function database({ publishedWedding = wedding, batches = [], first = () => undefined, all = () => ({ results: [] }) } = {}) {
   return {
     prepare(query) {
       let values = []
@@ -57,7 +57,7 @@ function database({ publishedWedding = wedding, batches = [], first = () => unde
           if (query.includes('INSERT INTO public_wedding_request_limits')) return { request_count: 1, blocked_until: null }
           return null
         },
-        async all() { return { results: [] } },
+        async all() { return all(query, values) },
         async run() { return { meta: { changes: 1 } } },
         query,
         values,
@@ -70,13 +70,13 @@ function database({ publishedWedding = wedding, batches = [], first = () => unde
   }
 }
 
-async function call(path, { method = 'GET', body, publishedWedding, env = {}, headers = {}, first } = {}) {
+async function call(path, { method = 'GET', body, publishedWedding, env = {}, headers = {}, first, all } = {}) {
   const requestHeaders = new Headers({ ...headers })
   if (body !== undefined) requestHeaders.set('Content-Type', 'application/json')
   if (method !== 'GET') requestHeaders.set('Origin', origin)
   const request = new Request(`${origin}${path}`, { method, headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body) })
   const batches = []
-  const db = database({ publishedWedding, batches, first })
+  const db = database({ publishedWedding, batches, first, all })
   const response = await onRequest({ request, env: { DB: db, ...env } })
   return { response, batches }
 }
@@ -190,6 +190,42 @@ test('private RSVP recovery returns the same principal QR without exposing compa
   assert.deepEqual(body.credentials.map((credential) => credential.accessUrl), [`${origin}/convidado#convite/${accessToken}`])
   assert.equal(body.credentials.some((credential) => credential.companionRequestId), false)
   assert.equal(batches.length, 0)
+})
+
+test('private RSVP recovery includes only approved and authorized companion QR credentials', async () => {
+  const secret = 'test-key-with-at-least-thirty-two-characters'
+  const keyBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
+  const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt'])
+  const encode = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+  async function encryptedToken(token) {
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token)))
+    return { access_token_ciphertext: encode(ciphertext), access_token_iv: encode(iv) }
+  }
+  const principal = { id: 'guest-1', name: 'Pessoa', ...await encryptedToken('c'.repeat(43)) }
+  const companion = { id: 'guest-2', name: 'Acompanhante', companion_request_id: 'companion-1', ...await encryptedToken('d'.repeat(43)) }
+  const { response } = await call('/api/public/attendance-requests/credentials', {
+    method: 'POST',
+    body: { requestToken: 'b'.repeat(43) },
+    env: { GUEST_CREDENTIALS_ENCRYPTION_KEY: secret },
+    first(query) {
+      if (query.includes('FROM guest_rsvp_requests WHERE request_token_hash')) return { id: 'request-1', wedding_id: 'wedding-1', event_id: eventId, guest_id: 'guest-1', attendance_status: 'confirmed', review_status: 'approved' }
+      if (query.includes('INSERT INTO public_wedding_request_limits')) return { request_count: 1, blocked_until: null }
+      if (query.includes('FROM guests g JOIN guest_rsvps')) return principal
+      return undefined
+    },
+    all(query) {
+      if (query.includes('FROM guest_companion_requests c')) return { results: [companion] }
+      return { results: [] }
+    },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.credentials.map(({ guestId, name, companionRequestId }) => ({ guestId, name, companionRequestId })), [
+    { guestId: 'guest-1', name: 'Pessoa', companionRequestId: undefined },
+    { guestId: 'guest-2', name: 'Acompanhante', companionRequestId: 'companion-1' },
+  ])
+  assert.match(body.credentials[1].accessUrl, /#convite\/d{43}$/)
 })
 
 test('request status lookup rejects malformed bearer tokens without querying D1', async () => {
