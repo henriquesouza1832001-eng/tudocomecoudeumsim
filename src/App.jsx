@@ -14,7 +14,6 @@ import {
   ChevronRight,
   CircleHelp,
   Copy,
-  Download,
   Eye,
   EyeOff,
   ExternalLink,
@@ -97,7 +96,7 @@ function FontScalePicker({ value = 'medium', onChange }) {
     <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
   </div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '' } }
 const EVENT_TYPE_LABELS = { ceremony: 'Cerimônia', reception: 'Recepção', rehearsal: 'Ensaio', brunch: 'Brunch', other: 'Outro' }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
@@ -232,12 +231,12 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`
 }
 
-async function requestWithRecentMfa(request, path, options) {
+async function requestWithRecentMfa(request, path, options, requestPrompt) {
   try {
     return await request(path, options)
   } catch (cause) {
     if (cause.message !== 'recent_mfa_required') throw cause
-    const code = window.prompt('Confirme a opera\u00e7\u00e3o com o c\u00f3digo de seis d\u00edgitos do autenticador.')
+    const code = await requestPrompt({ title: 'Confirme sua identidade', message: 'Digite o código de seis dígitos do autenticador para continuar.', label: 'Código do autenticador', type: 'text', confirmLabel: 'Confirmar código' })
     if (!code) throw new Error('mfa_reauthentication_cancelled')
     await request('/api/auth/mfa/reauth', { method: 'POST', body: JSON.stringify({ code }) })
     return request(path, options)
@@ -400,15 +399,66 @@ async function hashInvitationToken(token) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
 }
 
+function IdentityDialog({ config, onResolve }) {
+  const [value, setValue] = useState('')
+  const input = useRef(null)
+
+  useEffect(() => {
+    if (config.type === 'prompt') input.current?.focus()
+    const handleKey = (event) => {
+      if (event.key === 'Escape') onResolve(config.type === 'prompt' ? null : false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [config.type, onResolve])
+
+  function submit(event) {
+    event.preventDefault()
+    onResolve(config.type === 'prompt' ? value.trim() || null : true)
+  }
+
+  return <div className="identity-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onResolve(config.type === 'prompt' ? null : false)}><form className="identity-dialog" role="alertdialog" aria-modal="true" aria-labelledby="identity-dialog-title" onSubmit={submit}>
+    <span className="identity-dialog-flower" aria-hidden="true">✿</span>
+    <span className="eyebrow">TUDO COMEÇOU DE UM SIM</span>
+    <h2 id="identity-dialog-title">{config.title}</h2>
+    <p>{config.message}</p>
+    {config.type === 'prompt' && <label className="identity-dialog-field">{config.label}<input ref={input} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={value} onChange={(event) => setValue(event.target.value.replace(/\D/g, '').slice(0, 6))} required /></label>}
+    <div className="identity-dialog-actions"><button type="button" className="button-outline" onClick={() => onResolve(config.type === 'prompt' ? null : false)}>Cancelar</button><button type="submit" className={config.danger ? 'identity-dialog-danger' : 'button-primary'}>{config.confirmLabel || 'Continuar'}</button></div>
+  </form></div>
+}
+
 function App() {
   const [view, setView] = useState(resolveCurrentView)
   const [theme, setTheme] = useState('garden')
   const [adminPage, setAdminPage] = useState('overview')
   const [toast, setToast] = useState('')
+  const [dialog, setDialog] = useState(null)
+  const dialogResolver = useRef(null)
 
   function notify(message) {
     setToast(message)
     window.setTimeout(() => setToast(''), 2400)
+  }
+
+  function askDialog(options) {
+    return new Promise((resolve) => {
+      dialogResolver.current = resolve
+      setDialog(options)
+    })
+  }
+
+  function finishDialog(value) {
+    dialogResolver.current?.(value)
+    dialogResolver.current = null
+    setDialog(null)
+  }
+
+  function confirmAction(message, title = 'Confirmar ação', confirmLabel = 'Confirmar', danger = false) {
+    return askDialog({ type: 'confirm', title, message, confirmLabel, danger })
+  }
+
+  function promptAction(options) {
+    return askDialog({ ...options, type: 'prompt' })
   }
 
   function navigateView(nextView) {
@@ -442,7 +492,7 @@ function App() {
       </div>}
 
       {view === 'guest' && import.meta.env.DEV && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
-      {view === 'dashboard' && <CouplePanel notify={notify} />}
+      {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
       {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'help-center' && <HelpCenter />}
       {view === 'couple-signup' && <CoupleSignup />}
@@ -455,9 +505,10 @@ function App() {
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
       {view === 'godparent' && <GodparentPortal notify={notify} />}
       {view === 'event-staff' && <EventStaffPanel notify={notify} />}
-      {view === 'superadmin' && <SuperAdminPanel notify={notify} />}
+      {view === 'superadmin' && <SuperAdminPanel notify={notify} promptAction={promptAction} />}
       {view === 'checkin' && <CheckIn notify={notify} />}
       {toast && <div className="toast" role="status"><Check size={16} /> {toast}</div>}
+      {dialog && <IdentityDialog key={`${dialog.title}-${dialog.type}`} config={dialog} onResolve={finishDialog} />}
     </main>
   )
 }
@@ -1005,7 +1056,7 @@ function PasswordReset() {
   </RoleFrame>
 }
 
-function CouplePanel({ notify }) {
+function CouplePanel({ notify, confirmAction, promptAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
@@ -1022,14 +1073,14 @@ function CouplePanel({ notify }) {
   const [events, setEvents] = useState([])
   const [rsvps, setRsvps] = useState([])
   const [gifts, setGifts] = useState([])
-  const [contributions, setContributions] = useState([])
-  const [contributionSummary, setContributionSummary] = useState({ received_cents: 0, fee_due_cents: 0, total_count: 0 })
   const [editingGift, setEditingGift] = useState(null)
   const [giftType, setGiftType] = useState('fixed')
   const [giftTitle, setGiftTitle] = useState('')
   const [giftDescription, setGiftDescription] = useState('')
   const [giftAmount, setGiftAmount] = useState('')
   const [giftGoal, setGiftGoal] = useState('')
+  const [giftFulfillmentType, setGiftFulfillmentType] = useState('pix_direct')
+  const [giftStoreUrl, setGiftStoreUrl] = useState('')
   const [manualEventId, setManualEventId] = useState('')
   const [manualGuestId, setManualGuestId] = useState('')
   const [manualRsvpStatus, setManualRsvpStatus] = useState('confirmed')
@@ -1129,8 +1180,6 @@ function CouplePanel({ notify }) {
       setEvents(result.events)
       setRsvps([])
       setGifts([])
-      setContributions([])
-      setContributionSummary({ received_cents: 0, fee_due_cents: 0, total_count: 0 })
       setMembers([])
       setAssignments([])
       setGodparentTasks([])
@@ -1152,8 +1201,6 @@ function CouplePanel({ notify }) {
       setEvents(eventResult.events)
       setRsvps([])
       setGifts([])
-      setContributions([])
-      setContributionSummary({ received_cents: 0, fee_due_cents: 0, total_count: 0 })
       setMembers([])
       setAssignments([])
       setGodparentTasks([])
@@ -1164,13 +1211,12 @@ function CouplePanel({ notify }) {
       setSiteConfigLoading(false)
       return
     }
-    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, contributionResult, memberResult, assignmentResult, taskResult, siteConfigResult] = await Promise.all([
+    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, memberResult, assignmentResult, taskResult, siteConfigResult] = await Promise.all([
       request(`${base}/guests`),
       request(`${base}/groups`),
       request(`${base}/events`),
       request(`${base}/rsvps`),
       request(`${base}/gifts`),
-      request(`${base}/contributions`),
       request(`${base}/members`),
       request(`${base}/event-assignments`),
       request(`${base}/godparent-tasks`),
@@ -1181,8 +1227,6 @@ function CouplePanel({ notify }) {
     setEvents(eventResult.events)
     setRsvps(rsvpResult.rsvps)
     setGifts(giftResult.gifts)
-    setContributions(contributionResult.contributions)
-    setContributionSummary(contributionResult.summary)
     setMembers(memberResult.members)
     setAssignments(assignmentResult.assignments)
     setGodparentTasks(taskResult.tasks)
@@ -1215,15 +1259,15 @@ function CouplePanel({ notify }) {
     }
   }
 
-  async function publishSite(profile) {
-    if (!window.confirm('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?')) return
+  async function publishSite(profile, configOverride = siteConfig) {
+    if (!await confirmAction('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?', 'Publicar convite', 'Publicar convite')) return
     setSiteConfigLoading(true)
     setError('')
     try {
       if (profile) await saveWeddingProfile(profile)
-      let draft = siteConfig
-      if (JSON.stringify(siteConfig) !== JSON.stringify(savedSiteConfig)) {
-        const saved = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(siteConfig) })
+      let draft = configOverride
+      if (JSON.stringify(configOverride) !== JSON.stringify(savedSiteConfig)) {
+        const saved = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(configOverride) })
         draft = saved.draft
         setSiteConfig(draft)
         setSavedSiteConfig(draft)
@@ -1402,11 +1446,11 @@ function CouplePanel({ notify }) {
   }
 
   async function removeGuest(guest) {
-    if (!window.confirm(`Remover ${guest.name}? Os dados pessoais e o link serão apagados; RSVP e check-in serão preservados sem identificação.`)) return
+    if (!await confirmAction(`Remover ${guest.name}? Os dados pessoais e o link serão apagados; RSVP e check-in serão preservados sem identificação.`, 'Remover convidado', 'Remover', true)) return
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
+      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' }, promptAction)
       setEditingGuest(null)
       setShare(null)
       await loadWeddingData(weddingId)
@@ -1441,6 +1485,8 @@ function CouplePanel({ notify }) {
     setGiftDescription('')
     setGiftAmount('')
     setGiftGoal('')
+    setGiftFulfillmentType('pix_direct')
+    setGiftStoreUrl('')
   }
 
   function startGiftEdit(gift) {
@@ -1450,6 +1496,8 @@ function CouplePanel({ notify }) {
     setGiftDescription(gift.description || '')
     setGiftAmount(gift.amount_cents === null ? '' : (gift.amount_cents / 100).toFixed(2))
     setGiftGoal(gift.goal_cents === null ? '' : (gift.goal_cents / 100).toFixed(2))
+    setGiftFulfillmentType(gift.fulfillment_type || 'pix_direct')
+    setGiftStoreUrl(gift.store_url || '')
   }
 
   async function saveGift(event) {
@@ -1459,6 +1507,8 @@ function CouplePanel({ notify }) {
     try {
       const body = {
         giftType,
+        fulfillmentType: giftFulfillmentType,
+        storeUrl: giftFulfillmentType === 'store_link' ? giftStoreUrl : '',
         title: giftTitle,
         description: giftDescription,
         amountCents: giftType === 'fixed' ? parseBrlCents(giftAmount) : null,
@@ -1480,7 +1530,7 @@ function CouplePanel({ notify }) {
   }
 
   async function archiveGift(gift) {
-    if (!window.confirm(`Arquivar “${gift.title}”? O presente deixa de ficar ativo na lista.`)) return
+    if (!await confirmAction(`Arquivar “${gift.title}”? O presente deixa de ficar ativo na lista.`, 'Arquivar presente', 'Arquivar', true)) return
     setBusy(true)
     setError('')
     try {
@@ -1489,72 +1539,6 @@ function CouplePanel({ notify }) {
       notify('Presente arquivado; o registro foi preservado.')
     } catch {
       setError('Não foi possível arquivar este presente.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function exportContributionCsv() {
-    setBusy(true)
-    setError('')
-    try {
-      const rows = []
-      let page = 1
-      let hasMore = true
-      while (hasMore) {
-        if (page > 10000) throw new Error('export_page_limit')
-        const result = await request(`/api/couple/weddings/${weddingId}/contributions?page=${page}`)
-        rows.push(...result.contributions)
-        hasMore = result.hasMore
-        page += 1
-      }
-      const statusLabels = { reported: 'Informado', pending: 'Pendente', confirmed: 'Confirmado', paid: 'Pago', failed: 'Falhou', refunded: 'Estornado', rejected: 'Recusado' }
-      const table = [
-        ['Data', 'Presente', 'Modo', 'Status', 'Pagador', 'Mensagem', 'Valor em centavos', 'Valor em reais', 'Taxa em centavos', 'Taxa em reais', 'Quem paga a taxa', 'Status da taxa'],
-        ...rows.map((item) => [
-          item.created_at,
-          item.gift_title || 'Presente sem item vinculado',
-          item.payment_mode === 'pix_direct' ? 'Pix direto' : 'Stripe',
-          statusLabels[item.status] || item.status,
-          item.payer_name || '',
-          item.message || '',
-          item.amount_cents,
-          formatBrlCents(item.amount_cents),
-          item.fee_amount_cents,
-          formatBrlCents(item.fee_amount_cents),
-          item.fee_paid_by === 'guest' ? 'Convidado' : 'Noivos',
-          item.fee_status,
-        ]),
-      ]
-      const blob = new Blob([`\uFEFF${table.map((row) => row.map(csvCell).join(';')).join('\r\n')}`], { type: 'text/csv;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = `casamento-${wedding?.slug || weddingId}-extrato-de-presentes.csv`
-      anchor.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      notify(`Extrato exportado com ${rows.length} lançamentos`)
-    } catch {
-      setError('Não foi possível exportar o extrato completo de presentes.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function decideContribution(contribution, status) {
-    const verb = status === 'confirmed' ? 'confirmar o recebimento' : 'recusar este registro'
-    if (!window.confirm(`Deseja ${verb} de ${formatBrlCents(contribution.amount_cents)}?`)) return
-    setBusy(true)
-    setError('')
-    try {
-      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/contributions/${contribution.id}/decision`, {
-        method: 'POST',
-        body: JSON.stringify({ status }),
-      })
-      await loadWeddingData(weddingId)
-      notify(status === 'confirmed' ? 'Recebimento confirmado' : 'Registro recusado')
-    } catch (cause) {
-      setError(cause.message === 'mfa_reauthentication_cancelled' ? 'A confirmação do autenticador foi cancelada.' : 'Não foi possível atualizar este recebimento.')
     } finally {
       setBusy(false)
     }
@@ -1662,7 +1646,7 @@ function CouplePanel({ notify }) {
   }
 
   async function deleteWeddingEvent(item) {
-    if (!window.confirm(`Excluir o evento “${item.name}”? O convite publicado também será atualizado. Confirmações, entradas, fotos ou acessos de equipe vinculados impedem a exclusão.`)) return
+    if (!await confirmAction(`Excluir o evento “${item.name}”? O convite publicado também será atualizado. Confirmações, entradas, fotos ou acessos de equipe vinculados impedem a exclusão.`, 'Excluir evento', 'Excluir evento', true)) return
     setBusy(true)
     setError('')
     try {
@@ -1836,23 +1820,23 @@ function CouplePanel({ notify }) {
       {events.length > 0 && members.some((member) => ['event_staff', 'checkin_staff'].includes(member.role)) && <section className="role-card"><span className="eyebrow">ACESSO POR EVENTO</span><h2>Atribuir eventos</h2><div className="team-assignment-list">{members.filter((member) => ['event_staff', 'checkin_staff'].includes(member.role)).map((member) => <article key={member.id}><strong>{member.email}<small>{member.role === 'checkin_staff' ? 'Equipe de entrada' : 'Equipe do evento'}</small></strong><div>{events.map((event) => { const assigned = assignments.some((item) => item.membership_id === member.id && item.event_id === event.id); return <label key={event.id}><input type="checkbox" checked={assigned} disabled={busy || member.status !== 'active'} onChange={(input) => assignMember(event.id, member, input.target.checked)} />{event.name}</label> })}</div></article>)}</div></section>}
     </>}
     {tab === 'gifts' && <>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">CATÁLOGO DO CASAMENTO</span><h2>{editingGift ? 'Editar presente' : 'Adicionar presente'}</h2></div><Gift size={18} /></div><p className="team-access-note">Crie cotas com valor definido ou presentes de valor livre. A lista fica vinculada somente a este casamento. Recebimentos e pagamentos ainda não estão conectados.</p><form className="gift-management-form" onSubmit={saveGift}><label>Nome do presente<input value={giftTitle} onChange={(event) => setGiftTitle(event.target.value)} maxLength="120" required /></label><label>Tipo<select value={giftType} onChange={(event) => setGiftType(event.target.value)}><option value="fixed">Cota com valor definido</option><option value="custom">Valor livre</option></select></label>{giftType === 'fixed' && <label>Valor da cota (R$)<input inputMode="decimal" value={giftAmount} onChange={(event) => setGiftAmount(event.target.value)} placeholder="150,00" required /></label>}<label>Meta opcional (R$)<input inputMode="decimal" value={giftGoal} onChange={(event) => setGiftGoal(event.target.value)} placeholder="Sem meta" /></label><label className="gift-form-wide">Descrição<textarea rows="3" maxLength="500" value={giftDescription} onChange={(event) => setGiftDescription(event.target.value)} /></label>{editingGift && <label>Status<select value={editingGift.status} onChange={(event) => setEditingGift({ ...editingGift, status: event.target.value })}><option value="active">Ativo</option><option value="archived">Arquivado</option></select></label>}<div className="gift-form-actions"><button type="submit" className="button-primary" disabled={busy || (!editingGift && gifts.filter((item) => item.status === 'active').length >= 60)}>{editingGift ? 'Salvar presente' : 'Adicionar à lista'} <Check size={15} /></button>{editingGift && <button type="button" className="button-outline" disabled={busy} onClick={resetGiftForm}>Cancelar</button>}</div></form></section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">CATÁLOGO DO CASAMENTO</span><h2>{editingGift ? 'Editar presente' : 'Adicionar presente'}</h2></div><Gift size={18} /></div><p className="team-access-note">Escolha Pix direto aos noivos ou um link para comprar e entregar em uma loja. A plataforma não recebe pagamentos.</p><form className="gift-management-form" onSubmit={saveGift}><label>Nome do presente<input value={giftTitle} onChange={(event) => setGiftTitle(event.target.value)} maxLength="120" required /></label><label>Como presentear<select value={giftFulfillmentType} onChange={(event) => setGiftFulfillmentType(event.target.value)}><option value="pix_direct">Pix direto aos noivos</option><option value="store_link">Comprar em uma loja</option></select></label><label>Tipo<select value={giftType} onChange={(event) => setGiftType(event.target.value)}><option value="fixed">Valor sugerido</option><option value="custom">Sem valor sugerido</option></select></label>{giftType === 'fixed' && <label>Valor sugerido (R$)<input inputMode="decimal" value={giftAmount} onChange={(event) => setGiftAmount(event.target.value)} placeholder="150,00" required /></label>}{giftFulfillmentType === 'store_link' && <label className="gift-form-wide">Link seguro da loja<input type="url" inputMode="url" value={giftStoreUrl} onChange={(event) => setGiftStoreUrl(event.target.value)} placeholder="https://loja.com/produto" required /></label>}<label className="gift-form-wide">Descrição<textarea rows="3" maxLength="500" value={giftDescription} onChange={(event) => setGiftDescription(event.target.value)} /></label>{editingGift && <label>Status<select value={editingGift.status} onChange={(event) => setEditingGift({ ...editingGift, status: event.target.value })}><option value="active">Ativo</option><option value="archived">Arquivado</option></select></label>}<div className="gift-form-actions"><button type="submit" className="button-primary" disabled={busy || (!editingGift && gifts.filter((item) => item.status === 'active').length >= 60) || (giftFulfillmentType === 'store_link' && !giftStoreUrl.trim())}>{editingGift ? 'Salvar presente' : 'Adicionar à lista'} <Check size={15} /></button>{editingGift && <button type="button" className="button-outline" disabled={busy} onClick={resetGiftForm}>Cancelar</button>}</div></form></section>
+      <section className="role-card couple-pix-settings"><div className="role-card-heading"><div><span className="eyebrow">PIX DIRETO</span><h2>Chave Pix no convite</h2></div><Wallet size={18} /></div><p className="team-access-note">O convidado copia a chave e faz a transferência no próprio aplicativo do banco. Não há cobrança, confirmação automática nem integração bancária.</p><label className="pix-toggle"><input type="checkbox" checked={Boolean(siteConfig.pix?.enabled)} onChange={(event) => setSiteConfig((current) => ({ ...current, pix: { enabled: event.target.checked, key: current.pix?.key || '' } }))} /><span>Mostrar opção Pix na lista de presentes</span></label><label className="pix-key-field">Chave Pix<input autoComplete="off" value={siteConfig.pix?.key || ''} onChange={(event) => setSiteConfig((current) => ({ ...current, pix: { enabled: Boolean(current.pix?.enabled), key: event.target.value } }))} maxLength="200" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" /></label><div className="gift-form-actions"><button type="button" className="button-primary" disabled={siteConfigLoading || (siteConfig.pix?.enabled && !siteConfig.pix?.key?.trim())} onClick={() => publishSite(null, siteConfig)}>{siteConfigLoading ? 'Salvando…' : 'Salvar e publicar no convite'} <Check size={15} /></button></div><small className="pix-publish-note">A publicação atualiza o site inteiro com o rascunho salvo.</small></section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">LISTA DE PRESENTES</span><h2>Itens cadastrados</h2></div><span className="task-count">{gifts.filter((item) => item.status === 'active').length}/60 ativos</span></div><div className="couple-gift-list">{gifts.map((gift) => <article key={gift.id}><div><strong>{gift.title}</strong><small>{gift.gift_type === 'custom' ? 'Valor livre' : formatBrlCents(gift.amount_cents)}{gift.goal_cents ? ` · meta ${formatBrlCents(gift.goal_cents)}` : ''}</small>{gift.description && <p>{gift.description}</p>}</div><span className={`admin-state ${gift.status === 'active' ? 'admin-state-active' : ''}`}>{gift.status === 'active' ? 'Ativo' : 'Arquivado'}</span><div className="guest-admin-actions"><button className="button-outline" disabled={busy} onClick={() => startGiftEdit(gift)} aria-label={`Editar ${gift.title}`}><Pencil size={14} /></button>{gift.status === 'active' && <button className="button-outline guest-remove-button" disabled={busy} onClick={() => archiveGift(gift)} aria-label={`Arquivar ${gift.title}`}><Trash2 size={14} /></button>}</div></article>)}{!gifts.length && <p className="buffet-empty">Adicione os primeiros presentes para este casamento.</p>}</div></section>
     </>}
     {tab === 'gifts' && <>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">REGISTRO FINANCEIRO</span><h2>Recebimentos e taxas</h2></div><button className="button-outline" onClick={exportContributionCsv} disabled={busy || !contributionSummary.total_count}><Download size={15} /> Exportar CSV</button></div><div className="gift-ledger-summary"><div><span>Presentes confirmados</span><strong>{formatBrlCents(contributionSummary.received_cents)}</strong></div><div><span>Taxas pendentes</span><strong>{formatBrlCents(contributionSummary.fee_due_cents)}</strong></div><div><span>Registros financeiros</span><strong>{contributionSummary.total_count}</strong></div></div><div className="couple-gift-list">{contributions.map((item) => <article key={item.id}><div><strong>{item.gift_title || 'Presente sem item vinculado'} · {formatBrlCents(item.amount_cents)}</strong><small>{item.payer_name || 'Convidado'} · {item.payment_mode === 'pix_direct' ? 'Pix direto' : 'Stripe'} · {new Date(item.created_at).toLocaleDateString('pt-BR')}</small>{item.message && <p>{item.message}</p>}</div><span className={`admin-state ${['confirmed', 'paid'].includes(item.status) ? 'admin-state-active' : ''}`}>{({ reported: 'Informado', pending: 'Pendente', confirmed: 'Confirmado', paid: 'Pago', failed: 'Falhou', refunded: 'Estornado', rejected: 'Recusado' })[item.status] || item.status}</span><small className="gift-fee-state">Taxa {formatBrlCents(item.fee_amount_cents)} · {item.fee_status === 'due' ? 'pendente' : item.fee_status === 'paid' ? 'paga' : 'não cobrada'}</small>{item.status === 'reported' && item.payment_mode === 'pix_direct' && <div className="guest-admin-actions"><button className="button-outline" disabled={busy} onClick={() => decideContribution(item, 'confirmed')}>Confirmar</button><button className="button-outline guest-remove-button" disabled={busy} onClick={() => decideContribution(item, 'rejected')}>Recusar</button></div>}</article>)}{!contributions.length && <p className="buffet-empty">Os recebimentos aparecerão aqui quando os modos de pagamento forem ativados.</p>}</div><p className="team-access-note">A confirmação financeira vem do webhook do provedor ou dos noivos no Pix direto. O retorno do navegador não confirma pagamento.</p></section>
     </>}
     {tab === 'godparents' && <>
       <section className="role-card godparent-welcome"><span className="eyebrow">QUEM CAMINHA COM VOCÊS</span><h2>Um espaço especial para padrinhos e madrinhas.</h2><p>Compartilhem orientações e tarefas com cada pessoa. O convite individual mostra apenas o que foi enviado a ela, sem expor a lista de convidados.</p><a href="#godparent-task-form">Preparar uma orientação <ArrowRight size={17} /></a></section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
-    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} />}
-    {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} />}
+    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
+    {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function GuestPhotoAlbum({ weddingId, notify }) {
+function GuestPhotoAlbum({ weddingId, notify, confirmAction, promptAction }) {
   const [photos, setPhotos] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -1881,13 +1865,13 @@ function GuestPhotoAlbum({ weddingId, notify }) {
   }, [weddingId])
 
   async function removePhoto(photo) {
-    if (!window.confirm(`Remover a foto enviada por ${photo.guest_name}?`)) return
+    if (!await confirmAction(`Remover a foto enviada por ${photo.guest_name}?`, 'Remover foto', 'Remover', true)) return
     setBusyPhoto(photo.id)
     try {
       let response = await fetch(`/api/couple/weddings/${weddingId}/photos/${photo.id}`, { method: 'DELETE' })
       let result = await response.json().catch(() => ({}))
       if (response.status === 403 && result.error === 'recent_mfa_required') {
-        const code = window.prompt('Confirme a remoção com o código de seis dígitos do autenticador.')
+        const code = await promptAction({ title: 'Confirme sua identidade', message: 'Digite o código de seis dígitos do autenticador para remover esta foto.', label: 'Código do autenticador', confirmLabel: 'Confirmar código' })
         if (!code) throw new Error('A confirmação do autenticador foi cancelada.')
         const verification = await fetch('/api/auth/mfa/reauth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
         if (!verification.ok) throw new Error('O código do autenticador não foi aceito.')
@@ -1912,18 +1896,18 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SitePhotoLibrary({ images, mediaUrls, coverPhotoId, coverGallery, siteGallery, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, siteInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle }) {
+function SitePhotoLibrary({ images, mediaUrls, coverPhotoId, coverGallery, siteGallery, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, siteInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onDelete }) {
   return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
     <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{images.length}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
     <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><input ref={siteInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'site')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto(s) da capa</button><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => siteInput.current?.click()}><Image size={17} /> Adicionar foto(s) do site</button></div>
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
     {mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}
     <label className="customizer-carousel-toggle"><input type="checkbox" checked={coverCarouselEnabled} disabled={coverGallery.length < 2} onChange={(event) => onCarouselToggle(event.target.checked)} /><span><strong>Ativar carrossel na capa</strong><small>{coverGallery.length < 2 ? 'Marquem pelo menos duas fotos como carrossel.' : 'As fotos escolhidas alternam na abertura do convite.'}</small></span></label>
-    {images.length > 0 ? <div className="customizer-photo-library-grid">{images.map((item) => <article className="customizer-photo-library-item" key={item.id}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><div className="customizer-photo-roles"><label><input type="radio" name="cover-photo-choice" checked={coverPhotoId === item.id} onChange={() => onCoverSelect(item.id)} /> Foto principal</label><label><input type="checkbox" checked={coverGallery.includes(item.id)} disabled={coverCarouselEnabled && coverPhotoId === item.id} onChange={(event) => onCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel</label><label><input type="checkbox" checked={siteGallery.includes(item.id)} onChange={(event) => onSitePhotoToggle(item.id, event.target.checked)} /> Galeria do site</label></div></article>)}</div> : <div className="customizer-photo-library-empty"><Camera size={23} /><strong>Adicionem as fotos que querem compartilhar.</strong><span>As imagens ficam privadas no rascunho até vocês publicarem o site.</span></div>}
+    {images.length > 0 ? <div className="customizer-photo-library-grid">{images.map((item) => <article className="customizer-photo-library-item" key={item.id}><img src={mediaUrls[item.id] || ''} alt="Foto enviada pelo casal" /><div className="customizer-photo-roles"><label><input type="radio" name="cover-photo-choice" checked={coverPhotoId === item.id} onChange={() => onCoverSelect(item.id)} /> Foto principal</label><label><input type="checkbox" checked={coverGallery.includes(item.id)} disabled={coverCarouselEnabled && coverPhotoId === item.id} onChange={(event) => onCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel</label><label><input type="checkbox" checked={siteGallery.includes(item.id)} onChange={(event) => onSitePhotoToggle(item.id, event.target.checked)} /> Galeria do site</label></div><button type="button" className="customizer-delete-photo-button" disabled={mediaBusy} onClick={() => onDelete(item)}><Trash2 size={14} /> Excluir foto</button></article>)}</div> : <div className="customizer-photo-library-empty"><Camera size={23} /><strong>Adicionem as fotos que querem compartilhar.</strong><span>As imagens ficam privadas no rascunho até vocês publicarem o site.</span></div>}
   </section>
 }
 
-function CoupleSiteEditor({ wedding, events = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving }) {
+function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving, confirmAction, notify }) {
   const [device, setDevice] = useState('desktop')
   const [step, setStep] = useState('visual')
   const [partnerOneName, setPartnerOneName] = useState(wedding?.partner_one_name || '')
@@ -1934,6 +1918,7 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const [mediaUrls, setMediaUrls] = useState({})
   const [mediaBusy, setMediaBusy] = useState(false)
   const [mediaError, setMediaError] = useState('')
+  const mediaUrlRegistry = useRef(new Set())
   const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
   const photoInput = useRef(null)
   const sitePhotoInput = useRef(null)
@@ -1954,6 +1939,8 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const coverMessage = config.coverMessages?.[language] || config.coverMessages?.['pt-BR'] || ''
   const storyMessage = config.storyMessages?.[language] || config.storyMessages?.['pt-BR'] || ''
   const storyEnabled = (config.enabledSections || []).includes('Nossa história')
+  const eventsEnabled = (config.enabledSections || []).includes('Eventos')
+  const giftsEnabled = (config.enabledSections || []).includes('Lista de presentes')
   const previewEvent = events[0]
   const previewCoverId = config.coverCarouselEnabled && config.coverGallery?.length ? config.coverGallery[previewCoverIndex] : config.coverPhotoId
   const previewPhotoUrl = mediaUrls[previewCoverId]
@@ -1964,7 +1951,11 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
   const remainingPhotoSlots = Math.max(0, SITE_MEDIA_LIMITS.photosPerWedding - uploadedImages.length)
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const selectTheme = (themeId) => update({ theme: themeId, paletteIndex: 0, ...(THEME_PRESETS[themeId] || THEME_PRESETS.garden) })
-  const toggleStory = () => update({ enabledSections: storyEnabled ? ['Eventos', 'Confirmação de presença'] : ['Nossa história', 'Eventos', 'Confirmação de presença'] })
+  const toggleSection = (section, enabled) => setConfig((current) => {
+    const sections = current.enabledSections || []
+    return { ...current, enabledSections: enabled ? [...new Set([...sections, section])] : sections.filter((item) => item !== section) }
+  })
+  const toggleStory = () => toggleSection('Nossa história', !storyEnabled)
   const updateStory = (value) => update({ storyMessages: { ...DEFAULT_SITE_CONFIG.storyMessages, ...config.storyMessages, [language]: value } })
   const updateCoverMessage = (value) => update({ coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...config.coverMessages, [language]: value } })
   const selectCoverPhoto = (id) => setConfig((current) => ({ ...current, coverPhotoId: id, coverGallery: current.coverCarouselEnabled ? [...new Set([id, ...(current.coverGallery || []).filter((item) => item !== id)])] : current.coverGallery || [] }))
@@ -2006,6 +1997,8 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     setEventTime(wedding?.event_time || '')
   }, [wedding?.id])
 
+  useEffect(() => () => mediaUrlRegistry.current.forEach((url) => URL.revokeObjectURL(url)), [])
+
   useEffect(() => {
     let active = true
     fetch(`/api/couple/weddings/${wedding.id}/site-media`).then((response) => response.ok ? response.json() : { media: [] }).then((result) => { if (active) setSiteMedia(result.media || []) }).catch(() => { if (active) setSiteMedia([]) })
@@ -2014,20 +2007,21 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
 
   useEffect(() => {
     let active = true
-    const ids = [...new Set([...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.siteGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])]
+    const ids = [...new Set([...siteMedia.map((item) => item.id), ...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.siteGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])].filter((id) => !mediaUrls[id])
+    if (!ids.length) return () => { active = false }
     Promise.all(ids.map(async (id) => {
       const response = await fetch(`/api/site-media/${id}`)
-      if (!response.ok) return [id, '']
-      return [id, URL.createObjectURL(await response.blob())]
+      if (!response.ok) return [id, null]
+      const url = URL.createObjectURL(await response.blob())
+      mediaUrlRegistry.current.add(url)
+      return [id, url]
     })).then((entries) => {
-      if (!active) { entries.forEach(([, url]) => url && URL.revokeObjectURL(url)); return }
-      setMediaUrls((current) => {
-        Object.values(current).forEach((url) => URL.revokeObjectURL(url))
-        return Object.fromEntries(entries.filter(([, url]) => url))
-      })
+      if (!active) return
+      const loaded = entries.filter(([, url]) => url)
+      setMediaUrls((current) => ({ ...current, ...Object.fromEntries(loaded) }))
     }).catch(() => {})
     return () => { active = false }
-  }, [wedding.id, config.coverPhotoId, JSON.stringify(config.coverGallery || []), JSON.stringify(config.siteGallery || []), config.coverVideoId])
+  }, [wedding.id, JSON.stringify(siteMedia.map((item) => item.id)), JSON.stringify(Object.keys(mediaUrls)), config.coverPhotoId, JSON.stringify(config.coverGallery || []), JSON.stringify(config.siteGallery || []), config.coverVideoId])
 
   useEffect(() => {
     setPreviewCoverIndex(0)
@@ -2086,6 +2080,41 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
     }
   }
 
+  async function deleteSiteMedia(item) {
+    const usages = []
+    for (const [label, current] of [['rascunho', config], ['convite publicado', publishedConfig]]) {
+      if (!current) continue
+      if (current.coverPhotoId === item.id) usages.push(`${label}: foto principal da capa`)
+      if (current.coverGallery?.includes(item.id)) usages.push(`${label}: carrossel da capa`)
+      if (current.coverVideoId === item.id) usages.push(`${label}: vídeo de abertura`)
+    }
+    const usageText = usages.length ? ` Ela está sendo usada em ${usages.join(' e ')}. Se estiver no convite publicado, substituam a foto e publiquem a alteração antes de tentar excluir.` : ''
+    if (!await confirmAction(`Excluir esta foto enviada pelo casal?${usageText}`, 'Excluir foto', 'Excluir foto', true)) return
+    setMediaBusy(true)
+    setMediaError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${wedding.id}/site-media/${item.id}`, { method: 'DELETE' })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        if (result.error === 'site_media_in_use') throw new Error(`Não foi possível excluir. A foto ainda está em uso: ${(result.references || []).join('; ')}. Escolham outra foto principal ou removam esta do carrossel, salvem e publiquem a alteração antes de tentar novamente.`)
+        throw new Error('Não foi possível excluir esta foto. Atualize a página e tente novamente.')
+      }
+      const url = mediaUrls[item.id]
+      if (url) {
+        URL.revokeObjectURL(url)
+        mediaUrlRegistry.current.delete(url)
+      }
+      setSiteMedia((current) => current.filter((media) => media.id !== item.id))
+      setMediaUrls((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== item.id)))
+      setConfig((current) => ({ ...current, coverPhotoId: current.coverPhotoId === item.id ? null : current.coverPhotoId, coverGallery: (current.coverGallery || []).filter((id) => id !== item.id), siteGallery: (current.siteGallery || []).filter((id) => id !== item.id), coverVideoId: current.coverVideoId === item.id ? null : current.coverVideoId }))
+      notify('Foto excluída do armazenamento deste casamento.')
+    } catch (error) {
+      setMediaError(error.message)
+    } finally {
+      setMediaBusy(false)
+    }
+  }
+
   return <div className="customize-layout simplified-customizer">
     <div className="customize-controls">
       <div className="customizer-wizard-nav" role="tablist" aria-label="Etapas para personalizar o convite">
@@ -2094,9 +2123,9 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
       </div>
       {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
-        <div className="wedding-profile-fields"><label>Nome 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Nome 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
+        <div className="wedding-profile-fields"><label>Noivo(a) 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Noivo(a) 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
-        <SitePhotoLibrary images={uploadedImages} mediaUrls={mediaUrls} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} remaining={remainingPhotoSlots} coverInput={photoInput} siteInput={sitePhotoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} />
+        <SitePhotoLibrary images={uploadedImages} mediaUrls={mediaUrls} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} remaining={remainingPhotoSlots} coverInput={photoInput} siteInput={sitePhotoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onDelete={deleteSiteMedia} />
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
         <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button></div>
@@ -2104,13 +2133,11 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <FontScalePicker value={config.fontScale} onChange={(fontScale) => update({ fontScale })} />
       </section> : <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO DOIS</span><h3>Contem só o que importa</h3></div></div>
-        <p>Nomes, data e eventos vêm do cadastro do casamento. Acrescentem um recado curto, se quiserem.</p>
-        <label className="font-pair-label">Idioma do convite<select value={language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label>
-        <label className="font-pair-label">Mensagem para os convidados · {languageName}<textarea rows="2" maxLength="140" value={coverMessage} onChange={(event) => updateCoverMessage(event.target.value)} placeholder={language === 'en' ? 'For example: We are happy to celebrate with you.' : language === 'es' ? 'Por ejemplo: Nos alegra celebrar con ustedes.' : 'Ex.: Vai ser uma alegria celebrar com você.'} /><small>{coverMessage.length}/140 caracteres</small></label>
-        <label className="customizer-story-toggle"><input type="checkbox" checked={storyEnabled} onChange={toggleStory} /><span><strong>Contar um pouco da nossa história</strong><small>Opcional. Um parágrafo já é suficiente.</small></span></label>
-        {storyEnabled && <label className="font-pair-label">Como tudo começou · {languageName}<textarea rows="3" maxLength="360" value={storyMessage} onChange={(event) => updateStory(event.target.value)} placeholder={language === 'en' ? 'Tell briefly how you met.' : language === 'es' ? 'Cuenten brevemente cómo se conocieron.' : 'Contem em poucas linhas como se conheceram.'} /><small>{storyMessage.length}/360 caracteres</small></label>}
-        <p className="customizer-step-note">A foto principal, o carrossel e a galeria do site são organizados na etapa Aparência.</p>
-        <details className="customizer-extra-fields"><summary>Cardápio e traje, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="280" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="100" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label></div></details>
+        <div className="customizer-content-group"><div className="customizer-content-heading"><span>01</span><div><strong>Mensagem do convite</strong><small>Escolham o idioma e escrevam um recado breve.</small></div></div><label className="font-pair-label">Idioma do convite<select value={language} onChange={(event) => update({ language: event.target.value })}><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option></select></label><label className="font-pair-label">Mensagem para os convidados · {languageName}<textarea rows="3" maxLength="140" value={coverMessage} onChange={(event) => updateCoverMessage(event.target.value)} placeholder={language === 'en' ? 'For example: We are happy to celebrate with you.' : language === 'es' ? 'Por ejemplo: Nos alegra celebrar con ustedes.' : 'Ex.: Vai ser uma alegria celebrar com você.'} /><small>{coverMessage.length}/140 caracteres</small></label></div>
+        <div className="customizer-content-group"><div className="customizer-content-heading"><span>02</span><div><strong>Nossa história</strong><small>Uma lembrança curta sobre vocês.</small></div></div><label className="customizer-story-toggle"><input type="checkbox" checked={storyEnabled} onChange={toggleStory} /><span><strong>Mostrar nossa história no convite</strong><small>Opcional. Um parágrafo já é suficiente.</small></span></label>{storyEnabled && <label className="font-pair-label">Como tudo começou · {languageName}<textarea rows="3" maxLength="360" value={storyMessage} onChange={(event) => updateStory(event.target.value)} placeholder={language === 'en' ? 'Tell briefly how you met.' : language === 'es' ? 'Cuenten brevemente cómo se conocieron.' : 'Contem em poucas linhas como se conheceram.'} /><small>{storyMessage.length}/360 caracteres</small></label>}</div>
+        <div className="customizer-content-group"><div className="customizer-content-heading"><span>03</span><div><strong>O que aparece no convite</strong><small>Ativem somente as informações que desejam compartilhar.</small></div></div><div className="customizer-section-toggles">{[['Eventos', 'Programação dos eventos'], ['Confirmação de presença', 'Confirmação de presença'], ['Lista de presentes', 'Lista de presentes']].map(([section, label]) => <label key={section}><input type="checkbox" checked={(config.enabledSections || []).includes(section)} onChange={(event) => toggleSection(section, event.target.checked)} /><span>{label}</span></label>)}</div></div>
+        <details className="customizer-extra-fields"><summary>Mais fotos no convite, opcional</summary><div><label className="customizer-story-toggle"><input type="checkbox" checked={config.coverCarouselEnabled || false} onChange={(event) => update({ coverCarouselEnabled: event.target.checked, ...(event.target.checked && config.coverPhotoId ? { coverGallery: [...new Set([config.coverPhotoId, ...(config.coverGallery || [])])] } : {}) })} /><span><strong>Alternar a foto de abertura</strong><small>Escolham as fotos na etapa Aparência. Sem esta opção, o convite mantém uma foto fixa.</small></span></label>{config.coverCarouselEnabled && !config.coverGallery?.length && <p className="customizer-step-note">Na etapa Aparência, marquem quais fotos entram no carrossel.</p>}</div></details>
+        <details className="customizer-extra-fields"><summary>Informações adicionais, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="1200" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="120" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label><label className="font-pair-label">Orientações aos convidados<textarea rows="3" maxLength="1200" value={config.weddingDetails?.schedule || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, schedule: event.target.value } })} placeholder="Informações úteis sobre chegada, estacionamento ou acessibilidade." /></label></div></details>
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
       </section>}
@@ -2122,7 +2149,9 @@ function CoupleSiteEditor({ wedding, events = [], config, savedConfig, published
         <div className="browser-below"><span>{language === 'en' ? 'Event' : language === 'es' ? 'Evento' : 'Evento'}</span><i>·</i><span>{language === 'en' ? 'RSVP' : language === 'es' ? 'Confirmar asistencia' : 'Confirmação de presença'}</span></div>
         {previewEvent && <div className="browser-story-preview"><span>{previewEvent.event_type}</span><p><strong>{previewEvent.name}</strong>{previewEvent.starts_at ? ` · ${new Date(previewEvent.starts_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{previewEvent.venue_name ? ` · ${previewEvent.venue_name}` : ''}</p></div>}
         {storyEnabled && storyMessage && <div className="browser-story-preview"><span>NOSSA HISTÓRIA</span><p>{storyMessage}</p></div>}
-        {(config.weddingDetails?.menu || config.weddingDetails?.dressCode) && <div className="browser-story-preview"><span>ORIENTAÇÕES</span><p>{[config.weddingDetails.menu, config.weddingDetails.dressCode].filter(Boolean).join(' · ')}</p></div>}
+        {eventsEnabled && (config.weddingDetails?.schedule || config.weddingDetails?.menu || config.weddingDetails?.dressCode) && <div className="browser-story-preview"><span>INFORMAÇÕES ADICIONAIS</span><p>{[config.weddingDetails.schedule, config.weddingDetails.menu, config.weddingDetails.dressCode].filter(Boolean).join(' · ')}</p></div>}
+        {giftsEnabled && gifts.some((gift) => gift.status === 'active') && <div className="browser-story-preview"><span>LISTA DE PRESENTES</span><p>{gifts.filter((gift) => gift.status === 'active').slice(0, 2).map((gift) => gift.title).join(' · ')}</p></div>}
+        {giftsEnabled && config.pix?.enabled && config.pix.key && <div className="browser-story-preview"><span>CONTRIBUIR VIA PIX</span><p>{config.pix.key}</p></div>}
       </div>
       {siteGallery.length > 0 && <section className="browser-site-gallery-preview"><span>GALERIA DO SITE</span><div>{siteGallery.map((id) => mediaUrls[id] && <img key={id} src={mediaUrls[id]} alt="Foto escolhida para a galeria do site" />)}</div></section>}
       <div className="preview-notice"><CircleHelp size={15} /> {!previewHasCover ? 'Sem foto ainda: a capa usa as cores do tema e mostra como o texto ficará.' : publishedAt ? `Última publicação: ${published}. As mudanças aparecem para os convidados depois de publicar.` : 'Esta prévia é privada até vocês publicarem o convite.'}</div>
@@ -2362,6 +2391,8 @@ function GuestPortal({ notify, setView }) {
   const [coverIndex, setCoverIndex] = useState(0)
   const [siteOpen, setSiteOpen] = useState(false)
   const [focusRsvp, setFocusRsvp] = useState(false)
+  const [focusGifts, setFocusGifts] = useState(false)
+  const [focusPix, setFocusPix] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const token = window.location.hash.startsWith('#convite/') ? window.location.hash.slice(9) : ''
@@ -2375,11 +2406,18 @@ function GuestPortal({ notify, setView }) {
   const siteGallery = invitation?.siteConfig?.siteGallery || []
   const activeCoverId = invitation?.siteConfig?.coverCarouselEnabled && coverGallery.length ? coverGallery[coverIndex] : invitation?.siteConfig?.coverPhotoId || coverGallery[0]
   const activeCoverUrl = invitationMedia[activeCoverId] || ''
+  const publicSections = invitation?.siteConfig?.enabledSections || []
+  const showEvents = publicSections.includes('Eventos')
+  const showRsvp = publicSections.includes('Confirmação de presença')
+  const showGifts = publicSections.includes('Lista de presentes') && (invitation?.gifts || []).length > 0
+  const showPix = Boolean(invitation?.siteConfig?.pix?.enabled && invitation.siteConfig.pix.key && publicSections.includes('Lista de presentes'))
   const hasMoreInvitationContent = Boolean(
-    invitation?.siteConfig?.weddingDetails?.menu
-    || invitation?.siteConfig?.weddingDetails?.dressCode
-    || siteGallery.length > 0
+    (showEvents && (invitation?.siteConfig?.weddingDetails?.menu
+      || invitation?.siteConfig?.weddingDetails?.dressCode
+      || invitation?.siteConfig?.weddingDetails?.schedule))
     || (invitation?.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']))
+    || showPix
+    || (publicSections.includes('Galeria de fotos') && siteGallery.length > 0)
   )
 
   async function loadInvitation() {
@@ -2404,10 +2442,14 @@ function GuestPortal({ notify, setView }) {
   useEffect(() => { loadInvitation() }, [token])
 
   useEffect(() => {
-    if (!siteOpen || !focusRsvp) return
-    document.getElementById('guest-site-rsvp')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (!siteOpen) return
+    const target = focusRsvp ? 'guest-site-rsvp' : focusGifts ? 'guest-site-gifts' : focusPix ? 'guest-site-pix' : null
+    if (!target) return
+    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setFocusRsvp(false)
-  }, [siteOpen, focusRsvp])
+    setFocusGifts(false)
+    setFocusPix(false)
+  }, [siteOpen, focusRsvp, focusGifts, focusPix])
 
   useEffect(() => {
     if (!invitation?.siteConfig) return
@@ -2451,21 +2493,34 @@ function GuestPortal({ notify, setView }) {
     notify('Resposta registrada para este evento')
   }
 
+  async function copyPixKey() {
+    try {
+      await navigator.clipboard.writeText(invitation.siteConfig.pix.key)
+      notify('Chave Pix copiada. Cole no aplicativo do seu banco.')
+    } catch {
+      notify('Selecione a chave Pix e copie para usar no aplicativo do seu banco.')
+    }
+  }
+
   return <RoleFrame icon={UserRound} eyebrow="CONVITE INDIVIDUAL" title={invitation ? `Olá, ${invitation.guest.name}.` : 'Seu convite individual.'} description={invitation ? `Você está convidado para celebrar com ${invitation.wedding.partnerOneName} e ${invitation.wedding.partnerTwoName}.` : 'Os detalhes são exibidos somente pelo link individual enviado pelos noivos.'} secure secureName="Seu convite" secureFooter="Convite individual" compactIntro={Boolean(invitation)} className="guest-invitation-page" style={siteStyle}>
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt="Foto escolhida pelo casal para o convite" /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary" onClick={() => setSiteOpen(true)}>Abrir site do casamento <ArrowRight size={16} /></button><button type="button" className="button-outline" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}>Confirmar presença</button></div></section>
+      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} autoPlay muted loop playsInline controls={false} aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt="Foto escolhida pelo casal para o convite" /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary" onClick={() => setSiteOpen(true)}>Abrir site do casamento <ArrowRight size={16} /></button>{showRsvp && <button type="button" className="button-outline" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}>Confirmar presença</button>}{showGifts && <button type="button" className="button-outline" onClick={() => { setFocusGifts(true); setSiteOpen(true) }}>Lista de presentes <Gift size={15} /></button>}{showPix && <button type="button" className="button-outline" onClick={() => { setFocusPix(true); setSiteOpen(true) }}>Contribuir via Pix <Wallet size={15} /></button>}</div></section>
       {siteOpen && <div className="guest-full-site-heading"><div><span className="eyebrow">SITE DO CASAMENTO</span><h2>Informações para celebrar com vocês</h2></div><button type="button" className="button-outline" onClick={() => { setSiteOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Voltar ao convite</button></div>}
-      {siteOpen && hasMoreInvitationContent && <details className="guest-extra-details" open><summary>História e outros detalhes</summary>
-      {siteGallery.length > 0 && invitation.siteConfig?.enabledSections?.includes('Galeria de fotos') && <section className="role-card guest-couple-gallery"><span className="eyebrow">FOTOS DO CASAL</span><h2>Um pouco da nossa história em imagens</h2><div>{siteGallery.map((id) => invitationMedia[id] && <img key={id} src={invitationMedia[id]} alt="Foto do casal" loading="lazy" />)}</div></section>}
-      {invitation.siteConfig?.weddingDetails?.menu && <section className="role-card guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
-      {invitation.siteConfig?.weddingDetails?.dressCode && <section className="role-card guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2><div className="customizer-preview-swatches">{activePalette?.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</div></section>}
-      {invitation.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']) && <section className="role-card guest-story-section"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']}</p></section>}
-      </details>}
+      {siteOpen && hasMoreInvitationContent && <div className="guest-invitation-content">
+        {invitation.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']) && <section className="guest-story-section"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']}</p></section>}
+        {showEvents && invitation.siteConfig?.weddingDetails?.schedule && <section className="guest-story-section"><span className="eyebrow">ORIENTAÇÕES</span><p>{invitation.siteConfig.weddingDetails.schedule}</p></section>}
+        {showEvents && invitation.siteConfig?.weddingDetails?.menu && <section className="guest-story-section"><span className="eyebrow">CARDÁPIO</span><p>{invitation.siteConfig.weddingDetails.menu}</p></section>}
+        {showEvents && invitation.siteConfig?.weddingDetails?.dressCode && <section className="guest-story-section"><span className="eyebrow">TRAJE</span><h2>{invitation.siteConfig.weddingDetails.dressCode}</h2></section>}
+      </div>}
       {siteOpen && invitation.guest.guestType === 'godparent' && <section className="role-card"><span className="eyebrow">ESPAÇO DOS PADRINHOS</span><h2>Orientações individuais</h2><p>Consulte as tarefas e os combinados enviados a você.</p><button className="button-outline" onClick={() => setView('godparent')}>Abrir minha área <ArrowRight size={14} /></button></section>}
-      {siteOpen && invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} notify={notify} />}
-      {siteOpen && <section id="guest-site-rsvp" className="guest-site-events"><span className="eyebrow">EVENTOS E CONFIRMAÇÃO</span>{invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}</section>}
+      {siteOpen && invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} limit={invitation.siteConfig.guestCamera.photoLimit} notify={notify} />}
+      {siteOpen && showEvents && !showRsvp && <section className="guest-site-events guest-site-events-readonly"><span className="eyebrow">PROGRAMAÇÃO</span>{invitation.events.length ? invitation.events.map((event) => <article className="guest-public-event" key={event.id}><div><small>{event.event_type}</small><h3>{event.name}</h3></div><p>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) : 'Data a definir'}{event.venue_name ? ` · ${event.venue_name}` : ''}</p>{event.address && <small>{event.address}</small>}</article>) : <p>Os detalhes dos eventos ainda não foram publicados.</p>}</section>}
+      {siteOpen && showRsvp && <section id="guest-site-rsvp" className="guest-site-events"><span className="eyebrow">EVENTOS E CONFIRMAÇÃO</span>{invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}</section>}
+      {siteOpen && publicSections.includes('Galeria de fotos') && siteGallery.length > 0 && <section className="guest-story-section guest-site-gallery-public"><span className="eyebrow">FOTOS DO CASAL</span><div>{siteGallery.map((id) => invitationMedia[id] && <img key={id} src={invitationMedia[id]} alt="Foto escolhida pelo casal" />)}</div></section>}
+      {siteOpen && showGifts && <section id="guest-site-gifts" className="guest-site-gifts"><div className="guest-site-section-heading"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2><p>Se escolherem um item de loja, a compra e a entrega são feitas diretamente com a loja.</p></div><div className="guest-public-gifts">{invitation.gifts.map((gift) => <article className="guest-public-gift" key={gift.id}><div><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}</div>{gift.fulfillment_type === 'store_link' && gift.store_url ? <a href={gift.store_url} target="_blank" rel="noopener noreferrer">Ver na loja <ArrowRight size={14} /></a> : <strong>{gift.gift_type === 'custom' ? 'Pix direto' : formatBrlCents(gift.amount_cents)}</strong>}</article>)}</div></section>}
+      {siteOpen && showPix && <section id="guest-site-pix" className="guest-site-pix"><span className="eyebrow">PRESENTE DIRETO AOS NOIVOS</span><h2>Contribuir via Pix</h2><p>Copie a chave e faça a transferência pelo aplicativo do seu banco.</p><div className="guest-pix-copy-row"><input readOnly aria-label="Chave Pix dos noivos" value={invitation.siteConfig.pix.key} onFocus={(event) => event.target.select()} /><button type="button" className="button-primary" onClick={copyPixKey}><Copy size={15} /> Copiar chave</button></div></section>}
     </>}
   </RoleFrame>
 }
@@ -2638,7 +2693,7 @@ function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = fals
     }
   }
 
-  return <details className="role-card invitation-event-card" open={initialOpen}><summary><span><small>{event.event_type}</small><strong>{event.name}</strong>{event.starts_at && <em>{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</em>}</span>{event.rsvp ? <b>Presença confirmada</b> : <b>Responder</b>}<ChevronDown size={17} /></summary><div className="invitation-event-content">{event.venue_name && <p className="invitation-event-venue"><MapPin size={16} /> <span>{event.venue_name}{event.address ? ` · ${event.address}` : ''}</span></p>}<form className="invitation-rsvp-form" onSubmit={submit}><label>Você vai participar?<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Sim, estarei lá</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label className="invitation-rsvp-wide">Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><div className="invitation-rsvp-wide"><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} /></div>{error && <p className="admin-form-error invitation-rsvp-wide" role="alert">{error}</p>}<button className="button-primary invitation-rsvp-wide" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Confirmar presença'} <Check size={15} /></button></form></div></details>
+  return <details className="role-card invitation-event-card" open={initialOpen}><summary><span><small>{event.event_type}</small><strong>{event.name}</strong>{event.starts_at && <em>{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</em>}</span>{event.rsvp ? <b>{event.rsvp.status === 'declined' ? 'Não poderá comparecer' : 'Resposta registrada'}</b> : <b>Responder</b>}<ChevronDown size={17} /></summary><div className="invitation-event-content">{event.venue_name && <p className="invitation-event-venue"><MapPin size={16} /> <span>{event.venue_name}{event.address ? ` · ${event.address}` : ''}</span></p>}<form className="invitation-rsvp-form" onSubmit={submit}><label>Você vai participar?<select value={status} onChange={(input) => setStatus(input.target.value)}><option value="confirmed">Sim, estarei lá</option><option value="declined">Não poderei ir</option></select></label><label>Quantidade de pessoas<select value={partySize} onChange={(input) => setPartySize(input.target.value)}>{Array.from({ length: maxPartySize }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label><label className="invitation-rsvp-wide">Restrição alimentar, se houver<input value={dietaryNotes} maxLength={1000} onChange={(input) => setDietaryNotes(input.target.value)} placeholder="Opcional" /></label><div className="invitation-rsvp-wide"><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} /></div>{error && <p className="admin-form-error invitation-rsvp-wide" role="alert">{error}</p>}<button className="button-primary invitation-rsvp-wide" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Salvando…' : 'Confirmar presença'} <Check size={15} /></button></form></div></details>
 }
 function TurnstileChallenge({ onToken, resetKey, action = 'account' }) {
   const container = useRef(null)
@@ -3151,7 +3206,7 @@ async function readSuperadminResponse(response) {
   }
 }
 
-function SuperAdminPanel({ notify }) {
+function SuperAdminPanel({ notify, promptAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
@@ -3268,14 +3323,14 @@ function SuperAdminPanel({ notify }) {
   if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Escaneie o QR code com seu aplicativo autenticador e confirme o código de seis dígitos.">
     <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><TotpSetupQr enrollment={enrollment} /><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>
   </SuperAdminAccessFrame>
-  return <SuperAdminWorkspace notify={notify} account={account} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setStage('login') }} />
+  return <SuperAdminWorkspace notify={notify} promptAction={promptAction} account={account} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setStage('login') }} />
 }
 
 function SuperAdminAccessFrame({ title, description, children, eyebrow = 'CONTROLE DA PLATAFORMA', brand = 'Administração da plataforma' }) {
   return <div className="role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>{brand}</strong></a><span className="role-preview"><LockKeyhole size={13} /> ÁREA PROTEGIDA</span></header><main className="role-main admin-auth-main"><div className="role-intro"><span className="role-icon"><Shield size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}</main><footer className="role-footer"><span>{brand}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SuperAdminWorkspace({ notify, account, onLogout }) {
+function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
   const [adminSection, setAdminSection] = useState('overview')
   const [data, setData] = useState(null)
   const [accounts, setAccounts] = useState([])
@@ -3395,7 +3450,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, '/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) })
+      await requestWithRecentMfa(request, '/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) }, promptAction)
       await refresh()
       notify('Política de taxas gravada no D1 e registrada na auditoria')
     } catch (cause) {
@@ -3413,7 +3468,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
       const result = await requestWithRecentMfa(request, '/api/superadmin/email-test', {
         method: 'POST',
         body: JSON.stringify({ confirmation: 'send-test-email' }),
-      })
+      }, promptAction)
       setEmailTestState(`E-mail de teste enviado para ${result.to}.`)
       notify('E-mail de teste enviado pelo Resend')
     } catch (cause) {
@@ -3436,7 +3491,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, `/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) })
+      await requestWithRecentMfa(request, `/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) }, promptAction)
       setPurgeTarget(null)
       setConfirmation('')
       await refresh()

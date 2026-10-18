@@ -4,7 +4,7 @@ Este arquivo é a fonte de verdade para o agente. Siga exatamente o que está es
 
 ## 1. Visão
 
-Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. Cada casal tem seu próprio subdomínio. O serviço é cobrado por uma taxa por presente recebido, sem mensalidade.
+Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. O uso é gratuito no piloto; presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas acessadas por links do casal. A plataforma não recebe nem processa esses valores.
 
 Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única constante de configuração, nunca espalhado pelo código.
 
@@ -40,14 +40,14 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 8. Lista de presença (RSVP).
 9. Notificação push 30 dias antes do casamento, com mensagem personalizada pelos noivos, oferecendo adicionar o evento ao calendário. O sistema pergunta qual calendário o convidado usa: Google, Outlook ou Apple.
 10. Site dos noivos totalmente personalizável dentro de limites definidos. Personalização curada, nunca infinita.
-11. Presentes em dinheiro via provedor brasileiro com split de pagamento. O pagamento é processado pela conta de marketplace da plataforma; a comissão e a parcela dos noivos são separadas e repassadas conforme regras do provedor. O casal não deve precisar abrir conta individual no provedor quando a solução escolhida permitir subcontas vinculadas à chave Pix.
+11. Presentes por Pix direto aos noivos ou links externos de loja. A plataforma apenas exibe o Pix ou encaminha o convidado à loja; não inicia compras, cobra, processa, guarda ou repassa dinheiro.
 12. Modo de controle de entrada: parte do app dedicada a ler QR code no dia do evento, substituindo a lista física.
 13. Jogo diário, uma partida por dia por convidado, com ranking entre convidados. Opcional: os noivos ligam ou desligam.
 14. Multi-idioma.
 15. Cada casal tem seu subdomínio.
-16. Cobrança por taxa por presente.
-17. A lista de presentes é exclusiva da plataforma. Não incluir links, catálogos ou redirecionamentos para lojas externas. O casal usa o site gratuitamente; a plataforma cobra somente pelos presentes pagos nela, com os valores e taxas apresentados antes da confirmação.
-18. Meta comercial: cobrar menos que sites de casamento comparáveis. Não publicar afirmação comparativa nem taxa específica até aprovar a política de preços e comparar o mesmo meio de pagamento, quem paga a tarifa, processamento, mínimos e repasses.
+16. Piloto gratuito. Não cobrar taxa por presente nem processar valores dentro da plataforma.
+17. A lista pode conter Pix direto aos noivos e links de produtos em lojas externas. O link apenas encaminha para a loja; compra e entrega ocorrem fora da plataforma. O casal usa o site gratuitamente no piloto.
+18. O produto pode ter potencial comercial futuro, mas não publicar taxas ou promessas comerciais até o dono aprovar um modelo.
 19. O painel apresenta o planejamento de despesas com fornecedores, registro de valores e vencimentos e lembretes mensais por e-mail ou push como parte da experiência da plataforma.
 20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
 
@@ -248,7 +248,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 ### 7.20 Entrega por fase
 
 - Fase 1: assistente inicial, temas, cores, fontes, capa, biblioteca de seções (ligar, desligar, reordenar, variações), eventos, idiomas, imagens com ponto focal, pré-visualização ao vivo, rascunho e publicação, verificador básico, presets simples de animação.
-- Fase 2: personalização dos blocos de presentes e dos modos Pix, com chave Pix e taxa exibida de forma transparente.
+- Fase 2: personalização dos presentes, chave Pix direta dos noivos e links HTTPS de lojas externas.
 - Fase 3: mensagem dos 30 dias com variáveis, título do calendário, monograma e ícone do PWA, prévia de compartilhamento, QR estilizado e arte para impressão, envelope animado e confete.
 - Fase 5: personalização do quiz (perguntas, prêmio e encerramento).
 - Antes da fase 6: visibilidade por grupo refinada, histórico de versões, colaboradores e modo agradecimento, se não tiverem entrado antes por necessidade.
@@ -263,7 +263,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 - Convidados: cadastro manual, importação por planilha CSV, grupos e famílias, acompanhantes, restrições alimentares.
 - Presença: status por convidado, relatório e exportação.
-- Presentes: catálogo, cotas, valores livres, status de recebimento, modos de pagamento, chave Pix, saldo de taxas.
+- Presentes: catálogo de itens com Pix direto ou link de loja externa. Não registrar recebimentos nem taxas.
 - Convites: link curto, QR code, subdomínio, link de acesso individual ou por grupo.
 - Mensagem da notificação dos 30 dias, por idioma.
 - Controle de entrada: lista de quem já entrou, em tempo real.
@@ -274,7 +274,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 ### 8.1 Perfis e áreas de acesso
 
-- Superadmin: administração global de contas, casamentos, status, políticas de taxa e auditoria. A área exige login com senha e segundo fator TOTP. A autorização é validada no servidor em toda operação; esconder uma rota no frontend não é controle de acesso.
+- Superadmin: administração global de contas, casamentos, status e auditoria. A área exige login com senha e segundo fator TOTP. A autorização é validada no servidor em toda operação; esconder uma rota no frontend não é controle de acesso.
 - Noivos: administradores do próprio casamento, com acesso aos convidados, RSVP, presentes, convites e personalização daquele casamento.
 - Convidados: acesso somente ao convite individual, eventos autorizados, RSVP, presentes e recursos habilitados pelos noivos.
 - Padrinhos: não têm acesso à lista de convidados. A área individual pode mostrar apenas eventos, orientações e tarefas atribuídas ao próprio padrinho.
@@ -284,7 +284,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Convidados e padrinhos usam token individual armazenado apenas como hash; o servidor limita eventos pelo grupo autorizado. Padrinhos só consultam e atualizam tarefas ligadas ao próprio convite.
 - Equipe do evento e equipe de entrada só consultam eventos atribuídos por `membership_event_access`. A lista da equipe não inclui e-mail ou telefone; somente `checkin_staff` pode registrar entradas e acompanhantes de última hora.
 - A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando registros financeiros e trilha de auditoria. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
-- A política de taxa pode estar desligada. Quando ligada, percentual, mínimo, máximo e pagador são configuráveis; não fixar valores de negócio no código.
+- Nenhuma tela do casal ou superadmin deve sugerir que a plataforma recebe ou repassa os presentes no piloto.
 
 ## 9. Notificações push (VAPID)
 
@@ -305,29 +305,15 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Apple e demais: arquivo .ics gerado pelo Worker.
 - Guardar a escolha do convidado para não perguntar de novo.
 
-## 11. Pagamentos e taxa por presente
+## 11. Presentes por Pix direto e links de loja
 
-Princípio: o registro do presente (ledger no D1) é independente do meio de pagamento. Cada modo é um provedor com a mesma interface: criar cobrança, confirmar, calcular taxa. Adicionar, trocar ou desligar um provedor não pode alterar o resto do app. Valores sempre em centavos inteiros e em BRL. Webhooks idempotentes, com tabela de eventos já processados.
-
-A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo por presente). Nunca fixar no código.
-
-### Split Pix via provedor brasileiro
-
-- Usar um provedor brasileiro com API de Pix e split que aceite o modelo de marketplace e repasses para noivos sem exigir conta individual no provedor, quando tecnicamente e comercialmente disponível.
-- O convidado paga por uma cobrança Pix criada para o presente. O provedor processa a cobrança e separa comissão da plataforma e saldo devido ao casal conforme a regra de taxa aprovada.
-- O fluxo passa pela conta de marketplace da plataforma e liquida o saldo dos noivos por repasse para a chave Pix indicada. Subcontas ou carteiras virtuais só podem ser usadas se as condições do provedor forem confirmadas.
-- O casal informa a chave Pix e os dados de titularidade necessários. A ausência de conta individual no provedor não elimina validações de identidade, titularidade, prevenção a fraude ou obrigações legais.
-- A confirmação no ledger D1 depende de webhook assinado do provedor. Webhooks são idempotentes; retorno do navegador não confirma pagamento.
-- O painel mostra, antes da confirmação do presente, valor escolhido, taxa do provedor, taxa da plataforma, total pago e valor estimado a repassar ao casal. Nenhuma taxa pode ser publicada até aprovação da política comercial.
-- Reembolsos, disputas, estornos, repasses, saldo pendente e conciliação são registrados no ledger e tratados de acordo com o contrato do provedor.
-- Não implementar pagamentos em produção antes de confirmar elegibilidade da plataforma, contrato, taxas, titularidade, prazos de liquidação, regras de saque, reembolsos e obrigações fiscais e regulatórias.
-
-### Regras comuns
-
-- Mostrar ao casal o extrato de presentes, taxas, repasses, estornos e saldo pendente.
-- O fluxo financeiro e os papéis da plataforma, do provedor, do casal e do convidado devem ser descritos com clareza antes do pagamento.
-- Os noivos escolhem quais formas de presente ativar. A página de presentes mostra apenas as opções ativas.
-
+- A plataforma não recebe, processa, guarda ou repassa dinheiro dos presentes. Não criar checkout, split, comissão, ledger financeiro ou confirmação automática de pagamento para este fluxo.
+- O casal pode cadastrar uma chave Pix e instruções curtas. O convidado usa o app bancário dele para pagar diretamente ao casal. A interface informa que a confirmação ocorre fora da plataforma.
+- O casal pode cadastrar presente físico com nome, descrição, imagem opcional e URL de uma loja. O botão abre a página externa para o convidado concluir a compra e combinar a entrega. A plataforma não vende o item nem promete disponibilidade ou preço.
+- Validar URLs como HTTPS e mostrar claramente quando o convidado sairá do site. Rejeitar esquemas de script, URLs locais e protocolos que não sejam HTTP(S).
+- Não expor endereços residenciais ou dados privados de entrega em páginas públicas; orientar a combinação direta entre convidado e casal.
+- Nenhuma taxa por presente está ativa no piloto. Qualquer futura monetização depende de nova decisão do dono e da atualização deste arquivo.
+- A lista pública mostra somente formas habilitadas pelo casal e dados explicitamente marcados como públicos.
 ## 12. Controle de entrada
 
 - Cada convidado recebe QR único com token assinado e não adivinhável.
@@ -372,7 +358,7 @@ A regra de taxa fica em tabela de configuração (percentual, mínimo e máximo 
 3. Entrada: leitor de QR para a equipe, funcionamento offline, registro manual de última hora, buffet e exportação de entradas.
 4. Despesas: fornecedores, orçamento, pagamentos, vencimentos e lembretes por e-mail ou push.
 5. Convites físicos e digitais: formatos de impressão em alta resolução, QR estilizado e integração de carteira digital.
-6. Presentes e Pix: catálogo interno, ledger, provedor brasileiro de split, taxas transparentes, repasses e conciliação. Esta etapa vem depois do controle de despesas.
+6. Presentes: lista pública com Pix direto aos noivos e/ou links externos de loja; sem checkout, ledger financeiro, split ou repasse pela plataforma. Esta etapa vem depois do controle de despesas.
 7. PWA, notificações e calendários: instalação, lembrete personalizado, escolha de calendário e conteúdo por idioma.
 8. Quiz diário.
 9. Empacotamento para as lojas.
@@ -387,7 +373,7 @@ Brasil
 - Casar.com: lista de presentes em dinheiro com saque por Pix e itens editáveis. Levantamento deles indica que 74% dos casais preferem lista convertida em dinheiro. Referência principal de modelo de negócio e taxa.
 - iCasei: site completo com lista, enquetes, contagem regressiva e mural de recados.
 - Wedy: layout moderno, confirmação de presença por WhatsApp e formas de arrecadar dinheiro.
-- Lista de presentes exclusiva da plataforma, vinculada ao convite do casal.
+- Lista de presentes vinculada ao convite do casal, com Pix direto ou links externos de lojas.
 - Padrões a seguir: lista de presentes para todos os bolsos, opção de lua de mel, resgate via Pix, confirmação pelo WhatsApp.
 
 Internacional (design e produto)
@@ -415,8 +401,8 @@ Stripe
 ## 18. Perguntar ao dono do projeto antes de implementar
 
 - Domínio base dos subdomínios.
-- Provedor brasileiro de Pix split: confirmar elegibilidade da plataforma, contrato, tipo de conta, onboarding dos casais, titularidade da chave Pix, custos de processamento e repasse, prazos, reembolsos e responsabilidades antes de escolher.
-- Valor da taxa da plataforma: percentual, mínimo e máximo por presente, e quem paga por padrão (noivos ou convidado).
+- Não há provedor ou split no piloto. O Pix é transferido diretamente pelos convidados aos noivos.
+- Não há taxa por presente no piloto. Um modelo comercial futuro exige nova decisão do dono.
 - Idiomas finais: pt-BR, en e es.
 - Referências próprias do dono do projeto, a enviar.
 - Serviço de e-mail transacional para verificação de conta e recuperação de senha.
@@ -429,10 +415,10 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 - O dono retomou o desenvolvimento nesta conversa. Continue o trabalho a partir das fases definidas neste arquivo; nao trate a transferencia anterior como uma pausa vigente.
 - A identidade visual aprovada para a landing e jardim editorial: fotografia de casamento em destaque, tons pasteis e detalhes florais discretos, com texto legivel e navegacao clara.
-- Criar e usar o site e gratuito, sem mensalidade. A lista de presentes e exclusiva da plataforma. Nao incluir links, itens de lojas, catalogos externos, redirecionamentos ou texto que sugira compra fora do site.
-- A receita vem exclusivamente de presentes pagos dentro da plataforma. A comunicacao publica apresenta a experiencia completa do produto em linguagem direta, sem rotulos de desenvolvimento ou avisos internos de disponibilidade.
-- Nao divulgar nome de provedor nem taxa numerica antes da aprovacao comercial. A pagina explica o fluxo desejado de Pix, split, repasse e exibicao transparente de custos antes de confirmar o presente.
-- O fluxo de presentes apresentado ao publico e Pix pago dentro do site, com comissao da plataforma e repasse do restante aos noivos. Nao incluir lojas externas nem sugerir pagamento fora da plataforma.
+- O piloto é gratuito. A lista de presentes aceita Pix direto aos noivos e links externos de lojas; a plataforma apenas exibe o Pix ou encaminha para a loja, sem processar pagamentos.
+- Não cobrar taxa no piloto. Qualquer modelo comercial futuro depende de decisão expressa do dono. A comunicação pública não deve sugerir que a plataforma processa pagamentos.
+- O Pix é pago diretamente ao casal, fora da plataforma. Não mencionar split, repasse ou taxas da plataforma.
+- O fluxo público de presentes pode oferecer Pix direto ao casal e redirecionamento para loja externa, sem compra dentro da plataforma.
 - A prioridade e corrigir a porta de entrada e preparar o personalizador para a Fase 1 da secao 7.20. O personalizador deve ser curado e seguro, sem CSS, HTML ou JavaScript livre.
 - O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
 - Nao alterar decisoes aprovadas sem perguntar quando houver uma lacuna material. Nao pedir novamente uma decisao que ja consta neste arquivo.
@@ -442,7 +428,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Repositorio: `https://github.com/henriquesouza1832001-eng/tudocomecoudeumsim.git`.
 - Commit mais recente: `2d9b55b Clarify Pix gifts and wedding site editor`, enviado para `origin/main`. A arvore de trabalho estava limpa no ultimo check.
 - Esse commit alterou `AGENTS.md`, `functions/api/[[route]].js`, `src/App.jsx`, `src/MarketingLanding.css`, `src/MarketingLanding.jsx` e `src/styles.css`.
-- A landing deve explicar a experiencia completa desejada: site do casal, convites digitais e para impressao, QR, carteira digital, RSVP, presentes exclusivos da plataforma via Pix e split, planejamento financeiro, lembretes, PWA e controle de entrada. Nao usar avisos de "em desenvolvimento" ou "em breve".
+- A landing explica a experiência do produto sem sugerir processamento de pagamentos; presentes usam Pix direto aos noivos ou redirecionamento para loja.
 - O commit adiciona `storyMessages` a configuracao, campos de historia por idioma no personalizador, previa desse texto e exibicao no convite individual publicado. Limite atual: 3000 caracteres por idioma; fallback para pt-BR.
 - O personalizador existente ja tinha escolhas curadas de tema, paleta, par de fontes, layout de capa, idioma, animacao, secoes reordenaveis, rascunho, publicacao e previa de dispositivo. Confira a implementacao antes de descrever o conjunto como completo; parte da previa pode ser apenas visual.
 - `npm run lint` e `npm run build` passaram para o commit `2d9b55b`.
@@ -451,23 +437,23 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 ### Acoes para concluir o trabalho
 
 - Confirmado em 15/10/2026: o Pages serviu os bundles da entrega `b8c5297` em `https://tudocomecoudeumsim.pages.dev`. Deploy pela integracao Git do Cloudflare; nao fazer deploy manual nem criar pipeline.
-- Conferir a landing publicada: sem links, catalogos ou redirecionamentos de lojas externas; explicar a plataforma de ponta a ponta conforme a experiencia que o dono definiu, sem mencionar desenvolvimento.
+- Conferir a landing publicada: explicar que o Pix vai direto ao casal e os links externos levam às lojas para concluir a compra.
 - O dono pediu para continuar o desenvolvimento seguindo este arquivo. So disponibilize publicamente recursos que estejam concluidos e validados.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
 - `npm run lint`, `npm run build` e `git diff --check` passaram para `b8c5297`; repetir depois de qualquer nova alteracao.
-- Ainda faltam decisoes listadas na secao 18, principalmente dominio base e provedor, contrato e taxas do Pix split. Nao inventar essas informacoes nem implementar recebimentos em producao antes das confirmacoes exigidas na secao 11.
+- A decisão sobre domínio próprio e qualquer modelo comercial futuro permanece pendente. Não implementar processamento de pagamentos.
 - Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.
 
 ## 20. Atualizacao de desenvolvimento em 15/10/2026
 
 - A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
 - A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
-- A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legiveis e secoes dedicadas a RSVP, Pix, convites, check-in, despesas, PWA e calendario. A lista de presentes e exclusiva da plataforma; nao indicar lojas externas. Evitar numeracao decorativa nos cards de etapas.
+- A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legíveis e seções dedicadas a RSVP, presentes por Pix direto ou links de loja, convites, check-in, despesas, PWA e calendário. Evitar numeração decorativa nos cards de etapas.
 - A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes, site publico completo para cada casal e escolha final de idiomas. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
 - A diretriz mais recente do dono determina que a comunicacao da landing descreva a experiencia completa do produto sem rotulos ou ressalvas de desenvolvimento, pois o lancamento publico ainda sera anunciado por ele. Essa decisao substitui as notas anteriores que pediam omitir recursos futuros.
-- Nao incluir links, catalogos ou produtos de lojas externas. Valores exatos de taxas e afirmacoes comparativas continuam sujeitos a aprovacao comercial.
+- Links externos de lojas são permitidos somente como redirecionamento para compra fora da plataforma. Não processar pagamento nem cobrar taxa no piloto.
 - A tela de cadastro recebeu ajuste de escala tipografica e marca; confirmar no Pages que o monograma nao empilha letras em telas estreitas.
-- Em 15/10/2026, o dono reorganizou a entrega por esforço e dependencias: personalizador primeiro; convidados/convites e QR; controle de entrada por QR com excecao manual; despesas antes de presentes; Pix split por ultimo depois de despesas; impressao/carteira digital depois da base de convites.
+- Em 15/10/2026, o dono reorganizou a entrega por esforço e dependencias: personalizador primeiro; convidados/convites e QR; controle de entrada por QR com excecao manual; despesas antes de presentes; presentes por Pix direto ou links externos; impressao/carteira digital depois da base de convites.
 - O painel dos noivos agora abre em “Personalizar site” e ordena as abas pelo fluxo, deixando Presentes no fim. Os oito pares tipograficos curados agora fornecem tokens de fonte para a previa do editor e o convite individual publicado, com familias locais do sistema e fallbacks.
 - Em 15/10/2026, o commit `4577b15` publicou a landing completa com blocos de RSVP, presentes Pix, convites digitais/impressos/carteira, check-in com entrada manual e relatorios, despesas e lembretes, PWA e calendario. O rodape tem links internos validos e contatos. O menu mobile permite rolagem horizontal sem estourar a viewport.
 - O mesmo commit atualizou title, description, Open Graph e `public/llms.txt` para refletir a plataforma. Confirmados HTTP 200 na pagina inicial, `/cadastro` e `/llms.txt`; os novos assets e estilos de cadastro estavam presentes no Pages.
@@ -541,3 +527,10 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - `FontScalePicker` oferece Compacto, Padrão e Ampliado tanto em `/criar-site` quanto no editor autenticado, dentro da etapa Aparência. As escolhas atualizam as prévias na hora e são guardadas no mesmo rascunho.
 - A escala também é aplicada ao convite individual publicado, incluindo capa, recado e detalhes. Valores permitidos continuam sendo `small`, `medium` e `large`, validados pela API.
 - Validação: `npm test` passou com 11/11 testes, `npm run lint`, `npm run build` e `git diff --check` passaram. O commit `5f1c6eb` foi enviado por `hen` e integrado por fast-forward a `main`. A página de produção respondeu HTTP 200 e serviu o bundle com o seletor de tamanho e as regras CSS correspondentes.
+
+## 21. Decisão de produto confirmada em 17/10/2026
+
+- O objetivo imediato é concluir uma plataforma utilizável no chá de panela dos amigos e no casamento no ano seguinte, gratuita no piloto e adequada como case de portfólio com potencial comercial futuro.
+- Presentes: Pix diretamente aos noivos ou redirecionamento para loja externa. A plataforma não realiza a compra, não recebe ou repassa valores e não cobra taxa no piloto.
+- Priorizar a experiência real do casal e dos convidados, especialmente site público, mobile, compartilhamento por link/QR, informações do evento, RSVP e presentes configurados pelo casal.
+- Não confundir mockups, dados de demonstração ou controles visuais com recursos persistidos e funcionais.

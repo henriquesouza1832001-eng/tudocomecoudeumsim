@@ -23,7 +23,37 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 200 } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '' } }
+
+function validPixSettings(pix) {
+  if (pix === undefined) return defaultSiteConfig.pix
+  if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key)) return null
+  const key = pix.key.trim()
+  if (pix.enabled && !key) return null
+  return { enabled: pix.enabled, key }
+}
+
+function publicSiteConfig(config) {
+  if (!config) return config
+  const pixEnabled = config.pix?.enabled && config.enabledSections?.includes('Lista de presentes')
+  return { ...config, pix: pixEnabled ? config.pix : { enabled: false, key: '' } }
+}
+
+function siteMediaReferences(value, id) {
+  let config
+  try {
+    config = JSON.parse(value || '{}')
+  } catch {
+    return ['configuração indisponível']
+  }
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return []
+  const uses = []
+  if (config.coverPhotoId === id) uses.push('foto principal da capa')
+  if (Array.isArray(config.coverGallery) && config.coverGallery.includes(id)) uses.push('carrossel da capa')
+  if (config.coverVideoId === id) uses.push('vídeo de abertura')
+  if (Array.isArray(config.siteGallery) && config.siteGallery.includes(id)) uses.push('galeria do site')
+  return uses
+}
 const guestPhotoConsentVersion = 'guest-camera-v1'
 
 function validGuestCamera(camera) {
@@ -103,7 +133,9 @@ function parseSiteConfig(value) {
     if (config.siteGallery !== undefined && (!Array.isArray(config.siteGallery) || config.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
-    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+    const pix = validPixSettings(config.pix)
+    if (!pix) return null
+    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -130,7 +162,9 @@ function validateSiteConfig(body) {
   if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+  const pix = validPixSettings(body.pix)
+  if (!pix) return null
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {
@@ -879,6 +913,38 @@ app.get('/api/couple/weddings/:weddingId/site-media', requireSession, async (con
   return context.json({ media })
 })
 
+app.delete('/api/couple/weddings/:weddingId/site-media/:mediaId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const mediaId = context.req.param('mediaId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  if (!/^[0-9a-f-]{36}$/i.test(mediaId)) return jsonError(context, 400, 'invalid_media_id')
+  if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
+  const configs = await context.env.DB.prepare('SELECT site_config_json, published_site_config_json FROM weddings WHERE id = ?').bind(weddingId).first()
+  if (!configs) return jsonError(context, 404, 'wedding_not_found')
+  const references = [
+    ...siteMediaReferences(configs.site_config_json, mediaId).map((use) => `rascunho: ${use}`),
+    ...siteMediaReferences(configs.published_site_config_json, mediaId).map((use) => `convite publicado: ${use}`),
+  ]
+  if (references.length) return context.json({ error: 'site_media_in_use', references }, 409, { 'Cache-Control': 'no-store' })
+  let objectKey
+  for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
+    const key = `${weddingId}/site/${mediaId}.${extension}`
+    const object = await context.env.GUEST_PHOTOS.get(key)
+    if (object?.customMetadata?.weddingId === weddingId) {
+      objectKey = key
+      break
+    }
+  }
+  if (!objectKey) return jsonError(context, 404, 'media_not_found')
+  await context.env.GUEST_PHOTOS.delete(objectKey)
+  await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+    VALUES (?, ?, ?, 'wedding_site_media_deleted', 'site_media', ?, '{}')`)
+    .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, mediaId).run()
+  return context.json({ id: mediaId, deleted: true })
+})
+
 app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   if (!await weddingMembership(context, weddingId, ['couple_admin', 'editor'])) return jsonError(context, 404, 'wedding_not_found')
@@ -955,7 +1021,7 @@ app.get('/api/couple/weddings/:weddingId/published', requireSession, async (cont
   if (!wedding?.site_published_at) return jsonError(context, 404, 'published_site_not_found')
   return context.json({
     wedding: { slug: wedding.slug, partner_one_name: wedding.partner_one_name, partner_two_name: wedding.partner_two_name, event_date: wedding.event_date, event_time: wedding.event_time },
-    siteConfig: parseSiteConfig(wedding.published_site_config_json),
+    siteConfig: publicSiteConfig(parseSiteConfig(wedding.published_site_config_json)),
     events: JSON.parse(wedding.published_events_json || '[]').filter((event) => !event.group_ids.length).map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids
@@ -1334,7 +1400,7 @@ app.get('/api/couple/weddings/:weddingId/gifts', requireSession, async (context)
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
-  const result = await context.env.DB.prepare(`SELECT id, gift_type, title, description, amount_cents, goal_cents, status, display_order, created_at, updated_at
+  const result = await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents, status, display_order, created_at, updated_at
     FROM gifts WHERE wedding_id = ? ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, display_order, created_at`).bind(weddingId).all()
   return context.json({ gifts: result.results })
 })
@@ -1347,6 +1413,16 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
+  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
+  let safeStoreUrl = null
+  if (fulfillmentType === 'store_link') {
+    try {
+      const parsed = new URL(storeUrl)
+      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
+      safeStoreUrl = parsed.toString()
+    } catch { return jsonError(context, 400, 'invalid_store_url') }
+  }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -1357,14 +1433,14 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const id = crypto.randomUUID()
   const actorId = context.get('session').account_id
   await context.env.DB.batch([
-    context.env.DB.prepare(`INSERT INTO gifts (id, wedding_id, gift_type, title, description, amount_cents, goal_cents, display_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, weddingId, body.giftType, title, description, amountCents, goalCents, count.total),
+    context.env.DB.prepare(`INSERT INTO gifts (id, wedding_id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents, display_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, weddingId, body.giftType, fulfillmentType, safeStoreUrl, title, description, amountCents, goalCents, count.total),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'gift_created', 'gift', ?, ?)`)
-      .bind(crypto.randomUUID(), actorId, weddingId, id, JSON.stringify({ giftType: body.giftType, amountCents, goalCents })),
+      .bind(crypto.randomUUID(), actorId, weddingId, id, JSON.stringify({ giftType: body.giftType, fulfillmentType, amountCents, goalCents })),
   ])
-  return context.json({ gift: { id, gift_type: body.giftType, title, description, amount_cents: amountCents, goal_cents: goalCents, status: 'active', display_order: count.total } }, 201)
+  return context.json({ gift: { id, gift_type: body.giftType, fulfillment_type: fulfillmentType, store_url: safeStoreUrl, title, description, amount_cents: amountCents, goal_cents: goalCents, status: 'active', display_order: count.total } }, 201)
 })
 
 app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async (context) => {
@@ -1376,6 +1452,16 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
+  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
+  let safeStoreUrl = null
+  if (fulfillmentType === 'store_link') {
+    try {
+      const parsed = new URL(storeUrl)
+      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
+      safeStoreUrl = parsed.toString()
+    } catch { return jsonError(context, 400, 'invalid_store_url') }
+  }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -1385,13 +1471,13 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   if (!current) return jsonError(context, 404, 'gift_not_found')
   const actorId = context.get('session').account_id
   await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE gifts SET gift_type = ?, title = ?, description = ?, amount_cents = ?, goal_cents = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?`)
-      .bind(body.giftType, title, description, amountCents, goalCents, body.status, giftId, weddingId),
+    context.env.DB.prepare(`UPDATE gifts SET gift_type = ?, fulfillment_type = ?, store_url = ?, title = ?, description = ?, amount_cents = ?, goal_cents = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?`)
+      .bind(body.giftType, fulfillmentType, safeStoreUrl, title, description, amountCents, goalCents, body.status, giftId, weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'gift_updated', 'gift', ?, ?)`)
-      .bind(crypto.randomUUID(), actorId, weddingId, giftId, JSON.stringify({ giftType: body.giftType, amountCents, goalCents, status: body.status })),
+      .bind(crypto.randomUUID(), actorId, weddingId, giftId, JSON.stringify({ giftType: body.giftType, fulfillmentType, amountCents, goalCents, status: body.status })),
   ])
-  return context.json({ gift: { id: giftId, gift_type: body.giftType, title, description, amount_cents: amountCents, goal_cents: goalCents, status: body.status } })
+  return context.json({ gift: { id: giftId, gift_type: body.giftType, fulfillment_type: fulfillmentType, store_url: safeStoreUrl, title, description, amount_cents: amountCents, goal_cents: goalCents, status: body.status } })
 })
 
 app.delete('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async (context) => {
@@ -1681,13 +1767,13 @@ app.get('/api/invitation', async (context) => {
   const publishedEvents = JSON.parse(guest.published_events_json || '[]')
   const [rsvps, gifts] = await Promise.all([
     context.env.DB.prepare('SELECT event_id, status, party_size, dietary_notes FROM guest_rsvps WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
-    context.env.DB.prepare(`SELECT id, gift_type, title, description, amount_cents, goal_cents
+    context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents
       FROM gifts WHERE wedding_id = ? AND status = 'active' ORDER BY display_order, created_at`).bind(guest.wedding_id).all(),
   ])
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, eventTime: guest.event_time, timezone: guest.timezone },
-    siteConfig: parseSiteConfig(guest.published_site_config_json),
+    siteConfig: publicSiteConfig(parseSiteConfig(guest.published_site_config_json)),
     events: publishedEvents.filter((event) => !event.group_ids.length || event.group_ids.includes(guest.group_id)).map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids
