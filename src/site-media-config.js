@@ -1,1 +1,1 @@
-export const SITE_MEDIA_LIMITS = { photosPerWedding: 40 }
+export const SITE_MEDIA_LIMITS = { photosPerWedding: 15 }

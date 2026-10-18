@@ -23,11 +23,13 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 200 } }
+const guestPhotoConsentVersion = 'guest-camera-v1'
 
 function validGuestCamera(camera) {
   if (camera === undefined) return defaultSiteConfig.guestCamera
-  if (!camera || typeof camera !== 'object' || Array.isArray(camera) || typeof camera.enabled !== 'boolean' || !Number.isInteger(camera.photoLimit) || camera.photoLimit < 1 || camera.photoLimit > 50) return null
+  if (!camera || typeof camera !== 'object' || Array.isArray(camera) || typeof camera.enabled !== 'boolean' || !Number.isInteger(camera.photoLimit)) return null
+  if (camera.photoLimit < 1 || camera.photoLimit > 300) return null
   return { enabled: camera.enabled, photoLimit: camera.photoLimit }
 }
 
@@ -402,7 +404,7 @@ async function invitationGuest(context) {
   const match = authorization.match(/^Bearer ([A-Za-z0-9_-]{40,60})$/)
   if (!match) return null
   return context.env.DB.prepare(`
-    SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type,
+    SELECT g.id, g.wedding_id, g.group_id, g.name, g.party_size, g.guest_type, g.photo_consent_at,
       CASE WHEN w.site_published_at IS NULL THEN w.partner_one_name ELSE w.published_partner_one_name END AS partner_one_name,
       CASE WHEN w.site_published_at IS NULL THEN w.partner_two_name ELSE w.published_partner_two_name END AS partner_two_name,
       CASE WHEN w.site_published_at IS NULL THEN w.event_date ELSE w.published_event_date END AS event_date,
@@ -1662,8 +1664,19 @@ app.get('/api/invitation/photos', async (context) => {
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
   const config = parseSiteConfig(guest.published_site_config_json)
   if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
-  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).first()
-  return context.json({ saved: current?.total || 0, limit: config.guestCamera.photoLimit, remaining: Math.max(0, config.guestCamera.photoLimit - (current?.total || 0)) })
+  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ?').bind(guest.wedding_id).first()
+  return context.json({ saved: current?.total || 0, limit: config.guestCamera.photoLimit, remaining: Math.max(0, config.guestCamera.photoLimit - (current?.total || 0)), consented: Boolean(guest.photo_consent_at) })
+})
+
+app.post('/api/invitation/photos/consent', async (context) => {
+  const guest = await invitationGuest(context)
+  if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  const config = parseSiteConfig(guest.published_site_config_json)
+  if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  const body = await context.req.json().catch(() => null)
+  if (body?.accepted !== true) return jsonError(context, 400, 'photo_consent_required')
+  await context.env.DB.prepare(`UPDATE guests SET photo_consent_at = COALESCE(photo_consent_at, CURRENT_TIMESTAMP), photo_consent_version = COALESCE(photo_consent_version, ?) WHERE id = ? AND wedding_id = ?`).bind(guestPhotoConsentVersion, guest.id, guest.wedding_id).run()
+  return context.json({ consented: true })
 })
 
 app.post('/api/invitation/photos', async (context) => {
@@ -1671,6 +1684,7 @@ app.post('/api/invitation/photos', async (context) => {
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
   const config = parseSiteConfig(guest.published_site_config_json)
   if (!config?.guestCamera?.enabled) return jsonError(context, 404, 'guest_camera_unavailable')
+  if (!guest.photo_consent_at) return jsonError(context, 403, 'photo_consent_required')
   if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'photo_storage_unavailable')
   const contentLength = Number(context.req.header('Content-Length') || 0)
   if (contentLength > 7_000_000) return jsonError(context, 413, 'photo_too_large')
@@ -1681,6 +1695,8 @@ app.post('/api/invitation/photos', async (context) => {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) return jsonError(context, 400, 'unsupported_photo_type')
   const event = await guestCanAccessEvent(context, guest, eventId)
   if (!event) return jsonError(context, 404, 'event_not_found')
+  const current = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_photos WHERE wedding_id = ?').bind(guest.wedding_id).first()
+  if ((current?.total || 0) >= config.guestCamera.photoLimit) return jsonError(context, 409, 'photo_limit_reached')
   const bytes = new Uint8Array(await photo.arrayBuffer())
   const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
   const png = bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 && bytes[4] === 13 && bytes[5] === 10 && bytes[6] === 26 && bytes[7] === 10
@@ -1699,9 +1715,9 @@ app.post('/api/invitation/photos', async (context) => {
     const result = await context.env.DB.prepare(`
       INSERT INTO guest_photos (id, wedding_id, event_id, guest_id, object_key, content_type, size_bytes)
       SELECT ?, ?, ?, ?, ?, ?, ? WHERE (
-        SELECT COUNT(*) FROM guest_photos WHERE wedding_id = ? AND guest_id = ?
+        SELECT COUNT(*) FROM guest_photos WHERE wedding_id = ?
       ) < ?
-    `).bind(id, guest.wedding_id, eventId, guest.id, objectKey, photo.type, photo.size, guest.wedding_id, guest.id, config.guestCamera.photoLimit).run()
+    `).bind(id, guest.wedding_id, eventId, guest.id, objectKey, photo.type, photo.size, guest.wedding_id, config.guestCamera.photoLimit).run()
     if (!result.meta.changes) {
       await context.env.GUEST_PHOTOS.delete(objectKey)
       return jsonError(context, 409, 'photo_limit_reached')

@@ -97,7 +97,7 @@ function FontScalePicker({ value = 'medium', onChange }) {
     <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
   </div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 5 } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 } }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
 let turnstileScriptPromise
@@ -718,7 +718,7 @@ function readPublicSiteDraft() {
 
 function GuestCameraSettings({ settings = DEFAULT_SITE_CONFIG.guestCamera, onChange, id }) {
   const camera = { ...DEFAULT_SITE_CONFIG.guestCamera, ...settings }
-  return <section className="guest-camera-settings" id={id}><div><span className="eyebrow">LEMBRANÇAS DOS CONVIDADOS</span><h3>Uma câmera para cada pessoa</h3><p>O convidado tira uma foto, confere a prévia e decide se quer guardar ou tentar outra vez. As fotos ficam privadas para o casal; cada convidado só vê a contagem que ainda pode enviar.</p></div><label className="guest-camera-toggle"><input type="checkbox" checked={camera.enabled} onChange={(event) => onChange({ ...camera, enabled: event.target.checked })} /><span>Ativar a câmera do casamento</span></label>{camera.enabled && <label className="font-pair-label">Limite de fotos por convidado<input type="number" min="1" max="50" step="1" value={camera.photoLimit} onChange={(event) => onChange({ ...camera, photoLimit: Math.max(1, Math.min(50, Number(event.target.value) || 1)) })} /><small>Escolham qualquer quantidade entre uma e cinquenta fotos.</small></label>}<small>Depois da celebração, o casal pode rever as fotos com o nome de quem registrou cada momento.</small></section>
+  return <section className="guest-camera-settings" id={id}><div><span className="eyebrow">LEMBRANÇAS DOS CONVIDADOS</span><h3>Uma câmera para o álbum</h3><p>As fotos são espontâneas: ao tirar, cada imagem é enviada direto para o álbum compartilhado. O limite é total para o casamento, sem cota por convidado.</p></div><label className="guest-camera-toggle"><input type="checkbox" checked={camera.enabled} onChange={(event) => onChange({ ...camera, enabled: event.target.checked })} /><span>Ativar a câmera do casamento</span></label>{camera.enabled && <label className="font-pair-label">Limite total do álbum<input type="number" min="1" max="300" step="1" value={camera.photoLimit} onChange={(event) => { const photoLimit = Number(event.target.value); if (Number.isInteger(photoLimit) && photoLimit >= 1 && photoLimit <= 300) onChange({ ...camera, photoLimit }) }} /><small>Escolham o total que desejam, até 300 fotos. Todos os convidados compartilham esse limite.</small></label>}<small>Antes da primeira foto, cada convidado autoriza o envio automático. As fotos ficam privadas para o casal.</small></section>
 }
 
 function PublicSiteCustomizer() {
@@ -2411,21 +2411,23 @@ function GuestPortal({ notify, setView }) {
       {invitation.siteConfig?.enabledSections?.includes('Nossa história') && (invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']) && <section className="role-card guest-story-section"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{invitation.siteConfig.storyMessages?.[invitation.siteConfig.language] || invitation.siteConfig.storyMessages?.['pt-BR']}</p></section>}
       </details>}
       {siteOpen && invitation.guest.guestType === 'godparent' && <section className="role-card"><span className="eyebrow">ESPAÇO DOS PADRINHOS</span><h2>Orientações individuais</h2><p>Consulte as tarefas e os combinados enviados a você.</p><button className="button-outline" onClick={() => setView('godparent')}>Abrir minha área <ArrowRight size={14} /></button></section>}
-      {siteOpen && invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} limit={invitation.siteConfig.guestCamera.photoLimit} notify={notify} />}
+      {siteOpen && invitation.siteConfig?.guestCamera?.enabled && invitation.events.length > 0 && <GuestCamera token={token} events={invitation.events} notify={notify} />}
       {siteOpen && <section id="guest-site-rsvp" className="guest-site-events"><span className="eyebrow">EVENTOS E CONFIRMAÇÃO</span>{invitation.events.length ? invitation.events.map((event, index) => <InvitationEventCard key={event.id} event={event} initialOpen={index === 0} maxPartySize={invitation.guest.partySize} onSubmit={saveRsvp} />) : <section className="role-card"><p>Os detalhes dos eventos ainda não foram publicados.</p></section>}</section>}
     </>}
   </RoleFrame>
 }
 
-function GuestCamera({ token, events, limit, notify }) {
+function GuestCamera({ token, events, notify }) {
   const [status, setStatus] = useState(null)
   const [eventId, setEventId] = useState(events[0]?.id || '')
-  const [pending, setPending] = useState(null)
   const [consent, setConsent] = useState(false)
+  const [cameraStream, setCameraStream] = useState(null)
+  const [processing, setProcessing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const fileInput = useRef(null)
-  const pendingUrl = useRef('')
+  const videoRef = useRef(null)
+  const cameraStreamRef = useRef(null)
+  const retryPhoto = useRef(null)
 
   async function loadStatus() {
     const response = await fetch('/api/invitation/photos', { headers: { Authorization: `Bearer ${token}` } })
@@ -2436,53 +2438,64 @@ function GuestCamera({ token, events, limit, notify }) {
 
   useEffect(() => {
     loadStatus().catch((cause) => setError(cause.message))
-    return () => { if (pendingUrl.current) URL.revokeObjectURL(pendingUrl.current) }
   }, [token])
 
-  async function preparePhoto(file) {
-    if (!file) return
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      fetch('/api/invitation/photos', { headers: { Authorization: `Bearer ${token}` } }).then(async (response) => {
+        const result = await response.json()
+        if (response.ok) setStatus(result)
+      }).catch(() => {})
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (!cameraStream || !videoRef.current) return undefined
+    videoRef.current.srcObject = cameraStream
+    videoRef.current.play().catch(() => setError('Não foi possível iniciar a câmera. Confira a permissão do navegador.'))
+    return () => {
+      if (videoRef.current) videoRef.current.srcObject = null
+    }
+  }, [cameraStream])
+
+  useEffect(() => () => cameraStreamRef.current?.getTracks().forEach((track) => track.stop()), [])
+
+  function stopCamera() {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop())
+    cameraStreamRef.current = null
+    setCameraStream(null)
+  }
+
+  async function startCamera() {
     setError('')
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Este navegador não oferece captura direta. Abra o convite em um navegador atualizado com acesso à câmera.')
+      return
+    }
     try {
-      const bitmap = await createImageBitmap(file)
-      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(bitmap.width * scale)
-      canvas.height = Math.round(bitmap.height * scale)
-      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-      bitmap.close()
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))
-      if (!blob) throw new Error('Não foi possível preparar esta foto. Tente outra vez.')
-      if (pendingUrl.current) URL.revokeObjectURL(pendingUrl.current)
-      pendingUrl.current = URL.createObjectURL(blob)
-      setPending({ file: new File([blob], 'momento.webp', { type: 'image/webp' }), url: pendingUrl.current })
-      setConsent(false)
-    } catch (cause) {
-      setError(cause.message || 'Não foi possível abrir esta foto.')
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+      cameraStreamRef.current = stream
+      setCameraStream(stream)
+    } catch {
+      setError('Não foi possível acessar a câmera. Permita o uso nas configurações do navegador e tente novamente.')
     }
   }
 
-  function retake() {
-    if (pendingUrl.current) URL.revokeObjectURL(pendingUrl.current)
-    pendingUrl.current = ''
-    setPending(null)
-    setConsent(false)
-    if (fileInput.current) fileInput.current.value = ''
-  }
-
-  async function keepPhoto() {
-    if (!pending || !eventId || !consent) return
+  async function acceptConsent() {
     setBusy(true)
     setError('')
     try {
-      const body = new FormData()
-      body.set('photo', pending.file)
-      body.set('eventId', eventId)
-      const response = await fetch('/api/invitation/photos', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error === 'photo_limit_reached' ? 'Você já enviou o máximo de fotos definido pelo casal.' : result.error === 'photo_storage_unavailable' || result.error === 'photo_storage_failed' ? 'O envio de fotos não está disponível agora. Tente novamente em alguns minutos.' : result.error === 'photo_too_large' ? 'Esta foto excede o limite de envio. Tente uma imagem menor.' : 'Não foi possível guardar a foto. Tente novamente.')
-      retake()
-      await loadStatus()
-      notify('Foto guardada para o álbum do casal')
+      const response = await fetch('/api/invitation/photos/consent', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ accepted: true }) })
+      if (!response.ok) throw new Error('Não foi possível ativar a câmera. Tente novamente.')
+      setConsent(true)
+      setStatus((current) => ({ ...current, consented: true }))
     } catch (cause) {
       setError(cause.message)
     } finally {
@@ -2490,7 +2503,58 @@ function GuestCamera({ token, events, limit, notify }) {
     }
   }
 
-  return <section className="role-card guest-camera-card" id="guest-camera"><div className="role-card-heading"><div><span className="eyebrow">UMA LEMBRANÇA PELOS SEUS OLHOS</span><h2>A câmera do casamento</h2></div><Camera size={20} /></div><p>Tire uma foto espontânea da celebração. Confira a prévia e escolha se quer guardar ou tentar outra vez. Depois de enviar, ela fica só com o casal — você não verá as fotos da galeria.</p>{events.length > 1 && <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)}>{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}{pending ? <div className="guest-camera-preview"><img src={pending.url} alt="Prévia da foto antes de enviar" /><label className="guest-camera-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /> Autorizo o casal a guardar esta foto no álbum com meu nome.</label><div><button className="button-outline" type="button" onClick={retake} disabled={busy}>Tirar outra</button><button className="button-primary" type="button" onClick={keepPhoto} disabled={busy || !consent}>{busy ? 'Guardando…' : 'Guardar foto'} <Check size={15} /></button></div></div> : <><label className="guest-camera-action">{status?.remaining > 0 ? <><Camera size={17} /> Tirar uma foto</> : 'Limite de fotos enviado'}<input ref={fileInput} type="file" accept="image/*" capture="environment" onChange={(event) => preparePhoto(event.target.files?.[0])} disabled={busy || !status?.remaining} /></label><small>{status ? `${status.remaining} de ${limit} fotos restantes para você` : 'A câmera abre no seu celular e mostra a prévia antes de enviar.'}</small></>}{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
+  async function sendPhoto(file) {
+    if (!file || !eventId) return
+    setBusy(true)
+    setError('')
+    try {
+      const body = new FormData()
+      body.set('photo', file)
+      body.set('eventId', eventId)
+      const response = await fetch('/api/invitation/photos', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body })
+      const result = await response.json()
+      if (!response.ok) {
+        if (result.error === 'photo_limit_reached') {
+          retryPhoto.current = null
+          await loadStatus()
+          throw new Error('O álbum atingiu o limite de fotos escolhido pelo casal.')
+        }
+        throw new Error(result.error === 'photo_storage_unavailable' || result.error === 'photo_storage_failed' ? 'O envio não está disponível agora. A foto ficou pronta para tentar novamente.' : result.error === 'photo_too_large' || result.error === 'invalid_photo' ? 'Esta foto não pôde ser enviada. Tente outra foto.' : 'Não foi possível guardar a foto. Ela ficou pronta para tentar novamente.')
+      }
+      retryPhoto.current = null
+      notify('Foto enviada para o álbum do casal')
+      await loadStatus().catch(() => setStatus((current) => current ? { ...current, saved: current.saved + 1, remaining: Math.max(0, current.remaining - 1) } : current))
+    } catch (cause) {
+      retryPhoto.current = cause.message === 'O álbum atingiu o limite de fotos escolhido pelo casal.' ? null : file
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function capturePhoto() {
+    if (!cameraStream || !videoRef.current || busy || processing) return
+    setError('')
+    setProcessing(true)
+    try {
+      const video = videoRef.current
+      const scale = Math.min(1, 1800 / Math.max(video.videoWidth, video.videoHeight))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(video.videoWidth * scale)
+      canvas.height = Math.round(video.videoHeight * scale)
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))
+      if (!blob) throw new Error('Não foi possível preparar esta foto. Tente outra vez.')
+      stopCamera()
+      await sendPhoto(new File([blob], 'momento.webp', { type: 'image/webp' }))
+    } catch (cause) {
+      setError(cause.message || 'Não foi possível capturar esta foto.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  return <section className="role-card guest-camera-card" id="guest-camera"><div className="role-card-heading"><div><span className="eyebrow">UMA LEMBRANÇA PELOS SEUS OLHOS</span><h2>A câmera do casamento</h2></div><Camera size={20} /></div><p>Enquadre o momento e toque no botão. A foto é capturada e enviada direto para o álbum do casal, sem tela de revisão.</p>{events.length > 1 && <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)}>{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}<div className="guest-camera-album-counter" role="status"><strong>{status?.remaining ?? '—'} fotos restantes</strong><span>{status ? `${status.saved} de ${status.limit} fotos no álbum` : 'Carregando o limite compartilhado'}</span></div>{status && status.remaining < 1 ? <div className="guest-camera-album-full">O álbum já recebeu todas as {status.limit} fotos.</div> : status?.consented ? <div className="guest-camera-live">{cameraStream ? <><video ref={videoRef} autoPlay muted playsInline aria-label="Enquadramento ao vivo da câmera" /><div><button className="button-primary" type="button" onClick={capturePhoto} disabled={busy || processing}>{processing ? 'Capturando…' : busy ? 'Enviando…' : <><Camera size={17} /> Tirar foto</>}</button><button className="button-outline" type="button" onClick={stopCamera} disabled={busy || processing}>Fechar câmera</button></div></> : <button className="button-primary" type="button" onClick={startCamera} disabled={busy}><Camera size={17} /> Abrir câmera</button>}{retryPhoto.current && <button className="button-outline" type="button" disabled={busy} onClick={() => sendPhoto(retryPhoto.current)}>Tentar enviar a foto novamente</button>}</div> : <div className="guest-camera-consent-start"><p>Ao ativar a câmera, você autoriza o envio imediato das fotos tiradas para o álbum privado do casal, identificadas pelo seu convite. Não será possível revisar ou escolher cada foto antes do envio.</p><label className="guest-camera-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /> Entendi e autorizo o envio automático das fotos que eu tirar.</label><button className="button-primary" type="button" onClick={acceptConsent} disabled={busy || !consent || !status?.remaining}>{busy ? 'Ativando câmera…' : 'Ativar câmera'}</button></div>}{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
 }
 
 function InvitationEventCard({ event, maxPartySize, onSubmit, initialOpen = false }) {
