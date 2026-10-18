@@ -147,6 +147,21 @@ test('public media endpoint never reads a file that is not referenced by the pub
   assert.equal(objectReads, 0)
 })
 
+test('public media endpoint serves photos selected for the invitation carousel', async () => {
+  const carouselPhotoId = '55555555-5555-4555-8555-555555555555'
+  const publishedWedding = {
+    ...wedding,
+    published_site_config_json: JSON.stringify({ ...siteConfig, siteCarouselEnabled: true, siteCarouselPhotos: [carouselPhotoId] }),
+  }
+  const objectReads = []
+  const { response } = await call(`/api/public/weddings/ana-e-bia/media/${carouselPhotoId}`, {
+    publishedWedding,
+    env: { GUEST_PHOTOS: { async get(key) { objectReads.push(key); return key.endsWith('.jpg') ? { body: new Uint8Array([1]), httpMetadata: { contentType: 'image/jpeg' } } : null } } },
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual(objectReads, [`wedding-1/site/${carouselPhotoId}.jpg`])
+})
+
 test('general RSVP rejects an invalid event before creating a request', async () => {
   const { response, batches } = await call('/api/public/weddings/ana-e-bia/rsvp', {
     method: 'POST',

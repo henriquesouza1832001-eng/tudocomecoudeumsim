@@ -97,7 +97,7 @@ function FontScalePicker({ value = 'medium', onChange }) {
     <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
   </div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, timeline: [], giftPresentation: {}, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, shareMessage: '', timeline: [], giftPresentation: {}, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const EVENT_TYPE_LABELS = { ceremony: 'Cerimônia', reception: 'Recepção', rehearsal: 'Ensaio', brunch: 'Brunch', other: 'Outro' }
 const GIFT_CATEGORIES = ['Cozinha', 'Eletrodomésticos', 'Casa e decoração', 'Quarto e banho', 'Experiências', 'Lua de mel', 'Outros']
 
@@ -198,16 +198,78 @@ function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts,
   const story = config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR'] || ''
   const details = config?.weddingDetails || {}
   const gallery = config?.siteGallery || []
+  const carouselPhotos = config?.siteCarouselPhotos || []
   return <>
     {sections.includes('Contagem regressiva') && <WeddingCountdown date={eventDate} time={eventTime} timezone={timezone} preview={preview} />}
     {sections.includes('Nossa história') && story && <section className="public-wedding-story"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{story}</p></section>}
     {sections.includes('Linha do tempo') && <WeddingTimelineSection items={config?.timeline || []} mediaUrl={mediaUrl} preview={preview} />}
+    {config?.siteCarouselEnabled && carouselPhotos.length > 0 && <WeddingPhotoCarousel photos={carouselPhotos} mediaUrl={mediaUrl} autoplay={Boolean(config.siteCarouselAutoplay)} />}
     {sections.includes('Eventos') && <WeddingEventsSection events={events} timezone={timezone} preview={preview} />}
     {sections.includes('Eventos') && (details.schedule || details.menu || details.dressCode) && <section className="public-wedding-details">{details.schedule && <article><span className="eyebrow">ORIENTAÇÕES</span><p>{details.schedule}</p></article>}{details.dressCode && <article><span className="eyebrow">TRAJE</span><p>{details.dressCode}</p></article>}{details.menu && <article><span className="eyebrow">CARDÁPIO</span><p>{details.menu}</p></article>}</section>}
     {sections.includes('Galeria de fotos') && gallery.length > 0 && <section className="public-wedding-gallery"><span className="eyebrow">FOTOS DO CASAL</span><div>{gallery.map((id) => mediaUrl(id) && <img key={id} src={mediaUrl(id)} alt="Foto escolhida pelo casal" />)}</div></section>}
     {showGifts && (giftMode === 'inline' ? <WeddingGiftsSection gifts={gifts} presentation={giftPresentation} mediaUrl={mediaUrl} preview={preview} /> : <section className="public-wedding-display-cta"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2>{preview ? <button className="button-primary" type="button" onClick={onOpenGifts}>Ver lista de presentes <ArrowRight size={15} /></button> : <a className="button-primary" href={`${weddingUrl}?pagina=presentes`}>Ver lista de presentes <ArrowRight size={15} /></a>}</section>)}
     {showPix && (pixMode === 'inline' ? <WeddingPixSection pix={config?.pix || {}} preview={preview} onCopy={onCopyPix} /> : <section className="public-wedding-display-cta"><span className="eyebrow">UM PRESENTE COM CARINHO</span><h2>Se desejarem, presenteiem os noivos via Pix.</h2>{preview ? <button className="button-primary" type="button" onClick={onOpenPix}>Presentear via Pix <ArrowRight size={15} /></button> : <a className="button-primary" href={`${weddingUrl}?pagina=pix`}>Presentear via Pix <ArrowRight size={15} /></a>}</section>)}
   </>
+}
+
+function WeddingPhotoCarousel({ photos, mediaUrl, autoplay }) {
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const pointerStart = useRef(null)
+  const resumeTimer = useRef(null)
+  const slideCount = photos.length
+  const activePhoto = photos[index % Math.max(slideCount, 1)]
+  const activePhotoUrl = activePhoto ? mediaUrl(activePhoto) : ''
+  const moveTo = (nextIndex) => setIndex((nextIndex + slideCount) % slideCount)
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setReducedMotion(media.matches)
+    updatePreference()
+    media.addEventListener?.('change', updatePreference)
+    return () => media.removeEventListener?.('change', updatePreference)
+  }, [])
+
+  useEffect(() => {
+    setIndex((current) => current % Math.max(slideCount, 1))
+    if (!autoplay || reducedMotion || paused || slideCount < 2) return undefined
+    const timer = window.setInterval(() => setIndex((current) => (current + 1) % slideCount), 5000)
+    return () => window.clearInterval(timer)
+  }, [autoplay, paused, reducedMotion, slideCount])
+
+  useEffect(() => () => window.clearTimeout(resumeTimer.current), [])
+
+  if (!slideCount || !activePhotoUrl) return null
+
+  const pauseForInteraction = () => {
+    if (!autoplay) return
+    setPaused(true)
+    window.clearTimeout(resumeTimer.current)
+    resumeTimer.current = window.setTimeout(() => setPaused(false), 5000)
+  }
+
+  const handlePointerDown = (event) => {
+    pointerStart.current = event.clientX
+    pauseForInteraction()
+  }
+
+  const handlePointerUp = (event) => {
+    if (pointerStart.current === null) return
+    const distance = event.clientX - pointerStart.current
+    pointerStart.current = null
+    if (Math.abs(distance) > 45) moveTo(index + (distance < 0 ? 1 : -1))
+  }
+
+  return <section className="public-wedding-photo-carousel" aria-label="Carrossel de fotos do casal" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null }} onKeyDown={(event) => { if (event.key === 'ArrowLeft') { event.preventDefault(); pauseForInteraction(); moveTo(index - 1) } if (event.key === 'ArrowRight') { event.preventDefault(); pauseForInteraction(); moveTo(index + 1) } }}>
+    <span className="eyebrow">FOTOS DO CASAL</span>
+    <h2>Alguns instantes nossos</h2>
+    <div className="public-wedding-photo-carousel-stage" aria-live="off">
+      <img key={activePhoto} src={activePhotoUrl} alt={`Foto ${index + 1} de ${slideCount}`} draggable="false" />
+      {slideCount > 1 && <><button className="public-wedding-photo-carousel-arrow is-previous" type="button" aria-label="Foto anterior" onClick={() => { pauseForInteraction(); moveTo(index - 1) }}><ArrowLeft size={19} /></button><button className="public-wedding-photo-carousel-arrow is-next" type="button" aria-label="Próxima foto" onClick={() => { pauseForInteraction(); moveTo(index + 1) }}><ArrowRight size={19} /></button></>}
+    </div>
+    {slideCount > 1 && <div className="public-wedding-photo-carousel-indicators" role="group" aria-label="Escolher foto">{photos.map((photo, photoIndex) => <button key={photo} type="button" className={photoIndex === index ? 'active' : ''} aria-label={`Mostrar foto ${photoIndex + 1}`} aria-current={photoIndex === index ? 'true' : undefined} onClick={() => { pauseForInteraction(); moveTo(photoIndex) }} />)}</div>}
+  </section>
 }
 
 function WeddingEventsSection({ events, timezone, preview = false }) {
@@ -2258,13 +2320,18 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onImageError, onDelete }) {  return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
+function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
+  return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
     <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{totalImages}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
     <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto</button></div>
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
     {mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}
     <label className="customizer-carousel-toggle"><input type="checkbox" checked={coverCarouselEnabled} disabled={coverGallery.length < 2} onChange={(event) => onCarouselToggle(event.target.checked)} /><span><strong>Ativar carrossel na capa</strong><small>{coverGallery.length < 2 ? 'Marquem pelo menos duas fotos como carrossel.' : 'As fotos escolhidas alternam na abertura do convite.'}</small></span></label>
-    {images.length > 0 ? <div className="customizer-photo-library-grid">{images.map((item) => <article className="customizer-photo-library-item" key={item.id}>{mediaUrls[item.id] && !mediaLoadErrors.includes(item.id) ? <img src={mediaUrls[item.id]} alt="Foto enviada pelo casal" onError={() => onImageError(item.id)} /> : <span className="customizer-photo-loading">{mediaLoadErrors.includes(item.id) ? 'Foto indisponível' : 'Carregando foto…'}</span>}<div className="customizer-photo-roles"><label><input type="radio" name="cover-photo-choice" checked={coverPhotoId === item.id} onChange={() => onCoverSelect(item.id)} /> Foto principal</label><label><input type="checkbox" checked={coverGallery.includes(item.id)} disabled={coverCarouselEnabled && coverPhotoId === item.id} onChange={(event) => onCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel</label><label><input type="checkbox" checked={siteGallery.includes(item.id)} onChange={(event) => onSitePhotoToggle(item.id, event.target.checked)} /> Galeria do site</label></div><button type="button" className="customizer-delete-photo-button" disabled={mediaBusy} onClick={() => onDelete(item)}><Trash2 size={14} /> Excluir foto</button></article>)}</div> : <div className="customizer-photo-library-empty"><Camera size={23} /><strong>{totalImages ? 'As fotos dos produtos ficam organizadas na aba Presentes.' : 'Adicionem as fotos que querem compartilhar.'}</strong><span>{totalImages ? 'Enviem ou escolham fotos para a capa e a galeria nesta etapa.' : 'As imagens ficam privadas no rascunho até vocês publicarem o site.'}</span></div>}  </section>
+    <label className="customizer-carousel-toggle"><input type="checkbox" checked={siteCarouselEnabled} disabled={siteCarouselPhotos.length === 0} onChange={(event) => onSiteCarouselToggle(event.target.checked)} /><span><strong>Exibir carrossel no convite</strong><small>{siteCarouselPhotos.length ? `${siteCarouselPhotos.length} foto(s) selecionada(s), em uma seção após a história e antes dos eventos.` : 'Escolham pelo menos uma foto abaixo para exibir o carrossel.'}</small></span></label>
+    {siteCarouselEnabled && <label className="customizer-carousel-toggle customizer-carousel-autoplay"><input type="checkbox" checked={siteCarouselAutoplay} disabled={siteCarouselPhotos.length < 2} onChange={(event) => onSiteCarouselAutoplayToggle(event.target.checked)} /><span><strong>Reproduzir automaticamente</strong><small>{siteCarouselPhotos.length < 2 ? 'Selecionem duas ou mais fotos para ativar a reprodução.' : 'Avança suavemente a cada 5 segundos.'}</small></span></label>}
+    {siteCarouselPhotos.length > 0 && <ol className="customizer-photo-carousel-order" aria-label="Ordem das fotos do carrossel">{siteCarouselPhotos.map((id, index) => <li key={id}><span>{mediaUrls[id] ? <img src={mediaUrls[id]} alt="" /> : <span className="customizer-photo-loading">{index + 1}</span>}<strong>Foto {index + 1}</strong></span><div><button type="button" className="button-outline" aria-label={`Mover foto ${index + 1} para antes`} disabled={index === 0} onClick={() => onReorderSiteCarousel(id, -1)}><ArrowLeft size={14} /></button><button type="button" className="button-outline" aria-label={`Mover foto ${index + 1} para depois`} disabled={index === siteCarouselPhotos.length - 1} onClick={() => onReorderSiteCarousel(id, 1)}><ArrowRight size={14} /></button></div></li>)}</ol>}
+    {images.length > 0 ? <div className="customizer-photo-library-grid">{images.map((item) => { const carouselIndex = siteCarouselPhotos.indexOf(item.id); return <article className="customizer-photo-library-item" key={item.id}>{mediaUrls[item.id] && !mediaLoadErrors.includes(item.id) ? <img src={mediaUrls[item.id]} alt="Foto enviada pelo casal" onError={() => onImageError(item.id)} /> : <span className="customizer-photo-loading">{mediaLoadErrors.includes(item.id) ? 'Foto indisponível' : 'Carregando foto…'}</span>}<div className="customizer-photo-roles"><label><input type="radio" name="cover-photo-choice" checked={coverPhotoId === item.id} onChange={() => onCoverSelect(item.id)} /> Foto principal</label><label><input type="checkbox" checked={coverGallery.includes(item.id)} disabled={coverCarouselEnabled && coverPhotoId === item.id} onChange={(event) => onCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel da capa</label><label><input type="checkbox" checked={siteGallery.includes(item.id)} onChange={(event) => onSitePhotoToggle(item.id, event.target.checked)} /> Galeria do site</label><label><input type="checkbox" checked={carouselIndex >= 0} onChange={(event) => onSiteCarouselPhotoToggle(item.id, event.target.checked)} /> No carrossel do convite</label>{carouselIndex >= 0 && <small>Posição: {carouselIndex + 1}</small>}</div><button type="button" className="customizer-delete-photo-button" disabled={mediaBusy} onClick={() => onDelete(item)}><Trash2 size={14} /> Excluir foto</button></article> })}</div> : <div className="customizer-photo-library-empty"><Camera size={23} /><strong>{totalImages ? 'As fotos dos produtos ficam organizadas na aba Presentes.' : 'Adicionem as fotos que querem compartilhar.'}</strong><span>{totalImages ? 'Enviem ou escolham fotos para a capa e a galeria nesta etapa.' : 'As imagens ficam privadas no rascunho até vocês publicarem o site.'}</span></div>}
+  </section>
 }
 
 function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving, confirmAction, notify }) {
@@ -2306,6 +2373,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const countdownEnabled = (config.enabledSections || []).includes('Contagem regressiva')
   const timelineItems = config.timeline || []
   const giftPresentation = config.giftPresentation || {}
+  const siteCarouselPhotos = config.siteCarouselPhotos || []
   const pixDisplayMode = ['inline', 'page', 'hidden'].includes(config.pixDisplayMode) ? config.pixDisplayMode : config.pix?.enabled ? 'inline' : 'hidden'
   const previewPixEnabled = Boolean(config.pix?.enabled && config.pix.key?.trim() && pixDisplayMode !== 'hidden')
   const previewGifts = giftsEnabled ? gifts.filter((gift) => gift.fulfillment_type === 'store_link' || previewPixEnabled) : []
@@ -2315,7 +2383,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const previewHasCover = Boolean(previewVideoUrl || previewPhotoUrl)
   const uploadedImages = siteMedia.filter((item) => item.mediaType === 'image')
   const siteGallery = config.siteGallery || []
-  const nonGiftMediaIds = new Set([config.coverPhotoId, ...(config.coverGallery || []), ...siteGallery, ...(config.timeline || []).map((item) => item.photoId)].filter(Boolean))
+  const nonGiftMediaIds = new Set([config.coverPhotoId, ...(config.coverGallery || []), ...siteGallery, ...siteCarouselPhotos, ...(config.timeline || []).map((item) => item.photoId)].filter(Boolean))
   const giftOnlyPhotoIds = new Set(Object.values(config.giftPresentation || {}).map((item) => item?.photoId).filter((id) => id && !nonGiftMediaIds.has(id)))
   const customizerImages = uploadedImages.filter((image) => !giftOnlyPhotoIds.has(image.id))
   const remainingPhotoSlots = Math.max(0, SITE_MEDIA_LIMITS.photosPerWedding - uploadedImages.length)
@@ -2349,6 +2417,22 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       : (current.enabledSections || []).filter((section) => section !== 'Galeria de fotos')
     return { ...current, siteGallery: next, enabledSections }
   })
+  const toggleSiteCarouselPhoto = (id, included) => setConfig((current) => {
+    const selected = current.siteCarouselPhotos || []
+    const photos = included ? [...new Set([...selected, id])] : selected.filter((photoId) => photoId !== id)
+    return { ...current, siteCarouselPhotos: photos, siteCarouselEnabled: photos.length ? current.siteCarouselEnabled : false, siteCarouselAutoplay: photos.length > 1 ? current.siteCarouselAutoplay : false }
+  })
+  const reorderSiteCarouselPhoto = (id, direction) => setConfig((current) => {
+    const photos = [...(current.siteCarouselPhotos || [])]
+    const index = photos.indexOf(id)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= photos.length) return current
+    const selected = photos[index]
+    photos[index] = photos[target]
+    photos[target] = selected
+    return { ...current, siteCarouselPhotos: photos }
+  })
+  const toggleSiteCarousel = (enabled) => update({ siteCarouselEnabled: enabled && siteCarouselPhotos.length > 0 })
   const handlePhotoUpload = (event, usage) => {
     const input = event.currentTarget
     const files = [...input.files].slice(0, remainingPhotoSlots)
@@ -2390,7 +2474,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
 
   useEffect(() => {
     let active = true
-    const ids = [...new Set([...siteMedia.map((item) => item.id), ...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.siteGallery || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])].filter((id) => !mediaUrls[id])
+    const ids = [...new Set([...siteMedia.map((item) => item.id), ...(config.coverPhotoId ? [config.coverPhotoId] : []), ...(config.coverGallery || []), ...(config.siteGallery || []), ...(config.siteCarouselPhotos || []), ...(config.coverVideoId ? [config.coverVideoId] : [])])].filter((id) => !mediaUrls[id])
     if (!ids.length) return () => { active = false }
     Promise.all(ids.map(async (id) => {
       const response = await fetch(`/api/site-media/${id}`)
@@ -2404,7 +2488,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       setMediaUrls((current) => ({ ...current, ...Object.fromEntries(loaded) }))
     }).catch(() => {})
     return () => { active = false }
-  }, [wedding.id, JSON.stringify(siteMedia.map((item) => item.id)), JSON.stringify(Object.keys(mediaUrls)), config.coverPhotoId, JSON.stringify(config.coverGallery || []), JSON.stringify(config.siteGallery || []), config.coverVideoId])
+  }, [wedding.id, JSON.stringify(siteMedia.map((item) => item.id)), JSON.stringify(Object.keys(mediaUrls)), config.coverPhotoId, JSON.stringify(config.coverGallery || []), JSON.stringify(config.siteGallery || []), JSON.stringify(config.siteCarouselPhotos || []), config.coverVideoId])
 
   useEffect(() => {
     setPreviewCoverIndex(0)
@@ -2472,6 +2556,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       if (current.coverPhotoId === item.id) usages.push(`${label}: foto principal da capa`)
       if (current.coverGallery?.includes(item.id)) usages.push(`${label}: carrossel da capa`)
       if (current.siteGallery?.includes(item.id)) usages.push(`${label}: galeria do site`)
+      if (current.siteCarouselPhotos?.includes(item.id)) usages.push(`${label}: carrossel do convite`)
       if (current.coverVideoId === item.id) usages.push(`${label}: vídeo de abertura`)
       if (current.timeline?.some((milestone) => milestone.photoId === item.id)) usages.push(`${label}: linha do tempo`)
       if (Object.values(current.giftPresentation || {}).some((gift) => gift?.photoId === item.id)) usages.push(`${label}: foto de presente`)
@@ -2501,7 +2586,8 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       setMediaLoadErrors((current) => current.filter((id) => id !== item.id))
       setConfig((current) => {
         const siteGallery = (current.siteGallery || []).filter((id) => id !== item.id)
-        return { ...current, coverPhotoId: current.coverPhotoId === item.id ? null : current.coverPhotoId, coverGallery: (current.coverGallery || []).filter((id) => id !== item.id), siteGallery, timeline: (current.timeline || []).map((milestone) => milestone.photoId === item.id ? { ...milestone, photoId: null } : milestone), giftPresentation: Object.fromEntries(Object.entries(current.giftPresentation || {}).map(([giftId, gift]) => [giftId, gift.photoId === item.id ? { ...gift, photoId: null } : gift])), enabledSections: siteGallery.length ? current.enabledSections : (current.enabledSections || []).filter((section) => section !== 'Galeria de fotos'), coverVideoId: current.coverVideoId === item.id ? null : current.coverVideoId }
+        const siteCarouselPhotos = (current.siteCarouselPhotos || []).filter((id) => id !== item.id)
+        return { ...current, coverPhotoId: current.coverPhotoId === item.id ? null : current.coverPhotoId, coverGallery: (current.coverGallery || []).filter((id) => id !== item.id), siteGallery, siteCarouselPhotos, siteCarouselEnabled: siteCarouselPhotos.length ? current.siteCarouselEnabled : false, siteCarouselAutoplay: siteCarouselPhotos.length > 1 ? current.siteCarouselAutoplay : false, timeline: (current.timeline || []).map((milestone) => milestone.photoId === item.id ? { ...milestone, photoId: null } : milestone), giftPresentation: Object.fromEntries(Object.entries(current.giftPresentation || {}).map(([giftId, gift]) => [giftId, gift.photoId === item.id ? { ...gift, photoId: null } : gift])), enabledSections: siteGallery.length ? current.enabledSections : (current.enabledSections || []).filter((section) => section !== 'Galeria de fotos'), coverVideoId: current.coverVideoId === item.id ? null : current.coverVideoId }
       })
       notify('Foto excluída do armazenamento deste casamento.')
     } catch (error) {
@@ -2533,7 +2619,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
         <div className="wedding-profile-fields"><label>Noivo(a) 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Noivo(a) 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
-        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
+        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div>
         <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button></div>
@@ -2552,7 +2638,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
       </section>}
-      <PublishedInviteShare wedding={wedding} publishedAt={publishedAt} notify={notify} />
+      <PublishedInviteShare wedding={wedding} profile={profile} config={config} update={update} publishedAt={publishedAt} notify={notify} />
       <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
     <div className="customize-preview">
@@ -2570,13 +2656,20 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     </div>
   </div>
 }
-function PublishedInviteShare({ wedding, publishedAt, notify }) {
-  const [qr, setQr] = useState('')
+function PublishedInviteShare({ wedding, profile, config, update, publishedAt, notify }) {
   const url = wedding?.slug ? `${window.location.origin}/casamento/${encodeURIComponent(wedding.slug)}` : ''
-  useEffect(() => {
-    if (url) QRCode.toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr(''))
-  }, [url])
   if (!publishedAt || !url) return null
+  const names = [profile.partnerOneName, profile.partnerTwoName].map((name) => name?.trim()).filter(Boolean).join(' & ')
+  const date = profile.eventDate ? new Date(`${profile.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const time = profile.eventTime || ''
+  const defaultMessage = `Com muita alegria, queremos convidar você para celebrar um dos dias mais especiais das nossas vidas! 💍\n\n💕 ${names || 'Os noivos'}\n\n${date ? `📅 ${date}\n` : ''}${time ? `🕓 ${time}\n` : ''}\nPreparamos um convite especial com todos os detalhes do nosso casamento.\n\nAcesse nosso convite e confirme sua presença:\n\n{{link}}\n\nEsperamos você para celebrar esse momento conosco! ❤️`
+  const storedMessage = config.shareMessage || ''
+  const message = (storedMessage || defaultMessage).replaceAll('{{link}}', url)
+  const saveMessage = (value) => {
+    let next = value.split(url).join('{{link}}')
+    if (!next.includes('{{link}}')) next = `${next.trimEnd()}\n\n{{link}}`
+    update({ shareMessage: next })
+  }
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(url)
@@ -2585,7 +2678,16 @@ function PublishedInviteShare({ wedding, publishedAt, notify }) {
       notify('Selecione o endereço para copiá-lo.')
     }
   }
-  return <section className="role-card published-invite-share"><div><span className="eyebrow">CONVITE PUBLICADO</span><h2>Compartilhar convite</h2><p>Qualquer pessoa com este link pode registrar a própria resposta e, ao confirmar, recebe um QR individual. Para limitar o acesso às pessoas convidadas, compartilhe os links individuais da lista.</p><label>Link público<input readOnly value={url} onFocus={(event) => event.target.select()} /></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyLink}><Copy size={15} /> Copiar link</button><a className="button-outline" href={url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Visualizar convite</a></div></div>{qr && <div><img src={qr} alt="QR Code geral do convite" /><a className="button-outline" href={qr} download={`convite-${wedding.slug}.png`}>Baixar QR Code</a></div>}</section>
+  async function copyMessage() {
+    try {
+      await navigator.clipboard.writeText(message)
+      notify('Mensagem copiada.')
+    } catch {
+      notify('Selecione a mensagem para copiá-la.')
+    }
+  }
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+  return <section className="role-card published-invite-share"><div><span className="eyebrow">CONVITE PUBLICADO</span><h2>Compartilhar convite</h2><p>O link público permite que cada pessoa registre a própria resposta e receba um QR individual. Para convites pessoais, use o link exclusivo da lista.</p><label>Link público<input readOnly value={url} onFocus={(event) => event.target.select()} /></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyLink}><Copy size={15} /> Copiar link</button><a className="button-outline" href={url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Visualizar convite</a></div><label className="share-message-field">Mensagem para compartilhar<textarea rows="10" maxLength="4000" value={message} onChange={(event) => saveMessage(event.target.value)} /><small>A mensagem personalizada é salva junto com o rascunho do convite.</small></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyMessage}><Copy size={15} /> Copiar mensagem</button><a className="button-outline" href={whatsappUrl} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Compartilhar pelo WhatsApp</a></div></div></section>
 }
 
 function AttendanceRequestManager({ policy, setPolicy, requests, companions, companionNameDrafts, setCompanionNameDrafts, onSavePolicy, onReviewRequest, onReviewCompanion, busy }) {
@@ -2637,7 +2739,9 @@ function InvitationShare({ share, onClose, notify }) {
       notify('Selecione e copie o link exibido')
     }
   }
-  return <section className="role-card invitation-share-card"><div><span className="eyebrow">LINK INDIVIDUAL GERADO</span><h2>{share.name}</h2><p>Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela.</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions"><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><button className="button-outline" onClick={onClose}>Fechar</button></div></div>{qr && <img src={qr} alt={`QR code do convite individual de ${share.name}`} />}</section>
+  const individualMessage = `Com carinho, convidamos você para celebrar conosco! 💍\n\n💕 ${share.name}\n\nAcesse seu convite individual e confirme sua presença:\n${share.url}`
+  const individualWhatsAppUrl = `https://wa.me/?text=${encodeURIComponent(individualMessage)}`
+  return <section className="role-card invitation-share-card"><div><span className="eyebrow">LINK INDIVIDUAL GERADO</span><h2>{share.name}</h2><p>Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela.</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions"><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><a className="button-outline" href={individualWhatsAppUrl} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enviar pelo WhatsApp</a><button className="button-outline" onClick={onClose}>Fechar</button></div></div>{qr && <img src={qr} alt={`QR code do convite individual de ${share.name}`} />}</section>
 }
 
 function Dashboard({ theme, setTheme, page, setPage, notify, demo = false }) {

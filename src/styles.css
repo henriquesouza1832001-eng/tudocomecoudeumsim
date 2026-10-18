@@ -6962,3 +6962,354 @@ img { display: block; max-width: 100%; }
     padding-bottom: 26px;
   }
 }
+
+.public-wedding-page {
+  font-size: clamp(16px, 1.15vw, 18px);
+  line-height: 1.65;
+}
+
+.public-wedding-page .public-wedding-header,
+.invitation-preview-document .public-wedding-header {
+  font-size: 15px;
+}
+
+.public-wedding-page .public-wedding-cover-copy h1 {
+  font-size: clamp(3.5rem, 5.2vw, 4.5rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+
+.public-wedding-page .public-wedding-cover-copy > p,
+.public-wedding-page .public-wedding-cover-message {
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
+  line-height: 1.65;
+}
+
+.public-wedding-page .public-wedding-cover-copy .public-wedding-cover-kicker,
+.public-wedding-page .eyebrow {
+  font-size: .75rem;
+  letter-spacing: .1em;
+}
+
+.public-wedding-page .public-wedding-story {
+  width: min(100% - 48px, 900px);
+  max-width: 900px;
+  padding: clamp(52px, 7vw, 88px) clamp(52px, 10vw, 132px);
+}
+
+.public-wedding-page .public-wedding-story > p {
+  width: min(100%, 42rem);
+  max-width: 42rem;
+  margin: 18px auto 0;
+  font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+  line-height: 1.72;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.public-wedding-page .public-wedding-events > h2,
+.public-wedding-page .public-wedding-timeline > h2,
+.public-wedding-page .public-wedding-gifts > h2,
+.public-wedding-page .public-wedding-pix > h2,
+.public-wedding-page .public-wedding-rsvp > h2 {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  line-height: 1.16;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.public-wedding-page .public-wedding-events > article > div:first-child small,
+.public-wedding-page .public-wedding-events > article > p,
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location,
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > strong,
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > span,
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > a,
+.public-wedding-page .public-wedding-details article > p {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.public-wedding-page .public-wedding-events > article > div:first-child small {
+  letter-spacing: .025em;
+}
+
+.public-wedding-page .public-wedding-events > article h3 {
+  font-size: clamp(1.35rem, 1.8vw, 1.6rem);
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location {
+  gap: 7px 16px;
+  margin-top: 5px;
+}
+
+.public-wedding-page .public-wedding-details {
+  margin-top: 0;
+  padding-block: 24px 30px;
+}
+
+.public-wedding-page .public-wedding-details article .eyebrow {
+  font-size: .75rem;
+}
+
+.public-wedding-page .public-wedding-gifts > h2,
+.public-wedding-page .public-wedding-pix > h2 {
+  font-size: clamp(1.9rem, 3vw, 2.4rem);
+}
+
+.public-wedding-page .public-wedding-gifts h3 {
+  font-size: clamp(1.25rem, 1.65vw, 1.5rem);
+  line-height: 1.25;
+}
+
+.public-wedding-page .public-wedding-gifts p,
+.public-wedding-page .public-wedding-gifts article > div > small,
+.public-wedding-page .public-wedding-pix > p,
+.public-wedding-page .public-wedding-pix > small,
+.public-wedding-page .public-wedding-rsvp > p,
+.public-wedding-page .public-wedding-rsvp label {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.published-invite-share {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.share-message-field textarea {
+  min-height: 220px;
+  padding: 14px;
+  border: 1px solid rgba(62, 83, 69, .24);
+  color: var(--ink, #31443a);
+  background: #fffefa;
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.share-message-field small {
+  color: var(--muted, #647268);
+  font-size: .875rem;
+}
+
+.public-wedding-photo-carousel {
+  width: min(100% - 56px, 1120px);
+  margin: 0 auto;
+  padding: clamp(38px, 5.5vw, 72px) 0;
+  color: var(--ink, #31443a);
+  text-align: center;
+}
+
+.public-wedding-photo-carousel > .eyebrow {
+  color: var(--accent, #a98462);
+}
+
+.public-wedding-photo-carousel > h2 {
+  margin: 9px 0 24px;
+  color: var(--forest, #40594a);
+  font: 400 clamp(2rem, 3vw, 2.5rem)/1.16 var(--font-heading, Georgia, serif);
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.public-wedding-photo-carousel-stage {
+  position: relative;
+  width: 100%;
+  max-height: 700px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 70%, #d9ded6);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.public-wedding-photo-carousel-stage > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  animation: wedding-carousel-enter .55s ease both;
+}
+
+.public-wedding-photo-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(45, 58, 49, .42);
+  box-shadow: 0 3px 16px rgba(28, 35, 29, .16);
+  transform: translateY(-50%);
+  transition: background-color .2s ease, opacity .2s ease;
+  cursor: pointer;
+}
+
+.public-wedding-photo-carousel-arrow:hover,
+.public-wedding-photo-carousel-arrow:focus-visible {
+  background: rgba(45, 58, 49, .76);
+}
+
+.public-wedding-photo-carousel-arrow.is-previous {
+  left: clamp(12px, 2.5vw, 30px);
+}
+
+.public-wedding-photo-carousel-arrow.is-next {
+  right: clamp(12px, 2.5vw, 30px);
+}
+
+.public-wedding-photo-carousel-indicators {
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.public-wedding-photo-carousel-indicators button {
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  min-height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--forest, #40594a) 28%, transparent);
+  transition: width .25s ease, background-color .25s ease;
+  cursor: pointer;
+}
+
+.public-wedding-photo-carousel-indicators button.active {
+  width: 24px;
+  background: var(--accent, #a98462);
+}
+
+.customizer-photo-carousel-order {
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.customizer-photo-carousel-order li,
+.customizer-photo-carousel-order li > span,
+.customizer-photo-carousel-order li > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customizer-photo-carousel-order li {
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 6px 9px;
+  border: 1px solid rgba(62, 83, 69, .14);
+  background: #fffefa;
+}
+
+.customizer-photo-carousel-order li > span > img,
+.customizer-photo-carousel-order li > span > .customizer-photo-loading {
+  width: 48px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.customizer-photo-carousel-order li > span > strong {
+  color: var(--forest, #40594a);
+  font-size: .9rem;
+}
+
+.customizer-photo-carousel-order li button {
+  width: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  justify-content: center;
+  padding: 0;
+}
+
+.customizer-photo-carousel-order li button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+@keyframes wedding-carousel-enter {
+  from { opacity: .45; transform: scale(1.012); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 600px) {
+  .public-wedding-page .public-wedding-cover-copy h1 {
+    font-size: clamp(2.65rem, 10.5vw, 3.5rem);
+    line-height: 1;
+  }
+
+  .public-wedding-page .public-wedding-story {
+    width: min(100% - 32px, 900px);
+    min-height: 0;
+    padding: 50px clamp(30px, 8vw, 44px);
+  }
+
+  .public-wedding-page.theme-floral .public-wedding-story {
+    background-size: 100% 100%, min(100%, 560px) auto;
+  }
+
+  .public-wedding-page .public-wedding-story > p {
+    width: 100%;
+    max-width: 100%;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+  }
+
+  .public-wedding-page .public-wedding-events > h2,
+  .public-wedding-page .public-wedding-timeline > h2,
+  .public-wedding-page .public-wedding-gifts > h2,
+  .public-wedding-page .public-wedding-pix > h2,
+  .public-wedding-page .public-wedding-rsvp > h2 {
+    font-size: 1.9rem;
+  }
+
+  .public-wedding-page .public-wedding-events > article > .public-wedding-event-location {
+    margin-top: 6px;
+  }
+
+  .published-invite-share .role-actions {
+    align-items: stretch;
+  }
+
+  .public-wedding-photo-carousel {
+    width: min(100% - 32px, 1120px);
+    padding-block: 34px;
+  }
+
+  .public-wedding-photo-carousel > h2 {
+    margin-bottom: 18px;
+    font-size: 1.9rem;
+  }
+
+  .public-wedding-photo-carousel-stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  .public-wedding-photo-carousel-arrow {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-wedding-photo-carousel-stage > img,
+  .public-wedding-photo-carousel-arrow,
+  .public-wedding-photo-carousel-indicators button {
+    animation: none;
+    transition: none;
+  }
+}

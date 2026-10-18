@@ -7,6 +7,9 @@ const mediaId = '11111111-1111-4111-8111-111111111111'
 
 function database({ role = 'couple_admin', draftConfig = {}, publishedConfig = {}, invitationConfig } = {}) {
   return {
+    async batch(statements) {
+      return Promise.all(statements.map((statement) => statement.run()))
+    },
     prepare(query) {
       let parameters = []
       return {
@@ -32,10 +35,11 @@ function database({ role = 'couple_admin', draftConfig = {}, publishedConfig = {
   }
 }
 
-async function call(path, { method = 'GET', role, draftConfig, publishedConfig, invitationConfig, bucket } = {}) {
+async function call(path, { method = 'GET', role, draftConfig, publishedConfig, invitationConfig, bucket, body } = {}) {
   const request = new Request(`${origin}${path}`, {
     method,
-    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(path === '/api/invitation' || path.startsWith('/api/site-media/') ? { Authorization: `Bearer ${'a'.repeat(40)}` } : {}) },
+    headers: { Cookie: '__Host-wedding-session=test-session', Origin: origin, ...(body ? { 'Content-Type': 'application/json' } : {}), ...(path === '/api/invitation' || path.startsWith('/api/site-media/') ? { Authorization: `Bearer ${'a'.repeat(40)}` } : {}) },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   })
   return onRequest({ request, env: { DB: database({ role, draftConfig, publishedConfig, invitationConfig }), GUEST_PHOTOS: bucket } })
 }
@@ -55,6 +59,17 @@ test('site media deletion refuses files referenced by draft or published invitat
   assert.equal(response.status, 409)
   assert.deepEqual(await response.json(), { error: 'site_media_in_use', references: ['rascunho: carrossel da capa', 'rascunho: linha do tempo', 'rascunho: foto de presente', 'convite publicado: foto principal da capa'] })
   assert.equal(deleted, false)
+})
+
+test('site media deletion recognizes invitation carousel photos as active content', async () => {
+  const response = await call(`/api/couple/weddings/wedding-1/site-media/${mediaId}`, {
+    method: 'DELETE',
+    draftConfig: { siteCarouselPhotos: [mediaId] },
+    publishedConfig: {},
+    bucket: { async get() { return { customMetadata: { weddingId: 'wedding-1' } } }, async delete() {} },
+  })
+  assert.equal(response.status, 409)
+  assert.deepEqual((await response.json()).references, ['rascunho: carrossel do convite'])
 })
 
 test('site media deletion removes only the unreferenced file in the authorized wedding', async () => {
@@ -102,10 +117,47 @@ test('site media deletion does not remove an object owned by another wedding', a
 })
 
 test('public invitation hides a disabled Pix key', async () => {
-  const config = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Lista de presentes'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' }, pix: { enabled: false, key: 'segredo@example.com' } }
+  const config = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Lista de presentes'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' }, pix: { enabled: false, key: 'segredo@example.com' }, shareMessage: 'Mensagem privada do casal' }
   const response = await call('/api/invitation', { invitationConfig: config })
   assert.equal(response.status, 200)
-  assert.deepEqual((await response.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
+  const result = await response.json()
+  assert.deepEqual(result.siteConfig.pix, { enabled: false, key: '', holderName: '' })
+  assert.equal('shareMessage' in result.siteConfig, false)
+})
+
+test('couples can save a formatted invitation sharing message in the site draft', async () => {
+  const message = 'Com carinho!\n\n\ud83d\udc95 Nomes do casal\n\n{{link}}'
+  const config = {
+    theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos'], animationPreset: 'Elegante',
+    fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' },
+    storyMessages: { 'pt-BR': '', en: '', es: '' }, shareMessage: message,
+  }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', {
+    method: 'PUT',
+    body: config,
+    bucket: { async get(key) { return key.endsWith('.jpg') ? { customMetadata: { weddingId: 'wedding-1' } } : null } },
+  })
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).draft.shareMessage, message)
+})
+
+test('couples can save ordered photos and autoplay settings for the invitation carousel', async () => {
+  const photos = ['22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333']
+  const config = {
+    theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos'], animationPreset: 'Elegante',
+    fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' },
+    storyMessages: { 'pt-BR': '', en: '', es: '' }, siteCarouselEnabled: true, siteCarouselPhotos: photos, siteCarouselAutoplay: true,
+  }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', {
+    method: 'PUT',
+    body: config,
+    bucket: { async get(key) { return key.endsWith('.jpg') ? { customMetadata: { weddingId: 'wedding-1' } } : null } },
+  })
+  assert.equal(response.status, 200)
+  const result = await response.json()
+  assert.deepEqual(result.draft.siteCarouselPhotos, photos)
+  assert.equal(result.draft.siteCarouselEnabled, true)
+  assert.equal(result.draft.siteCarouselAutoplay, true)
 })
 
 test('public invitation reveals the Pix key when enabled independently of the gifts section', async () => {
