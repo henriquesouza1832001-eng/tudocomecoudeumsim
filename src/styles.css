@@ -2584,6 +2584,38 @@ img { display: block; max-width: 100%; }
 .guest-full-site-heading h2 { margin: 6px 0 0; font: 400 clamp(25px, 3vw, 34px)/1.2 Georgia, 'Times New Roman', serif; }
 .guest-site-events { scroll-margin-top: 20px; }
 .guest-site-events > .eyebrow { margin: 16px 0; display: block; }
+.customizer-content-group { padding: 22px 0; border-top: 1px solid #e3e4dc; }
+.customizer-content-group:first-of-type { margin-top: 18px; }
+.customizer-content-heading { margin-bottom: 16px; display: flex; align-items: center; gap: 13px; }
+.customizer-content-heading > span { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #d5dfd2; border-radius: 50%; color: #526b59; font-size: 11px; }
+.customizer-content-heading > div { display: grid; gap: 3px; }
+.customizer-content-heading strong { color: #2d4034; font: 400 22px/1.2 Georgia, 'Times New Roman', serif; }
+.customizer-content-heading small { color: #6e776e; font-size: 13px; }
+.customizer-section-toggles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.customizer-section-toggles label { min-height: 46px; padding: 10px 12px; display: flex; align-items: center; gap: 9px; border: 1px solid #dce1d8; background: #fffefa; color: #3e5043; font-size: 14px; cursor: pointer; }
+.customizer-section-toggles input { width: 18px; height: 18px; accent-color: #405b4c; }
+.customizer-photo-loading { min-height: 120px; display: grid; place-items: center; padding: 12px; color: #68766a; background: #eef2eb; text-align: center; font-size: 14px; }
+.guest-invitation-content { margin: 14px 0 24px; border-top: 1px solid color-mix(in srgb, var(--forest) 18%, transparent); }
+.guest-invitation-page .guest-story-section { padding: 22px 4px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--forest) 16%, transparent); background: transparent; }
+.guest-invitation-page .guest-story-section .eyebrow { color: var(--accent); letter-spacing: .14em; }
+.guest-invitation-page .guest-story-section h2 { margin: 8px 0 0; color: var(--forest); font: 400 24px/1.25 var(--font-heading, Georgia, serif); }
+.guest-site-gifts { margin: 28px 0; padding: 24px 0; scroll-margin-top: 20px; border-top: 1px solid color-mix(in srgb, var(--forest) 22%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--forest) 22%, transparent); }
+.guest-site-section-heading { margin-bottom: 14px; }
+.guest-site-section-heading .eyebrow { color: var(--accent); }
+.guest-site-section-heading h2 { margin: 7px 0; color: var(--forest); font: 400 clamp(25px, 4vw, 34px)/1.2 var(--font-heading, Georgia, serif); }
+.guest-public-gifts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }
+.guest-public-gift { min-width: 0; padding: 16px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; border-bottom: 1px solid color-mix(in srgb, var(--forest) 14%, transparent); }
+.guest-public-gift h3 { margin: 0; color: var(--forest); font: 400 20px/1.25 var(--font-heading, Georgia, serif); }
+.guest-public-gift p { margin: 6px 0 0; color: color-mix(in srgb, var(--forest) 76%, #333); font-size: 14px; line-height: 1.55; }
+.guest-public-gift > strong { flex: 0 0 auto; color: var(--forest); font-size: 14px; }
+.guest-public-event { padding: 16px 0; border-bottom: 1px solid color-mix(in srgb, var(--forest) 16%, transparent); }
+.guest-public-event small { color: var(--accent); text-transform: uppercase; letter-spacing: .1em; }
+.guest-public-event h3 { margin: 5px 0; color: var(--forest); font: 400 22px/1.25 var(--font-heading, Georgia, serif); }
+.guest-public-event p { margin: 0; color: color-mix(in srgb, var(--forest) 82%, #333); line-height: 1.55; }
+.guest-public-event > small:last-child { margin-top: 5px; display: block; color: #69746a; text-transform: none; letter-spacing: 0; }
+.guest-site-events-readonly { margin: 24px 0; padding: 0 4px; }
+.guest-invitation-actions { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+@media (max-width: 600px) { .customizer-section-toggles, .guest-public-gifts { grid-template-columns: 1fr; } .guest-public-gift { padding: 14px 0; } }
 
 .app-shell, .guest-page, .role-page, .checkin-page { background-image: var(--watercolor-floral-background); background-position: center top; background-size: 100% 100vh; background-repeat: no-repeat; background-attachment: fixed; }
 .checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-watercolor-overlay.png'); }
