@@ -70,6 +70,30 @@ const THEME_PRESETS = {
   night: { fontPair: 'Moderno sem serifa', coverLayout: 'full', coverComposition: 'overlay' },
 }
 const PALETTE_NAMES = ['Original', 'Areia', 'Terracota', 'Rosé', 'Oliva', 'Dourado']
+function colorLuminance(color) {
+  const channels = color.replace('#', '').match(/.{2}/g).map((value) => Number.parseInt(value, 16) / 255).map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+}
+function contrastRatio(first, second) {
+  const values = [colorLuminance(first), colorLuminance(second)].sort((a, b) => b - a)
+  return (values[0] + 0.05) / (values[1] + 0.05)
+}
+function blendToward(color, target, amount) {
+  const channels = color.replace('#', '').match(/.{2}/g).map((value, index) => {
+    const source = Number.parseInt(value, 16)
+    const destination = Number.parseInt(target.replace('#', '').slice(index * 2, index * 2 + 2), 16)
+    return Math.round(source + (destination - source) * amount).toString(16).padStart(2, '0')
+  })
+  return `#${channels.join('')}`
+}
+function accessibleAccent(ink, accent, paper) {
+  if (contrastRatio(accent, paper) >= 4.5) return accent
+  for (let amount = 0.02; amount <= 1; amount += 0.02) {
+    const adjusted = blendToward(accent, ink, amount)
+    if (contrastRatio(adjusted, paper) >= 4.5) return adjusted
+  }
+  return ink
+}
 function getThemePalettes(theme) {
   return [
     theme.colors,
@@ -78,17 +102,17 @@ function getThemePalettes(theme) {
     ['#664851', '#c9808f', '#f4e8eb'],
     ['#47563f', '#9fa477', '#edf0e8'],
     ['#5d512f', '#d2b65f', '#f5efd9'],
-  ]
+  ].map(([ink, accent, paper]) => [ink, accessibleAccent(ink, accent, paper), paper])
 }
 const SITE_FONT_PAIRS = {
-  'Clássico editorial': ['Georgia, "Times New Roman", serif', 'Arial, sans-serif'],
-  'Romântico leve': ['"Palatino Linotype", "Book Antiqua", Palatino, serif', '"Trebuchet MS", Arial, sans-serif'],
-  'Moderno sem serifa': ['Arial, "Helvetica Neue", sans-serif', 'Arial, "Helvetica Neue", sans-serif'],
-  'Elegante de alto contraste': ['"Bodoni MT", Didot, Georgia, serif', '"Helvetica Neue", Arial, sans-serif'],
-  'Contemporâneo humanista': ['"Gill Sans", "Trebuchet MS", sans-serif', '"Gill Sans", "Trebuchet MS", sans-serif'],
-  'Floral delicado': ['"Palatino Linotype", Palatino, serif', '"Trebuchet MS", Arial, sans-serif'],
-  'Minimalista geométrico': ['"Century Gothic", Futura, Arial, sans-serif', '"Century Gothic", Futura, Arial, sans-serif'],
-  'Rústico acolhedor': ['Georgia, "Times New Roman", serif', 'Verdana, Arial, sans-serif'],
+  'Clássico editorial': ["'Playfair Display', Georgia, serif", "'DM Sans', Arial, sans-serif"],
+  'Romântico leve': ["'Cormorant Garamond', Georgia, serif", "'Lora', Georgia, serif"],
+  'Moderno sem serifa': ["'Montserrat', Arial, sans-serif", "'Montserrat', Arial, sans-serif"],
+  'Elegante de alto contraste': ["'Libre Baskerville', Georgia, serif", "'Manrope', Arial, sans-serif"],
+  'Contemporâneo humanista': ["'Manrope', Arial, sans-serif", "'DM Sans', Arial, sans-serif"],
+  'Floral delicado': ["'Lora', Georgia, serif", "'Raleway', Arial, sans-serif"],
+  'Minimalista geométrico': ["'Montserrat', Arial, sans-serif", "'Manrope', Arial, sans-serif"],
+  'Rústico acolhedor': ["'Cormorant Garamond', Georgia, serif", "'Lora', Georgia, serif"],
 }
 const FONT_SCALE_OPTIONS = [{ id: 'small', label: 'Compacto' }, { id: 'medium', label: 'Padrão' }, { id: 'large', label: 'Ampliado' }]
 function FontScalePicker({ value = 'medium', onChange }) {

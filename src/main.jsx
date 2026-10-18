@@ -1,5 +1,19 @@
 import React, { lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource/dm-sans/400.css'
+import '@fontsource/dm-sans/500.css'
+import '@fontsource/dm-sans/600.css'
+import '@fontsource/dm-sans/700.css'
+import '@fontsource/playfair-display/400.css'
+import '@fontsource/playfair-display/500.css'
+import '@fontsource/playfair-display/600.css'
+import '@fontsource/playfair-display/400-italic.css'
+import '@fontsource/cormorant-garamond/400.css'
+import '@fontsource/libre-baskerville/400.css'
+import '@fontsource/lora/400.css'
+import '@fontsource/manrope/400.css'
+import '@fontsource/montserrat/400.css'
+import '@fontsource/raleway/400.css'
 
 const App = lazy(() => import('./App.jsx'))
 const MarketingLanding = lazy(() => import('./MarketingLanding.jsx'))
@@ -17,24 +31,6 @@ if (isMarketingLanding) {
   imagePreload.type = 'image/avif'
   imagePreload.fetchPriority = 'high'
   document.head.append(imagePreload)
-}
-
-if (!isMarketingLanding) {
-  const fontPreconnect = document.createElement('link')
-  fontPreconnect.rel = 'preconnect'
-  fontPreconnect.href = 'https://fonts.googleapis.com'
-  document.head.append(fontPreconnect)
-
-  const fontFilePreconnect = document.createElement('link')
-  fontFilePreconnect.rel = 'preconnect'
-  fontFilePreconnect.href = 'https://fonts.gstatic.com'
-  fontFilePreconnect.crossOrigin = 'anonymous'
-  document.head.append(fontFilePreconnect)
-
-  const appFonts = document.createElement('link')
-  appFonts.rel = 'stylesheet'
-  appFonts.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap'
-  document.head.append(appFonts)
 }
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

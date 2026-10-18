@@ -5,10 +5,10 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --ink: #30372f;
-  --muted: #7f8179;
+  --muted: #62665e;
   --forest: #405447;
   --deep: #293a31;
-  --accent: #b38d69;
+  --accent: #806047;
   --sand: #ece5d9;
   --paper: #f7f5ef;
   --line: rgba(48, 55, 47, .12);
@@ -25,13 +25,13 @@ a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
 ::selection { color: #fff; background: var(--forest); }
 .app-shell { min-height: 100vh; }
-.theme-editorial { --forest: #4e5b51; --deep: #29332e; --accent: #bb8068; --sand: #ebe4dc; --paper: #f7f4ef; }
-.theme-minimal { --forest: #586575; --deep: #303b47; --accent: #c27f79; --sand: #e8e6e0; --paper: #f5f4f1; }
-.theme-floral { --forest: #765965; --deep: #463542; --accent: #c88d9c; --sand: #eee3e4; --paper: #f8f3f3; }
-.theme-rustic { --forest: #754f3e; --deep: #433129; --accent: #bd8b56; --sand: #e9ddd0; --paper: #f6f0e7; }
-.theme-beach { --forest: #3d6970; --deep: #244a51; --accent: #c68e68; --sand: #e9ece6; --paper: #f4f7f4; }
-.theme-tropical { --forest: #637455; --deep: #334539; --accent: #d38a68; --sand: #e6e9da; --paper: #f5f3e9; }
-.theme-night { --forest: #38424c; --deep: #202831; --accent: #d1a96a; --sand: #e4e0d7; --paper: #f3f1ec; }
+.theme-editorial { --forest: #4e5b51; --deep: #29332e; --accent: #8d5847; --sand: #ebe4dc; --paper: #f7f4ef; }
+.theme-minimal { --forest: #586575; --deep: #303b47; --accent: #965b55; --sand: #e8e6e0; --paper: #f5f4f1; }
+.theme-floral { --forest: #765965; --deep: #463542; --accent: #8b5064; --sand: #eee3e4; --paper: #f8f3f3; }
+.theme-rustic { --forest: #754f3e; --deep: #433129; --accent: #83522c; --sand: #e9ddd0; --paper: #f6f0e7; }
+.theme-beach { --forest: #3d6970; --deep: #244a51; --accent: #86553d; --sand: #e9ece6; --paper: #f4f7f4; }
+.theme-tropical { --forest: #637455; --deep: #334539; --accent: #86503b; --sand: #e6e9da; --paper: #f5f3e9; }
+.theme-night { --forest: #38424c; --deep: #202831; --accent: #8b3441; --sand: #e4e0d7; --paper: #f3f1ec; }
 .prototype-bar { min-height: 48px; padding: 6px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #26352e; color: rgba(255,255,255,.8); font-size: 10px; letter-spacing: .08em; position: relative; z-index: 20; }
 .prototype-label { display: flex; gap: 8px; align-items: center; white-space: nowrap; font-weight: 600; }
 .prototype-dot, .save-state > span, .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #b8cf91; display: inline-block; }
@@ -3230,6 +3230,32 @@ img { display: block; max-width: 100%; }
   .attendance-request-row .role-actions {
     flex-wrap: wrap;
   }
+}
+
+.role-page .role-preview {
+  color: #52594f;
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+
+.role-page .role-intro p,
+.role-page .role-card p {
+  color: #52594f;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.role-page .role-card > .eyebrow,
+.role-page .role-card-heading .eyebrow,
+.role-page .role-intro .eyebrow {
+  color: var(--forest);
+  font-size: 11px;
+}
+
+.role-page .role-card .button-outline,
+.role-page .role-actions .button-outline {
+  min-height: 44px;
+  font-size: 13px;
 }
 
 .public-wedding-cover {
