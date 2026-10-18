@@ -5584,6 +5584,20 @@ img { display: block; max-width: 100%; }
   padding: 24px 0;
 }
 
+.public-wedding-gift-list-link {
+  width: 100%;
+  padding: 8px 0 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 36%, transparent);
+}
+
+.public-wedding-gift-list-link .button-outline {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
 .public-wedding-display-page > .public-wedding-pix > div {
   display: flex;
   flex-wrap: wrap;
