@@ -93,6 +93,13 @@ test('superadmin sessions without TOTP remain blocked from product operations', 
   assert.deepEqual(await response.json(), { error: 'mfa_setup_required' })
 })
 
+test('legacy contribution and fee APIs are unavailable in the direct-payment pilot', async () => {
+  const contributions = await callApi('/api/couple/weddings/wedding-1/contributions')
+  const fees = await callApi('/api/superadmin/fee-policy')
+  assert.equal(contributions.response.status, 404)
+  assert.equal(fees.response.status, 404)
+})
+
 test('couple signup accepts account details without invitation names or a slug', async () => {
   const { response } = await callApi('/api/auth/couple-signup', {
     method: 'POST',

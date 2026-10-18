@@ -1820,58 +1820,6 @@ app.delete('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, asyn
   return context.json({ id: giftId, status: 'archived' })
 })
 
-app.get('/api/couple/weddings/:weddingId/contributions', requireSession, async (context) => {
-  const weddingId = context.req.param('weddingId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
-  if (!membership) return jsonError(context, 404, 'wedding_not_found')
-  const requestedPage = Number(context.req.query('page') || 1)
-  if (!Number.isSafeInteger(requestedPage) || requestedPage < 1 || requestedPage > 10000) return jsonError(context, 400, 'invalid_page')
-  const page = requestedPage
-  const pageSize = 200
-  const offset = (page - 1) * pageSize
-  const [totals, contributions] = await Promise.all([
-    context.env.DB.prepare(`SELECT
-      COALESCE(SUM(CASE WHEN status IN ('confirmed', 'paid') THEN amount_cents ELSE 0 END), 0) AS received_cents,
-      COALESCE(SUM(CASE WHEN status IN ('confirmed', 'paid') AND fee_status = 'due' THEN fee_amount_cents ELSE 0 END), 0) AS fee_due_cents,
-      COUNT(*) AS total_count
-      FROM gift_contributions WHERE wedding_id = ?`).bind(weddingId).first(),
-    context.env.DB.prepare(`SELECT c.id, c.gift_id, g.title AS gift_title, c.payment_mode, c.status, c.amount_cents,
-      c.fee_amount_cents, c.fee_paid_by, c.fee_status, c.payer_name, c.message, c.confirmed_at, c.created_at
-      FROM gift_contributions c LEFT JOIN gifts g ON g.id = c.gift_id
-      WHERE c.wedding_id = ? ORDER BY c.created_at DESC, c.id LIMIT ? OFFSET ?`).bind(weddingId, pageSize, offset).all(),
-  ])
-  return context.json({ summary: totals, contributions: contributions.results, page, pageSize, hasMore: totals.total_count > offset + contributions.results.length }, 200, { 'Cache-Control': 'no-store' })
-})
-
-app.post('/api/couple/weddings/:weddingId/contributions/:contributionId/decision', requireSession, async (context) => {
-  const weddingId = context.req.param('weddingId')
-  const contributionId = context.req.param('contributionId')
-  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
-  if (!membership) return jsonError(context, 404, 'wedding_not_found')
-  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
-  const body = await context.req.json().catch(() => null)
-  if (!body || !['confirmed', 'rejected'].includes(body.status)) return jsonError(context, 400, 'invalid_contribution_decision')
-  const contribution = await context.env.DB.prepare(`SELECT id, payment_mode, status, amount_cents FROM gift_contributions WHERE id = ? AND wedding_id = ?`)
-    .bind(contributionId, weddingId).first()
-  if (!contribution) return jsonError(context, 404, 'contribution_not_found')
-  if (contribution.payment_mode !== 'pix_direct' || contribution.status !== 'reported') return jsonError(context, 409, 'contribution_not_reviewable')
-  const policy = await context.env.DB.prepare(`SELECT enabled, rate_basis_points, minimum_fee_cents, maximum_fee_cents, paid_by FROM fee_policies WHERE wedding_id = ? OR wedding_id IS NULL ORDER BY wedding_id IS NOT NULL DESC LIMIT 1`)
-    .bind(weddingId).first()
-  const feeEnabled = body.status === 'confirmed' && Boolean(policy?.enabled)
-  const calculatedFee = feeEnabled
-    ? Math.min(policy.maximum_fee_cents ?? Number.MAX_SAFE_INTEGER, Math.max(policy.minimum_fee_cents, Math.round(contribution.amount_cents * policy.rate_basis_points / 10000)))
-    : 0
-  const actorId = context.get('session').account_id
-  const results = await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE gift_contributions SET status = ?, fee_amount_cents = ?, fee_rate_basis_points = ?, fee_minimum_cents = ?, fee_maximum_cents = ?, fee_paid_by = ?, fee_status = ?, confirmed_at = CASE WHEN ? = 'confirmed' THEN CURRENT_TIMESTAMP ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ? AND status = 'reported' AND payment_mode = 'pix_direct'`)
-      .bind(body.status, calculatedFee, feeEnabled ? policy.rate_basis_points : 0, feeEnabled ? policy.minimum_fee_cents : 0, feeEnabled ? policy.maximum_fee_cents : null, policy?.paid_by || 'couple', feeEnabled ? 'due' : 'not_due', body.status, contributionId, weddingId),
-    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json) SELECT ?, ?, ?, ?, 'gift_contribution', ?, ? WHERE changes() > 0`)
-      .bind(crypto.randomUUID(), actorId, weddingId, body.status === 'confirmed' ? 'gift_contribution_confirmed' : 'gift_contribution_rejected', contributionId, JSON.stringify({ amountCents: contribution.amount_cents, feeAmountCents: calculatedFee, feePaidBy: policy?.paid_by || 'couple' })),
-  ])
-  if (!results[0].meta.changes) return jsonError(context, 409, 'contribution_not_reviewable')
-  return context.json({ id: contributionId, status: body.status, feeAmountCents: calculatedFee, feeStatus: feeEnabled ? 'due' : 'not_due' })
-})
-
 app.post('/api/couple/weddings/:weddingId/rsvps', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
@@ -2808,16 +2756,10 @@ app.get('/api/superadmin/overview', requireSession, requireSuperadmin, async (co
   if (!Number.isSafeInteger(auditPage) || auditPage < 1 || auditPage > 10000) return jsonError(context, 400, 'invalid_page')
   const auditLimit = 20
   const auditOffset = (auditPage - 1) * auditLimit
-  const [accounts, weddings, guests, fees, financials, audit, auditCount] = await Promise.all([
+  const [accounts, weddings, guests, audit, auditCount] = await Promise.all([
     context.env.DB.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM accounts WHERE status != 'deleted'").first(),
     context.env.DB.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM weddings WHERE status != 'deleted'").first(),
     context.env.DB.prepare('SELECT COUNT(*) AS total FROM guests WHERE deleted_at IS NULL').first(),
-    context.env.DB.prepare('SELECT enabled, rate_basis_points, minimum_fee_cents, maximum_fee_cents, paid_by FROM fee_policies WHERE wedding_id IS NULL LIMIT 1').first(),
-    context.env.DB.prepare(`SELECT
-      COALESCE(SUM(CASE WHEN status IN ('confirmed', 'paid') THEN amount_cents ELSE 0 END), 0) AS gifts_received_cents,
-      COALESCE(SUM(CASE WHEN fee_status = 'paid' THEN fee_amount_cents ELSE 0 END), 0) AS fees_received_cents,
-      COALESCE(SUM(CASE WHEN fee_status = 'due' THEN fee_amount_cents ELSE 0 END), 0) AS fees_due_cents
-      FROM gift_contributions`).first(),
     context.env.DB.prepare(`
       SELECT l.action, l.target_type, l.target_id, l.created_at, a.email AS actor_email
       FROM audit_logs l LEFT JOIN accounts a ON a.id = l.actor_account_id
@@ -2825,7 +2767,7 @@ app.get('/api/superadmin/overview', requireSession, requireSuperadmin, async (co
     `).bind(auditLimit, auditOffset).all(),
     context.env.DB.prepare('SELECT COUNT(*) AS total FROM audit_logs').first(),
   ])
-  return context.json({ accounts, weddings, guests, fees, financials, audit: audit.results, auditPage, auditTotal: auditCount.total, auditHasMore: auditCount.total > auditOffset + audit.results.length })
+  return context.json({ accounts, weddings, guests, audit: audit.results, auditPage, auditTotal: auditCount.total, auditHasMore: auditCount.total > auditOffset + audit.results.length })
 })
 
 app.get('/api/superadmin/accounts', requireSession, requireSuperadmin, async (context) => {
@@ -3027,31 +2969,6 @@ app.post('/api/superadmin/email-test', requireSession, requireSuperadmin, async 
     VALUES (?, ?, 'superadmin_email_test_sent', 'email_service', 'resend', '{}')`)
     .bind(crypto.randomUUID(), session.account_id).run()
   return context.json({ sent: true, to: recipient })
-})
-
-app.get('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (context) => {
-  const policy = await context.env.DB.prepare('SELECT enabled, rate_basis_points, minimum_fee_cents, maximum_fee_cents, paid_by, updated_at FROM fee_policies WHERE wedding_id IS NULL LIMIT 1').first()
-  return context.json({ policy })
-})
-
-app.put('/api/superadmin/fee-policy', requireSession, requireSuperadmin, async (context) => {
-  const mfaVerifiedAt = Date.parse(context.get('session').mfa_verified_at)
-  if (!Number.isFinite(mfaVerifiedAt) || mfaVerifiedAt > Date.now() || Date.now() - mfaVerifiedAt > 300000) return jsonError(context, 403, 'recent_mfa_required')
-  const body = await context.req.json().catch(() => null)
-  const validInteger = (value) => Number.isSafeInteger(value) && value >= 0
-  if (!body || typeof body.enabled !== 'boolean' || !validInteger(body.rateBasisPoints) || body.rateBasisPoints > 10000 || !validInteger(body.minimumFeeCents) || !(body.maximumFeeCents === null || validInteger(body.maximumFeeCents)) || !['couple', 'guest'].includes(body.paidBy)) return jsonError(context, 400, 'invalid_fee_policy')
-  if (body.maximumFeeCents !== null && body.maximumFeeCents < body.minimumFeeCents) return jsonError(context, 400, 'invalid_fee_range')
-  const actorId = context.get('actorId')
-  const oldPolicy = await context.env.DB.prepare('SELECT enabled, rate_basis_points, minimum_fee_cents, maximum_fee_cents, paid_by FROM fee_policies WHERE wedding_id IS NULL LIMIT 1').first()
-  if (!oldPolicy) return jsonError(context, 503, 'fee_policy_unavailable')
-  await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE fee_policies SET enabled = ?, rate_basis_points = ?, minimum_fee_cents = ?, maximum_fee_cents = ?, paid_by = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE wedding_id IS NULL`)
-      .bind(Number(body.enabled), body.rateBasisPoints, body.minimumFeeCents, body.maximumFeeCents, body.paidBy, actorId),
-    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, action, target_type, target_id, details_json)
-      VALUES (?, ?, 'platform_fee_policy_changed', 'fee_policy', 'platform-default', ?)`)
-      .bind(crypto.randomUUID(), actorId, JSON.stringify({ from: oldPolicy, to: body })),
-  ])
-  return context.json({ policy: { enabled: Number(body.enabled), rate_basis_points: body.rateBasisPoints, minimum_fee_cents: body.minimumFeeCents, maximum_fee_cents: body.maximumFeeCents, paid_by: body.paidBy } })
 })
 
 export { app }
