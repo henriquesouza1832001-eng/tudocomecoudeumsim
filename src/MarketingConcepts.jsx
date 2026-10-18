@@ -54,7 +54,7 @@ function ConceptOption({ option }) {
           <h3>{option.headline}</h3>
           <p>{option.body}</p>
           <a className="concept-cta" href="/criar-site">Criar meu site grátis <ArrowRight size={17} /></a>
-          <span className="concept-free-note">Sem mensalidade para criar o site. Taxa dos presentes informada antes do pagamento.</span>
+          <span className="concept-free-note">Site gratuito no piloto. Pix direto e links de loja.</span>
         </div>
       </div>
       <div className="concept-quick-links" aria-label="Destaques da plataforma">
@@ -85,8 +85,8 @@ export default function MarketingConcepts() {
       <div className="concept-outline-grid">
         <article><span><Heart size={20} /></span><h3>Montar o site do casal</h3><p>Escolher um tema, contar a história, publicar data, local e orientações. Criar e personalizar o site sem mensalidade.</p></article>
         <article><span><Users size={20} /></span><h3>Organizar convidados</h3><p>Compartilhar por link curto, convite individual ou QR code; acompanhar confirmações e preparar a recepção.</p></article>
-        <article><span><Gift size={20} /></span><h3>Entender os presentes</h3><p>O site é gratuito sem presentes pagos pela plataforma. Quando houver contribuição, o convidado vê taxa, total e divisão antes de pagar.</p></article>
-        <article><span><Wallet size={20} /></span><h3>Acompanhar o split Pix</h3><p>Diagrama proposto: convidado paga → provedor processa → comissão da plataforma e valor do casal são separados → repasse ao casal.</p></article>
+        <article><span><Gift size={20} /></span><h3>Entender os presentes</h3><p>O casal pode publicar uma chave Pix para transferências diretas ou links para presentes físicos em lojas.</p></article>
+        <article><span><Wallet size={20} /></span><h3>Oferecer Pix direto</h3><p>O convidado copia a chave e transfere diretamente aos noivos pelo aplicativo do banco.</p></article>
         <article><span><CalendarDays size={20} /></span><h3>Planejar orçamento e fornecedores</h3><p>Registrar despesas, valores e vencimentos e receber alertas mensais por e-mail ou notificação. Recurso planejado, ainda não disponível.</p></article>
         <article><span><Printer size={20} /></span><h3>Enviar e imprimir o convite</h3><p>Aplicar a identidade visual ao QR code e preparar convite digital, arquivo para impressão e carteira digital conforme os formatos implementados.</p></article>
         <article><span><MapPin size={20} /></span><h3>Controlar a entrada</h3><p>Equipe consulta check-ins com e sem QR code e exporta a lista necessária para o buffet, sem expor contatos.</p></article>
@@ -94,8 +94,8 @@ export default function MarketingConcepts() {
       </div>
     </section>
     <section className="concept-flow" id="presentes" aria-labelledby="concept-flow-title">
-      <div><span className="concept-overline">PRESENTES E TAXAS, SEM LETRAS PEQUENAS</span><h2 id="concept-flow-title">O convidado sabe para onde vai cada valor.</h2><p>O valor cobrado pela plataforma e os custos do provedor serão apresentados antes da confirmação. A taxa final só entra no site depois de aprovada e comparada em condições equivalentes.</p></div>
-      <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>Convidado escolhe um presente</strong><small>Valor e total exibidos antes do pagamento</small></div><ArrowRight className="concept-flow-arrow" /><div><span><ShieldCheck size={19} /></span><strong>Provedor brasileiro processa o Pix</strong><small>Webhook confirma e atualiza o extrato</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>Split separa os valores</strong><small>Comissão da plataforma e repasse do casal</small></div></div>
+      <div><span className="concept-overline">PRESENTES POR PIX DIRETO OU LOJA</span><h2 id="concept-flow-title">O presente chega direto ao casal ou à loja.</h2><p>O Pix é transferido pelo aplicativo do banco diretamente aos noivos. Links de loja levam o convidado à página do produto para concluir a compra.</p></div>
+      <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>Convidado escolhe uma ideia</strong><small>Pix direto ou item físico de loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><ShieldCheck size={19} /></span><strong>Banco do convidado faz o Pix</strong><small>O valor vai direto aos noivos</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>Loja recebe o pedido</strong><small>Compra e entrega combinadas fora do site</small></div></div>
     </section>
     <section className="concept-actions"><div><span className="concept-overline">ESCOLHA DA DIREÇÃO VISUAL</span><h2>Qual delas combina mais com a plataforma?</h2><p>Jardim editorial mantém mais espaço para leitura. Convite botânico traz mais textura floral e clima de papelaria. A escolha define a identidade antes do redesenho final da página inicial.</p></div><div className="concept-action-cards"><article><Flower2 size={19} /><strong>Jardim editorial</strong><span>Foto grande, detalhes florais leves, leitura direta.</span></article><article><Flower2 size={19} /><strong>Convite botânico</strong><span>Molduras e cartões florais com mais presença visual.</span></article></div></section>
     <footer className="concept-footer"><span>e&amp;t · Sites de casamento</span><span>Fotos de referência: Pexels</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>

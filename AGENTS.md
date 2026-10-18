@@ -535,3 +535,12 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - Priorizar a experiência real do casal e dos convidados, especialmente site público, mobile, compartilhamento por link/QR, informações do evento, RSVP e presentes configurados pelo casal.
 - Não confundir mockups, dados de demonstração ou controles visuais com recursos persistidos e funcionais.
 - Histórico remoto do D1 conferido: `0014_wedding_invitation_profile.sql` e `0014_guest_album_limit_and_consent.sql` constam como aplicadas; a primeira foi registrada antes da segunda. As duas alteram tabelas/colunas distintas. Não renomear nem reaplicar esses arquivos, pois o D1 registra o nome exato e isso poderia tentar executar os `ALTER TABLE` outra vez. Não há migrations pendentes; a próxima deve usar o prefixo `0016`.
+
+## Presentes utilizáveis no piloto — 17/10/2026
+
+- O painel do casal cadastra contribuições com valor Pix sugerido ou livre e presentes físicos com URL HTTPS de loja. Para presentes de loja não se pede nem se exibe preço, que pode mudar; compra e entrega são concluídas fora da plataforma.
+- Ativar o Pix no painel também ativa a seção de presentes no rascunho. A chave só aparece aos convidados depois de publicada e fica visível para quem acessa a lista. O convite permite copiar a chave, mostra como usar um valor sugerido e lembra conferir o titular no app do banco.
+- A lista pública oculta contribuições Pix quando a chave não está publicada; cada contribuição visível aponta para o Pix direto. Itens físicos abrem o endereço HTTPS em outra aba e informam que compra e entrega são combinadas com a loja.
+- A landing, os estudos visuais de presentes e o painel de demonstração foram atualizados para não prometer split, recebimentos ou taxas e explicar o modelo gratuito do piloto.
+- Nenhuma migration ou dado remoto foi alterado nesta etapa. A migration `0015_gift_fulfillment_options.sql` já está aplicada no D1 e dá suporte ao tipo e URL de loja.
+- Validação: `npm run lint`, `npm test` (29/29), `npm run build` e `git diff --check` passaram.

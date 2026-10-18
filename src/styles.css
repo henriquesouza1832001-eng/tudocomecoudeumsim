@@ -2933,3 +2933,18 @@ img { display: block; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .couple-role-page .couple-panel-tabs { transition: none; }
 }
+.couple-role-page .gift-management-form label { color: #435247; font-size: 14px; line-height: 1.45; }
+.couple-role-page .gift-management-form input, .couple-role-page .gift-management-form select, .couple-role-page .gift-management-form textarea { min-height: 46px; padding: 10px 12px; font-size: 15px; }
+.couple-role-page .couple-gift-list strong { font-size: 16px; line-height: 1.4; }
+.couple-role-page .couple-gift-list small, .couple-role-page .couple-gift-list p { font-size: 13px; line-height: 1.5; }
+.guest-gift-action { display: grid; justify-items: end; gap: 9px; flex: 0 0 auto; }
+.guest-gift-action > strong { color: var(--forest); font-size: 14px; text-align: right; }
+.guest-gift-action .button-outline { min-height: 44px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 7px; color: var(--forest); font-weight: 700; }
+.guest-public-gift > div:first-child > small { display: block; margin-top: 8px; color: color-mix(in srgb, var(--forest) 72%, #333); font-size: 13px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .guest-public-gift { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .guest-gift-action { width: 100%; justify-items: stretch; }
+  .guest-gift-action > strong { text-align: left; }
+  .guest-gift-action .button-outline { justify-content: center; }
+  .couple-role-page .couple-gift-list article { grid-template-columns: minmax(0, 1fr) auto; }
+}
