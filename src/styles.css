@@ -5598,6 +5598,314 @@ img { display: block; max-width: 100%; }
   gap: 9px;
 }
 
+.public-wedding-header nav {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: clamp(12px, 1.8vw, 24px);
+}
+
+.public-wedding-menu-toggle {
+  display: none;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 20%, transparent);
+  color: var(--forest, #40594a);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.public-wedding-giving-menu {
+  position: relative;
+}
+
+.public-wedding-giving-menu > button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.public-wedding-giving-options {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 230px;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 16%, transparent);
+  background: var(--paper, #f7f4ed);
+  box-shadow: 0 12px 28px rgba(42, 48, 39, .12);
+}
+
+.public-wedding-giving-options a {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.public-wedding-giving-options a:hover,
+.public-wedding-giving-options a:focus-visible {
+  background: color-mix(in srgb, var(--accent, #c6ad8a) 14%, var(--paper, #f7f4ed));
+}
+
+.invitation-preview-frame {
+  width: 100%;
+  height: min(78svh, 780px);
+  min-height: 360px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  container-type: inline-size;
+}
+
+.invitation-preview-frame .browser-bar {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+}
+
+.invitation-preview-frame .public-wedding-header {
+  position: sticky;
+  top: 24px;
+  z-index: 9;
+}
+
+.invitation-preview-frame .public-wedding-header > a:first-child {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.invitation-preview-frame.device-tablet {
+  width: min(100%, 768px);
+  max-width: none;
+}
+
+.invitation-preview-frame.device-mobile {
+  width: min(100%, 390px);
+  max-width: none;
+  border-radius: 14px;
+}
+
+.invitation-preview-frame.device-mobile .browser-bar {
+  height: 24px;
+}
+
+.public-wedding-cover-copy {
+  justify-content: var(--cover-copy-justify, center);
+}
+
+.public-wedding-cover-composition-side .public-wedding-cover-copy,
+.public-wedding-cover-composition-overlay .public-wedding-cover-copy {
+  justify-content: var(--cover-copy-justify, center);
+}
+
+.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(90deg, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .38)), transparent 78%);
+}
+
+.public-wedding-cover-position-top.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(180deg, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.public-wedding-cover-position-center.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: radial-gradient(ellipse at center, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .58)), transparent 80%);
+}
+
+.public-wedding-cover-position-bottom.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(0deg, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.public-wedding-cover-position-top.public-wedding-cover-full .public-wedding-cover-media::after {
+  background: linear-gradient(180deg, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.public-wedding-cover-position-center.public-wedding-cover-full .public-wedding-cover-media::after {
+  background: radial-gradient(ellipse at center, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .58)), transparent 80%);
+}
+
+.public-wedding-cover-position-bottom.public-wedding-cover-full .public-wedding-cover-media::after {
+  background: linear-gradient(0deg, rgba(20, 27, 23, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.theme-beach .public-wedding-cover-position-top.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(180deg, rgba(38, 77, 81, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.theme-beach .public-wedding-cover-position-center.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: radial-gradient(ellipse at center, rgba(38, 77, 81, calc(var(--cover-overlay-opacity, .45) * .58)), transparent 80%);
+}
+
+.theme-beach .public-wedding-cover-position-bottom.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(0deg, rgba(38, 77, 81, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.theme-night .public-wedding-cover-position-top.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(180deg, rgba(28, 24, 32, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.theme-night .public-wedding-cover-position-center.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: radial-gradient(ellipse at center, rgba(28, 24, 32, calc(var(--cover-overlay-opacity, .45) * .58)), transparent 80%);
+}
+
+.theme-night .public-wedding-cover-position-bottom.public-wedding-cover-composition-overlay .public-wedding-cover-media::after {
+  background: linear-gradient(0deg, rgba(28, 24, 32, calc(var(--cover-overlay-opacity, .45) * .72)), transparent 76%);
+}
+
+.public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3.2rem, 7vw, 6.4rem) * var(--site-text-scale, 1));
+  line-height: .98;
+  gap: .04em;
+  margin-block: 18px;
+}
+
+.public-wedding-cover-copy .public-wedding-cover-date {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .public-wedding-header {
+    gap: 10px 16px;
+    padding: 10px 16px;
+  }
+
+  .public-wedding-header > a:first-child {
+    max-width: min(58vw, 300px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .public-wedding-header > a:last-child {
+    display: none;
+  }
+
+  .public-wedding-menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .public-wedding-header nav {
+    order: 3;
+    width: 100%;
+    display: none;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .public-wedding-header nav.is-open {
+    display: flex;
+  }
+
+  .public-wedding-header nav > a,
+  .public-wedding-giving-menu > button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+  }
+
+  .public-wedding-giving-menu {
+    width: 100%;
+  }
+
+  .public-wedding-giving-options {
+    position: static;
+    min-width: 0;
+    margin: 0 0 6px 10px;
+    box-shadow: none;
+  }
+
+  .invitation-preview-frame .public-wedding-header > a:last-child {
+    display: none;
+  }
+}
+
+@container (max-width: 720px) {
+  .invitation-preview-frame .public-wedding-header {
+    gap: 10px 16px;
+    padding: 10px 14px;
+  }
+
+  .invitation-preview-frame .public-wedding-header > a:first-child {
+    max-width: min(58cqi, 300px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .invitation-preview-frame .public-wedding-menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .invitation-preview-frame .public-wedding-header nav {
+    order: 3;
+    width: 100%;
+    display: none;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .invitation-preview-frame .public-wedding-header nav.is-open {
+    display: flex;
+  }
+
+  .invitation-preview-frame .public-wedding-header nav > a,
+  .invitation-preview-frame .public-wedding-giving-menu > button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+  }
+
+  .invitation-preview-frame .public-wedding-giving-menu {
+    width: 100%;
+  }
+
+  .invitation-preview-frame .public-wedding-giving-options {
+    position: static;
+    min-width: 0;
+    margin: 0 0 6px 10px;
+    box-shadow: none;
+  }
+
+  .invitation-preview-frame.device-mobile .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+    font-size: calc(clamp(2.5rem, 11cqi, 3.6rem) * var(--site-text-scale, 1));
+  }
+
+  .invitation-preview-frame.device-mobile .public-wedding-cover-composition-overlay {
+    min-height: 72svh;
+  }
+}
+
+@container (min-width: 721px) {
+  .invitation-preview-frame .public-wedding-menu-toggle {
+    display: none;
+  }
+
+  .invitation-preview-frame .public-wedding-header nav {
+    display: flex;
+  }
+}
+
 .public-wedding-display-page > .public-wedding-pix > div {
   display: flex;
   flex-wrap: wrap;
@@ -6085,4 +6393,89 @@ img { display: block; max-width: 100%; }
 
 .invitation-preview-frame .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 > span {
   max-width: 100%;
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover.public-wedding-cover-composition-side {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(430px, clamp(430px, 52vw, 680px));
+  min-height: clamp(430px, 52vw, 680px);
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover-composition-side .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(2.7rem, 5.3vw, 5.2rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover.public-wedding-cover-composition-overlay {
+  grid-template-rows: minmax(520px, clamp(520px, 64vw, 760px));
+  min-height: clamp(520px, 64vw, 760px);
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover-composition-overlay .public-wedding-cover-copy {
+  min-height: inherit;
+  padding: 56px 24px;
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3.2rem, 7vw, 6.4rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover-full .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3rem, 8vw, 6.5rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-desktop .public-wedding-cover-composition-editorial .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3.2rem, 8vw, 7.1rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-tablet .public-wedding-cover.public-wedding-cover-composition-side {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(430px, clamp(430px, 52cqi, 680px));
+  min-height: clamp(430px, 52cqi, 680px);
+}
+
+.invitation-preview-frame.device-tablet .public-wedding-cover-composition-side .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(2.7rem, 5.3cqi, 5.2rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-tablet .public-wedding-cover.public-wedding-cover-composition-overlay {
+  grid-template-rows: minmax(520px, clamp(520px, 64cqi, 760px));
+  min-height: clamp(520px, 64cqi, 760px);
+}
+
+.invitation-preview-frame.device-tablet .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3.2rem, 7cqi, 6.4rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-tablet .public-wedding-cover-composition-editorial .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(3.2rem, 8cqi, 7.1rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover.public-wedding-cover-composition-side {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: clamp(200px, 48cqi, 290px) auto;
+  min-height: 0;
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover-composition-side .public-wedding-cover-copy h1,
+.invitation-preview-frame.device-mobile .public-wedding-cover-composition-editorial .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(2.15rem, 9cqi, 3.1rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(2.5rem, 11cqi, 3.6rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover-full .public-wedding-cover-copy h1 {
+  font-size: calc(clamp(2.5rem, 11cqi, 3.6rem) * var(--site-text-scale, 1));
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover.public-wedding-cover-composition-editorial {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto clamp(200px, 56cqi, 320px);
+  min-height: 0;
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover-composition-editorial .public-wedding-cover-media {
+  grid-column: 1;
+  grid-row: 2;
 }
