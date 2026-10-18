@@ -544,4 +544,4 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - A landing, os estudos visuais de presentes e o painel de demonstração foram atualizados para não prometer split, recebimentos ou taxas e explicar o modelo gratuito do piloto.
 - Nenhuma migration ou dado remoto foi alterado nesta etapa. A migration `0015_gift_fulfillment_options.sql` já está aplicada no D1 e dá suporte ao tipo e URL de loja.
 - Validação: `npm run lint`, `npm test` (29/29), `npm run build` e `git diff --check` passaram.
-- O check do Pages para `9e3af68` publicou apenas o preview da branch (`f8539106.tudocomecoudeumsim.pages.dev`); o domínio principal ainda servia o bundle anterior. A integração de produção deve ser confirmada por uma atualização nova em `main`, sem deploy manual.
+- O primeiro check do Pages para `9e3af68` publicou apenas o preview de `hen`. Depois da atualização única em `main` no commit `f88b718`, `https://tudocomecoudeumsim.pages.dev` respondeu HTTP 200 e passou a servir os assets gerados pelo build validado (`index-DBbvOpQJ.js`, `App-f-ODa_og.js` e `MarketingLanding-4Q1wuAh-.js`). A publicação foi feita pela integração Git do Cloudflare.
