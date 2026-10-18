@@ -3174,35 +3174,39 @@ img { display: block; max-width: 100%; }
 }
 
 .public-wedding-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 22px;
-  padding: 17px max(24px, calc((100vw - 1160px) / 2));
-  background: color-mix(in srgb, var(--paper, #f7f4ed) 94%, white);
+  gap: 28px;
+  padding: 14px max(28px, calc((100vw - 1240px) / 2));
+  border-bottom: 1px solid color-mix(in srgb, var(--forest, #40594a) 12%, transparent);
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 96%, white);
+  backdrop-filter: blur(10px);
 }
 
 .public-wedding-header > a:first-child {
   color: var(--forest, #40594a);
   font-family: var(--font-heading, Georgia, serif);
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .public-wedding-header nav {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 18px;
+  gap: clamp(14px, 2.5vw, 34px);
 }
 
 .public-wedding-header nav a,
 .public-wedding-header > a:last-child,
 .public-wedding-footer a {
   color: inherit;
-  font-size: .83rem;
+  font-size: .8rem;
   text-decoration: none;
 }
 
@@ -3217,14 +3221,22 @@ img { display: block; max-width: 100%; }
 .public-wedding-cover {
   position: relative;
   display: grid;
-  min-height: min(760px, 84vh);
-  place-items: center;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+  min-height: clamp(500px, 57vw, 690px);
   overflow: hidden;
   background: color-mix(in srgb, var(--accent, #c6ad8a) 25%, var(--paper, #f7f4ed));
 }
 
-.public-wedding-cover > img,
-.public-wedding-cover > video {
+.public-wedding-cover-media {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--forest, #40594a) 12%, var(--paper, #f7f4ed));
+}
+
+.public-wedding-cover-media > img,
+.public-wedding-cover-media > video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -3232,59 +3244,171 @@ img { display: block; max-width: 100%; }
   object-fit: cover;
 }
 
-.public-wedding-cover::after {
+.public-wedding-cover-placeholder {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(20, 27, 23, .08), rgba(20, 27, 23, .47));
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent, #c6ad8a) 38%, var(--paper, #f7f4ed)), color-mix(in srgb, var(--forest, #40594a) 20%, var(--paper, #f7f4ed)));
+}
+
+.public-wedding-cover-full {
+  display: block;
+  min-height: clamp(520px, 64vw, 760px);
+}
+
+.public-wedding-cover-full .public-wedding-cover-media {
+  position: absolute;
+  inset: 0;
+}
+
+.public-wedding-cover-full .public-wedding-cover-media::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 27, 23, .06), rgba(20, 27, 23, .52));
   content: '';
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy {
+  align-items: center;
+  min-height: inherit;
+  margin-inline: auto;
+  color: white;
+  text-align: center;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, .34);
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy h1 i {
+  color: var(--accent, #d6b99a);
+}
+
+.public-wedding-cover-split .public-wedding-cover-copy {
+  max-width: 660px;
+  padding-inline: clamp(36px, 6vw, 92px);
+}
+
+.public-wedding-cover-arch .public-wedding-cover-media {
+  padding: clamp(24px, 4vw, 56px);
+  background: transparent;
+}
+
+.public-wedding-cover-arch .public-wedding-cover-media > img,
+.public-wedding-cover-arch .public-wedding-cover-media > video {
+  inset: clamp(24px, 4vw, 56px);
+  border-radius: 50% 50% 3px 3px / 22% 22% 3px 3px;
+}
+
+.public-wedding-cover-type {
+  grid-template-columns: 1fr;
+  min-height: 440px;
+}
+
+.public-wedding-cover-type .public-wedding-cover-media {
+  display: none;
+}
+
+.public-wedding-cover-type .public-wedding-cover-copy {
+  align-items: center;
+  justify-self: center;
+  max-width: 780px;
+  text-align: center;
 }
 
 .public-wedding-cover-copy {
   position: relative;
   z-index: 1;
-  width: min(900px, calc(100% - 40px));
-  padding: 72px 24px;
-  color: white;
-  text-align: center;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, .28);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 720px;
+  padding: clamp(40px, 6.5vw, 88px);
+  color: var(--ink, #31443a);
+  text-align: left;
 }
 
-.public-wedding-cover-copy > span,
-.public-wedding-cover-copy > p {
-  letter-spacing: .14em;
+.public-wedding-cover-copy > span {
+  color: var(--accent, #a98462);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .2em;
 }
 
 .public-wedding-cover-copy h1 {
-  margin: 20px 0 10px;
+  margin: 18px 0 12px;
   font-family: var(--font-heading, Georgia, serif);
-  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-size: clamp(2.6rem, 5.3vw, 5.2rem);
   font-weight: 400;
-  line-height: .98;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .public-wedding-cover-copy h1 i {
-  color: var(--accent, #d6b99a);
+  color: var(--accent, #ad886a);
   font-style: italic;
 }
 
 .public-wedding-cover-copy > p {
-  font-size: 1rem;
+  margin: 0;
+  color: color-mix(in srgb, currentColor 74%, transparent);
+  font-size: .9rem;
+  letter-spacing: .045em;
+  line-height: 1.6;
 }
 
 .public-wedding-cover-copy > div {
-  margin: 20px 0;
-  font-size: 1.06rem;
+  max-width: 34rem;
+  margin: 20px 0 0;
+  color: color-mix(in srgb, currentColor 82%, transparent);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  line-height: 1.55;
 }
 
 .public-wedding-cover-copy .button-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 26px;
   border-color: var(--forest, #40594a);
   background: var(--forest, #40594a);
   color: #fff;
   text-shadow: none;
+}
+
+.public-wedding-cover-full::after {
+  display: none;
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy {
+  position: relative;
+  width: min(940px, calc(100% - 48px));
+  padding: 56px 24px;
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy > span,
+.public-wedding-cover-full .public-wedding-cover-copy > p {
+  color: rgba(255, 255, 255, .9);
+  letter-spacing: .14em;
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy h1 {
+  font-size: clamp(3rem, 8vw, 6.5rem);
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy > div {
+  color: rgba(255, 255, 255, .96);
+}
+
+.public-wedding-cover-full .public-wedding-cover-copy .button-primary {
+  margin-top: 22px;
+}
+
+.public-wedding-cover-collage .public-wedding-cover-media > img {
+  object-position: center;
+}
+
+.public-wedding-cover-collage .public-wedding-cover-copy {
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 92%, white);
 }
 
 .public-wedding-story,
@@ -3294,9 +3418,9 @@ img { display: block; max-width: 100%; }
 .public-wedding-gifts,
 .public-wedding-pix,
 .public-wedding-rsvp {
-  width: min(100% - 40px, 920px);
+  width: min(100% - 56px, 1120px);
   margin: 0 auto;
-  padding: clamp(40px, 7vw, 82px) 0;
+  padding: clamp(36px, 5vw, 68px) 0;
 }
 
 .public-wedding-story {
@@ -3305,11 +3429,11 @@ img { display: block; max-width: 100%; }
 }
 
 .public-wedding-story > p {
-  margin: 18px auto 0;
+  margin: 16px auto 0;
   color: var(--forest, #40594a);
   font-family: var(--font-heading, Georgia, serif);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  line-height: 1.6;
+  font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+  line-height: 1.55;
 }
 
 .public-wedding-events > h2,
@@ -3318,7 +3442,7 @@ img { display: block; max-width: 100%; }
 .public-wedding-rsvp > h2 {
   margin: 10px 0 24px;
   font-family: var(--font-heading, Georgia, serif);
-  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-size: clamp(1.9rem, 3.8vw, 2.8rem);
   font-weight: 400;
 }
 
@@ -3369,7 +3493,7 @@ img { display: block; max-width: 100%; }
 
 .public-wedding-gallery img {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
 }
 
@@ -3488,6 +3612,62 @@ img { display: block; max-width: 100%; }
   max-width: 620px;
 }
 
+.public-rsvp-credential-note {
+  max-width: 620px;
+  color: color-mix(in srgb, var(--ink, #31443a) 74%, transparent);
+  font-size: .94rem;
+  line-height: 1.55;
+}
+
+.public-wedding-request-success .individual-credential-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  align-items: center;
+  gap: 20px;
+  margin: 4px 0;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 55%, white);
+}
+
+.public-wedding-request-success .individual-credential-card h2 {
+  margin: 6px 0;
+  color: var(--forest, #40594a);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.65rem;
+  font-weight: 400;
+}
+
+.public-wedding-request-success .individual-credential-card p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.public-wedding-request-success .individual-credential-card input {
+  min-height: 42px;
+  font-size: .82rem;
+}
+
+.public-wedding-request-success .individual-credential-card > div:last-child {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+}
+
+.public-wedding-request-success .individual-credential-card img {
+  width: 152px;
+  height: 152px;
+  object-fit: contain;
+  background: white;
+}
+
+.public-wedding-request-success .individual-credential-card .button-outline {
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 34%, transparent);
+  color: var(--forest, #40594a);
+  text-decoration: none;
+}
+
 .public-wedding-request-success .button-primary {
   justify-self: start;
   padding: 12px 16px;
@@ -3505,6 +3685,15 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 720px) {
   .public-wedding-header {
+    position: relative;
+  }
+
+  .public-wedding-request-success .individual-credential-card {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .public-wedding-header {
     flex-wrap: wrap;
     padding: 14px 18px;
   }
@@ -3521,7 +3710,64 @@ img { display: block; max-width: 100%; }
   }
 
   .public-wedding-cover {
-    min-height: 72vh;
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .public-wedding-cover-media {
+    min-height: 50svh;
+  }
+
+  .public-wedding-cover-split .public-wedding-cover-media,
+  .public-wedding-cover-video .public-wedding-cover-media,
+  .public-wedding-cover-arch .public-wedding-cover-media {
+    min-height: 48svh;
+  }
+
+  .public-wedding-cover-frame .public-wedding-cover-media {
+    padding: 18px;
+  }
+
+  .public-wedding-cover-arch .public-wedding-cover-media > img,
+  .public-wedding-cover-arch .public-wedding-cover-media > video {
+    inset: 18px;
+    width: calc(100% - 36px);
+    height: calc(100% - 36px);
+  }
+
+  .public-wedding-cover-full {
+    min-height: 72svh;
+  }
+
+  .public-wedding-cover-full .public-wedding-cover-media {
+    min-height: 100%;
+  }
+
+  .public-wedding-cover-copy,
+  .public-wedding-cover-split .public-wedding-cover-copy {
+    width: 100%;
+    padding: 34px 26px 42px;
+  }
+
+  .public-wedding-cover-copy h1 {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+  }
+
+  .public-wedding-cover-full .public-wedding-cover-copy {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+    width: 100%;
+    min-height: 100%;
+    padding: 36px 24px;
+  }
+
+  .public-wedding-cover-full .public-wedding-cover-copy h1 {
+    font-size: clamp(2.8rem, 12vw, 4.5rem);
+  }
+
+  .public-wedding-cover-type {
+    min-height: 380px;
   }
 
   .public-wedding-events > article,
@@ -3535,6 +3781,25 @@ img { display: block; max-width: 100%; }
   .public-wedding-gallery > div,
   .public-wedding-contact-fields {
     grid-template-columns: 1fr;
+  }
+
+  .public-wedding-story,
+  .public-wedding-events,
+  .public-wedding-details,
+  .public-wedding-gallery,
+  .public-wedding-gifts,
+  .public-wedding-pix,
+  .public-wedding-rsvp {
+    width: min(100% - 36px, 1120px);
+    padding-block: 34px;
+  }
+
+  .public-wedding-gallery > div {
+    gap: 8px;
+  }
+
+  .public-wedding-gallery img {
+    aspect-ratio: 1 / 1;
   }
 
   .public-wedding-pix > div {

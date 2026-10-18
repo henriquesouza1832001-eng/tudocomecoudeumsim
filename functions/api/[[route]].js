@@ -282,6 +282,30 @@ async function tokenHash(token) {
   return encodeToken(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))))
 }
 
+async function guestCredentialCipher(context, token) {
+  const secret = context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY
+  if (typeof secret !== 'string' || secret.length < 32) return null
+  const keyBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
+  const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt'])
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token))
+  return { ciphertext: encodeToken(new Uint8Array(ciphertext)), iv: encodeToken(iv) }
+}
+
+async function openGuestCredential(context, ciphertext, encodedIv) {
+  const secret = context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY
+  if (typeof secret !== 'string' || secret.length < 32 || !ciphertext || !encodedIv) return null
+  const keyBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
+  const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt'])
+  const decode = (value) => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')), (character) => character.charCodeAt(0))
+  try {
+    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode(encodedIv) }, key, decode(ciphertext))
+    return new TextDecoder().decode(plaintext)
+  } catch {
+    return null
+  }
+}
+
 async function allowCoupleSignup(context) {
   const now = Math.floor(Date.now() / 1000)
   const windowSeconds = 3600
@@ -1503,6 +1527,7 @@ app.get('/api/couple/weddings/:weddingId/attendance-requests', requireSession, a
   if (!await weddingMembership(context, weddingId, ['couple_admin'])) return jsonError(context, 404, 'wedding_not_found')
   const requests = await context.env.DB.prepare(`SELECT r.id, r.event_id, e.name AS event_name, r.name, r.email, r.phone,
       r.attendance_status, r.review_status, r.guest_id, r.created_at, r.decided_at,
+      (SELECT COUNT(*) FROM guest_companion_requests c WHERE c.rsvp_request_id = r.id AND c.status = 'pending') AS companions_pending,
       EXISTS (SELECT 1 FROM guests g WHERE g.wedding_id = r.wedding_id AND g.deleted_at IS NULL
         AND ((r.email IS NOT NULL AND lower(g.email) = lower(r.email)) OR (r.phone IS NOT NULL
           AND replace(replace(replace(replace(replace(replace(g.phone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', ''), '.', '')
@@ -1575,14 +1600,15 @@ app.patch('/api/couple/weddings/:weddingId/attendance-requests/:requestId', requ
   }
   const guestId = body.decision === 'approved' ? crypto.randomUUID() : null
   const accessToken = guestId && request.attendance_status === 'confirmed' ? encodeToken(crypto.getRandomValues(new Uint8Array(32))) : null
+  const credential = accessToken ? await guestCredentialCipher(context, accessToken) : null
   const statements = [context.env.DB.prepare(`UPDATE guest_rsvp_requests SET review_status = ?, guest_id = ?, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND wedding_id = ? AND review_status = 'pending'`).bind(body.decision, guestId, context.get('session').account_id, requestId, weddingId)]
   if (guestId) {
     const partySize = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_companion_requests WHERE rsvp_request_id = ?').bind(requestId).first()
-    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, invited_by, name, email, phone, access_token_hash, party_size, rsvp_status, guest_type, source)
-      SELECT ?, ?, ?, name, email, phone, ?, ?, attendance_status, 'guest', 'public_request'
+    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, rsvp_status, guest_type, source)
+      SELECT ?, ?, ?, name, email, phone, ?, ?, ?, ?, attendance_status, 'guest', 'public_request'
       FROM guest_rsvp_requests WHERE id = ? AND review_status = 'approved' AND guest_id = ?`)
-      .bind(guestId, weddingId, context.get('session').account_id, accessToken ? await tokenHash(accessToken) : null, (partySize?.total || 0) + 1, requestId, guestId))
+      .bind(guestId, weddingId, context.get('session').account_id, accessToken ? await tokenHash(accessToken) : null, credential?.ciphertext || null, credential?.iv || null, (partySize?.total || 0) + 1, requestId, guestId))
     statements.push(context.env.DB.prepare(`INSERT INTO guest_rsvps (id, wedding_id, event_id, guest_id, status, party_size)
       SELECT ?, wedding_id, event_id, ?, attendance_status, 1 FROM guest_rsvp_requests WHERE id = ? AND review_status = 'approved' AND guest_id = ?
       ON CONFLICT(event_id, guest_id) DO NOTHING`).bind(crypto.randomUUID(), guestId, requestId, guestId))
@@ -1639,16 +1665,17 @@ app.patch('/api/couple/weddings/:weddingId/companion-requests/:companionId', req
   const approvalLimit = Math.min(policy?.max_companions || 0, requestedCount)
   const guestId = body.decision === 'approved' ? crypto.randomUUID() : null
   const accessToken = guestId ? encodeToken(crypto.getRandomValues(new Uint8Array(32))) : null
+  const credential = accessToken ? await guestCredentialCipher(context, accessToken) : null
   const statements = [context.env.DB.prepare(`UPDATE guest_companion_requests SET name = ?, status = ?, guest_id = ?, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND wedding_id = ? AND status = 'pending' AND (? != 'approved' OR (
       SELECT COUNT(*) FROM guest_companion_requests c WHERE c.wedding_id = ? AND c.status = 'approved'
         AND ((c.host_guest_id = ? AND ? IS NOT NULL) OR (c.rsvp_request_id = ? AND ? IS NOT NULL))
     ) < ?)`).bind(name, body.decision, guestId, context.get('session').account_id, companionId, weddingId, body.decision, weddingId, companion.host_guest_id, companion.host_guest_id, companion.rsvp_request_id, companion.rsvp_request_id, approvalLimit)]
   if (guestId) {
-    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, party_size, rsvp_status, guest_type, source)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, 1, 'confirmed', 'guest', 'companion'
+    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, rsvp_status, guest_type, source)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'confirmed', 'guest', 'companion'
       WHERE EXISTS (SELECT 1 FROM guest_companion_requests WHERE id = ? AND status = 'approved' AND guest_id = ?)`)
-      .bind(guestId, weddingId, companion.host_group_id || null, context.get('session').account_id, name, companion.email, companion.phone, await tokenHash(accessToken), companionId, guestId))
+      .bind(guestId, weddingId, companion.host_group_id || null, context.get('session').account_id, name, companion.email, companion.phone, await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, companionId, guestId))
     statements.push(context.env.DB.prepare(`INSERT INTO guest_rsvps (id, wedding_id, event_id, guest_id, status, party_size)
       SELECT ?, wedding_id, event_id, ?, 'confirmed', 1 FROM guest_companion_requests WHERE id = ? AND status = 'approved' AND guest_id = ?
       ON CONFLICT(event_id, guest_id) DO NOTHING`).bind(crypto.randomUUID(), guestId, companionId, guestId))
@@ -1666,7 +1693,21 @@ app.patch('/api/couple/weddings/:weddingId/companion-requests/:companionId', req
     const current = await context.env.DB.prepare('SELECT status FROM guest_companion_requests WHERE id = ? AND wedding_id = ?').bind(companionId, weddingId).first()
     return jsonError(context, 409, current?.status === 'pending' ? 'companion_limit_reached' : 'companion_request_already_reviewed')
   }
-  return context.json({ id: companionId, status: body.decision, guestId })
+  let emailSent = false
+  if (body.decision === 'approved' && companion.email && accessToken) {
+    const accessUrl = `${new URL(context.req.url).origin}/convidado#convite/${accessToken}`
+    try {
+      emailSent = await sendTransactionalEmail(context, {
+        to: companion.email,
+        subject: 'Seu acesso individual ao casamento',
+        text: `Seu pedido de presença foi aprovado. Apresente seu QR individual na entrada: ${accessUrl}`,
+        html: `<p>Seu pedido de presença foi aprovado.</p><p><a href="${accessUrl}">Abrir meu convite individual e QR code</a></p>`,
+      })
+    } catch {
+      emailSent = false
+    }
+  }
+  return context.json({ id: companionId, status: body.decision, guestId, emailSent })
 })
 
 app.get('/api/couple/weddings/:weddingId/gifts', requireSession, async (context) => {
@@ -1898,10 +1939,11 @@ app.post('/api/couple/weddings/:weddingId/guests', requireSession, async (contex
   }
   const id = crypto.randomUUID()
   const accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+  const credential = await guestCredentialCipher(context, accessToken)
   await context.env.DB.batch([
-    context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, party_size, dietary_notes, guest_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, weddingId, body.groupId || null, context.get('session').account_id, name, email, phone, await tokenHash(accessToken), partySize, dietaryNotes, guestType),
+    context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, dietary_notes, guest_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, weddingId, body.groupId || null, context.get('session').account_id, name, email, phone, await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, partySize, dietaryNotes, guestType),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'guest_invited', 'guest', ?, '{}')`)
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, id),
@@ -1946,12 +1988,15 @@ app.post('/api/couple/weddings/:weddingId/guests/import', requireSession, async 
     else rows.push({ name, email, phone, groupId, groupName: groupName || null, dietaryNotes, guestType, partySize })
   }
   if (errors.length) return context.json({ error: 'guest_import_validation_failed', rows: errors }, 400)
-  const created = rows.map((guest) => ({ ...guest, id: crypto.randomUUID(), token: encodeToken(crypto.getRandomValues(new Uint8Array(32))) }))
+  const created = await Promise.all(rows.map(async (guest) => {
+    const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+    return { ...guest, id: crypto.randomUUID(), token, credential: await guestCredentialCipher(context, token) }
+  }))
   const statements = []
   for (const guest of created) {
-    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, party_size, dietary_notes, guest_type, source)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'csv_import')`)
-      .bind(guest.id, weddingId, guest.groupId, context.get('session').account_id, guest.name, guest.email, guest.phone, await tokenHash(guest.token), guest.partySize, guest.dietaryNotes, guest.guestType))
+    statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, dietary_notes, guest_type, source)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'csv_import')`)
+      .bind(guest.id, weddingId, guest.groupId, context.get('session').account_id, guest.name, guest.email, guest.phone, await tokenHash(guest.token), guest.credential?.ciphertext || null, guest.credential?.iv || null, guest.partySize, guest.dietaryNotes, guest.guestType))
     statements.push(context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'guest_invited', 'guest', ?, '{"source":"csv_import"}')`)
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, guest.id))
@@ -2002,7 +2047,7 @@ app.delete('/api/couple/weddings/:weddingId/guests/:guestId', requireSession, as
   if (guestPhotos.results.length && context.env.GUEST_PHOTOS) await context.env.GUEST_PHOTOS.delete(guestPhotos.results.map((photo) => photo.object_key))
   await context.env.DB.batch([
     context.env.DB.prepare('DELETE FROM guest_photos WHERE wedding_id = ? AND guest_id = ?').bind(weddingId, guestId),
-    context.env.DB.prepare(`UPDATE guests SET name = 'Convidado removido', email = NULL, phone = NULL, access_token_hash = NULL, dietary_notes = NULL,
+    context.env.DB.prepare(`UPDATE guests SET name = 'Convidado removido', email = NULL, phone = NULL, access_token_hash = NULL, access_token_ciphertext = NULL, access_token_iv = NULL, dietary_notes = NULL,
       deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL`).bind(guestId, weddingId),
     context.env.DB.prepare('UPDATE guest_rsvps SET dietary_notes = NULL WHERE wedding_id = ? AND guest_id = ?').bind(weddingId, guestId),
     context.env.DB.prepare(`UPDATE godparent_tasks SET title = 'Orientação removida', details = '', updated_at = CURRENT_TIMESTAMP WHERE wedding_id = ? AND guest_id = ?`).bind(weddingId, guestId),
@@ -2024,9 +2069,10 @@ app.post('/api/couple/weddings/:weddingId/guests/:guestId/invitation-token', req
   const guest = await context.env.DB.prepare('SELECT id FROM guests WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL').bind(guestId, weddingId).first()
   if (!guest) return jsonError(context, 404, 'guest_not_found')
   const accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+  const credential = await guestCredentialCipher(context, accessToken)
   await context.env.DB.batch([
-    context.env.DB.prepare('UPDATE guests SET access_token_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?')
-      .bind(await tokenHash(accessToken), guestId, weddingId),
+    context.env.DB.prepare('UPDATE guests SET access_token_hash = ?, access_token_ciphertext = ?, access_token_iv = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?')
+      .bind(await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, guestId, weddingId),
     context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
       VALUES (?, ?, ?, 'guest_access_rotated', 'guest', ?, '{}')`)
       .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, guestId),
@@ -2082,7 +2128,7 @@ app.post('/api/public/weddings/:slug/rsvp', async (context) => {
   const companions = Array.isArray(body?.companions) ? body.companions : []
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.eventId || '') || !name || name.length > 160 || (email && (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email))) || (phone && (phone.length > 40 || phone.replace(/\D/g, '').length < 8)) || (!email && !phone)
     || !['confirmed', 'declined'].includes(body.attendanceStatus) || !/^[A-Za-z0-9_-]{20,80}$/.test(body.idempotencyKey || '') || !/^[A-Za-z0-9_-]{40,60}$/.test(body.requestToken || '')
-    || companions.length > 19 || companions.some((item) => !item || (typeof item.name !== 'string' || item.name.trim().length > 160) || (item.email && (typeof item.email !== 'string' || item.email.length > 254 || !/^\S+@\S+\.\S+$/.test(item.email))) || (item.phone && (typeof item.phone !== 'string' || item.phone.length > 40)))) return jsonError(context, 400, 'invalid_public_rsvp')
+    || companions.length > 19 || companions.some((item) => !item || typeof item.name !== 'string' || item.name.trim().length > 160 || (item.email && (typeof item.email !== 'string' || item.email.length > 254 || !/^\S+@\S+\.\S+$/.test(item.email))) || (item.phone && (typeof item.phone !== 'string' || item.phone.length > 40)))) return jsonError(context, 400, 'invalid_public_rsvp')
   const config = parseSiteConfig(wedding.published_site_config_json)
   if (!config?.enabledSections.includes('Confirmação de presença')) return jsonError(context, 404, 'rsvp_unavailable')
   const event = publicWeddingEvents(wedding).find((item) => item.id === body.eventId)
@@ -2091,21 +2137,50 @@ app.post('/api/public/weddings/:slug/rsvp', async (context) => {
   if ((companions.length && !policy?.companions_allowed) || companions.length > (policy?.max_companions || 0) || (body.attendanceStatus === 'declined' && companions.length)) return jsonError(context, 400, 'companion_limit_reached')
   const requestTokenHash = await tokenHash(body.requestToken)
   const idempotencyHash = await tokenHash(body.idempotencyKey)
-  const duplicate = await context.env.DB.prepare('SELECT id, request_token_hash FROM guest_rsvp_requests WHERE wedding_id = ? AND idempotency_hash = ?').bind(wedding.id, idempotencyHash).first()
+  const duplicate = await context.env.DB.prepare('SELECT id, request_token_hash, guest_id, review_status FROM guest_rsvp_requests WHERE wedding_id = ? AND idempotency_hash = ?').bind(wedding.id, idempotencyHash).first()
   if (duplicate) {
     if (duplicate.request_token_hash !== requestTokenHash) return jsonError(context, 409, 'request_already_submitted')
-    return context.json({ id: duplicate.id, duplicate: true, requestToken: body.requestToken, requestUrl: `${new URL(context.req.url).origin}/confirmar-presenca#solicitacao/${body.requestToken}` }, 200, { 'Cache-Control': 'no-store' })
+    let credential = null
+    if (duplicate.guest_id && body.attendanceStatus === 'confirmed') {
+      const guest = await context.env.DB.prepare(`SELECT g.id, g.name, g.access_token_ciphertext, g.access_token_iv FROM guests g
+        JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ? AND r.wedding_id = g.wedding_id AND r.status = 'confirmed'
+        JOIN guest_event_authorizations a ON a.guest_id = g.id AND a.event_id = ? AND a.wedding_id = g.wedding_id AND a.status = 'authorized'
+        WHERE g.id = ? AND g.wedding_id = ? AND g.deleted_at IS NULL AND g.rsvp_status = 'confirmed'`)
+        .bind(event.id, event.id, duplicate.guest_id, wedding.id).first()
+      const accessToken = guest && await openGuestCredential(context, guest.access_token_ciphertext, guest.access_token_iv)
+      if (accessToken) credential = { guestId: guest.id, name: guest.name, accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${accessToken}` }
+    }
+    return context.json({ id: duplicate.id, duplicate: true, reviewStatus: duplicate.review_status, requestToken: body.requestToken, requestUrl: `${new URL(context.req.url).origin}/confirmar-presenca#solicitacao/${body.requestToken}`, credential }, 200, { 'Cache-Control': 'no-store' })
   }
   const limit = await allowPublicWeddingRequest(context, wedding.id)
   if (!limit.allowed) return context.json({ error: 'too_many_requests' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
   const challenge = await verifyTurnstile(context, body.turnstileToken, 'rsvp')
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
   if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
+  if (body.attendanceStatus === 'confirmed' && (typeof context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY !== 'string' || context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY.length < 32)) return jsonError(context, 503, 'guest_credentials_unavailable')
+  const matchingGuest = await context.env.DB.prepare(`SELECT id FROM guests WHERE wedding_id = ? AND deleted_at IS NULL
+    AND ((? IS NOT NULL AND lower(email) = lower(?)) OR (? IS NOT NULL
+      AND replace(replace(replace(replace(replace(replace(phone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', ''), '.', '')
+      = replace(replace(replace(replace(replace(replace(?, '+', ''), ' ', ''), '-', ''), '(', ''), ')', ''), '.', ''))) LIMIT 1`)
+    .bind(wedding.id, email, email, phone, phone).first()
+  if (matchingGuest) return jsonError(context, 409, 'use_individual_invitation')
   const id = crypto.randomUUID()
+  const guestId = crypto.randomUUID()
   const requestToken = body.requestToken
-  const statements = [context.env.DB.prepare(`INSERT INTO guest_rsvp_requests (id, wedding_id, event_id, name, email, phone, attendance_status, request_token_hash, idempotency_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, wedding.id, event.id, name, email, phone, body.attendanceStatus, requestTokenHash, idempotencyHash)]
+  const accessToken = body.attendanceStatus === 'confirmed' ? encodeToken(crypto.getRandomValues(new Uint8Array(32))) : null
+  const credential = accessToken ? await guestCredentialCipher(context, accessToken) : { ciphertext: null, iv: null }
+  const statements = [context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, rsvp_status, guest_type, source)
+    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 'guest', 'public_request')`)
+    .bind(guestId, wedding.id, name, email, phone, accessToken ? await tokenHash(accessToken) : null, credential.ciphertext, credential.iv, companions.length + 1, body.attendanceStatus),
+  context.env.DB.prepare(`INSERT INTO guest_rsvp_requests (id, wedding_id, event_id, name, email, phone, attendance_status, review_status, request_token_hash, idempotency_hash, guest_id, decided_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, CURRENT_TIMESTAMP)`)
+    .bind(id, wedding.id, event.id, name, email, phone, body.attendanceStatus, requestTokenHash, idempotencyHash, guestId),
+  context.env.DB.prepare(`INSERT INTO guest_rsvps (id, wedding_id, event_id, guest_id, status, party_size)
+    VALUES (?, ?, ?, ?, ?, 1) ON CONFLICT(event_id, guest_id) DO NOTHING`)
+    .bind(crypto.randomUUID(), wedding.id, event.id, guestId, body.attendanceStatus)]
+  if (body.attendanceStatus === 'confirmed') statements.push(context.env.DB.prepare(`INSERT INTO guest_event_authorizations (wedding_id, event_id, guest_id, status)
+    VALUES (?, ?, ?, 'authorized') ON CONFLICT(event_id, guest_id) DO UPDATE SET status = 'authorized', decided_by = NULL, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP`)
+    .bind(wedding.id, event.id, guestId))
   for (const companion of companions) statements.push(context.env.DB.prepare(`INSERT INTO guest_companion_requests (id, wedding_id, event_id, rsvp_request_id, name, email, phone)
     VALUES (?, ?, ?, ?, ?, ?, ?)`)
     .bind(crypto.randomUUID(), wedding.id, event.id, id, companion.name.trim(), companion.email?.trim().toLowerCase() || null, companion.phone?.trim() || null))
@@ -2113,18 +2188,35 @@ app.post('/api/public/weddings/:slug/rsvp', async (context) => {
     VALUES (?, NULL, ?, 'guest_rsvp_requested', 'guest_rsvp_request', ?, ?)`)
     .bind(crypto.randomUUID(), wedding.id, id, JSON.stringify({ eventId: event.id, attendanceStatus: body.attendanceStatus, companionsRequested: companions.length })))
   await context.env.DB.batch(statements)
-  return context.json({ id, reviewStatus: 'pending', requestToken, requestUrl: `${new URL(context.req.url).origin}/confirmar-presenca#solicitacao/${requestToken}` }, 201, { 'Cache-Control': 'no-store' })
+  const requestUrl = `${new URL(context.req.url).origin}/confirmar-presenca#solicitacao/${requestToken}`
+  const accessUrl = accessToken ? `${new URL(context.req.url).origin}/convidado#convite/${accessToken}` : null
+  let emailSent = false
+  if (email && accessUrl) {
+    try {
+      emailSent = await sendTransactionalEmail(context, {
+        to: email,
+        subject: 'Sua confirmação de presença',
+        text: `Sua presença foi confirmada. Guarde seu QR individual para a entrada: ${accessUrl}\n\nVocê também pode consultar sua confirmação por este link: ${requestUrl}`,
+        html: `<p>Sua presença foi confirmada.</p><p><a href="${accessUrl}">Abrir meu convite individual e QR code</a></p><p><a href="${requestUrl}">Consultar confirmação</a></p>`,
+      })
+    } catch {
+      emailSent = false
+    }
+  }
+  return context.json({ id, reviewStatus: 'approved', requestToken, requestUrl, credential: accessUrl ? { guestId, name, accessUrl } : null, emailSent }, 201, { 'Cache-Control': 'no-store' })
 })
 
 app.post('/api/public/attendance-requests/lookup', async (context) => {
   const body = await context.req.json().catch(() => null)
   if (!/^[A-Za-z0-9_-]{40,60}$/.test(body?.requestToken || '')) return jsonError(context, 400, 'invalid_request_token')
-  const request = await context.env.DB.prepare(`SELECT r.id, r.name, r.attendance_status, r.review_status, r.event_id, e.name AS event_name,
+  const request = await context.env.DB.prepare(`SELECT r.id, r.wedding_id, r.name, r.attendance_status, r.review_status, r.event_id, e.name AS event_name,
       w.partner_one_name, w.partner_two_name
     FROM guest_rsvp_requests r JOIN events e ON e.id = r.event_id AND e.wedding_id = r.wedding_id
     JOIN weddings w ON w.id = r.wedding_id
     WHERE r.request_token_hash = ? AND w.status = 'active'`).bind(await tokenHash(body.requestToken)).first()
   if (!request) return jsonError(context, 404, 'attendance_request_not_found')
+  const limit = await allowPublicWeddingRequest(context, request.wedding_id)
+  if (!limit.allowed) return context.json({ error: 'too_many_requests' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
   const companions = await context.env.DB.prepare(`SELECT id, name, status FROM guest_companion_requests
     WHERE rsvp_request_id = ? ORDER BY created_at`).bind(request.id).all()
   return context.json({ request: { id: request.id, name: request.name, attendanceStatus: request.attendance_status, reviewStatus: request.review_status, eventName: request.event_name, partnerOneName: request.partner_one_name, partnerTwoName: request.partner_two_name }, companions: companions.results }, 200, { 'Cache-Control': 'no-store' })
@@ -2133,37 +2225,33 @@ app.post('/api/public/attendance-requests/lookup', async (context) => {
 app.post('/api/public/attendance-requests/credentials', async (context) => {
   const body = await context.req.json().catch(() => null)
   if (!/^[A-Za-z0-9_-]{40,60}$/.test(body?.requestToken || '')) return jsonError(context, 400, 'invalid_request_token')
+  if (typeof context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY !== 'string' || context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY.length < 32) return jsonError(context, 503, 'guest_credentials_unavailable')
   const request = await context.env.DB.prepare(`SELECT id, wedding_id, event_id, guest_id, attendance_status, review_status
     FROM guest_rsvp_requests WHERE request_token_hash = ?`).bind(await tokenHash(body.requestToken)).first()
   if (!request) return jsonError(context, 404, 'attendance_request_not_found')
   if (request.review_status !== 'approved' || request.attendance_status !== 'confirmed' || !request.guest_id) return jsonError(context, 409, 'credentials_not_available')
   const limit = await allowPublicWeddingRequest(context, request.wedding_id)
   if (!limit.allowed) return context.json({ error: 'too_many_requests' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
-  const companions = await context.env.DB.prepare(`SELECT c.id AS companion_request_id, g.id, g.name
-    FROM guest_companion_requests c JOIN guests g ON g.id = c.guest_id AND g.wedding_id = c.wedding_id
-    JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = c.event_id AND r.wedding_id = c.wedding_id AND r.status = 'confirmed'
-    JOIN guest_event_authorizations a ON a.guest_id = g.id AND a.event_id = c.event_id AND a.wedding_id = c.wedding_id AND a.status = 'authorized'
-    WHERE c.rsvp_request_id = ? AND c.status = 'approved' AND c.guest_id IS NOT NULL AND g.deleted_at IS NULL ORDER BY c.created_at`)
-    .bind(request.id).all()
-  const primary = await context.env.DB.prepare(`SELECT g.id, g.name FROM guests g
-    JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ? AND r.wedding_id = g.wedding_id AND r.status = 'confirmed'
+  const guest = await context.env.DB.prepare(`SELECT g.id, g.name, g.access_token_ciphertext, g.access_token_iv
+    FROM guests g JOIN guest_rsvps r ON r.guest_id = g.id AND r.event_id = ? AND r.wedding_id = g.wedding_id AND r.status = 'confirmed'
     JOIN guest_event_authorizations a ON a.guest_id = g.id AND a.event_id = ? AND a.wedding_id = g.wedding_id AND a.status = 'authorized'
-    WHERE g.id = ? AND g.wedding_id = ? AND g.deleted_at IS NULL`).bind(request.event_id, request.event_id, request.guest_id, request.wedding_id).first()
-  if (!primary) return jsonError(context, 409, 'credentials_not_available')
-  const guests = [{ ...primary, companionRequestId: null }, ...companions.results.map((item) => ({ ...item, companionRequestId: item.companion_request_id }))]
-  const credentials = []
-  const statements = []
-  for (const guest of guests) {
-    const accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
-    const hash = await tokenHash(accessToken)
-    statements.push(context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL AND rsvp_status = 'confirmed'`).bind(hash, guest.id, request.wedding_id))
-    statements.push(context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
-      VALUES (?, NULL, ?, 'guest_credential_recovered', 'guest', ?, '{}')`).bind(crypto.randomUUID(), request.wedding_id, guest.id))
-    credentials.push({ guestId: guest.id, name: guest.name || '', companionRequestId: guest.companionRequestId, accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${accessToken}` })
+    WHERE g.id = ? AND g.wedding_id = ? AND g.deleted_at IS NULL AND g.rsvp_status = 'confirmed'`)
+    .bind(request.event_id, request.event_id, request.guest_id, request.wedding_id).first()
+  if (!guest) return jsonError(context, 409, 'credentials_not_available')
+  let accessToken = await openGuestCredential(context, guest.access_token_ciphertext, guest.access_token_iv)
+  if (!accessToken) {
+    accessToken = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+    const credential = await guestCredentialCipher(context, accessToken)
+    await context.env.DB.batch([
+      context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, access_token_ciphertext = ?, access_token_iv = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL AND rsvp_status = 'confirmed'`)
+      .bind(await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, guest.id, request.wedding_id),
+      context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+        VALUES (?, NULL, ?, 'guest_credential_recovered', 'guest', ?, '{}')`)
+        .bind(crypto.randomUUID(), request.wedding_id, guest.id),
+    ])
   }
-  await context.env.DB.batch(statements)
-  return context.json({ credentials }, 200, { 'Cache-Control': 'no-store' })
+  return context.json({ credentials: [{ guestId: guest.id, name: guest.name || '', accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${accessToken}` }] }, 200, { 'Cache-Control': 'no-store' })
 })
 
 app.get('/api/invitation/companions', async (context) => {
@@ -2233,23 +2321,33 @@ app.patch('/api/invitation/companions/:companionId', async (context) => {
 app.post('/api/invitation/companions/:companionId/credential', async (context) => {
   const guest = await invitationGuest(context)
   if (!guest || guest.source === 'companion') return jsonError(context, 403, 'companion_management_unavailable')
+  if (typeof context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY !== 'string' || context.env.GUEST_CREDENTIALS_ENCRYPTION_KEY.length < 32) return jsonError(context, 503, 'guest_credentials_unavailable')
   const limit = await allowRsvpRequest(context, guest.id)
   if (!limit.allowed) return context.json({ error: 'too_many_requests' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
-  const companion = await context.env.DB.prepare(`SELECT id, guest_id, event_id FROM guest_companion_requests
-    WHERE id = ? AND wedding_id = ? AND host_guest_id = ? AND status = 'approved' AND guest_id IS NOT NULL`)
+  const companion = await context.env.DB.prepare(`SELECT c.id, c.guest_id, c.event_id, g.name, g.access_token_ciphertext, g.access_token_iv
+    FROM guest_companion_requests c JOIN guests g ON g.id = c.guest_id AND g.wedding_id = c.wedding_id
+    WHERE c.id = ? AND c.wedding_id = ? AND c.host_guest_id = ? AND c.status = 'approved' AND c.guest_id IS NOT NULL AND g.deleted_at IS NULL`)
     .bind(context.req.param('companionId'), guest.wedding_id, guest.id).first()
   if (!companion) return jsonError(context, 404, 'companion_credential_not_found')
   const event = await guestCanAccessEvent(context, guest, companion.event_id)
-  const attendance = await guestAttendanceStatus(context, guest.wedding_id, companion.event_id, guest.id)
-  if (!event || attendance?.rsvp_status !== 'confirmed') return jsonError(context, 409, 'companion_credential_not_available')
-  const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
-  await context.env.DB.batch([
-    context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL`)
-      .bind(await tokenHash(token), companion.guest_id, guest.wedding_id),
-    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
-      VALUES (?, NULL, ?, 'guest_companion_credential_recovered', 'guest', ?, '{}')`)
-      .bind(crypto.randomUUID(), guest.wedding_id, companion.guest_id),
+  const [attendance, companionAttendance] = await Promise.all([
+    guestAttendanceStatus(context, guest.wedding_id, companion.event_id, guest.id),
+    guestAttendanceStatus(context, guest.wedding_id, companion.event_id, companion.guest_id),
   ])
+  if (!event || attendance?.rsvp_status !== 'confirmed' || companionAttendance?.rsvp_status !== 'confirmed') return jsonError(context, 409, 'companion_credential_not_available')
+  let token = await openGuestCredential(context, companion.access_token_ciphertext, companion.access_token_iv)
+  if (!token) {
+    token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
+    const credential = await guestCredentialCipher(context, token)
+    await context.env.DB.batch([
+      context.env.DB.prepare(`UPDATE guests SET access_token_hash = ?, access_token_ciphertext = ?, access_token_iv = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL`)
+        .bind(await tokenHash(token), credential?.ciphertext || null, credential?.iv || null, companion.guest_id, guest.wedding_id),
+      context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+        VALUES (?, NULL, ?, 'guest_companion_credential_recovered', 'guest', ?, '{}')`)
+        .bind(crypto.randomUUID(), guest.wedding_id, companion.guest_id),
+    ])
+  }
   return context.json({ accessUrl: `${new URL(context.req.url).origin}/convidado#convite/${token}` }, 200, { 'Cache-Control': 'no-store' })
 })
 

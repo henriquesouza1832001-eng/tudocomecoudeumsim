@@ -42,13 +42,15 @@ const wedding = {
   site_published_at: '2026-10-18T12:00:00.000Z',
 }
 
-function database({ publishedWedding = wedding, batches = [] } = {}) {
+function database({ publishedWedding = wedding, batches = [], first = () => undefined } = {}) {
   return {
     prepare(query) {
       let values = []
       return {
-        bind(...args) { values = args; return this },
+        bind(...args) { values = args; this.values = values; return this },
         async first() {
+          const result = await first(query, values)
+          if (result !== undefined) return result
           if (query.includes('FROM weddings WHERE slug = ?')) return publishedWedding?.site_published_at ? publishedWedding : null
           if (query.includes('FROM wedding_guest_policies')) return { companions_allowed: 1, max_companions: 2 }
           if (query.includes('FROM guest_rsvp_requests WHERE wedding_id = ? AND idempotency_hash')) return null
@@ -68,13 +70,13 @@ function database({ publishedWedding = wedding, batches = [] } = {}) {
   }
 }
 
-async function call(path, { method = 'GET', body, publishedWedding, env = {}, headers = {} } = {}) {
+async function call(path, { method = 'GET', body, publishedWedding, env = {}, headers = {}, first } = {}) {
   const requestHeaders = new Headers({ ...headers })
   if (body !== undefined) requestHeaders.set('Content-Type', 'application/json')
   if (method !== 'GET') requestHeaders.set('Origin', origin)
   const request = new Request(`${origin}${path}`, { method, headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body) })
   const batches = []
-  const db = database({ publishedWedding, batches })
+  const db = database({ publishedWedding, batches, first })
   const response = await onRequest({ request, env: { DB: db, ...env } })
   return { response, batches }
 }
@@ -120,6 +122,73 @@ test('general RSVP fails closed when Turnstile is not configured', async () => {
   })
   assert.equal(response.status, 503)
   assert.deepEqual(await response.json(), { error: 'turnstile_unavailable' })
+  assert.equal(batches.length, 0)
+})
+
+test('public RSVP confirms the principal, issues a recoverable individual QR, and leaves companions pending', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, action: 'rsvp', hostname: 'tudocomecoudeumsim.pages.dev' }), { status: 200 })
+  try {
+    const { response, batches } = await call('/api/public/weddings/ana-e-bia/rsvp', {
+      method: 'POST',
+      body: {
+        eventId,
+        name: 'Pessoa convidada',
+        email: 'pessoa@example.com',
+        attendanceStatus: 'confirmed',
+        companions: [{ name: 'Acompanhante' }],
+        idempotencyKey: 'a'.repeat(36),
+        requestToken: 'b'.repeat(43),
+        turnstileToken: 'test-token',
+      },
+      env: { TURNSTILE_SECRET_KEY: 'test-secret', GUEST_CREDENTIALS_ENCRYPTION_KEY: 'test-key-with-at-least-thirty-two-characters' },
+    })
+    const body = await response.json()
+    assert.equal(response.status, 201)
+    assert.equal(body.reviewStatus, 'approved')
+    assert.equal(body.emailSent, false)
+    assert.equal(body.credential.name, 'Pessoa convidada')
+    assert.match(body.credential.accessUrl, /#convite\/[A-Za-z0-9_-]{40,60}$/)
+    assert.equal(batches.length, 1)
+    const statements = batches[0]
+    const guestInsert = statements.find((statement) => statement.query.includes('INSERT INTO guests'))
+    const requestInsert = statements.find((statement) => statement.query.includes('INSERT INTO guest_rsvp_requests'))
+    const companionInsert = statements.find((statement) => statement.query.includes('INSERT INTO guest_companion_requests'))
+    assert.ok(guestInsert)
+    assert.ok(requestInsert)
+    assert.ok(companionInsert)
+    assert.ok(guestInsert.values.includes('confirmed'))
+    assert.ok(guestInsert.values.some((value) => typeof value === 'string' && value.length > 40))
+    assert.equal(statements.indexOf(guestInsert) < statements.indexOf(requestInsert), true)
+    assert.equal(companionInsert.query.includes('status'), false)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('private RSVP recovery returns the same principal QR without exposing companion credentials', async () => {
+  const accessToken = 'c'.repeat(43)
+  const secret = 'test-key-with-at-least-thirty-two-characters'
+  const keyBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
+  const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt'])
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(accessToken)))
+  const encode = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+  const { response, batches } = await call('/api/public/attendance-requests/credentials', {
+    method: 'POST',
+    body: { requestToken: 'b'.repeat(43) },
+    env: { GUEST_CREDENTIALS_ENCRYPTION_KEY: secret },
+    first(query) {
+      if (query.includes('FROM guest_rsvp_requests WHERE request_token_hash')) return { id: 'request-1', wedding_id: 'wedding-1', event_id: eventId, guest_id: 'guest-1', attendance_status: 'confirmed', review_status: 'approved' }
+      if (query.includes('INSERT INTO public_wedding_request_limits')) return { request_count: 1, blocked_until: null }
+      if (query.includes('FROM guests g JOIN guest_rsvps')) return { id: 'guest-1', name: 'Pessoa', access_token_ciphertext: encode(ciphertext), access_token_iv: encode(iv) }
+      return undefined
+    },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.credentials.map((credential) => credential.accessUrl), [`${origin}/convidado#convite/${accessToken}`])
+  assert.equal(body.credentials.some((credential) => credential.companionRequestId), false)
   assert.equal(batches.length, 0)
 })
 

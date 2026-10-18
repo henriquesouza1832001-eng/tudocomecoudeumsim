@@ -1407,7 +1407,7 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     try {
       await request(`/api/couple/weddings/${weddingId}/attendance-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision }) })
       await loadWeddingData(weddingId)
-      notify(decision === 'approved' ? 'Solicitação aprovada. O pedido geral não libera a entrada sem a credencial individual.' : 'Solicitação recusada; o registro foi mantido.')
+      notify(decision === 'approved' ? 'Registro antigo aprovado. A credencial individual está disponível na lista de convidados.' : 'Registro antigo recusado; a resposta foi mantida.')
     } catch (cause) {
       setError(cause.message === 'matching_guest_requires_individual_invitation' ? 'Este contato já está em um convite. Para evitar duplicidade, envie o link individual já criado para essa pessoa.' : 'Não foi possível analisar esta solicitação.')
     } finally {
@@ -1426,10 +1426,10 @@ function CouplePanel({ notify, confirmAction, promptAction }) {
     setBusy(true)
     setError('')
     try {
-      await request(`/api/couple/weddings/${weddingId}/companion-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision, name }) })
+      const result = await request(`/api/couple/weddings/${weddingId}/companion-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision, name }) })
       setCompanionNameDrafts((current) => { const next = { ...current }; delete next[item.id]; return next })
       await loadWeddingData(weddingId)
-      notify(decision === 'approved' ? 'Acompanhante aprovado com uma credencial própria.' : 'Acompanhante recusado; a solicitação foi mantida.')
+      notify(decision === 'approved' ? result.emailSent ? 'Acompanhante aprovado. O link individual foi enviado por e-mail.' : 'Acompanhante aprovado. Gere o link individual na lista de convidados para compartilhá-lo.' : 'Acompanhante recusado; a solicitação foi mantida.')
     } catch (cause) {
       const messages = { companion_limit_reached: 'O limite de acompanhantes definido para este convite foi atingido.', attendance_request_not_approved: 'Aprove primeiro a solicitação principal.', companion_not_ready: 'Confirme a solicitação principal e identifique o acompanhante antes de aprovar.', host_not_confirmed: 'O convidado responsável precisa confirmar presença neste evento.' }
       setError(messages[cause.message] || 'Não foi possível analisar esta solicitação de acompanhante.')
@@ -2268,16 +2268,16 @@ function PublishedInviteShare({ wedding, publishedAt, notify }) {
       notify('Selecione o endereço para copiá-lo.')
     }
   }
-  return <section className="role-card published-invite-share"><div><span className="eyebrow">CONVITE PUBLICADO</span><h2>Compartilhar convite</h2><p>Este link permite consultar o convite e solicitar presença. O acesso à entrada depende da aprovação dos noivos e da credencial individual.</p><label>Link público<input readOnly value={url} onFocus={(event) => event.target.select()} /></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyLink}><Copy size={15} /> Copiar link</button><a className="button-outline" href={url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Visualizar convite</a></div></div>{qr && <div><img src={qr} alt="QR Code geral do convite" /><a className="button-outline" href={qr} download={`convite-${wedding.slug}.png`}>Baixar QR Code</a></div>}</section>
+  return <section className="role-card published-invite-share"><div><span className="eyebrow">CONVITE PUBLICADO</span><h2>Compartilhar convite</h2><p>Qualquer pessoa com este link pode registrar a própria resposta e, ao confirmar, recebe um QR individual. Para limitar o acesso às pessoas convidadas, compartilhe os links individuais da lista.</p><label>Link público<input readOnly value={url} onFocus={(event) => event.target.select()} /></label><div className="role-actions"><button type="button" className="button-primary" onClick={copyLink}><Copy size={15} /> Copiar link</button><a className="button-outline" href={url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Visualizar convite</a></div></div>{qr && <div><img src={qr} alt="QR Code geral do convite" /><a className="button-outline" href={qr} download={`convite-${wedding.slug}.png`}>Baixar QR Code</a></div>}</section>
 }
 
 function AttendanceRequestManager({ policy, setPolicy, requests, companions, companionNameDrafts, setCompanionNameDrafts, onSavePolicy, onReviewRequest, onReviewCompanion, busy }) {
   const pendingRequests = requests.filter((item) => item.review_status === 'pending')
   const pendingCompanions = companions.filter((item) => item.status === 'pending')
-  const labelStatus = (status) => ({ pending: 'Aguardando aprovação', approved: 'Aprovado', rejected: 'Recusado' }[status] || status)
+  const labelStatus = (status, automatic = false) => automatic && status === 'approved' ? 'Resposta registrada' : ({ pending: 'Aguardando análise', approved: 'Aprovado', rejected: 'Recusado' }[status] || status)
   return <>
-    <section className="role-card attendance-policy-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO E ACOMPANHANTES</span><h2>Pedidos pelo convite público</h2></div><span className="task-count">{pendingRequests.length + pendingCompanions.length} pendentes</span></div><p className="team-access-note">O link geral aceita pedidos, mas não libera entrada. Cada solicitação precisa ser analisada por vocês.</p><form className="attendance-policy-form" onSubmit={onSavePolicy}><label className="attendance-policy-toggle"><input type="checkbox" checked={policy.companionsAllowed} onChange={(event) => setPolicy((current) => ({ companionsAllowed: event.target.checked, maxCompanions: event.target.checked ? Math.max(current.maxCompanions, 1) : 0 }))} /> Permitir solicitação de acompanhantes</label>{policy.companionsAllowed && <label>Máximo por convite<input type="number" min="1" max="19" value={policy.maxCompanions} onChange={(event) => setPolicy((current) => ({ ...current, maxCompanions: Number(event.target.value) }))} required /></label>}<button type="submit" className="button-outline" disabled={busy}>Salvar limite</button></form></section>
-    <section className="role-card attendance-request-list"><div className="role-card-heading"><div><span className="eyebrow">RESPOSTAS RECEBIDAS</span><h2>Solicitações de presença</h2></div></div>{requests.length ? requests.map((item) => <article className="attendance-request-row" key={item.id}><div><strong>{item.name}</strong><small>{item.event_name} · {item.email || item.phone} · {item.attendance_status === 'confirmed' ? 'Vai comparecer' : 'Não poderá comparecer'}</small><span>{labelStatus(item.review_status)}{item.possible_existing_guest ? ' · contato já consta na lista; use o link individual existente' : ''}</span>{item.guest_id && <small>Cadastro individual criado. Use a lista abaixo para abrir ou renovar o QR.</small>}</div>{item.review_status === 'pending' && <div className="role-actions"><button type="button" className="button-primary" disabled={busy || Boolean(item.possible_existing_guest)} onClick={() => onReviewRequest(item, 'approved')}>Aprovar</button><button type="button" className="button-outline" disabled={busy} onClick={() => onReviewRequest(item, 'rejected')}>Recusar</button></div>}</article>) : <p className="buffet-empty">Nenhum pedido recebido pelo convite público.</p>}</section>
+    <section className="role-card attendance-policy-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO E ACOMPANHANTES</span><h2>Respostas pelo convite público</h2></div><span className="task-count">{pendingRequests.length + pendingCompanions.length} pendentes</span></div><p className="team-access-note">A pessoa que confirma recebe seu QR individual. Acompanhantes continuam sujeitos à aprovação. Compartilhe links individuais com quem foi convidado.</p><form className="attendance-policy-form" onSubmit={onSavePolicy}><label className="attendance-policy-toggle"><input type="checkbox" checked={policy.companionsAllowed} onChange={(event) => setPolicy((current) => ({ companionsAllowed: event.target.checked, maxCompanions: event.target.checked ? Math.max(current.maxCompanions, 1) : 0 }))} /> Permitir solicitação de acompanhantes</label>{policy.companionsAllowed && <label>Máximo por convite<input type="number" min="1" max="19" value={policy.maxCompanions} onChange={(event) => setPolicy((current) => ({ ...current, maxCompanions: Number(event.target.value) }))} required /></label>}<button type="submit" className="button-outline" disabled={busy}>Salvar limite</button></form></section>
+    <section className="role-card attendance-request-list"><div className="role-card-heading"><div><span className="eyebrow">RESPOSTAS RECEBIDAS</span><h2>Confirmações de presença</h2></div></div>{requests.length ? requests.map((item) => <article className="attendance-request-row" key={item.id}><div><strong>{item.name}</strong><small>{item.event_name} · {item.email || item.phone} · {item.attendance_status === 'confirmed' ? 'Vai comparecer' : 'Não poderá comparecer'}{item.created_at ? ` · ${new Date(item.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}</small>{item.companions_pending > 0 && <small>1 titular · {item.companions_pending} acompanhante(s) aguardando decisão individual</small>}<span>{labelStatus(item.review_status, Boolean(item.guest_id))}{item.possible_existing_guest && item.review_status === 'pending' ? ' · contato já consta na lista; oriente a usar o link individual existente' : ''}</span>{item.guest_id && <small>Convidado incluído na lista. O QR pode ser consultado ou renovado na tabela de convidados.</small>}</div>{item.review_status === 'pending' && <div className="role-actions"><button type="button" className="button-primary" disabled={busy || Boolean(item.possible_existing_guest)} onClick={() => onReviewRequest(item, 'approved')}>Aprovar registro antigo</button><button type="button" className="button-outline" disabled={busy} onClick={() => onReviewRequest(item, 'rejected')}>Recusar</button></div>}</article>) : <p className="buffet-empty">As respostas recebidas pelo convite aparecerão aqui.</p>}</section>
     <section className="role-card attendance-request-list"><div className="role-card-heading"><div><span className="eyebrow">AUTORIZAÇÃO INDIVIDUAL</span><h2>Acompanhantes</h2></div></div>{companions.length ? companions.map((item) => <article className="attendance-request-row" key={item.id}><div><strong>{item.name || 'Nome ainda não informado'}</strong><small>{item.requester_name} · {item.event_name}{item.email ? ` · ${item.email}` : ''}{item.phone ? ` · ${item.phone}` : ''}</small><span>{labelStatus(item.status)}</span>{item.status === 'pending' && <label>Nome para a credencial<input maxLength="160" value={companionNameDrafts[item.id] ?? item.name ?? ''} onChange={(event) => setCompanionNameDrafts((current) => ({ ...current, [item.id]: event.target.value }))} required /></label>}{item.guest_id && <small>Credencial individual emitida. O convidado responsável pode recuperá-la pelo link individual.</small>}</div>{item.status === 'pending' && <div className="role-actions"><button type="button" className="button-primary" disabled={busy || !(companionNameDrafts[item.id] ?? item.name)?.trim()} onClick={() => onReviewCompanion(item, 'approved')}>Aprovar</button><button type="button" className="button-outline" disabled={busy} onClick={() => onReviewCompanion(item, 'rejected')}>Recusar</button></div>}</article>) : <p className="buffet-empty">Nenhum acompanhante solicitado.</p>}</section>
   </>
 }
@@ -2551,6 +2551,9 @@ function GeneralWeddingSite({ notify }) {
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [busy, setBusy] = useState(false)
   const [requestUrl, setRequestUrl] = useState('')
+  const [publicCredential, setPublicCredential] = useState(null)
+  const [rsvpEmailSent, setRsvpEmailSent] = useState(false)
+  const [publicRsvpStatus, setPublicRsvpStatus] = useState('')
   const siteTheme = THEMES.find((item) => item.id === data?.siteConfig?.theme)
   const sitePalettes = siteTheme ? getThemePalettes(siteTheme) : []
   const activePalette = sitePalettes[data?.siteConfig?.paletteIndex] || sitePalettes[0]
@@ -2567,6 +2570,7 @@ function GeneralWeddingSite({ notify }) {
   const coverVideoUrl = config?.coverVideoId ? `/api/public/weddings/${encodeURIComponent(slug)}/media/${config.coverVideoId}` : ''
   const idempotencyKey = useRef('')
   const requestTokenRef = useRef('')
+  const savedRequestToken = window.location.hash.startsWith('#presenca/') ? window.location.hash.slice(10) : ''
 
   useEffect(() => {
     let active = true
@@ -2579,6 +2583,26 @@ function GeneralWeddingSite({ notify }) {
     }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [slug])
+
+  useEffect(() => {
+    if (!savedRequestToken) return undefined
+    let active = true
+    setRequestUrl(`${window.location.origin}/confirmar-presenca#solicitacao/${savedRequestToken}`)
+    fetch('/api/public/attendance-requests/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken: savedRequestToken }) })
+      .then(async (response) => {
+        const result = await response.json()
+        if (!response.ok) throw new Error('O link salvo não está mais disponível.')
+        if (!active) return
+        setPublicRsvpStatus(result.request.attendanceStatus)
+        if (result.request.attendanceStatus === 'confirmed' && result.request.reviewStatus === 'approved') {
+          const credentialResponse = await fetch('/api/public/attendance-requests/credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken: savedRequestToken }) })
+          const credentialResult = await credentialResponse.json()
+          if (!credentialResponse.ok) throw new Error('Não foi possível recuperar o QR agora. Tente novamente mais tarde.')
+          if (active) setPublicCredential(credentialResult.credentials[0] || null)
+        }
+      }).catch((cause) => { if (active) setError(cause.message) })
+    return () => { active = false }
+  }, [savedRequestToken])
 
   function changeCompanion(index, value) {
     setCompanions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item))
@@ -2611,16 +2635,20 @@ function GeneralWeddingSite({ notify }) {
       })
       const result = await response.json()
       if (!response.ok) {
-        const messages = { too_many_requests: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', turnstile_unavailable: 'A validação de segurança não está disponível agora.', turnstile_verification_failed: 'A validação expirou. Faça-a novamente.', event_not_available: 'Este evento não está disponível para solicitações pelo convite geral.', companion_limit_reached: 'A quantidade de acompanhantes ultrapassa o limite definido pelos noivos.', rsvp_unavailable: 'A confirmação não está disponível neste convite.' }
+      const messages = { too_many_requests: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', turnstile_unavailable: 'A validação de segurança não está disponível agora.', turnstile_verification_failed: 'A validação expirou. Faça-a novamente.', event_not_available: 'Este evento não está disponível pelo link público.', companion_limit_reached: 'A quantidade de acompanhantes ultrapassa o limite definido pelos noivos.', use_individual_invitation: 'Este contato já tem um convite individual. Use o link enviado pelos noivos.', rsvp_unavailable: 'A confirmação não está disponível neste convite.' }
         throw new Error(messages[result.error] || 'Não foi possível enviar a solicitação. Confira os dados e tente novamente.')
       }
       const token = result.requestToken || (requestUrl ? requestUrl.split('#solicitacao/')[1] : '')
       if (token) setRequestUrl(`${window.location.origin}/confirmar-presenca#solicitacao/${token}`)
+      setPublicCredential(result.credential || null)
+      setRsvpEmailSent(Boolean(result.emailSent))
+      setPublicRsvpStatus(attendanceStatus)
+      if (token) window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}#presenca/${token}`)
       idempotencyKey.current = ''
       requestTokenRef.current = ''
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
-      notify('Solicitação enviada aos noivos para análise.')
+      notify(result.credential ? 'Presença confirmada. Seu QR individual está disponível.' : 'Resposta registrada.')
     } catch (cause) {
       setError(cause.message || 'Não foi possível enviar a solicitação.')
       setTurnstileToken('')
@@ -2636,7 +2664,7 @@ function GeneralWeddingSite({ notify }) {
   return <main className="public-wedding-page" style={siteStyle}>
     <header className="public-wedding-header"><a href="#inicio" aria-label="Início do convite">{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><nav aria-label="Navegação do convite">{config?.enabledSections?.includes('Eventos') && <a href="#eventos">Eventos</a>}{config?.enabledSections?.includes('Confirmação de presença') && <a href="#confirmar-presenca">Confirmar presença</a>}{showGifts && <a href="#presentes">Presentes</a>}{showPix && <a href="#pix">Pix</a>}</nav><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>
     <section className={`public-wedding-cover public-wedding-cover-${config?.coverLayout || 'full'}`} id="inicio">
-      {coverVideoUrl ? <video src={coverVideoUrl} autoPlay muted loop playsInline aria-label="Vídeo do casal" /> : coverUrl ? <img src={coverUrl} alt="Foto escolhida pelo casal" /> : <div className="public-wedding-cover-placeholder" />}
+      <div className="public-wedding-cover-media">{coverVideoUrl ? <video src={coverVideoUrl} autoPlay muted loop playsInline aria-label="Vídeo do casal" /> : coverUrl ? <img src={coverUrl} alt="Foto escolhida pelo casal" /> : <div className="public-wedding-cover-placeholder" />}</div>
       <div className="public-wedding-cover-copy"><span>CONVITE</span><h1>{data.wedding.partnerOneName} <i>&amp;</i><br />{data.wedding.partnerTwoName}</h1><p>{data.wedding.eventDate ? new Date(`${data.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{data.wedding.eventTime ? ` · ${data.wedding.eventTime}` : ''}</p><div>{config?.coverMessages?.[config?.language] || config?.coverMessages?.['pt-BR']}</div>{config?.enabledSections?.includes('Confirmação de presença') && <a className="button-primary" href="#confirmar-presenca">Confirmar presença <ArrowRight size={15} /></a>}</div>
     </section>
     {config?.enabledSections?.includes('Nossa história') && (config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR']) && <section className="public-wedding-story"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{config.storyMessages?.[config.language] || config.storyMessages?.['pt-BR']}</p></section>}
@@ -2645,19 +2673,19 @@ function GeneralWeddingSite({ notify }) {
     {config?.enabledSections?.includes('Galeria de fotos') && config.siteGallery?.length > 0 && <section className="public-wedding-gallery"><span className="eyebrow">FOTOS DO CASAL</span><div>{config.siteGallery.map((id) => <img key={id} src={`/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} alt="Foto escolhida pelo casal" />)}</div></section>}
     {showGifts && <section className="public-wedding-gifts" id="presentes"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2><div>{giftList.map((gift) => <article key={gift.id}><div><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}{gift.fulfillment_type === 'store_link' && <small>A compra e a entrega são concluídas com a loja.</small>}</div>{gift.fulfillment_type === 'store_link' ? <a href={gift.store_url} target="_blank" rel="noopener noreferrer">Abrir loja <ExternalLink size={14} /></a> : <span>{gift.gift_type === 'custom' ? 'Valor livre' : `Sugestão: ${formatBrlCents(gift.amount_cents)}`}</span>}</article>)}</div></section>}
     {showPix && <section className="public-wedding-pix" id="pix"><span className="eyebrow">PRESENTE DIRETO AOS NOIVOS</span><h2>Contribuir via Pix</h2><p>Copie a chave e transfira pelo aplicativo do seu banco. A plataforma não recebe nem confirma pagamentos.</p>{config.pix.holderName && <p>Titular: {config.pix.holderName}</p>}<div><input readOnly aria-label="Chave Pix dos noivos" value={config.pix.key} onFocus={(event) => event.target.select()} /><button className="button-primary" type="button" onClick={copyPixKey}><Copy size={15} /> Copiar chave</button></div></section>}
-    {config?.enabledSections?.includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Este link geral registra uma solicitação para os noivos analisarem. Ele não autoriza a entrada no evento.</p>{requestUrl ? <div className="public-wedding-request-success"><strong>Solicitação enviada</strong><p>Os noivos precisam aprovar o pedido. Guarde o link seguro para consultar o andamento e, se aprovado, acessar as credenciais individuais.</p><a className="button-primary" href={requestUrl}>Acompanhar solicitação <ArrowRight size={15} /></a><input readOnly value={requestUrl} aria-label="Link seguro para acompanhar a solicitação" onFocus={(event) => event.target.select()} /></div> : <form onSubmit={submitRsvp}>
+    {config?.enabledSections?.includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Este link público permite registrar sua própria resposta. Ao confirmar, você recebe um QR individual; os noivos podem revogar o acesso. Cada acompanhante precisa de aprovação separada.</p>{requestUrl ? <div className="public-wedding-request-success"><strong>{publicRsvpStatus === 'confirmed' ? 'Presença confirmada' : 'Resposta registrada'}</strong><p>{publicCredential ? rsvpEmailSent ? 'Enviamos seu link individual por e-mail.' : 'Baixe o QR e guarde o link privado para consultar sua confirmação depois.' : 'Sua resposta foi salva. O link abaixo permite consultá-la mais tarde.'}</p>{publicCredential && <CredentialCard credential={publicCredential} />}{error && <p className="admin-form-error" role="alert">{error}</p>}<a className="button-outline" href={requestUrl}>Consultar confirmação e recuperar QR <ArrowRight size={15} /></a><input readOnly value={requestUrl} aria-label="Link privado para consultar a confirmação" onFocus={(event) => event.target.select()} /></div> : <form onSubmit={submitRsvp}>
       <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)} required><option value="">Selecione um evento</option>{eventList.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Nome completo<input value={name} onChange={(event) => setName(event.target.value)} maxLength="160" autoComplete="name" required /></label>
       <div className="public-wedding-contact-fields"><label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength="254" autoComplete="email" /></label><label>Telefone<input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength="40" autoComplete="tel" /></label></div>
       <label>Você poderá comparecer?<select value={attendanceStatus} onChange={(event) => { setAttendanceStatus(event.target.value); if (event.target.value === 'declined') setCompanions([]) }}><option value="confirmed">Vou comparecer</option><option value="declined">Não poderei comparecer</option></select></label>
       {attendanceStatus === 'confirmed' && maxCompanions > 0 && <div className="public-wedding-companions"><div><strong>Acompanhantes</strong><span>Os noivos analisarão cada solicitação. O nome é necessário antes da emissão do QR individual.</span></div>{companions.map((person, index) => <fieldset key={index}><legend>Acompanhante {index + 1}</legend><label>Nome, se já souber<input value={person.name} onChange={(event) => changeCompanion(index, { name: event.target.value })} maxLength="160" /></label><div className="public-wedding-contact-fields"><label>E-mail opcional<input value={person.email} onChange={(event) => changeCompanion(index, { email: event.target.value })} maxLength="254" /></label><label>Telefone opcional<input value={person.phone} onChange={(event) => changeCompanion(index, { phone: event.target.value })} maxLength="40" /></label></div></fieldset>)}{companions.length < maxCompanions && <button type="button" className="button-outline" onClick={() => setCompanions((current) => [...current, { name: '', email: '', phone: '' }])}>Solicitar acompanhante</button>}</div>}
-      <TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !eventId || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Enviar solicitação'} <Check size={15} /></button>
+      <p className="public-rsvp-credential-note">Após confirmar, seu QR será exibido aqui. Informe um e-mail válido para também receber o link individual.</p><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !eventId || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Registrar resposta'} <Check size={15} /></button>
     </form>}</section>}
     <footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
   </main>
 }
 
-function AttendanceRequestPortal({ notify, confirmAction }) {
+function AttendanceRequestPortal({ notify }) {
   const requestToken = window.location.hash.startsWith('#solicitacao/') ? window.location.hash.slice(13) : ''
   const [data, setData] = useState(null)
   const [credentials, setCredentials] = useState([])
@@ -2676,13 +2704,19 @@ function AttendanceRequestPortal({ notify, confirmAction }) {
       .then(async (response) => {
         const result = await response.json()
         if (!response.ok) throw new Error('Este link não é válido ou não está mais disponível.')
-        if (active) setData(result)
+        if (!active) return
+        setData(result)
+        if (result.request.reviewStatus === 'approved' && result.request.attendanceStatus === 'confirmed') {
+          const credentialResponse = await fetch('/api/public/attendance-requests/credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
+          const credentialResult = await credentialResponse.json()
+          if (!credentialResponse.ok) throw new Error('Não foi possível recuperar o QR agora. Tente novamente mais tarde.')
+          if (active) setCredentials(credentialResult.credentials)
+        }
       }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [requestToken])
 
   async function recoverCredentials() {
-    if (!await confirmAction('Vamos emitir novos QR codes individuais. Os códigos anteriores deixarão de funcionar.', 'Recuperar credenciais', 'Emitir novos QR codes')) return
     setBusy(true)
     setError('')
     try {
@@ -2690,7 +2724,7 @@ function AttendanceRequestPortal({ notify, confirmAction }) {
       const result = await response.json()
       if (!response.ok) throw new Error('As credenciais ainda não estão disponíveis.')
       setCredentials(result.credentials)
-      notify('Novas credenciais individuais emitidas.')
+      notify('Seu QR individual foi recuperado.')
     } catch (cause) {
       setError(cause.message)
     } finally {
@@ -2699,9 +2733,9 @@ function AttendanceRequestPortal({ notify, confirmAction }) {
   }
 
   const request = data?.request
-  const reviewLabel = request?.reviewStatus === 'pending' ? 'Aguardando análise dos noivos' : request?.reviewStatus === 'rejected' ? 'Solicitação não aprovada' : 'Solicitação aprovada'
+  const reviewLabel = request?.reviewStatus === 'pending' ? 'Aguardando análise dos noivos' : request?.reviewStatus === 'rejected' ? 'Resposta não aprovada' : 'Resposta registrada'
   return <RoleFrame icon={QrCode} eyebrow="ACOMPANHAMENTO DO CONVITE" title={loading ? 'Abrindo solicitação.' : request ? `Olá, ${request.name}.` : 'Solicitação de presença.'} description={loading ? 'Consultando o andamento.' : request ? `${request.partnerOneName} e ${request.partnerTwoName} · ${request.eventName}` : error} secure secureName="Acompanhamento da presença" secureFooter="Link individual e privado">
-    {request && <section className="role-card attendance-request-card"><span className={`admin-state ${request.reviewStatus === 'approved' ? 'admin-state-active' : ''}`}>{reviewLabel}</span><p>Resposta: {request.attendanceStatus === 'confirmed' ? 'Vou comparecer' : 'Não poderei comparecer'}.</p>{request.reviewStatus === 'pending' && <p>Este link geral não libera a entrada. Os noivos precisam analisar o pedido.</p>}{request.reviewStatus === 'rejected' && <p>Fale diretamente com os noivos se precisar revisar esta resposta.</p>}{data.companions.length > 0 && <div className="attendance-request-companions"><strong>Acompanhantes solicitados</strong>{data.companions.map((item) => <span key={item.id}>{item.name || 'Nome ainda não informado'} · {item.status === 'pending' ? 'Aguardando análise' : item.status === 'approved' ? 'Aprovado' : 'Não aprovado'}</span>)}</div>}{request.reviewStatus === 'approved' && request.attendanceStatus === 'confirmed' && <><p>Você pode recuperar os QR codes individuais aprovados. Ao emitir novamente, os códigos anteriores serão revogados.</p><button type="button" className="button-primary" disabled={busy} onClick={recoverCredentials}>{busy ? 'Preparando…' : 'Recuperar credenciais'} <QrCode size={15} /></button></>}</section>}
+    {request && <section className="role-card attendance-request-card"><span className={`admin-state ${request.reviewStatus === 'approved' ? 'admin-state-active' : ''}`}>{reviewLabel}</span><p>Resposta: {request.attendanceStatus === 'confirmed' ? 'Vou comparecer' : 'Não poderei comparecer'}.</p>{request.reviewStatus === 'pending' && <p>Os noivos ainda estão analisando esta resposta.</p>}{request.reviewStatus === 'rejected' && <p>Fale diretamente com os noivos se precisar revisar esta resposta.</p>}{data.companions.length > 0 && <div className="attendance-request-companions"><strong>Acompanhantes solicitados</strong>{data.companions.map((item) => <span key={item.id}>{item.name || 'Nome ainda não informado'} · {item.status === 'pending' ? 'Aguardando análise' : item.status === 'approved' ? 'Aprovado' : 'Não aprovado'}</span>)}</div>}{request.reviewStatus === 'approved' && request.attendanceStatus === 'confirmed' && <button type="button" className="button-outline" disabled={busy} onClick={recoverCredentials}>{busy ? 'Carregando…' : 'Atualizar QR individual'} <QrCode size={15} /></button>}</section>}
     {credentials.map((item) => <CredentialCard key={item.guestId} credential={item} />)}
     {error && !loading && <p className="admin-form-error" role="alert">{error}</p>}
   </RoleFrame>
