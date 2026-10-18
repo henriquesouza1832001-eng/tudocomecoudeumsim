@@ -24,7 +24,36 @@ const siteAnimations = ['Suave', 'Elegante', 'Festivo', 'Nenhum']
 const siteLanguages = ['pt-BR', 'en', 'es']
 const siteFontPairs = ['Clássico editorial', 'Romântico leve', 'Moderno sem serifa', 'Elegante de alto contraste', 'Contemporâneo humanista', 'Floral delicado', 'Minimalista geométrico', 'Rústico acolhedor']
 const siteSections = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato', 'Quiz dos noivos']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.', en: 'With joy, we invite you.', es: 'Con alegría, te invitamos.' }, storyMessages: { 'pt-BR': '', en: '', es: '' }, sectionContent: {}, guestCamera: { enabled: false, photoLimit: 5 }, pix: { enabled: false, key: '' } }
+
+function validPixSettings(pix) {
+  if (pix === undefined) return defaultSiteConfig.pix
+  if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key)) return null
+  const key = pix.key.trim()
+  if (pix.enabled && !key) return null
+  return { enabled: pix.enabled, key }
+}
+
+function publicSiteConfig(config) {
+  if (!config) return config
+  const pixEnabled = config.pix?.enabled && config.enabledSections?.includes('Lista de presentes')
+  return { ...config, pix: pixEnabled ? config.pix : { enabled: false, key: '' } }
+}
+
+function siteMediaReferences(value, id) {
+  let config
+  try {
+    config = JSON.parse(value || '{}')
+  } catch {
+    return ['configuração indisponível']
+  }
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return []
+  const uses = []
+  if (config.coverPhotoId === id) uses.push('foto principal da capa')
+  if (Array.isArray(config.coverGallery) && config.coverGallery.includes(id)) uses.push('carrossel da capa')
+  if (config.coverVideoId === id) uses.push('vídeo de abertura')
+  return uses
+}
 
 function validGuestCamera(camera) {
   if (camera === undefined) return defaultSiteConfig.guestCamera
@@ -98,10 +127,12 @@ function parseSiteConfig(value) {
     if (!weddingDetails) return null
     const guestCamera = validGuestCamera(config.guestCamera)
     if (!guestCamera) return null
+    const pix = validPixSettings(config.pix)
+    if (!pix) return null
     if (config.coverGallery !== undefined && (!Array.isArray(config.coverGallery) || config.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || config.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
     if (config.coverPhotoId !== undefined && config.coverPhotoId !== null && (typeof config.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverPhotoId))) return null
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
-    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+    return { ...defaultSiteConfig, ...config, coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -124,10 +155,12 @@ function validateSiteConfig(body) {
   if (!weddingDetails) return null
   const guestCamera = validGuestCamera(body.guestCamera)
   if (!guestCamera) return null
+  const pix = validPixSettings(body.pix)
+  if (!pix) return null
   if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
-  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, coverLayout: body.coverLayout, coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: body.language, coverMessages, storyMessages, sectionContent, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {
@@ -876,6 +909,38 @@ app.get('/api/couple/weddings/:weddingId/site-media', requireSession, async (con
   return context.json({ media })
 })
 
+app.delete('/api/couple/weddings/:weddingId/site-media/:mediaId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const mediaId = context.req.param('mediaId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  if (!/^[0-9a-f-]{36}$/i.test(mediaId)) return jsonError(context, 400, 'invalid_media_id')
+  if (!context.env.GUEST_PHOTOS) return jsonError(context, 503, 'media_storage_unavailable')
+  const configs = await context.env.DB.prepare('SELECT site_config_json, published_site_config_json FROM weddings WHERE id = ?').bind(weddingId).first()
+  if (!configs) return jsonError(context, 404, 'wedding_not_found')
+  const references = [
+    ...siteMediaReferences(configs.site_config_json, mediaId).map((use) => `rascunho: ${use}`),
+    ...siteMediaReferences(configs.published_site_config_json, mediaId).map((use) => `convite publicado: ${use}`),
+  ]
+  if (references.length) return context.json({ error: 'site_media_in_use', references }, 409, { 'Cache-Control': 'no-store' })
+  let objectKey
+  for (const extension of ['jpg', 'png', 'webp', 'mp4']) {
+    const key = `${weddingId}/site/${mediaId}.${extension}`
+    const object = await context.env.GUEST_PHOTOS.get(key)
+    if (object?.customMetadata?.weddingId === weddingId) {
+      objectKey = key
+      break
+    }
+  }
+  if (!objectKey) return jsonError(context, 404, 'media_not_found')
+  await context.env.GUEST_PHOTOS.delete(objectKey)
+  await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+    VALUES (?, ?, ?, 'wedding_site_media_deleted', 'site_media', ?, '{}')`)
+    .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, mediaId).run()
+  return context.json({ id: mediaId, deleted: true })
+})
+
 app.post('/api/couple/weddings/:weddingId/site-media', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   if (!await weddingMembership(context, weddingId, ['couple_admin', 'editor'])) return jsonError(context, 404, 'wedding_not_found')
@@ -947,7 +1012,7 @@ app.get('/api/couple/weddings/:weddingId/published', requireSession, async (cont
   if (!wedding?.site_published_at) return jsonError(context, 404, 'published_site_not_found')
   return context.json({
     wedding: { slug: wedding.slug, partner_one_name: wedding.partner_one_name, partner_two_name: wedding.partner_two_name, event_date: wedding.event_date, event_time: wedding.event_time },
-    siteConfig: parseSiteConfig(wedding.published_site_config_json),
+    siteConfig: publicSiteConfig(parseSiteConfig(wedding.published_site_config_json)),
     events: JSON.parse(wedding.published_events_json || '[]').filter((event) => !event.group_ids.length).map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids
@@ -1679,7 +1744,7 @@ app.get('/api/invitation', async (context) => {
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, eventTime: guest.event_time, timezone: guest.timezone },
-    siteConfig: parseSiteConfig(guest.published_site_config_json),
+    siteConfig: publicSiteConfig(parseSiteConfig(guest.published_site_config_json)),
     events: publishedEvents.filter((event) => !event.group_ids.length || event.group_ids.includes(guest.group_id)).map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids

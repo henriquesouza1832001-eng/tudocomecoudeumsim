@@ -2563,6 +2563,13 @@ img { display: block; max-width: 100%; }
 .couple-role-page .customizer-upload-grid .customizer-cover-photo-choice img { aspect-ratio: 4 / 3; }
 .couple-role-page .customizer-upload-grid .customizer-cover-photo-choice button span { padding: 10px 8px; font-size: 15px; }
 .couple-role-page .customizer-cover-photo-choice label { min-height: 44px; padding: 7px; display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.couple-role-page .customizer-delete-photo-button { min-height: 40px; margin-top: 6px; padding: 7px 9px; display: inline-flex; align-items: center; gap: 6px; color: #805044; border: 1px solid #d9c7bf; background: #fffefa; font-size: 13px; }
+.couple-role-page .customizer-delete-photo-button:hover, .couple-role-page .customizer-delete-photo-button:focus-visible { color: #63382e; border-color: #a97869; }
+.couple-role-page .pix-toggle { min-height: 44px; display: flex; align-items: center; gap: 10px; color: var(--forest); font-weight: 600; }
+.couple-role-page .pix-toggle input { width: 18px; height: 18px; accent-color: var(--forest); }
+.couple-role-page .pix-key-field { margin-top: 12px; display: grid; gap: 7px; color: var(--forest); font-size: 14px; }
+.couple-role-page .pix-key-field input, .guest-site-pix input { min-width: 0; min-height: 46px; padding: 10px 12px; color: var(--ink); border: 1px solid #c9d0c7; background: #fffefa; font: inherit; }
+.couple-role-page .pix-publish-note { display: block; margin-top: 9px; color: #6d756e; line-height: 1.5; }
 .couple-role-page .customizer-layout-options > div { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
 .couple-role-page .customizer-layout-options button { min-height: 54px; line-height: 1.35; }
 .couple-role-page .customizer-extra-fields { margin-top: 12px; border: 1px solid #d8ddd5; background: #fffefa; }
@@ -2608,6 +2615,11 @@ img { display: block; max-width: 100%; }
 .guest-public-gift h3 { margin: 0; color: var(--forest); font: 400 20px/1.25 var(--font-heading, Georgia, serif); }
 .guest-public-gift p { margin: 6px 0 0; color: color-mix(in srgb, var(--forest) 76%, #333); font-size: 14px; line-height: 1.55; }
 .guest-public-gift > strong { flex: 0 0 auto; color: var(--forest); font-size: 14px; }
+.guest-site-pix { margin: 24px 0; padding: 20px 0; scroll-margin-top: 20px; border-top: 1px solid color-mix(in srgb, var(--forest) 22%, transparent); }
+.guest-site-pix h2 { margin: 5px 0 8px; color: var(--forest); font: 400 28px/1.2 var(--font-heading, Georgia, serif); }
+.guest-site-pix p { margin: 0 0 14px; color: color-mix(in srgb, var(--forest) 76%, #333); line-height: 1.6; }
+.guest-pix-copy-row { max-width: 620px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.guest-pix-copy-row .button-primary { min-height: 46px; }
 .guest-public-event { padding: 16px 0; border-bottom: 1px solid color-mix(in srgb, var(--forest) 16%, transparent); }
 .guest-public-event small { color: var(--accent); text-transform: uppercase; letter-spacing: .1em; }
 .guest-public-event h3 { margin: 5px 0; color: var(--forest); font: 400 22px/1.25 var(--font-heading, Georgia, serif); }
@@ -2621,4 +2633,4 @@ img { display: block; max-width: 100%; }
 .checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-watercolor-overlay.png'); }
 @media (max-width: 600px) { .app-shell, .guest-page, .role-page, .checkin-page, .marketing-page { background-size: 100vw 100svh; } }
 @media (max-width: 760px) { .couple-role-page .customizer-workspace { grid-template-columns: 1fr; } .couple-role-page .customize-preview { position: static; } .couple-role-page .customizer-upload-panel .customizer-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .guest-full-site-heading { align-items: flex-start; flex-direction: column; } .guest-full-site-heading .button-outline { width: 100%; justify-content: center; } }
-@media (max-width: 480px) { .guest-invitation-actions { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .guest-invitation-actions { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } .guest-pix-copy-row { grid-template-columns: 1fr; } }
