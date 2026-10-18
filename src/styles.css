@@ -6491,3 +6491,474 @@ img { display: block; max-width: 100%; }
   grid-column: 1;
   grid-row: 2;
 }
+
+.customize-preview {
+  position: sticky;
+  top: 17px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.invitation-preview-viewport {
+  width: 100%;
+  height: min(76svh, 760px);
+  min-height: 360px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  border: 1px solid #e7e5dd;
+  background: #f7f4ed;
+  scrollbar-gutter: stable;
+}
+
+.invitation-preview-scaled-frame {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.invitation-preview-viewport iframe {
+  display: block;
+  border: 0;
+  background: #f7f4ed;
+}
+
+.invitation-preview-document {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  overflow: visible;
+  border: 0;
+  margin: 0 auto;
+  background: var(--paper, #f7f4ed);
+}
+
+.invitation-preview-document.browser-frame.device-tablet,
+.invitation-preview-document.browser-frame.device-mobile {
+  width: 100%;
+  max-width: none;
+}
+
+.invitation-preview-document > .browser-bar {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+}
+
+.invitation-preview-document .public-wedding-header {
+  top: 24px;
+}
+
+.invitation-preview-document .public-wedding-cover-copy h1,
+.public-wedding-page .public-wedding-cover-copy h1,
+.public-wedding-page .public-wedding-cover-full .public-wedding-cover-copy h1,
+.public-wedding-page .public-wedding-cover-composition-side .public-wedding-cover-copy h1,
+.public-wedding-page .public-wedding-cover-composition-editorial .public-wedding-cover-copy h1,
+.public-wedding-page .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+  max-width: 100%;
+  font-size: calc(clamp(2.5rem, 5vw, 4.5rem) * var(--site-text-scale, 1));
+  line-height: .98;
+  letter-spacing: -.045em;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.public-wedding-page .public-wedding-cover-copy h1 i {
+  margin: .02em 0;
+  line-height: 1;
+}
+
+.public-wedding-page .public-wedding-cover-copy .public-wedding-cover-kicker,
+.public-wedding-page .eyebrow {
+  font-size: calc(.78rem * var(--site-text-scale, 1));
+  letter-spacing: .1em;
+  line-height: 1.45;
+}
+
+.public-wedding-page .public-wedding-cover-copy .public-wedding-cover-date,
+.public-wedding-page .public-wedding-cover-copy .public-wedding-cover-message,
+.public-wedding-page .public-wedding-story > p,
+.public-wedding-page .public-wedding-events > article p,
+.public-wedding-page .public-wedding-events > article small,
+.public-wedding-page .public-wedding-event-location,
+.public-wedding-page .public-wedding-details p,
+.public-wedding-page .public-wedding-gifts p,
+.public-wedding-page .public-wedding-pix > p,
+.public-wedding-page .public-wedding-rsvp > p,
+.public-wedding-page .public-wedding-rsvp label {
+  font-size: calc(1rem * var(--site-text-scale, 1));
+  line-height: 1.65;
+}
+
+.public-wedding-page .public-wedding-cover-copy .public-wedding-cover-message {
+  max-width: 38rem;
+}
+
+.public-wedding-page .public-wedding-cover-copy .button-primary,
+.public-wedding-page .public-wedding-rsvp .button-primary,
+.public-wedding-page .public-wedding-display-cta .button-primary {
+  min-height: 46px;
+  font-size: calc(.9rem * var(--site-text-scale, 1));
+}
+
+.public-wedding-page .public-wedding-story,
+.public-wedding-page .public-wedding-timeline,
+.public-wedding-page .public-wedding-countdown,
+.public-wedding-page .public-wedding-events,
+.public-wedding-page .public-wedding-details,
+.public-wedding-page .public-wedding-gallery,
+.public-wedding-page .public-wedding-gifts,
+.public-wedding-page .public-wedding-pix,
+.public-wedding-page .public-wedding-rsvp,
+.public-wedding-page .public-wedding-display-cta {
+  width: 100%;
+  margin-inline: auto;
+  padding: clamp(52px, 7vw, 88px) max(24px, calc((100% - 1080px) / 2));
+}
+
+.public-wedding-page .public-wedding-story > p {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.public-wedding-page .public-wedding-story h2,
+.public-wedding-page .public-wedding-timeline h2,
+.public-wedding-page .public-wedding-countdown h2,
+.public-wedding-page .public-wedding-events > h2,
+.public-wedding-page .public-wedding-gifts > h2,
+.public-wedding-page .public-wedding-pix > h2,
+.public-wedding-page .public-wedding-rsvp > h2,
+.public-wedding-page .public-wedding-display-cta > h2 {
+  max-width: 22ch;
+  margin-inline: auto;
+  font-size: calc(clamp(2rem, 3.2vw, 2.5rem) * var(--site-text-scale, 1));
+  line-height: 1.12;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+.public-wedding-page .public-wedding-events > article h3,
+.public-wedding-page .public-gift-grid h3,
+.public-wedding-page .public-wedding-timeline h3 {
+  font-size: calc(clamp(1.2rem, 1.7vw, 1.5rem) * var(--site-text-scale, 1));
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+
+.public-wedding-page .public-gift-grid h3 {
+  overflow-wrap: anywhere;
+}
+
+.public-wedding-page .public-wedding-rsvp input,
+.public-wedding-page .public-wedding-rsvp select,
+.public-wedding-page .public-wedding-rsvp textarea {
+  font-size: calc(1rem * var(--site-text-scale, 1));
+}
+
+.public-wedding-page .public-wedding-header nav a,
+.public-wedding-page .public-wedding-header > a:last-child,
+.public-wedding-page .public-wedding-giving-menu > button,
+.public-wedding-page .public-wedding-footer a {
+  font-size: calc(.9rem * var(--site-text-scale, 1));
+}
+
+.public-wedding-page .public-wedding-header nav {
+  gap: clamp(12px, 1.8vw, 24px);
+}
+
+@media (max-width: 860px) {
+  .public-wedding-page .public-wedding-header {
+    gap: 10px 16px;
+    padding: 10px 18px;
+  }
+
+  .public-wedding-page .public-wedding-header > a:first-child {
+    max-width: min(54vw, 330px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .public-wedding-page .public-wedding-header > a:last-child {
+    display: none;
+  }
+
+  .public-wedding-page .public-wedding-menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .public-wedding-page .public-wedding-header nav {
+    order: 3;
+    width: 100%;
+    display: none;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .public-wedding-page .public-wedding-header nav.is-open {
+    display: flex;
+  }
+
+  .public-wedding-page .public-wedding-header nav > a,
+  .public-wedding-page .public-wedding-giving-menu > button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+  }
+
+  .public-wedding-page .public-wedding-giving-menu {
+    width: 100%;
+  }
+
+  .public-wedding-page .public-wedding-giving-options {
+    position: static;
+    min-width: 0;
+    margin: 0 0 6px 10px;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .public-wedding-page .public-wedding-cover-copy h1,
+  .public-wedding-page .public-wedding-cover-full .public-wedding-cover-copy h1,
+  .public-wedding-page .public-wedding-cover-composition-side .public-wedding-cover-copy h1,
+  .public-wedding-page .public-wedding-cover-composition-editorial .public-wedding-cover-copy h1,
+  .public-wedding-page .public-wedding-cover-composition-overlay .public-wedding-cover-copy h1 {
+    font-size: calc(clamp(2.35rem, 9vw, 3.5rem) * var(--site-text-scale, 1));
+    line-height: 1;
+  }
+
+  .public-wedding-page .public-wedding-story,
+  .public-wedding-page .public-wedding-timeline,
+  .public-wedding-page .public-wedding-countdown,
+  .public-wedding-page .public-wedding-events,
+  .public-wedding-page .public-wedding-details,
+  .public-wedding-page .public-wedding-gallery,
+  .public-wedding-page .public-wedding-gifts,
+  .public-wedding-page .public-wedding-pix,
+  .public-wedding-page .public-wedding-rsvp,
+  .public-wedding-page .public-wedding-display-cta {
+    width: 100%;
+    padding: 44px 18px;
+  }
+
+  .public-wedding-page .public-wedding-story h2,
+  .public-wedding-page .public-wedding-timeline h2,
+  .public-wedding-page .public-wedding-countdown h2,
+  .public-wedding-page .public-wedding-events > h2,
+  .public-wedding-page .public-wedding-gifts > h2,
+  .public-wedding-page .public-wedding-pix > h2,
+  .public-wedding-page .public-wedding-rsvp > h2,
+  .public-wedding-page .public-wedding-display-cta > h2 {
+    font-size: calc(clamp(1.8rem, 7vw, 2.25rem) * var(--site-text-scale, 1));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-wedding-page *,
+  .public-wedding-page *::before,
+  .public-wedding-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+.theme-floral .public-wedding-story {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-height: clamp(340px, 36vw, 480px);
+  padding: clamp(64px, 8vw, 96px) clamp(72px, 12vw, 180px);
+  background-image: linear-gradient(90deg, transparent 0%, transparent 17%, color-mix(in srgb, var(--paper) 76%, transparent) 28%, var(--paper) 38%, var(--paper) 62%, color-mix(in srgb, var(--paper) 76%, transparent) 72%, transparent 83%, transparent 100%), url('/images/floral-watercolor-overlay.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%, min(100%, 900px) auto;
+}
+
+.theme-floral .public-wedding-story > .eyebrow {
+  position: relative;
+  z-index: 1;
+  color: var(--forest);
+}
+
+.theme-floral .public-wedding-story > p {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 31rem);
+  max-width: 31rem;
+  margin: 18px auto 0;
+  color: var(--forest);
+  font-size: calc(1.1rem * var(--site-text-scale, 1));
+  line-height: 1.72;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.public-wedding-page .public-wedding-events {
+  padding-top: clamp(48px, 6vw, 72px);
+  padding-bottom: 32px;
+}
+
+.public-wedding-page .public-wedding-events > .eyebrow,
+.public-wedding-page .public-wedding-details .eyebrow {
+  color: var(--forest);
+}
+
+.public-wedding-page .public-wedding-events > h2 {
+  margin: 8px 0 18px;
+  font-size: calc(clamp(2rem, 3vw, 2.4rem) * var(--site-text-scale, 1));
+  line-height: 1.12;
+}
+
+.public-wedding-page .public-wedding-events > article {
+  grid-template-columns: minmax(0, 1.1fr) minmax(250px, .9fr);
+  align-items: start;
+  gap: 6px 28px;
+  padding: 18px 0 20px;
+  border-top-color: color-mix(in srgb, var(--forest) 18%, transparent);
+}
+
+.public-wedding-page .public-wedding-events > article > div:first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.public-wedding-page .public-wedding-events > article > div:first-child small {
+  color: var(--forest);
+  font-size: .78rem;
+  letter-spacing: .06em;
+}
+
+.public-wedding-page .public-wedding-events > article h3 {
+  margin: 3px 0 0;
+  color: var(--forest);
+  font-size: calc(clamp(1.3rem, 1.8vw, 1.55rem) * var(--site-text-scale, 1));
+  line-height: 1.25;
+}
+
+.public-wedding-page .public-wedding-events > article > p {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  margin: 0;
+  color: var(--ink);
+  font-size: calc(1rem * var(--site-text-scale, 1));
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr) auto;
+  align-items: baseline;
+  gap: 5px 18px;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: calc(1rem * var(--site-text-scale, 1));
+  line-height: 1.55;
+}
+
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > strong {
+  color: var(--forest);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > span {
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > a {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--forest);
+  font-size: .9rem;
+  text-underline-offset: 3px;
+}
+
+.public-wedding-page .public-wedding-details {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 20px 32px;
+  margin-top: 0;
+  padding-top: 24px;
+  padding-bottom: 30px;
+  border-top-color: color-mix(in srgb, var(--forest) 16%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--forest) 16%, transparent);
+}
+
+.public-wedding-page .public-wedding-details article > p {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: calc(1rem * var(--site-text-scale, 1));
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .theme-floral .public-wedding-story {
+    min-height: 320px;
+    padding: 54px clamp(70px, 18vw, 88px);
+    background-image: linear-gradient(90deg, transparent 0%, transparent 8%, color-mix(in srgb, var(--paper) 82%, transparent) 18%, var(--paper) 30%, var(--paper) 70%, color-mix(in srgb, var(--paper) 82%, transparent) 82%, transparent 92%, transparent 100%), url('/images/floral-watercolor-overlay.png');
+    background-size: 100% 100%, 560px auto;
+  }
+
+  .theme-floral .public-wedding-story > p {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 14px;
+    font-size: calc(1.05rem * var(--site-text-scale, 1));
+    line-height: 1.68;
+  }
+
+  .public-wedding-page .public-wedding-events {
+    padding-top: 42px;
+    padding-bottom: 24px;
+  }
+
+  .public-wedding-page .public-wedding-events > h2 {
+    margin-bottom: 14px;
+    font-size: calc(1.95rem * var(--site-text-scale, 1));
+  }
+
+  .public-wedding-page .public-wedding-events > article {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 16px 0;
+  }
+
+  .public-wedding-page .public-wedding-events > article > div:first-child,
+  .public-wedding-page .public-wedding-events > article > p {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .public-wedding-page .public-wedding-events > article > p {
+    margin-top: 3px;
+  }
+
+  .public-wedding-page .public-wedding-events > article > .public-wedding-event-location {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    margin-top: 7px;
+  }
+
+  .public-wedding-page .public-wedding-events > article > .public-wedding-event-location > a {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    margin-top: 2px;
+  }
+
+  .public-wedding-page .public-wedding-details {
+    gap: 20px;
+    padding-top: 22px;
+    padding-bottom: 26px;
+  }
+}

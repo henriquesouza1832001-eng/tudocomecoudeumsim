@@ -1,5 +1,6 @@
 import './styles.css'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
 import { SITE_MEDIA_LIMITS } from './site-media-config.js'
 import {
@@ -160,7 +161,7 @@ function WeddingInvitationCover({ theme = 'garden', layout = 'full', composition
   const selectedComposition = ['side', 'overlay', 'editorial'].includes(composition) ? composition : null
   const legacyLayoutClass = selectedComposition ? '' : ` public-wedding-cover-${coverLayout}`
   const coverStyle = { '--cover-text-align': textAlign, '--cover-copy-align': ({ left: 'flex-start', center: 'center', right: 'flex-end' })[textAlign] || 'flex-start', '--cover-copy-justify': ({ top: 'flex-start', center: 'center', bottom: 'flex-end' })[textPosition] || 'center', '--cover-overlay-opacity': String(Math.max(10, Math.min(75, overlayOpacity)) / 100), '--cover-image-position': ({ center: 'center center', top: 'center top', bottom: 'center bottom', left: 'left center', right: 'right center' })[imagePosition] || 'center center' }
-  return <section id={preview ? 'inicio' : undefined} className={`public-wedding-cover${legacyLayoutClass} public-cover-theme-${theme}${selectedComposition ? ` public-wedding-cover-composition-${selectedComposition}` : ''} public-wedding-cover-position-${textPosition}${preview ? ' invitation-cover-preview' : ''}`} style={coverStyle}>
+  return <section id="inicio" className={`public-wedding-cover${legacyLayoutClass} public-cover-theme-${theme}${selectedComposition ? ` public-wedding-cover-composition-${selectedComposition}` : ''} public-wedding-cover-position-${textPosition}${preview ? ' invitation-cover-preview' : ''}`} style={coverStyle}>
     <div className="public-wedding-cover-media">{videoUrl ? <video key={videoUrl} src={videoUrl} autoPlay muted loop playsInline aria-label="Vídeo do casal" /> : photoUrl ? <img key={photoUrl} src={photoUrl} alt="Foto escolhida pelo casal" /> : <div className="public-wedding-cover-placeholder" />}</div>
     {carouselCount > 1 && <span className="invite-gallery-dots" aria-label={`Foto ${carouselIndex + 1} de ${carouselCount}`}>{Array.from({ length: carouselCount }, (_, index) => <i className={index === carouselIndex ? 'active' : ''} key={index} />)}</span>}
     <span className="public-wedding-cover-ornament" aria-hidden="true" />
@@ -180,6 +181,14 @@ function WeddingNavigation({ items, givingOptions = [] }) {
     action()
   }
   return <><button ref={toggleRef} type="button" className="public-wedding-menu-toggle" aria-controls="public-wedding-navigation-links" aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>{menuOpen ? <X size={18} /> : <Menu size={18} />}<span>{menuOpen ? 'Fechar menu' : 'Menu'}</span></button><nav id="public-wedding-navigation-links" className={menuOpen ? 'is-open' : ''} aria-label="Navegação do convite" onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); setGivingOpen(false); toggleRef.current?.focus() } }}>{items.map((item) => <a key={item.label} href={item.href} onClick={(event) => activate(event, item.onSelect)}>{item.label}</a>)}{givingOptions.length > 0 && <div className={`public-wedding-giving-menu${givingOpen ? ' is-open' : ''}`}><button type="button" aria-expanded={givingOpen} onClick={() => setGivingOpen((current) => !current)}>Presentear <ChevronDown size={14} /></button>{givingOpen && <div className="public-wedding-giving-options">{givingOptions.map((option) => <a key={option.label} href={option.href} onClick={(event) => activate(event, option.onSelect)}>{option.label}</a>)}</div>}</div>}</nav></>
+}
+
+function WeddingInvitationDocument({ theme, animationPreset, style, partnerOneName, partnerTwoName, navigation, preview = false, children }) {
+  return <main className={`public-wedding-page theme-${theme || 'garden'}${animationPreset === 'Nenhum' ? ' motion-none' : ''}`} style={style}>
+    <header className="public-wedding-header"><a href="#inicio" aria-label="Início do convite">{partnerOneName} <i>&amp;</i> {partnerTwoName}</a>{navigation}<a href="https://henriquesouzas.com" target={preview ? undefined : '_blank'} rel={preview ? undefined : 'noreferrer'} onClick={preview ? (event) => event.preventDefault() : undefined}>henriquesouzas.com</a></header>
+    {children}
+    <footer className="public-wedding-footer"><span>Com carinho, {partnerOneName} &amp; {partnerTwoName}</span><a href="https://henriquesouzas.com" target={preview ? undefined : '_blank'} rel={preview ? undefined : 'noreferrer'} onClick={preview ? (event) => event.preventDefault() : undefined}>henriquesouzas.com</a></footer>
+  </main>
 }
 
 function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts, giftPresentation, mediaUrl, timezone, showGifts, showPix, preview = false, onOpenGifts, onOpenPix, onCopyPix, weddingUrl = '' }) {
@@ -220,6 +229,61 @@ function WeddingPixSection({ pix, preview = false, onCopy }) {
 
 function WeddingDisplayPage({ kind, href, weddingName, gifts, presentation, mediaUrl, pix, preview = false, onBack, onCopy }) {
   return <section className="public-wedding-display-page"><a className="public-wedding-back-link" href={preview ? undefined : href} onClick={preview ? onBack : undefined}><ArrowLeft size={15} /> Voltar ao convite</a><span className="eyebrow">{kind === 'gifts' ? 'LISTA DO CASAMENTO' : 'UM PRESENTE DIRETO AOS NOIVOS'}</span><h1>{kind === 'gifts' ? 'Um carinho para ' : 'Um gesto de carinho para '}{weddingName}</h1>{kind === 'gifts' ? <WeddingGiftsSection gifts={gifts} presentation={presentation} mediaUrl={mediaUrl} preview={preview} /> : <WeddingPixSection pix={pix} preview={preview} onCopy={onCopy} />}</section>
+}
+
+function InvitationPreviewWindow({ device, animationPreset, children }) {
+  const frameRef = useRef(null)
+  const viewportRef = useRef(null)
+  const [frameDocument, setFrameDocument] = useState(null)
+  const [scale, setScale] = useState(1)
+  const dimensions = { desktop: [1440, 1000], tablet: [820, 1180], mobile: [390, 844] }[device] || [1440, 1000]
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return undefined
+    const updateScale = () => {
+      const bounds = viewport.getBoundingClientRect()
+      setScale(Math.min(bounds.width / dimensions[0], bounds.height / dimensions[1], 1))
+    }
+    const observer = new ResizeObserver(updateScale)
+    observer.observe(viewport)
+    updateScale()
+    return () => observer.disconnect()
+  }, [dimensions[0], dimensions[1]])
+
+  useEffect(() => {
+    if (!frameDocument || animationPreset === 'Nenhum' || frameDocument.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in frameDocument.defaultView)) return undefined
+    const sections = frameDocument.querySelectorAll('.public-wedding-story, .public-wedding-timeline, .public-wedding-countdown, .public-wedding-events, .public-wedding-details, .public-wedding-gallery, .public-wedding-gifts, .public-wedding-pix, .public-wedding-rsvp')
+    sections.forEach((section) => section.classList.add('invite-section-reveal'))
+    const observer = new frameDocument.defaultView.IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible')
+        observer.unobserve(entry.target)
+      }
+    }), { threshold: 0.12 })
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [frameDocument, animationPreset, children])
+
+  function prepareFrame() {
+    const frame = frameRef.current
+    const doc = frame?.contentDocument
+    if (!doc) return
+    doc.querySelectorAll('[data-preview-styles]').forEach((node) => node.remove())
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((source) => {
+      const copy = source.cloneNode(true)
+      copy.setAttribute('data-preview-styles', '')
+      doc.head.appendChild(copy)
+    })
+    setFrameDocument(doc.getElementById('invitation-preview-root') ? doc : null)
+  }
+
+  const width = dimensions[0] * scale
+  const height = dimensions[1] * scale
+  const frameStyle = { width: `${dimensions[0]}px`, height: `${dimensions[1]}px`, transform: `scale(${scale})`, transformOrigin: 'top left' }
+  const srcDoc = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${window.location.origin}/"></head><body style="margin:0;overflow-x:hidden"><div id="invitation-preview-root"></div></body></html>`
+
+  return <div ref={viewportRef} className="invitation-preview-viewport" aria-label={`Prévia do convite em ${device === 'mobile' ? 'celular' : device === 'tablet' ? 'tablet' : 'desktop'}`}><div className="invitation-preview-scaled-frame" style={{ width: `${width}px`, height: `${height}px` }}><iframe ref={frameRef} title={`Prévia do convite em ${device}`} srcDoc={srcDoc} onLoad={prepareFrame} style={frameStyle} /></div>{frameDocument && createPortal(<div className={`invitation-preview-document browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>convite do casal</div><ExternalLink size={12} /></div>{children}</div>, frameDocument.getElementById('invitation-preview-root'))}</div>
 }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
@@ -2491,20 +2555,17 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       <PublishedInviteShare wedding={wedding} publishedAt={publishedAt} notify={notify} />
       <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
-    <div className={`customize-preview public-wedding-page theme-${theme.id}${config.animationPreset === 'Nenhum' ? ' motion-none' : ''}`} style={style}>
+    <div className="customize-preview">
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>
-      <div className={`browser-frame device-${device} invitation-preview-frame`}>
-        <div className="browser-bar"><span /><span /><span /><div>{wedding?.slug || 'seu-casamento'}.convite</div><ExternalLink size={12} /></div>
-        <div className={previewPage === 'invitation' ? '' : 'preview-subpage-shell'}>
-          <header className="public-wedding-header"><a href="#inicio">{partnerOneName || 'Nomes do casal'} <i>&amp;</i> {partnerTwoName || 'seu par'}</a>{previewPage === 'invitation' ? <WeddingNavigation items={previewNavItems} givingOptions={previewGivingOptions} /> : <button type="button" className="button-outline" onClick={() => setPreviewPage('invitation')}>Voltar ao convite</button>}<a href="https://henriquesouzas.com" onClick={(event) => event.preventDefault()}>henriquesouzas.com</a></header>
+      <InvitationPreviewWindow device={device} animationPreset={config.animationPreset}>
+        <WeddingInvitationDocument theme={theme.id} animationPreset={config.animationPreset} style={style} partnerOneName={partnerOneName || 'Nomes do casal'} partnerTwoName={partnerTwoName || 'seu par'} preview navigation={previewPage === 'invitation' ? <WeddingNavigation items={previewNavItems} givingOptions={previewGivingOptions} /> : <button type="button" className="button-outline" onClick={() => setPreviewPage('invitation')}>Voltar ao convite</button>}>
           {previewPage === 'invitation' ? <>
-        <WeddingInvitationCover theme={theme.id} layout={coverLayout} composition={config.coverComposition} textAlign={config.coverTextAlign} textPosition={config.coverTextPosition} overlayOpacity={config.coverOverlayOpacity} imagePosition={config.coverImagePosition} partnerOneName={partnerOneName} partnerTwoName={partnerTwoName} date={eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={eventTime} message={coverMessage} photoUrl={previewPhotoUrl} videoUrl={previewVideoUrl} showRsvp={(config.enabledSections || []).includes('Confirmação de presença')} preview carouselCount={config.coverCarouselEnabled ? (config.coverGallery || []).length : 0} carouselIndex={previewCoverIndex} />
-        <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
-        {(config.enabledSections || []).includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Respondam para cada evento. O QR individual aparece após a confirmação; acompanhantes precisam de aprovação dos noivos.</p><label>Evento<select disabled><option>{events[0]?.name || 'Evento publicado pelos noivos'}</option></select></label><label>Nome completo<input disabled placeholder="Nome do convidado" /></label><div className="public-wedding-contact-fields"><label>E-mail<input disabled placeholder="E-mail" /></label><label>Telefone<input disabled placeholder="Telefone" /></label></div><p className="public-rsvp-credential-note">Informem e-mail ou telefone para receber o link individual e recuperar o QR.</p><label>Você poderá comparecer?<select disabled><option>Vou comparecer</option></select></label><button className="button-primary" type="button" disabled>Registrar resposta <Check size={15} /></button></section>}
-        <footer className="public-wedding-footer"><span>Com carinho, {partnerOneName || 'Nomes do casal'} &amp; {partnerTwoName || 'seu par'}</span><a href="https://henriquesouzas.com" onClick={(event) => event.preventDefault()}>henriquesouzas.com</a></footer>
+            <WeddingInvitationCover theme={theme.id} layout={coverLayout} composition={config.coverComposition} textAlign={config.coverTextAlign} textPosition={config.coverTextPosition} overlayOpacity={config.coverOverlayOpacity} imagePosition={config.coverImagePosition} partnerOneName={partnerOneName} partnerTwoName={partnerTwoName} date={eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={eventTime} message={coverMessage} photoUrl={previewPhotoUrl} videoUrl={previewVideoUrl} showRsvp={(config.enabledSections || []).includes('Confirmação de presença')} preview carouselCount={config.coverCarouselEnabled ? (config.coverGallery || []).length : 0} carouselIndex={previewCoverIndex} />
+            <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
+            {(config.enabledSections || []).includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Respondam para cada evento. O QR individual aparece após a confirmação; acompanhantes precisam de aprovação dos noivos.</p><label>Evento<select disabled><option>{events[0]?.name || 'Evento publicado pelos noivos'}</option></select></label><label>Nome completo<input disabled placeholder="Nome do convidado" /></label><div className="public-wedding-contact-fields"><label>E-mail<input disabled placeholder="E-mail" /></label><label>Telefone<input disabled placeholder="Telefone" /></label></div><p className="public-rsvp-credential-note">Informem e-mail ou telefone para receber o link individual e recuperar o QR.</p><label>Você poderá comparecer?<select disabled><option>Vou comparecer</option></select></label><button className="button-primary" type="button" disabled>Registrar resposta <Check size={15} /></button></section>}
           </> : <WeddingDisplayPage kind={previewPage} weddingName={`${partnerOneName || 'Nomes do casal'} & ${partnerTwoName || 'seu par'}`} gifts={previewGifts.filter((gift) => gift.status === 'active')} presentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} pix={config.pix} preview onBack={() => setPreviewPage('invitation')} />}
-        </div>
-      </div>
+        </WeddingInvitationDocument>
+      </InvitationPreviewWindow>
       <div className="preview-notice"><CircleHelp size={15} /> {!previewHasCover ? 'Sem foto ainda: a capa usa as cores do tema e mostra como o texto ficará.' : publishedAt ? `Última publicação: ${published}. As mudanças aparecem para os convidados depois de publicar.` : 'Esta prévia é privada até vocês publicarem o convite.'}</div>
     </div>
   </div>
@@ -2941,9 +3002,8 @@ function GeneralWeddingSite({ notify }) {
     return <main className={`public-wedding-page theme-${config?.theme || 'garden'}`} style={siteStyle}><header className="public-wedding-header"><a href={weddingUrl}>{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><a className="public-wedding-back-link" href={weddingUrl}><ArrowLeft size={15} /> Voltar ao convite</a><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>{pageAvailable ? <WeddingDisplayPage kind={kind} href={weddingUrl} weddingName={`${data.wedding.partnerOneName} & ${data.wedding.partnerTwoName}`} gifts={publicGiftList} presentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} pix={config.pix} onCopy={copyPixKey} /> : <section className="public-wedding-display-page"><span className="eyebrow">CONVITE</span><h1>Esta opção não está disponível.</h1><a className="button-outline" href={weddingUrl}>Voltar ao convite</a></section>}<footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></main>
   }
 
-  return <main className={`public-wedding-page theme-${config?.theme || 'garden'}${config?.animationPreset === 'Nenhum' ? ' motion-none' : ''}`} style={siteStyle}>
-    <header className="public-wedding-header"><a href="#inicio" aria-label="Início do convite">{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><WeddingNavigation items={publicNavigationItems} givingOptions={publicGivingOptions} /><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>
-    <div id="inicio"><WeddingInvitationCover theme={config?.theme || 'garden'} layout={config?.coverLayout} composition={config?.coverComposition} textAlign={config?.coverTextAlign} textPosition={config?.coverTextPosition} overlayOpacity={config?.coverOverlayOpacity} imagePosition={config?.coverImagePosition} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} date={data.wedding.eventDate ? new Date(`${data.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={data.wedding.eventTime} message={config?.coverMessages?.[config?.language] || config?.coverMessages?.['pt-BR']} photoUrl={coverUrl} videoUrl={coverVideoUrl} showRsvp={config?.enabledSections?.includes('Confirmação de presença')} carouselCount={config?.coverCarouselEnabled ? coverGallery.length : 0} carouselIndex={coverIndex} /></div>
+  return <WeddingInvitationDocument theme={config?.theme} animationPreset={config?.animationPreset} style={siteStyle} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} navigation={<WeddingNavigation items={publicNavigationItems} givingOptions={publicGivingOptions} />}>
+    <WeddingInvitationCover theme={config?.theme || 'garden'} layout={config?.coverLayout} composition={config?.coverComposition} textAlign={config?.coverTextAlign} textPosition={config?.coverTextPosition} overlayOpacity={config?.coverOverlayOpacity} imagePosition={config?.coverImagePosition} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} date={data.wedding.eventDate ? new Date(`${data.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={data.wedding.eventTime} message={config?.coverMessages?.[config?.language] || config?.coverMessages?.['pt-BR']} photoUrl={coverUrl} videoUrl={coverVideoUrl} showRsvp={config?.enabledSections?.includes('Confirmação de presença')} carouselCount={config?.coverCarouselEnabled ? coverGallery.length : 0} carouselIndex={coverIndex} />
     <WeddingInvitationContent config={config} eventDate={data.wedding.eventDate} eventTime={data.wedding.eventTime} events={eventList} gifts={publicGiftList} giftPresentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} timezone={data.wedding.timezone} showGifts={showGifts} showPix={showPix} onCopyPix={copyPixKey} weddingUrl={weddingUrl} />
     {config?.enabledSections?.includes('Confirmação de presença') && <section className="public-wedding-rsvp" id="confirmar-presenca"><span className="eyebrow">RESPOSTA AO CONVITE</span><h2>Vocês poderão estar conosco?</h2><p>Respondam para cada evento. O QR individual aparece após a confirmação; acompanhantes precisam de aprovação dos noivos.</p>{requestUrl ? <div className="public-wedding-request-success"><strong>{publicRsvpStatus === 'confirmed' ? 'Presença confirmada' : 'Resposta registrada'}</strong><p>{publicCredential ? rsvpEmailSent ? 'Enviamos seu link individual por e-mail.' : 'Baixe o QR e guarde o link privado para consultar sua confirmação depois.' : 'Sua resposta foi salva. O link abaixo permite consultá-la mais tarde.'}</p>{publicCredential && <CredentialCard credential={publicCredential} />}{error && <p className="admin-form-error" role="alert">{error}</p>}<a className="button-outline" href={requestUrl}>Consultar confirmação e recuperar QR <ArrowRight size={15} /></a><input readOnly value={requestUrl} aria-label="Link privado para consultar a confirmação" onFocus={(event) => event.target.select()} /></div> : <form onSubmit={submitRsvp}>
       <label>Evento<select value={eventId} onChange={(event) => setEventId(event.target.value)} required><option value="">Selecione um evento</option>{eventList.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
@@ -2953,8 +3013,7 @@ function GeneralWeddingSite({ notify }) {
       {attendanceStatus === 'confirmed' && maxCompanions > 0 && <div className="public-wedding-companions"><div><strong>Acompanhantes</strong><span>Os noivos analisarão cada solicitação. O nome é necessário antes da emissão do QR individual.</span></div>{companions.map((person, index) => <fieldset key={index}><legend>Acompanhante {index + 1}</legend><label>Nome, se já souber<input value={person.name} onChange={(event) => changeCompanion(index, { name: event.target.value })} maxLength="160" /></label><div className="public-wedding-contact-fields"><label>E-mail opcional<input value={person.email} onChange={(event) => changeCompanion(index, { email: event.target.value })} maxLength="254" /></label><label>Telefone opcional<input value={person.phone} onChange={(event) => changeCompanion(index, { phone: event.target.value })} maxLength="40" /></label></div></fieldset>)}{companions.length < maxCompanions && <button type="button" className="button-outline" onClick={() => setCompanions((current) => [...current, { name: '', email: '', phone: '' }])}>Solicitar acompanhante</button>}</div>}
       <p className="public-rsvp-credential-note">Após confirmar, seu QR será exibido aqui. Informe um e-mail válido para também receber o link individual.</p><TurnstileChallenge action="rsvp" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || !eventId || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Registrar resposta'} <Check size={15} /></button>
     </form>}</section>}
-    <footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
-  </main>
+  </WeddingInvitationDocument>
 }
 
 function AttendanceRequestPortal({ notify }) {
