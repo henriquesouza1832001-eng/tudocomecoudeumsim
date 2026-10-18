@@ -417,7 +417,7 @@ function IdentityDialog({ config, onResolve }) {
     onResolve(config.type === 'prompt' ? value.trim() || null : true)
   }
 
-  return <div className="identity-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onResolve(config.type === 'prompt' ? null : false)}><form className="identity-dialog" role="alertdialog" aria-modal="true" aria-labelledby="identity-dialog-title" onSubmit={submit}>
+  return <div className="identity-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onResolve(config.type === 'prompt' ? null : false)}><form className={`identity-dialog${config.type === 'confirm' ? ' identity-dialog-confirm' : ''}`} role="alertdialog" aria-modal="true" aria-labelledby="identity-dialog-title" onSubmit={submit}>
     <span className="identity-dialog-flower" aria-hidden="true">✿</span>
     <span className="eyebrow">TUDO COMEÇOU DE UM SIM</span>
     <h2 id="identity-dialog-title">{config.title}</h2>

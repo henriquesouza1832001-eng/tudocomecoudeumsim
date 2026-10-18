@@ -48,10 +48,11 @@ img { display: block; max-width: 100%; }
 .identity-dialog > .eyebrow { color: var(--accent, #b6876d); font-size: 10px; font-weight: 700; letter-spacing: .17em; }
 .identity-dialog h2 { margin: 15px 42px 12px 0; color: var(--forest, #293a31); font-family: var(--serif, Georgia, serif); font-size: clamp(32px, 5vw, 38px); font-weight: 400; line-height: 1.15; }
 .identity-dialog > p { max-width: 420px; margin: 0; color: #687168; font-size: 15px; line-height: 1.7; }
+.identity-dialog-confirm > p { min-height: 3.4em; }
 .identity-dialog-field { display: grid; gap: 7px; margin-top: 20px; color: #465449; font-size: 12px; }
 .identity-dialog-field input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #d7d9d1; background: #fff; color: #28382f; font: inherit; font-size: 16px; letter-spacing: .18em; }
 .identity-dialog-actions { display: flex; justify-content: flex-end; gap: 11px; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(48,55,47,.1); }
-.identity-dialog-actions button { min-height: 48px; padding: 0 21px; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+.identity-dialog-actions button { min-height: 48px; padding: 0 21px; font-size: 14px; font-weight: 600; line-height: 1.25; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
 .identity-dialog-actions button:hover { transform: translateY(-1px); }
 .identity-dialog-danger { border: 1px solid #875257; background: #875257; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 .identity-dialog-danger:hover { border-color: #70434a; background: #70434a; }
