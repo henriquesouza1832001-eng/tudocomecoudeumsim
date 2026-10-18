@@ -13,6 +13,7 @@
   --paper: #f7f5ef;
   --line: rgba(48, 55, 47, .12);
   --serif: 'Playfair Display', Georgia, serif;
+  --watercolor-floral-background: linear-gradient(rgba(246,244,239,.78), rgba(246,244,239,.78)), url('/images/floral-watercolor-overlay.png');
 }
 
 * { box-sizing: border-box; }
@@ -1051,8 +1052,8 @@ img { display: block; max-width: 100%; }
 .team-invitation-result > div { display: flex; gap: 8px; margin-top: 5px; }
 .team-invitation-result input { min-width: 0; flex: 1; min-height: 36px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #596259; background: white; font-size: 8px; }
 .team-invitation-result button { flex: 0 0 auto; }
-.couple-events-tab { display: grid; gap: 14px; }
-.couple-events-tab .role-card { padding: 22px 24px; }
+.couple-events-tab { display: grid; gap: 0; }
+.couple-events-tab .role-card { padding: 23px clamp(18px, 3vw, 28px); }
 .couple-events-tab .role-card-heading { margin-bottom: 0; }
 .event-management-actions { display: flex; align-items: center; gap: 12px; }
 .event-management-actions .button-primary { min-height: 44px; }
@@ -1077,7 +1078,8 @@ img { display: block; max-width: 100%; }
 .couple-events-tab .event-group-access input { width: 15px; min-height: 15px; accent-color: var(--forest); }
 .couple-events-tab .event-page-error { margin: 14px 0 0; }
 .couple-events-tab .wedding-event-list { display: grid; }
-.couple-events-tab .wedding-event-list article { padding: 15px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(48,55,47,.08); }
+.couple-events-tab .wedding-event-list { margin-top: 20px; border-top: 1px solid rgba(48,55,47,.1); }
+.couple-events-tab .wedding-event-list article { padding: 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(48,55,47,.08); }
 .couple-events-tab .wedding-event-list article > div { min-width: 0; display: grid; gap: 4px; }
 .couple-events-tab .wedding-event-list article > .wedding-event-actions { display: flex; align-items: center; gap: 8px; }
 .couple-events-tab .wedding-event-actions .button-outline { min-height: 44px; }
@@ -1085,6 +1087,7 @@ img { display: block; max-width: 100%; }
 .couple-events-tab .wedding-event-list article small { color: #77796f; font-size: 12px; line-height: 1.5; }
 .couple-events-tab .wedding-event-list .event-delete-button { border-color: rgba(150,70,65,.3); color: #8e514b; }
 .couple-events-tab .wedding-event-list .event-delete-button:hover { border-color: #8e514b; color: white; background: #8e514b; }
+.couple-events-tab .event-empty-state { margin: 0; padding: 20px 0 2px; border: 0; color: #77796f; font-size: 13px; }
 .guest-admin-actions { display: flex; align-items: center; gap: 5px; }
 .guest-admin-actions .button-outline { width: 34px; min-height: 34px; padding: 0; }
 .guest-admin-actions .guest-remove-button { border-color: rgba(150,70,65,.28); color: #945c56; }
@@ -2794,6 +2797,10 @@ img { display: block; max-width: 100%; }
 .guest-full-site-heading h2 { margin: 6px 0 0; font: 400 clamp(25px, 3vw, 34px)/1.2 Georgia, 'Times New Roman', serif; }
 .guest-site-events { scroll-margin-top: 20px; }
 .guest-site-events > .eyebrow { margin: 16px 0; display: block; }
+
+.app-shell, .guest-page, .role-page, .checkin-page { background-image: var(--watercolor-floral-background); background-position: center top; background-size: 100% 100vh; background-repeat: no-repeat; background-attachment: fixed; }
+.checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-watercolor-overlay.png'); }
+@media (max-width: 600px) { .app-shell, .guest-page, .role-page, .checkin-page, .marketing-page { background-size: 100vw 100svh; } }
 @media (max-width: 760px) { .couple-role-page .customizer-workspace { grid-template-columns: 1fr; } .couple-role-page .customize-preview { position: static; } .couple-role-page .customizer-upload-panel .customizer-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .guest-full-site-heading { align-items: flex-start; flex-direction: column; } .guest-full-site-heading .button-outline { width: 100%; justify-content: center; } }
 @media (max-width: 480px) { .guest-invitation-actions { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } }
 
