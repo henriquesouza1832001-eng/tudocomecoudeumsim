@@ -41,6 +41,18 @@ img { display: block; max-width: 100%; }
 .prototype-switch button:hover, .prototype-switch button.selected { color: #293a31; background: #f6f2e9; }
 .prototype-badge { border: 1px solid rgba(255,255,255,.19); border-radius: 99px; padding: 6px 10px; color: rgba(255,255,255,.64); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
 .toast { position: fixed; bottom: 24px; left: 50%; z-index: 60; display: flex; align-items: center; gap: 9px; padding: 13px 18px; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; background: #27382f; color: #fff; box-shadow: 0 12px 35px rgba(32,43,36,.2); font-size: 12px; transform: translateX(-50%); animation: toast-in .25s ease both; }
+.identity-dialog-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: rgba(35,45,38,.58); backdrop-filter: blur(5px); }
+.identity-dialog { position: relative; width: min(480px, 100%); padding: 34px; border: 1px solid rgba(99,117,99,.25); background: var(--paper, #fbfaf6); color: var(--ink, #28382f); box-shadow: 0 24px 80px rgba(25,34,28,.28); animation: modal-in .2s ease both; }
+.identity-dialog-flower { position: absolute; top: 20px; right: 24px; color: #b6876d; font-size: 22px; }
+.identity-dialog > .eyebrow { color: var(--accent, #b6876d); font-size: 9px; letter-spacing: .16em; }
+.identity-dialog h2 { margin: 10px 32px 9px 0; color: var(--forest, #293a31); font-family: var(--serif, Georgia, serif); font-size: 30px; font-weight: 400; }
+.identity-dialog > p { margin: 0; color: #687168; font-size: 14px; line-height: 1.65; }
+.identity-dialog-field { display: grid; gap: 7px; margin-top: 20px; color: #465449; font-size: 12px; }
+.identity-dialog-field input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #d7d9d1; background: #fff; color: #28382f; font: inherit; font-size: 16px; letter-spacing: .18em; }
+.identity-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 26px; }
+.identity-dialog-actions button { min-height: 44px; padding: 0 18px; }
+.identity-dialog-danger { border: 1px solid #8c4b50; background: #8c4b50; color: #fff; font: inherit; cursor: pointer; }
+.identity-dialog :focus-visible { outline: 3px solid #bd8d72; outline-offset: 3px; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .demo-ribbon { height: 29px; padding: 0 6.1%; display: flex; align-items: center; gap: 12px; color: #697268; background: #ede9df; font-size: 9px; letter-spacing: .1em; }
 .demo-ribbon span:first-child { color: var(--forest); font-weight: 700; }

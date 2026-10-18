@@ -231,12 +231,12 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`
 }
 
-async function requestWithRecentMfa(request, path, options) {
+async function requestWithRecentMfa(request, path, options, requestPrompt) {
   try {
     return await request(path, options)
   } catch (cause) {
     if (cause.message !== 'recent_mfa_required') throw cause
-    const code = window.prompt('Confirme a opera\u00e7\u00e3o com o c\u00f3digo de seis d\u00edgitos do autenticador.')
+    const code = await requestPrompt({ title: 'Confirme sua identidade', message: 'Digite o código de seis dígitos do autenticador para continuar.', label: 'Código do autenticador', type: 'text', confirmLabel: 'Confirmar código' })
     if (!code) throw new Error('mfa_reauthentication_cancelled')
     await request('/api/auth/mfa/reauth', { method: 'POST', body: JSON.stringify({ code }) })
     return request(path, options)
@@ -399,15 +399,66 @@ async function hashInvitationToken(token) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
 }
 
+function IdentityDialog({ config, onResolve }) {
+  const [value, setValue] = useState('')
+  const input = useRef(null)
+
+  useEffect(() => {
+    if (config.type === 'prompt') input.current?.focus()
+    const handleKey = (event) => {
+      if (event.key === 'Escape') onResolve(config.type === 'prompt' ? null : false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [config.type, onResolve])
+
+  function submit(event) {
+    event.preventDefault()
+    onResolve(config.type === 'prompt' ? value.trim() || null : true)
+  }
+
+  return <div className="identity-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onResolve(config.type === 'prompt' ? null : false)}><form className="identity-dialog" role="alertdialog" aria-modal="true" aria-labelledby="identity-dialog-title" onSubmit={submit}>
+    <span className="identity-dialog-flower" aria-hidden="true">✿</span>
+    <span className="eyebrow">TUDO COMEÇOU DE UM SIM</span>
+    <h2 id="identity-dialog-title">{config.title}</h2>
+    <p>{config.message}</p>
+    {config.type === 'prompt' && <label className="identity-dialog-field">{config.label}<input ref={input} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={value} onChange={(event) => setValue(event.target.value.replace(/\D/g, '').slice(0, 6))} required /></label>}
+    <div className="identity-dialog-actions"><button type="button" className="button-outline" onClick={() => onResolve(config.type === 'prompt' ? null : false)}>Cancelar</button><button type="submit" className={config.danger ? 'identity-dialog-danger' : 'button-primary'}>{config.confirmLabel || 'Continuar'}</button></div>
+  </form></div>
+}
+
 function App() {
   const [view, setView] = useState(resolveCurrentView)
   const [theme, setTheme] = useState('garden')
   const [adminPage, setAdminPage] = useState('overview')
   const [toast, setToast] = useState('')
+  const [dialog, setDialog] = useState(null)
+  const dialogResolver = useRef(null)
 
   function notify(message) {
     setToast(message)
     window.setTimeout(() => setToast(''), 2400)
+  }
+
+  function askDialog(options) {
+    return new Promise((resolve) => {
+      dialogResolver.current = resolve
+      setDialog(options)
+    })
+  }
+
+  function finishDialog(value) {
+    dialogResolver.current?.(value)
+    dialogResolver.current = null
+    setDialog(null)
+  }
+
+  function confirmAction(message, title = 'Confirmar ação', confirmLabel = 'Confirmar', danger = false) {
+    return askDialog({ type: 'confirm', title, message, confirmLabel, danger })
+  }
+
+  function promptAction(options) {
+    return askDialog({ ...options, type: 'prompt' })
   }
 
   function navigateView(nextView) {
@@ -441,7 +492,7 @@ function App() {
       </div>}
 
       {view === 'guest' && import.meta.env.DEV && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
-      {view === 'dashboard' && <CouplePanel notify={notify} />}
+      {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
       {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'help-center' && <HelpCenter />}
       {view === 'couple-signup' && <CoupleSignup />}
@@ -453,9 +504,10 @@ function App() {
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
       {view === 'godparent' && <GodparentPortal notify={notify} />}
       {view === 'event-staff' && <EventStaffPanel notify={notify} />}
-      {view === 'superadmin' && <SuperAdminPanel notify={notify} />}
+      {view === 'superadmin' && <SuperAdminPanel notify={notify} promptAction={promptAction} />}
       {view === 'checkin' && <CheckIn notify={notify} />}
       {toast && <div className="toast" role="status"><Check size={16} /> {toast}</div>}
+      {dialog && <IdentityDialog key={`${dialog.title}-${dialog.type}`} config={dialog} onResolve={finishDialog} />}
     </main>
   )
 }
@@ -983,7 +1035,7 @@ function PasswordReset() {
   </RoleFrame>
 }
 
-function CouplePanel({ notify }) {
+function CouplePanel({ notify, confirmAction, promptAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
@@ -1191,7 +1243,7 @@ function CouplePanel({ notify }) {
   }
 
   async function publishSite(profile) {
-    if (!window.confirm('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?')) return
+    if (!await confirmAction('Publicar este rascunho e ativar o acesso dos convidados pelos links individuais?', 'Publicar convite', 'Publicar convite')) return
     setSiteConfigLoading(true)
     setError('')
     try {
@@ -1377,11 +1429,11 @@ function CouplePanel({ notify }) {
   }
 
   async function removeGuest(guest) {
-    if (!window.confirm(`Remover ${guest.name}? Os dados pessoais e o link serão apagados; RSVP e check-in serão preservados sem identificação.`)) return
+    if (!await confirmAction(`Remover ${guest.name}? Os dados pessoais e o link serão apagados; RSVP e check-in serão preservados sem identificação.`, 'Remover convidado', 'Remover', true)) return
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
+      await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' }, promptAction)
       setEditingGuest(null)
       setShare(null)
       await loadWeddingData(weddingId)
@@ -1455,7 +1507,7 @@ function CouplePanel({ notify }) {
   }
 
   async function archiveGift(gift) {
-    if (!window.confirm(`Arquivar “${gift.title}”? O presente deixa de ficar ativo na lista.`)) return
+    if (!await confirmAction(`Arquivar “${gift.title}”? O presente deixa de ficar ativo na lista.`, 'Arquivar presente', 'Arquivar', true)) return
     setBusy(true)
     setError('')
     try {
@@ -1518,14 +1570,14 @@ function CouplePanel({ notify }) {
 
   async function decideContribution(contribution, status) {
     const verb = status === 'confirmed' ? 'confirmar o recebimento' : 'recusar este registro'
-    if (!window.confirm(`Deseja ${verb} de ${formatBrlCents(contribution.amount_cents)}?`)) return
+    if (!await confirmAction(`Deseja ${verb} de ${formatBrlCents(contribution.amount_cents)}?`, 'Atualizar recebimento', status === 'confirmed' ? 'Confirmar recebimento' : 'Recusar registro', status !== 'confirmed')) return
     setBusy(true)
     setError('')
     try {
       await requestWithRecentMfa(request, `/api/couple/weddings/${weddingId}/contributions/${contribution.id}/decision`, {
         method: 'POST',
         body: JSON.stringify({ status }),
-      })
+      }, promptAction)
       await loadWeddingData(weddingId)
       notify(status === 'confirmed' ? 'Recebimento confirmado' : 'Registro recusado')
     } catch (cause) {
@@ -1637,7 +1689,7 @@ function CouplePanel({ notify }) {
   }
 
   async function deleteWeddingEvent(item) {
-    if (!window.confirm(`Excluir o evento “${item.name}”? O convite publicado também será atualizado. Confirmações, entradas, fotos ou acessos de equipe vinculados impedem a exclusão.`)) return
+    if (!await confirmAction(`Excluir o evento “${item.name}”? O convite publicado também será atualizado. Confirmações, entradas, fotos ou acessos de equipe vinculados impedem a exclusão.`, 'Excluir evento', 'Excluir evento', true)) return
     setBusy(true)
     setError('')
     try {
@@ -1794,12 +1846,12 @@ function CouplePanel({ notify }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
-    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} />}
+    {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} promptAction={promptAction} />}
     {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} />}
   </main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function GuestPhotoAlbum({ weddingId, notify }) {
+function GuestPhotoAlbum({ weddingId, notify, confirmAction, promptAction }) {
   const [photos, setPhotos] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -1828,13 +1880,13 @@ function GuestPhotoAlbum({ weddingId, notify }) {
   }, [weddingId])
 
   async function removePhoto(photo) {
-    if (!window.confirm(`Remover a foto enviada por ${photo.guest_name}?`)) return
+    if (!await confirmAction(`Remover a foto enviada por ${photo.guest_name}?`, 'Remover foto', 'Remover', true)) return
     setBusyPhoto(photo.id)
     try {
       let response = await fetch(`/api/couple/weddings/${weddingId}/photos/${photo.id}`, { method: 'DELETE' })
       let result = await response.json().catch(() => ({}))
       if (response.status === 403 && result.error === 'recent_mfa_required') {
-        const code = window.prompt('Confirme a remoção com o código de seis dígitos do autenticador.')
+        const code = await promptAction({ title: 'Confirme sua identidade', message: 'Digite o código de seis dígitos do autenticador para remover esta foto.', label: 'Código do autenticador', confirmLabel: 'Confirmar código' })
         if (!code) throw new Error('A confirmação do autenticador foi cancelada.')
         const verification = await fetch('/api/auth/mfa/reauth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
         if (!verification.ok) throw new Error('O código do autenticador não foi aceito.')
@@ -2963,7 +3015,7 @@ async function readSuperadminResponse(response) {
   }
 }
 
-function SuperAdminPanel({ notify }) {
+function SuperAdminPanel({ notify, promptAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
   const [email, setEmail] = useState('')
@@ -3080,14 +3132,14 @@ function SuperAdminPanel({ notify }) {
   if (stage === 'setup') return <SuperAdminAccessFrame title="Configure seu autenticador." description="Escaneie o QR code com seu aplicativo autenticador e confirme o código de seis dígitos.">
     <form className="role-card admin-login-form" onSubmit={confirmMfa}>{enrollment ? <><TotpSetupQr enrollment={enrollment} /><label>Código de confirmação<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value)} required /></label></> : <p className="admin-mfa-instructions">Preparando o cadastro seguro do autenticador…</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" disabled={busy || !enrollment} type="submit">Ativar segundo fator <Shield size={15} /></button></form>
   </SuperAdminAccessFrame>
-  return <SuperAdminWorkspace notify={notify} account={account} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setStage('login') }} />
+  return <SuperAdminWorkspace notify={notify} promptAction={promptAction} account={account} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); setStage('login') }} />
 }
 
 function SuperAdminAccessFrame({ title, description, children, eyebrow = 'CONTROLE DA PLATAFORMA', brand = 'Administração da plataforma' }) {
   return <div className="role-page"><header className="role-header"><a className="role-brand" href="/"><span>e<span>&</span>t</span><strong>{brand}</strong></a><span className="role-preview"><LockKeyhole size={13} /> ÁREA PROTEGIDA</span></header><main className="role-main admin-auth-main"><div className="role-intro"><span className="role-icon"><Shield size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}</main><footer className="role-footer"><span>{brand}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SuperAdminWorkspace({ notify, account, onLogout }) {
+function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
   const [adminSection, setAdminSection] = useState('overview')
   const [data, setData] = useState(null)
   const [accounts, setAccounts] = useState([])
@@ -3207,7 +3259,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, '/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) })
+      await requestWithRecentMfa(request, '/api/superadmin/fee-policy', { method: 'PUT', body: JSON.stringify({ enabled: policy.enabled, rateBasisPoints: Math.round(Number(policy.rate) * 100), minimumFeeCents: Math.round(Number(policy.min) * 100), maximumFeeCents: policy.max === '' ? null : Math.round(Number(policy.max) * 100), paidBy: policy.paidBy }) }, promptAction)
       await refresh()
       notify('Política de taxas gravada no D1 e registrada na auditoria')
     } catch (cause) {
@@ -3225,7 +3277,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
       const result = await requestWithRecentMfa(request, '/api/superadmin/email-test', {
         method: 'POST',
         body: JSON.stringify({ confirmation: 'send-test-email' }),
-      })
+      }, promptAction)
       setEmailTestState(`E-mail de teste enviado para ${result.to}.`)
       notify('E-mail de teste enviado pelo Resend')
     } catch (cause) {
@@ -3248,7 +3300,7 @@ function SuperAdminWorkspace({ notify, account, onLogout }) {
     setBusy(true)
     setError('')
     try {
-      await requestWithRecentMfa(request, `/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) })
+      await requestWithRecentMfa(request, `/api/superadmin/weddings/${purgeTarget.id}/anonymize`, { method: 'POST', body: JSON.stringify({ confirmation }) }, promptAction)
       setPurgeTarget(null)
       setConfirmation('')
       await refresh()
