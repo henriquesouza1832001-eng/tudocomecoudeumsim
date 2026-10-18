@@ -2941,6 +2941,14 @@ img { display: block; max-width: 100%; }
 .couple-role-page .gift-management-form input, .couple-role-page .gift-management-form select, .couple-role-page .gift-management-form textarea { min-height: 46px; padding: 10px 12px; font-size: 15px; }
 .couple-role-page .couple-gift-list strong { font-size: 16px; line-height: 1.4; }
 .couple-role-page .couple-gift-list small, .couple-role-page .couple-gift-list p { font-size: 13px; line-height: 1.5; }
+.couple-role-page .couple-pix-settings { margin-top: 20px; padding: clamp(22px, 3vw, 34px); border-color: #d8d9cb; background: linear-gradient(145deg, #fffefa, #f7f5ef); }
+.couple-role-page .couple-pix-settings .role-card-heading { margin-bottom: 12px; }
+.couple-role-page .couple-pix-settings .role-card-heading > svg { color: var(--accent); }
+.couple-role-page .couple-pix-settings > .team-access-note { max-width: 850px; margin: 0 0 14px; line-height: 1.6; }
+.couple-role-page .couple-pix-settings .pix-toggle { margin: 10px 0 14px; padding: 11px 13px; border: 1px solid #e0e3d8; background: rgba(239,242,234,.65); }
+.couple-role-page .couple-pix-settings .pix-key-field { max-width: 100%; }
+.couple-role-page .couple-pix-settings .gift-form-actions { margin-top: 20px; }
+.couple-role-page .couple-pix-settings .gift-form-actions button { min-height: 48px; }
 .guest-gift-action { display: grid; justify-items: end; gap: 9px; flex: 0 0 auto; }
 .guest-gift-action > strong { color: var(--forest); font-size: 14px; text-align: right; }
 .guest-gift-action .button-outline { min-height: 44px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 7px; color: var(--forest); font-weight: 700; }
