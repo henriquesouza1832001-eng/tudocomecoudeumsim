@@ -86,7 +86,7 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.1 Princípios
 
-- O casal nunca começa de uma tela em branco: parte de um tema com conteúdo de exemplo e ajusta.
+- O casal começa escolhendo a foto que quer usar no convite; pode continuar sem foto e voltar depois. A prévia sem imagem usa um espaço neutro, nunca fotos de modelo. Exemplos de texto e tema devem ser identificados como demonstração.
 - Tudo o que o casal altera aparece na pré-visualização ao vivo, em celular, tablet e desktop, antes de publicar.
 - Todo controle é feito de tokens de design (cores, fontes, espaçamentos, raios, animações). Trocar um token nunca quebra o layout, o contraste nem a responsividade.
 - Trocar de tema preserva todo o conteúdo, as fotos e as configurações de seções.
@@ -95,8 +95,8 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.2 Assistente inicial
 
-- Fluxo curto de até 6 passos no primeiro acesso: nomes, data, local, estilo do casamento (clássico, rústico, praia, minimalista, boho, moderno) e foto de capa. O idioma do piloto é pt-BR.
-- As respostas escolhem um tema inicial e já ativam as seções mais comuns. O casal pode pular qualquer passo e voltar depois.
+- O primeiro fluxo público começa pela foto e sua composição; o arquivo é enviado depois da criação do acesso, no painel. Em seguida vêm nomes, data, estilo, paleta e escala de texto. Local e horários são cadastrados em Eventos. O idioma do piloto é pt-BR.
+- O casal pode pular etapas e voltar depois. A prévia sem foto usa um espaço neutro, sem fotografia de modelo.
 - Ao enviar a foto de capa, o app sugere paletas extraídas da imagem (cálculo no navegador, sem serviço externo) e o ponto focal para recorte.
 
 ### 7.3 Temas
@@ -468,9 +468,9 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Não inventar valores, resultados, nomes, depoimentos, números de uso ou estados de interface para ilustrar recursos. Identificar exemplos visuais como exemplos e usar informações configuradas pelo casal.
 - Preservar a direção aprovada de jardim editorial: fotos de casamento identificadas, tons pastéis, detalhes florais leves, leitura confortável e navegação clara.
 
-- Em 15/10/2026, `/criar-site` foi ampliado para permitir a escolha de tema, paleta, par tipográfico, escala de leitura, formato da capa, foto pública de referência e seções antes do cadastro. A prévia acompanha as escolhas em computador, tablet e celular; os campos `fontScale` e `coverImage` são validados e persistidos pela API para a edição no painel.
-- O catálogo mantém oito temas curados. `Rock & romance` e `Festa no jardim` atendem casais que querem uma estética mais marcante sem liberar CSS ou cores sem limite. Os seis layouts usam CSS e fotos já disponíveis no projeto, sem novas bibliotecas ou fontes externas.
-- O personalizador permite escolher entre fotos públicas de referência. Upload das fotos próprias para R2 continua pendente; não afirmar que o envio de fotos já está disponível.
+- Em 15/10/2026, `/criar-site` foi ampliado para permitir a escolha de tema, paleta, par tipográfico, escala de leitura e composição da capa antes do cadastro. A prévia acompanha as escolhas em computador, tablet e celular.
+- O catálogo mantém oito temas curados. `Rock & romance` e `Festa no jardim` atendem casais que querem uma estética mais marcante sem liberar CSS ou cores sem limite. O seletor de capa ativo oferece `full`, `split` e `arch`.
+- O painel autenticado envia fotos e um vídeo de abertura ao R2; o navegador converte fotos para WebP antes do envio. `/criar-site` não envia mídia antes da criação de acesso e orienta o casal a escolher a foto no painel.
 
 ## Continuidade de trabalho — personalizador e convite compacto
 
@@ -507,7 +507,7 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 ## Personalizador público simplificado — 17/10/2026
 
 - Esta etapa começou na antiga branch `preview`, que depois foi renomeada para `hen`; `lar` foi criada no mesmo commit. A personalização simplificada foi integrada à versão de produção no commit `82a8505`.
-- `/criar-site` agora tem duas etapas curtas: nomes, data, tema e paleta; depois foto, composição, recado e detalhes opcionais. O idioma de texto começa em pt-BR e não há campos repetidos por idioma nem seletor de idioma apenas para a prévia.
+- `/criar-site` agora tem duas etapas curtas: foto e composição primeiro, depois nomes, data, tema, paleta e escala. O arquivo de foto é escolhido no painel após a criação de acesso. O idioma de texto começa em pt-BR e não há campos repetidos por idioma nem seletor de idioma apenas para a prévia.
 - A prévia mostra um convite compacto com a foto, composição, nomes, data, recado e os detalhes opcionais que foram preenchidos. Foram removidos os blocos longos de conteúdo fictício e os controles de personalização que não eram necessários para começar.
 - As três composições oferecidas (`full`, `split`, `arch`) existem no convite publicado e são aceitas pela validação da API. Rascunhos locais antigos com layouts `type`, `video` ou `collage` são normalizados para o layout correspondente ao tema escolhido.
 - Alterar a história curta ativa a seção de história no rascunho, para o conteúdo da prévia também poder aparecer no convite após cadastro/publicação.
@@ -534,7 +534,9 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - Presentes: Pix diretamente aos noivos ou redirecionamento para loja externa. A plataforma não realiza a compra, não recebe ou repassa valores e não cobra taxa no piloto.
 - Priorizar a experiência real do casal e dos convidados, especialmente site público, mobile, compartilhamento por link/QR, informações do evento, RSVP e presentes configurados pelo casal.
 - Não confundir mockups, dados de demonstração ou controles visuais com recursos persistidos e funcionais.
-- Histórico remoto do D1 conferido: `0014_wedding_invitation_profile.sql` e `0014_guest_album_limit_and_consent.sql` constam como aplicadas; a primeira foi registrada antes da segunda. As duas alteram tabelas/colunas distintas. Não renomear nem reaplicar esses arquivos, pois o D1 registra o nome exato e isso poderia tentar executar os `ALTER TABLE` outra vez. Não há migrations pendentes; a próxima deve usar o prefixo `0016`.
+- Exceção de ordem aprovada pelo dono para o piloto: concluir Presentes por Pix direto e links externos antes da Fase 4 (Despesas), para uso imediato no chá de panela. A plataforma não recebe nem registra pagamentos. Esta exceção não muda a sequência das demais fases.
+- Em 17/10, o D1 tinha as migrations até `0015` aplicadas; não renomear nem reaplicar as duas migrations `0014`, pois alteram tabelas/colunas distintas e o histórico registra o nome exato.
+- Auditoria remota de 18/10/2026: o D1 `tudocomecoudeumsim-db` tem aplicadas todas as migrations de `0001` a `0018`, incluindo as duas `0014`; Wrangler informou que não há migrations pendentes. A próxima migration deve usar o prefixo `0019`. Esta conferência só consulta o histórico; não aplicou SQL.
 
 ## Presentes utilizáveis no piloto — 17/10/2026
 
