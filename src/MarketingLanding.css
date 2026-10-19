@@ -20,9 +20,7 @@ button { font: inherit; }
 .marketing-header { transition: transform .22s ease, visibility 0s linear; }
 .marketing-header-hidden { transform: translateY(-110%); visibility: hidden; pointer-events: none; transition: transform .22s ease, visibility 0s linear .22s; }
 .marketing-brand { display: inline-flex; align-items: center; gap: 13px; color: var(--marketing-ink); white-space: nowrap; }
-.marketing-brand > span { font: 30px/1 var(--serif); }
-.marketing-brand > span > span, .marketing-footer-brand > span { color: #a77d62; font-style: italic; }
-.marketing-brand strong { padding-left: 13px; border-left: 1px solid #d7d3c8; font: 600 12px/1.4 Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.marketing-brand > span { font: 600 20px/1.2 var(--serif); }
 .marketing-header nav { display: flex; justify-content: flex-end; align-items: center; gap: clamp(18px, 2.5vw, 34px); }
 .marketing-header nav a { color: #424a43; font-size: 14px; line-height: 1.4; }
 .marketing-header nav a:hover, .marketing-footer a:hover { text-decoration: underline; text-underline-offset: 4px; }
@@ -83,8 +81,7 @@ button { font: inherit; }
 .marketing-final-login { min-height: 44px; margin-top: 12px; padding: 10px; color: #414a43; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
 .marketing-footer { padding: 52px max(6vw, calc((100vw - 1200px) / 2)) 0; background: #f7f4ef; border-top: 1px solid #e4ded7; }
 .marketing-footer-content { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(160px,.75fr) minmax(280px,1fr); gap: clamp(28px,5vw,76px); padding-bottom: 42px; }
-.marketing-footer-brand { color: #27382e; font: 34px/1 var(--serif); }
-.marketing-footer-brand > span { color: #a77d62; }
+.marketing-footer-brand { color: #27382e; font: 30px/1.15 var(--serif); }
 .marketing-footer-about h2 { max-width: 380px; margin: 14px 0 10px; color: #27382e; font: 400 24px/1.2 var(--serif); }
 .marketing-footer-about p { max-width: 390px; margin: 0; color: #4d554e; font-size: 15px; line-height: 1.65; }
 .marketing-footer-links, .marketing-footer-contact { display: grid; align-content: start; justify-items: start; gap: 12px; }
@@ -110,8 +107,7 @@ button { font: inherit; }
 @media (max-width: 760px) {
   .marketing-header { min-height: 0; padding: 12px 5% 8px; grid-template-columns: minmax(0,1fr) auto; gap: 8px 12px; }
   .marketing-brand { gap: 9px; }
-  .marketing-brand > span { font-size: 26px; }
-  .marketing-brand strong { max-width: none; padding-left: 9px; font-size: 10px; }
+  .marketing-brand > span { font-size: 18px; }
   .marketing-header nav { width: 100%; max-width: 100%; grid-column: 1/-1; grid-row: 2; justify-content: flex-start; gap: 18px; overflow-x: auto; scrollbar-width: none; }
   .marketing-header nav::-webkit-scrollbar { display: none; }
   .marketing-header nav a { flex: 0 0 auto; padding: 7px 0; font-size: 13px; }
@@ -179,7 +175,6 @@ button { font: inherit; }
   .marketing-photo-story-flower svg { width: 30px; height: 30px; }
 }
 @media (max-width: 390px) {
-  .marketing-brand strong { max-width: 118px; white-space: normal; }
   .marketing-header nav { gap: 16px; }
   .marketing-header nav a { font-size: 12px; }
   .marketing-header-cta { padding: 0 9px; font-size: 13px; }
@@ -300,7 +295,7 @@ button { font: inherit; }
 
 @media (max-width: 430px) {
   .marketing-header nav a:nth-child(3) { display: none; }
-  .marketing-brand strong { display: none; }
+  .marketing-brand > span { font-size: 15px; }
   .marketing-header-cta { min-height: 44px; padding: 0 9px; font-size: 12px; }
 }
 

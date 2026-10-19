@@ -1,5 +1,6 @@
 import { ArrowRight, Bell, CalendarDays, Flower2, Gift, Heart, MapPin, Printer, QrCode, ShieldCheck, Users, Wallet } from 'lucide-react'
 import './MarketingConcepts.css'
+import { PRODUCT_NAME } from './product-config.js'
 
 const options = [
   {
@@ -38,7 +39,7 @@ function ConceptOption({ option }) {
     </div>
     <div className="concept-browser">
       <header className="concept-header">
-        <a className="concept-brand" href="#inicio" aria-label="e&t sites de casamento"><span>e<span>&amp;</span>t</span><small>sites de casamento</small></a>
+        <a className="concept-brand" href="#inicio" aria-label={PRODUCT_NAME}><span>{PRODUCT_NAME}</span></a>
         <nav aria-label="Prévia de navegação"><a href="#como-funciona">Como funciona</a><a href="#presentes">Presentes</a><a href="#recursos">Recursos</a></nav>
         <a className="concept-login" href="/painel">Entrar</a>
       </header>
@@ -67,7 +68,7 @@ function ConceptOption({ option }) {
 
 export default function MarketingConcepts() {
   return <main className="concept-page">
-    <header className="concept-page-header"><a className="concept-page-brand" href="/">e<span>&amp;</span>t <small>estudo de identidade visual</small></a><a className="concept-return" href="/">Voltar para o site <ArrowRight size={15} /></a></header>
+    <header className="concept-page-header"><a className="concept-page-brand" href="/">{PRODUCT_NAME} <small>estudo de identidade visual</small></a><a className="concept-return" href="/">Voltar para o site <ArrowRight size={15} /></a></header>
     <section className="concept-intro">
       <span className="concept-overline">UMA IDENTIDADE PARA A PLATAFORMA TODA</span>
       <h1>Romântica no olhar. Clara em cada passo.</h1>
@@ -98,6 +99,6 @@ export default function MarketingConcepts() {
       <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>Convidado escolhe uma ideia</strong><small>Pix direto ou item físico de loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><ShieldCheck size={19} /></span><strong>Banco do convidado faz o Pix</strong><small>O valor vai direto aos noivos</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>Loja recebe o pedido</strong><small>Compra e entrega combinadas fora do site</small></div></div>
     </section>
     <section className="concept-actions"><div><span className="concept-overline">ESCOLHA DA DIREÇÃO VISUAL</span><h2>Qual delas combina mais com a plataforma?</h2><p>Jardim editorial mantém mais espaço para leitura. Convite botânico traz mais textura floral e clima de papelaria. A escolha define a identidade antes do redesenho final da página inicial.</p></div><div className="concept-action-cards"><article><Flower2 size={19} /><strong>Jardim editorial</strong><span>Foto grande, detalhes florais leves, leitura direta.</span></article><article><Flower2 size={19} /><strong>Convite botânico</strong><span>Molduras e cartões florais com mais presença visual.</span></article></div></section>
-    <footer className="concept-footer"><span>e&amp;t · Sites de casamento</span><span>Fotos de referência: Pexels</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
+    <footer className="concept-footer"><span>{PRODUCT_NAME}</span><span>Fotos de referência: Pexels</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
   </main>
 }
