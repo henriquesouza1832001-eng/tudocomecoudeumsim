@@ -8,6 +8,7 @@ export const EDITABLE_SITE_SECTION_TITLES = [
   ['Galeria de fotos', 'Alguns instantes nossos'],
   ['Lista de presentes', 'Um carinho para os noivos'],
   ['Confirmação de presença', 'Vocês poderão estar conosco?'],
+  ['Padrinhos e madrinhas', 'Quem estará ao nosso lado'],
   ['Hospedagem e dicas', 'Para aproveitar cada momento'],
   ['Perguntas frequentes', 'Dúvidas sobre a celebração'],
   ['Playlist', 'Músicas que fazem parte da nossa história'],

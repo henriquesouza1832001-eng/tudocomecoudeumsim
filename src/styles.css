@@ -7737,3 +7737,46 @@ img { display: block; max-width: 100%; }
     transition: none;
   }
 }
+.public-wedding-godparents {
+  width: min(100% - 56px, 1100px);
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 68px) 0;
+  text-align: center;
+}
+
+.public-wedding-godparents h2 {
+  margin: 10px 0 28px;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.9rem, 3.8vw, 2.8rem);
+  font-weight: 400;
+}
+
+.public-wedding-godparents > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 20px;
+}
+
+.public-wedding-godparents article {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--forest) 16%, transparent);
+  background: color-mix(in srgb, var(--paper) 82%, white);
+}
+
+.public-wedding-godparents img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.public-wedding-godparents h3 {
+  margin: 14px 0 6px;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.public-wedding-godparents p {
+  margin: 0;
+  line-height: 1.55;
+}

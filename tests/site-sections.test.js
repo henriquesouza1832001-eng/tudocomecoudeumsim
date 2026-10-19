@@ -49,3 +49,9 @@ test('editorial invitation sections can be activated and reordered', () => {
   assert.ok(sections.every((section) => ORDERABLE_SITE_SECTIONS.includes(section)))
   assert.deepEqual(moveSiteSection(sections, 'Playlist', -1), ['Hospedagem e dicas', 'Playlist', 'Perguntas frequentes', 'Vídeo', 'Contato'])
 })
+
+test('godparent profiles can be enabled and reordered with invitation sections', () => {
+  const sections = ['Padrinhos e madrinhas', 'Eventos']
+  assert.ok(sections.every((section) => ORDERABLE_SITE_SECTIONS.includes(section)))
+  assert.deepEqual(moveSiteSection(sections, 'Eventos', -1), ['Eventos', 'Padrinhos e madrinhas'])
+})

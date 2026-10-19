@@ -44,6 +44,18 @@ test('site publication warns when enabled story, timeline, or gallery sections a
   ])
 })
 
+test('site publication checks godparent portraits and accessible descriptions', () => {
+  const result = checkSitePublication({
+    enabledSections: ['Padrinhos e madrinhas'],
+    godparents: [{ name: 'Joana', photoId: 'portrait' }],
+    imageAltTexts: {},
+  })
+  assert.deepEqual(result.blockers, ['Preencha a descrição acessível de 1 foto(s) usada(s) no convite.'])
+  assert.deepEqual(result.warnings, [])
+  const empty = checkSitePublication({ enabledSections: ['Padrinhos e madrinhas'], godparents: [] })
+  assert.deepEqual(empty.warnings, ['A seção Padrinhos e madrinhas está ativa, mas precisa de uma pessoa com nome e foto.'])
+})
+
 test('photos in disabled sections do not create accessibility blockers', () => {
   const result = checkSitePublication({
     enabledSections: ['Eventos'],

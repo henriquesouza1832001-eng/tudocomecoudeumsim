@@ -184,6 +184,16 @@ test('couple site config accepts HTTPS links for playlist and video sections', a
   assert.deepEqual(result.draft.sectionContent, sectionContent)
 })
 
+test('couple site config saves the chosen public godparent profiles and rejects oversized entries', async () => {
+  const godparents = [{ id: '22222222-2222-4222-8222-222222222222', name: 'Joana e Paulo', message: 'Nossos amigos queridos.', photoId: 'a'.repeat(36) }]
+  const bucket = { async get(key) { return key.endsWith('.jpg') ? { customMetadata: { weddingId: 'wedding-1' } } : null } }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: { ...siteConfig, godparents }, env: { GUEST_PHOTOS: bucket } })
+  assert.equal(response.status, 200)
+  assert.deepEqual((await response.json()).draft.godparents, godparents)
+  const invalidResponse = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: { ...siteConfig, godparents: [{ ...godparents[0], message: 'x'.repeat(1201) }] }, env: { GUEST_PHOTOS: bucket } })
+  assert.equal(invalidResponse.status, 400)
+})
+
 test('couple can save a HTTPS store link for a physical gift', async () => {
   const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
     method: 'POST',

@@ -170,14 +170,28 @@ test('public invitation reveals the Pix key when enabled independently of the gi
   assert.deepEqual((await hidden.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
 })
 
-test('individual invitations can load photos referenced by the timeline and gift cards', async () => {
+test('public invitation omits godparent profiles when that section is disabled', async () => {
+  const response = await call('/api/invitation', {
+    invitationConfig: {
+      theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: [], animationPreset: 'Elegante',
+      fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' },
+      godparents: [{ id: '77777777-7777-4777-8777-777777777777', name: 'Nome privado', message: 'Mensagem privada', photoId: '66666666-6666-4666-8666-666666666666' }],
+    },
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual((await response.json()).siteConfig.godparents, [])
+})
+
+test('individual invitations can load photos referenced by the timeline, godparents, and gift cards', async () => {
   const timelinePhotoId = '44444444-4444-4444-8444-444444444444'
+  const godparentPhotoId = '66666666-6666-4666-8666-666666666666'
   const giftPhotoId = '55555555-5555-4555-8555-555555555555'
   const invitationConfig = {
     theme: 'garden', paletteIndex: 0, coverLayout: 'full', animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR',
-    enabledSections: ['Linha do tempo', 'Lista de presentes'],
+    enabledSections: ['Linha do tempo', 'Padrinhos e madrinhas', 'Lista de presentes'],
     coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' },
     timeline: [{ id: '22222222-2222-4222-8222-222222222222', title: 'Primeiro encontro', date: '', description: '', photoId: timelinePhotoId }],
+    godparents: [{ id: '77777777-7777-4777-8777-777777777777', name: 'Joana', message: '', photoId: godparentPhotoId }],
     giftPresentation: { '33333333-3333-4333-8333-333333333333': { category: 'Lua de mel', photoId: giftPhotoId } },
   }
   const response = await call(`/api/site-media/${timelinePhotoId}`, {
@@ -186,4 +200,9 @@ test('individual invitations can load photos referenced by the timeline and gift
   })
   assert.equal(response.status, 200)
   assert.equal(response.headers.get('Content-Type'), 'image/jpeg')
+  const godparentResponse = await call(`/api/site-media/${godparentPhotoId}`, {
+    invitationConfig,
+    bucket: { async get(key) { return key.endsWith('.jpg') ? { body: new Uint8Array([1]), httpMetadata: { contentType: 'image/jpeg' } } : null } },
+  })
+  assert.equal(godparentResponse.status, 200)
 })
