@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import { SITE_MEDIA_LIMITS } from './site-media-config.js'
 import { ORDERABLE_SITE_SECTIONS, moveSiteSection as moveSiteSectionOrder, orderedSiteSections, sortEventsByStartTime } from './site-sections.js'
 import { getThemePalettes, isValidCustomAccent } from './site-style.js'
+import { extractPhotoColorSuggestions } from './photo-palette.js'
 import { checkSitePublication } from './site-publication-check.js'
 import { createSiteDraftHistory, recordSiteDraftChange, redoSiteDraft, undoSiteDraft } from './site-draft-history.js'
 import { EDITABLE_SITE_SECTION_TITLES, getSiteSectionTitle, safeHttpsLink, setSiteSectionBody, setSiteSectionTitle } from './site-section-content.js'
@@ -2563,6 +2564,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [mediaBusy, setMediaBusy] = useState(false)
   const [mediaError, setMediaError] = useState('')
   const [mediaLoadErrors, setMediaLoadErrors] = useState([])
+  const [photoAccentSuggestions, setPhotoAccentSuggestions] = useState([])
   const mediaUrlRegistry = useRef(new Set())
   const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
   const [draftHistory, setDraftHistory] = useState(() => createSiteDraftHistory({ config, profile: { partnerOneName, partnerTwoName, eventDate, eventTime } }))
@@ -2673,6 +2675,38 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const update = (values) => setConfig((current) => ({ ...current, ...values }))
   const updateSectionTitle = (section, title) => setConfig((current) => setSiteSectionTitle(current, section, title))
   const updateSectionBody = (section, body) => setConfig((current) => setSiteSectionBody(current, section, body))
+
+  useEffect(() => {
+    setPhotoAccentSuggestions([])
+    if (!previewPhotoUrl) {
+      return undefined
+    }
+    let active = true
+    const image = new window.Image()
+    image.onload = () => {
+      if (!active) return
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = 32
+        canvas.height = 32
+        const context = canvas.getContext('2d', { willReadFrequently: true })
+        if (!context) return setPhotoAccentSuggestions([])
+        context.drawImage(image, 0, 0, canvas.width, canvas.height)
+        setPhotoAccentSuggestions(extractPhotoColorSuggestions(context.getImageData(0, 0, canvas.width, canvas.height).data))
+      } catch {
+        setPhotoAccentSuggestions([])
+      }
+    }
+    image.onerror = () => {
+      if (active) setPhotoAccentSuggestions([])
+    }
+    image.src = previewPhotoUrl
+    return () => {
+      active = false
+      image.onload = null
+      image.onerror = null
+    }
+  }, [previewPhotoUrl])
   const selectTheme = (themeId) => {
     const preset = THEME_PRESETS[themeId] || THEME_PRESETS.garden
     update({ theme: themeId, paletteIndex: 0, fontPair: preset.fontPair, coverLayout: preset.coverLayout, coverComposition: preset.coverComposition })
@@ -2933,7 +2967,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <div className="wedding-profile-fields"><label>Noivo(a) 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Noivo(a) 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
-        <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div><SiteAccentPicker value={config.customAccent} appliedValue={selectedPalette[1]} onChange={(customAccent) => update({ customAccent })} /></div>
+        <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{PALETTE_NAMES[config.paletteIndex] || PALETTE_NAMES[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${PALETTE_NAMES[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div>{photoAccentSuggestions.length > 0 && <div className="photo-palette-suggestions"><strong>Paletas inspiradas na foto de capa</strong><div>{photoAccentSuggestions.map((color, index) => { const suggestedPalette = getThemePalettes(theme, color)[config.paletteIndex] || selectedPalette; return <button type="button" key={color} onClick={() => update({ customAccent: color })} aria-label={`Usar paleta inspirada na foto ${index + 1}`} aria-pressed={config.customAccent === color} title={`Paleta sugerida ${index + 1}`}><span aria-hidden="true">{suggestedPalette.map((tokenColor) => <i key={tokenColor} style={{ backgroundColor: tokenColor }} />)}</span></button> })}</div><small>Extraídas neste dispositivo. A cor de destaque é ajustada para manter o contraste.</small></div>}<SiteAccentPicker value={config.customAccent} appliedValue={selectedPalette[1]} onChange={(customAccent) => update({ customAccent })} /></div>
         <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button></div>
         <div className="customizer-layout-options" role="group" aria-label="Composição da capa"><span>Composição da capa</span><div>{coverLayouts.map((layout) => <button type="button" key={layout.id} className={`customizer-layout-choice ${coverComposition === layout.id ? 'active' : ''}`} onClick={() => update({ coverComposition: layout.id })} aria-pressed={coverComposition === layout.id}><span className={`customizer-layout-thumb layout-thumb-${layout.id}`} aria-hidden="true"><i /><b /><em /></span><span>{layout.label}</span>{coverComposition === layout.id && <Check size={18} aria-hidden="true" />}</button>)}</div></div>
         <div className="cover-tuning-controls"><label className="font-pair-label">Alinhamento do texto<select value={config.coverTextAlign || 'left'} onChange={(event) => update({ coverTextAlign: event.target.value })}><option value="left">À esquerda</option><option value="center">Centralizado</option><option value="right">À direita</option></select></label><label className="font-pair-label">Posição vertical do texto<select value={config.coverTextPosition || 'center'} onChange={(event) => update({ coverTextPosition: event.target.value })}><option value="top">Parte superior</option><option value="center">Centro</option><option value="bottom">Parte inferior</option></select></label><label className="font-pair-label">Enquadramento no computador<select value={coverImagePositionDesktop} onChange={(event) => update({ coverImagePosition: event.target.value, coverImagePositionDesktop: event.target.value })}><option value="center">Centro</option><option value="top">Priorizar parte superior</option><option value="bottom">Priorizar parte inferior</option><option value="left">Priorizar lado esquerdo</option><option value="right">Priorizar lado direito</option></select></label><label className="font-pair-label">Enquadramento no celular<select value={coverImagePositionMobile} onChange={(event) => update({ coverImagePositionMobile: event.target.value })}><option value="center">Centro</option><option value="top">Priorizar parte superior</option><option value="bottom">Priorizar parte inferior</option><option value="left">Priorizar lado esquerdo</option><option value="right">Priorizar lado direito</option></select></label><label className="font-pair-label cover-overlay-control">Sobreposição escura <span>{config.coverOverlayOpacity ?? 45}%</span><input type="range" min="10" max="75" step="5" value={config.coverOverlayOpacity ?? 45} onChange={(event) => update({ coverOverlayOpacity: Number(event.target.value) })} /><small>Ajuda a manter o texto legível sobre a fotografia.</small></label></div>
