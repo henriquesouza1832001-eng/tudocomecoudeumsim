@@ -123,7 +123,7 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.6 Capa
 
-- 6 layouts de capa: foto em tela cheia, foto dividida ao lado do texto, foto em moldura ou arco, somente tipografia, vídeo curto em loop e colagem de 3 fotos.
+- No piloto, oferecer somente as três composições já implementadas: foto em destaque, foto ao lado e foto em moldura. Tipografia sem foto, vídeo de abertura e colagem ficam fora do seletor até terem prévia, persistência e saída publicada validadas e uma nova aprovação visual.
 - Controles: alinhamento do texto, intensidade da camada escura sobre a foto, ponto focal da imagem separado para celular e desktop, frase de apresentação, formato da data.
 - Contagem regressiva com formato dias, completo ou oculta.
 - Botões de ação da capa à escolha do casal entre: confirmar presença, presentear, ver local, jogar o quiz (se ativo).
@@ -437,7 +437,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 - Confirmado em 15/10/2026: o Pages serviu os bundles da entrega `b8c5297` em `https://tudocomecoudeumsim.pages.dev`. Deploy pela integracao Git do Cloudflare; nao fazer deploy manual nem criar pipeline.
 - Conferir a landing publicada: explicar que o Pix vai direto ao casal e os links externos levam às lojas para concluir a compra.
-- O dono pediu para continuar o desenvolvimento seguindo este arquivo. So disponibilize publicamente recursos que estejam concluidos e validados.
+- O dono pediu para continuar o desenvolvimento seguindo este arquivo. A landing pode apresentar a visão completa do produto conforme a decisão da seção 20; não anunciar oficialmente o lançamento antes da autorização do dono nem ativar fluxos incompletos como se estivessem operacionais.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
 - `npm run lint`, `npm run build` e `git diff --check` passaram para `b8c5297`; repetir depois de qualquer nova alteracao.
 - A decisão sobre domínio próprio e qualquer modelo comercial futuro permanece pendente. Não implementar processamento de pagamentos.
@@ -445,7 +445,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ## 20. Atualizacao de desenvolvimento em 15/10/2026
 
-- A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
+- Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. Enquanto o dominio proprio nao for comprado e configurado, manter o acesso atual por `tudocomecoudeumsim.pages.dev/casamento/:slug`. Nao inventar nem fixar um dominio base; implementar subdominios curinga depois que o dono fornecer o dominio.
 - A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
 - A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legíveis e seções dedicadas a RSVP, presentes por Pix direto ou links de loja, convites, check-in, despesas, PWA e calendário. Evitar numeração decorativa nos cards de etapas.
 - A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes e site publico completo para cada casal. O idioma do piloto foi confirmado como pt-BR. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
