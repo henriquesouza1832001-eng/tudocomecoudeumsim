@@ -43,7 +43,7 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 11. Presentes por Pix direto aos noivos ou links externos de loja. A plataforma apenas exibe o Pix ou encaminha o convidado à loja; não inicia compras, cobra, processa, guarda ou repassa dinheiro.
 12. Modo de controle de entrada: parte do app dedicada a ler QR code no dia do evento, substituindo a lista física.
 13. Jogo diário, uma partida por dia por convidado, com ranking entre convidados. Opcional: os noivos ligam ou desligam.
-14. Multi-idioma.
+14. Idioma do piloto: somente português brasileiro (pt-BR). Suporte multilíngue é uma evolução futura que depende de autorização do dono.
 15. Cada casal tem seu subdomínio.
 16. Piloto gratuito. Não cobrar taxa por presente nem processar valores dentro da plataforma.
 17. A lista pode conter Pix direto aos noivos e links de produtos em lojas externas. O link apenas encaminha para a loja; compra e entrega ocorrem fora da plataforma. O casal usa o site gratuitamente no piloto.
@@ -75,12 +75,10 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 
 ## 6. Idiomas
 
-- react-i18next com pt-BR (padrão), en e es. Confirmar a lista final com o dono do projeto.
-- Idioma inicial detectado pelo navegador, com seletor visível e escolha lembrada.
-- Textos fixos da interface em arquivos de tradução versionados.
-- Textos dos noivos (história, convite, mensagens) com campo por idioma e fallback para pt-BR quando faltar tradução.
-- Datas, horários e moeda formatados com Intl. Valores de presente sempre em BRL.
-- A notificação dos 30 dias sai no idioma salvo do convidado.
+- No piloto, toda a interface e o conteúdo editável usam somente pt-BR. Não exibir seletor de idioma nem pedir traduções ao casal.
+- Não detectar ou persistir idioma do visitante no piloto. Datas, horários e moeda são formatados com `Intl` usando pt-BR; valores de presente sempre em BRL.
+- A estrutura multilíngue (react-i18next, en e es, campos traduzidos e fallback para pt-BR) só entra após nova autorização expressa do dono.
+- A notificação dos 30 dias, quando implementada, usa pt-BR no piloto.
 
 ## 7. Site dos convidados e personalização
 
@@ -97,7 +95,7 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.2 Assistente inicial
 
-- Fluxo curto de até 6 passos no primeiro acesso: nomes, data, local, estilo do casamento (clássico, rústico, praia, minimalista, boho, moderno), foto de capa e idiomas do site.
+- Fluxo curto de até 6 passos no primeiro acesso: nomes, data, local, estilo do casamento (clássico, rústico, praia, minimalista, boho, moderno) e foto de capa. O idioma do piloto é pt-BR.
 - As respostas escolhem um tema inicial e já ativam as seções mais comuns. O casal pode pular qualquer passo e voltar depois.
 - Ao enviar a foto de capa, o app sugere paletas extraídas da imagem (cálculo no navegador, sem serviço externo) e o ponto focal para recorte.
 
@@ -118,7 +116,7 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.5 Tipografia
 
-- 8 pares de fontes pré-definidos (título e corpo), todos com suporte a acentuação de português e espanhol.
+- 8 pares de fontes pré-definidos (título e corpo), todos com suporte à acentuação do português brasileiro.
 - Escala de tamanho do texto: pequena, média ou grande.
 - Opções de estilo do título: peso, caixa alta nos rótulos e espaçamento entre letras, dentro de faixas seguras.
 - Fontes servidas pelo próprio projeto, com subconjunto de caracteres e carregamento otimizado. Não permitir upload de fontes nem fontes arbitrárias.
@@ -133,7 +131,7 @@ Objetivo: cada casal monta o site do seu jeito, com o nível de controle dos mel
 
 ### 7.7 Seções
 
-Biblioteca de seções. Cada uma pode ser ligada, desligada e reordenada (arrastar com toque, mouse e teclado), tem título editável por idioma e de 2 a 3 variações de layout:
+Biblioteca de seções. Cada uma pode ser ligada, desligada e reordenada (arrastar com toque, mouse e teclado), tem título editável em pt-BR e de 2 a 3 variações de layout:
 - Capa com contagem regressiva.
 - Nossa história, com texto e fotos.
 - Linha do tempo do casal.
@@ -165,7 +163,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 ### 7.9 Navegação e rodapé
 
-- O menu é gerado automaticamente a partir das seções ativas, com rótulos editáveis por idioma.
+- O menu é gerado automaticamente a partir das seções ativas, com rótulos editáveis em pt-BR.
 - Estilos de menu: fixo no topo, recolhido em menu lateral no celular ou barra inferior no PWA.
 - Botão flutuante opcional de confirmar presença.
 - O rodapé sempre mostra o crédito "henriquesouzas.com" com link. O casal não pode removê-lo.
@@ -181,24 +179,24 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 - Upload para o R2 com compressão, conversão para formatos modernos (WebP ou AVIF), tamanhos responsivos e limite de tamanho por arquivo.
 - Recorte guiado por ponto focal, nunca por posicionamento livre.
-- Texto alternativo por imagem, por idioma, com lembrete quando faltar.
+- Texto alternativo por imagem em pt-BR, com lembrete quando faltar.
 - Galeria com ordem por arrastar, álbuns (pré-casamento, viagens, família), legendas e visualização ampliada.
 - Limites de quantidade por casamento definidos em configuração, não fixos no código.
 
 ### 7.12 Idiomas e conteúdo
 
-- Os noivos escolhem quais idiomas ativar entre pt-BR, en e es.
-- Todo texto editável tem um campo por idioma, com indicador de completude por seção e opção de copiar o texto de outro idioma.
-- Quando faltar tradução, o site mostra o pt-BR (fallback) e o painel avisa.
-- Datas, horários e moeda seguem o idioma do visitante.
+- Durante o piloto, o idioma é pt-BR e cada conteúdo editável tem um único campo.
+- Não exibir seletor de idioma, completude de tradução nem campos paralelos de conteúdo.
+- Datas e horários usam pt-BR; valores de presentes permanecem em BRL.
+- Uma futura expansão multilíngue precisa de autorização do dono e revisão desta seção antes de começar.
 
 ### 7.13 Compartilhamento e identidade
 
-- Prévia ao compartilhar o link (imagem, título e descrição, por idioma), pensada para o WhatsApp e redes sociais.
+- Prévia ao compartilhar o link (imagem, título e descrição em pt-BR), pensada para o WhatsApp e redes sociais.
 - Monograma gerado a partir das iniciais do casal, usando a fonte e as cores do tema. O monograma gera o favicon, o ícone do PWA e a tela de abertura do app instalado.
 - Link curto e subdomínio exibidos no painel, com QR code estilizado nas cores do tema e arte pronta para imprimir (PNG e PDF) em formatos de cartão e de convite.
-- Mensagem da notificação dos 30 dias: editor por idioma com variáveis como nome do convidado, dias restantes e data, pré-visualização e envio de teste para o próprio casal.
-- Título e descrição do evento no calendário (.ics) editáveis por idioma.
+- Mensagem da notificação dos 30 dias em pt-BR, com variáveis como nome do convidado, dias restantes e data, pré-visualização e envio de teste para o próprio casal.
+- Título e descrição do evento no calendário (.ics) em pt-BR.
 
 ### 7.14 Privacidade e acesso
 
@@ -210,9 +208,9 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 ### 7.15 Editor, rascunho e publicação
 
 - Autosave contínuo no rascunho, com desfazer e refazer.
-- Pré-visualização ao vivo com alternância entre celular, tablet e desktop e com a escolha de idioma.
+- Pré-visualização ao vivo com alternância entre celular, tablet e desktop. O conteúdo usa pt-BR.
 - Link privado de pré-visualização para o casal mostrar o rascunho a quem quiser antes de publicar.
-- Verificador antes de publicar, com lista de pendências: contraste, texto faltando em algum idioma ativo, imagem sem texto alternativo, imagem muito pesada, seção ativa vazia, local sem endereço e chave Pix ausente quando o Modo B estiver ativo. Pendências de acessibilidade bloqueiam a publicação; as demais apenas avisam.
+- Verificador antes de publicar, com lista de pendências: contraste, texto obrigatório ausente, imagem sem texto alternativo, imagem muito pesada, seção ativa vazia, local sem endereço e chave Pix ausente quando o Modo B estiver ativo. Pendências de acessibilidade bloqueiam a publicação; as demais apenas avisam.
 - Publicação imediata ou agendada.
 - Histórico das últimas 20 versões publicadas, com restauração em um toque.
 - Colaboradores com papéis: administrador (os noivos), editor (cerimonialista, familiar), leitor e equipe de entrada (acesso somente ao leitor de QR).
@@ -230,11 +228,11 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Alvos de toque de pelo menos 44 px, foco visível, rótulos em todos os campos e navegação completa por teclado.
 - Responsivo em todas as larguras, sem rolagem horizontal.
 - Meta de desempenho: carregamento da capa rápido em 4G, com imagens responsivas, fontes em subconjunto e carregamento sob demanda das seções abaixo da dobra.
-- Todo recurso de personalização é testado nos 3 idiomas e nos 8 temas.
+- Todo recurso de personalização do piloto é testado em pt-BR e nos 8 temas.
 
 ### 7.18 Modelo de dados
 
-- A configuração do site é um documento JSON com versão e esquema validado, guardado no D1: tema, tokens escolhidos, seções (ordem, ativa, variação, conteúdo por idioma), eventos, grupos e acesso.
+- A configuração do site é um documento JSON com versão e esquema validado, guardado no D1: tema, tokens escolhidos, seções (ordem, ativa, variação, conteúdo em pt-BR), eventos, grupos e acesso.
 - Rascunho e publicado são registros separados. Publicar gera um instantâneo imutável servido a partir do cache (KV), o que dá velocidade e permite restaurar versões.
 - O esquema é validado no servidor e no cliente. Valor fora das listas permitidas é rejeitado.
 - Migração de esquema versionada para que sites antigos continuem abrindo.
@@ -247,7 +245,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 ### 7.20 Entrega por fase
 
-- Fase 1: assistente inicial, temas, cores, fontes, capa, biblioteca de seções (ligar, desligar, reordenar, variações), eventos, idiomas, imagens com ponto focal, pré-visualização ao vivo, rascunho e publicação, verificador básico, presets simples de animação.
+- Fase 1: assistente inicial, temas, cores, fontes, capa, biblioteca de seções (ligar, desligar, reordenar, variações), eventos, idioma pt-BR, imagens com ponto focal, pré-visualização ao vivo, rascunho e publicação, verificador básico, presets simples de animação.
 - Fase 2: personalização dos presentes, chave Pix direta dos noivos e links HTTPS de lojas externas.
 - Fase 3: mensagem dos 30 dias com variáveis, título do calendário, monograma e ícone do PWA, prévia de compartilhamento, QR estilizado e arte para impressão, envelope animado e confete.
 - Fase 5: personalização do quiz (perguntas, prêmio e encerramento).
@@ -257,7 +255,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 ### 7.21 Como superamos os sites atuais
 
 - Referências de funcionalidade: Joy (vários eventos, RSVP detalhado), Zola e The Knot (site e lista integrados), iCasei (mural, enquetes, contagem regressiva), Casar.com (lista em dinheiro com Pix), Squarespace e Riley & Grey (tipografia, galeria e acabamento visual), Greenvelope (envelope animado).
-- Diferenciais a entregar: pré-visualização real em três dispositivos com idioma, verificador de qualidade antes de publicar, paleta sugerida pela foto de capa, conteúdo e eventos por grupo de convidados, modo agradecimento, histórico de versões, QR e monograma estilizados com a identidade do casal e o mesmo sistema de design em site, PWA e notificação.
+- Diferenciais a entregar: pré-visualização real em três dispositivos, verificador de qualidade antes de publicar, paleta sugerida pela foto de capa, conteúdo e eventos por grupo de convidados, modo agradecimento, histórico de versões, QR e monograma estilizados com a identidade do casal e o mesmo sistema de design em site, PWA e notificação.
 
 ## 8. Painel dos noivos
 
@@ -265,7 +263,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Presença: status por convidado, relatório e exportação.
 - Presentes: catálogo de itens com Pix direto ou link de loja externa. Não registrar recebimentos nem taxas.
 - Convites: link curto, QR code, subdomínio, link de acesso individual ou por grupo.
-- Mensagem da notificação dos 30 dias, por idioma.
+- Mensagem da notificação dos 30 dias em pt-BR.
 - Controle de entrada: lista de quem já entrou, em tempo real.
 - Jogo: ligar ou desligar, perguntas personalizadas, ranking.
 - Personalização do site com pré-visualização ao vivo.
@@ -360,7 +358,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 4. Despesas: fornecedores, orçamento, pagamentos, vencimentos e lembretes por e-mail ou push.
 5. Convites físicos e digitais: formatos de impressão em alta resolução, QR estilizado e integração de carteira digital.
 6. Presentes: lista pública com Pix direto aos noivos e/ou links externos de loja; sem checkout, ledger financeiro, split ou repasse pela plataforma. Esta etapa vem depois do controle de despesas.
-7. PWA, notificações e calendários: instalação, lembrete personalizado, escolha de calendário e conteúdo por idioma.
+7. PWA, notificações e calendários: instalação, lembrete personalizado e escolha de calendário em pt-BR.
 8. Quiz diário.
 9. Empacotamento para as lojas.
 
@@ -404,7 +402,7 @@ Stripe
 - Domínio base dos subdomínios.
 - Não há provedor ou split no piloto. O Pix é transferido diretamente pelos convidados aos noivos.
 - Não há taxa por presente no piloto. Um modelo comercial futuro exige nova decisão do dono.
-- Idiomas finais: pt-BR, en e es.
+- Idioma confirmado para o piloto: somente pt-BR. Idiomas adicionais dependem de nova decisão do dono.
 - Referências próprias do dono do projeto, a enviar.
 - Serviço de e-mail transacional para verificação de conta e recuperação de senha.
 
@@ -450,7 +448,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - A conversa identificou que Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. O dono respondeu que a decisao do dominio e do caminho de acesso sera feita depois. Nao fixar um dominio base, migrar para rotas por slug nem alterar a arquitetura de subdominios sem nova instrucao.
 - A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
 - A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legíveis e seções dedicadas a RSVP, presentes por Pix direto ou links de loja, convites, check-in, despesas, PWA e calendário. Evitar numeração decorativa nos cards de etapas.
-- A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes, site publico completo para cada casal e escolha final de idiomas. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
+- A Fase 1 continua incompleta. Faltam, entre outros requisitos, o assistente inicial, upload e recorte de fotos no R2, contraste/acessibilidade validado, variacoes e conteudo real das secoes e site publico completo para cada casal. O idioma do piloto foi confirmado como pt-BR. Nao apresentar o personalizador completo ate verificar os itens da secao 7.20.
 - A diretriz mais recente do dono determina que a comunicacao da landing descreva a experiencia completa do produto sem rotulos ou ressalvas de desenvolvimento, pois o lancamento publico ainda sera anunciado por ele. Essa decisao substitui as notas anteriores que pediam omitir recursos futuros.
 - Links externos de lojas são permitidos somente como redirecionamento para compra fora da plataforma. Não processar pagamento nem cobrar taxa no piloto.
 - A tela de cadastro recebeu ajuste de escala tipografica e marca; confirmar no Pages que o monograma nao empilha letras em telas estreitas.
