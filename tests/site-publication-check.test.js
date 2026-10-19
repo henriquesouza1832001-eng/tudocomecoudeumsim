@@ -93,3 +93,8 @@ test('site publication accepts HTTPS playlist and video links', () => {
   })
   assert.deepEqual(result.warnings, [])
 })
+
+test('site publication warns when Pix is enabled without a key', () => {
+  const result = checkSitePublication({ pix: { enabled: true, key: '  ' } })
+  assert.deepEqual(result.warnings, ['O Pix está ativado, mas falta informar uma chave válida.'])
+})

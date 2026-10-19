@@ -32,6 +32,7 @@ export function checkSitePublication(config = {}, events = []) {
   }
   if (enabled.has('Playlist') && !safeHttpsLink(config.sectionContent?.Playlist?.['pt-BR']?.body)) warnings.push('A seção Playlist está ativa, mas precisa de um link HTTPS válido.')
   if (enabled.has('Vídeo') && !config.coverVideoId && !safeHttpsLink(config.sectionContent?.['Vídeo']?.['pt-BR']?.body)) warnings.push('A seção Vídeo está ativa, mas precisa de um vídeo enviado ou de um link HTTPS válido.')
+  if (config.pix?.enabled && !config.pix.key?.trim()) warnings.push('O Pix está ativado, mas falta informar uma chave válida.')
   if (enabled.has('Eventos')) {
     if (!events.length) warnings.push('A seção de eventos está ativa, mas ainda não há eventos cadastrados.')
     if (events.some((event) => !event.address?.trim())) warnings.push('Há evento sem endereço. Confira se os convidados terão como localizar o local.')
