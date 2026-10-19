@@ -23,6 +23,13 @@ test('site publication warns when an active dress code section has no content', 
   assert.deepEqual(result.warnings, ['A seção Dress code está ativa, mas ainda não tem orientação de traje.'])
 })
 
+test('site publication warns when the day schedule has no events or event times', () => {
+  const empty = checkSitePublication({ enabledSections: ['Cronograma'] }, [])
+  assert.deepEqual(empty.warnings, ['O cronograma está ativo, mas ainda não há eventos cadastrados.'])
+  const missingTimes = checkSitePublication({ enabledSections: ['Cronograma'] }, [{ starts_at: null }])
+  assert.deepEqual(missingTimes.warnings, ['Há evento sem data e horário para mostrar no cronograma.'])
+})
+
 test('site publication warns when enabled story, timeline, or gallery sections are empty', () => {
   const result = checkSitePublication({
     enabledSections: ['Nossa história', 'Linha do tempo', 'Galeria de fotos'],

@@ -3518,6 +3518,66 @@ img { display: block; max-width: 100%; }
   padding-block: clamp(44px, 7vw, 84px);
 }
 
+.public-wedding-schedule {
+  width: min(100% - 56px, 980px);
+  margin-inline: auto;
+  padding-block: clamp(44px, 7vw, 84px);
+}
+
+.public-wedding-schedule > h2 {
+  margin: 9px 0 28px;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 400;
+}
+
+.public-wedding-schedule > div {
+  display: grid;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.public-wedding-schedule article {
+  display: grid;
+  grid-template-columns: minmax(150px, .7fr) minmax(0, 1.3fr);
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.public-wedding-schedule article time {
+  color: var(--accent, #a98462);
+  font-size: .9rem;
+}
+
+.public-wedding-schedule article small {
+  color: var(--accent, #a98462);
+  font-size: .75rem;
+  letter-spacing: .08em;
+}
+
+.public-wedding-schedule article h3 {
+  margin: 5px 0;
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  font-weight: 400;
+}
+
+.public-wedding-schedule article p {
+  margin: 0;
+  color: var(--muted, #68746b);
+}
+
+@media (max-width: 640px) {
+  .public-wedding-schedule {
+    width: min(100% - 36px, 980px);
+  }
+
+  .public-wedding-schedule article {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
 .public-wedding-timeline > h2,
 .public-wedding-gallery > .eyebrow {
   font-family: var(--font-heading, Georgia, serif);

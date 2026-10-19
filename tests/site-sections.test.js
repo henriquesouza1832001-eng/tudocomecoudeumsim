@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { moveSiteSection, orderedSiteSections } from '../src/site-sections.js'
+import { moveSiteSection, orderedSiteSections, sortEventsByStartTime } from '../src/site-sections.js'
 
 test('site section order follows the saved configuration and keeps enabled legacy carousels visible', () => {
   const config = { enabledSections: ['Eventos', 'Nossa história'], siteCarouselEnabled: true }
@@ -11,7 +11,7 @@ test('site section order follows the saved configuration and keeps enabled legac
 
 test('couple section controls reorder rendered sections without dropping other saved sections', () => {
   const initial = ['Eventos', 'Cronograma', 'Nossa história', 'Confirmação de presença']
-  assert.deepEqual(moveSiteSection(initial, 'Eventos', 1), ['Nossa história', 'Cronograma', 'Eventos', 'Confirmação de presença'])
+  assert.deepEqual(moveSiteSection(initial, 'Eventos', 1), ['Cronograma', 'Eventos', 'Nossa história', 'Confirmação de presença'])
   assert.deepEqual(moveSiteSection(initial, 'Nossa história', 1), ['Eventos', 'Cronograma', 'Confirmação de presença', 'Nossa história'])
 })
 
@@ -27,4 +27,19 @@ test('dress code can be ordered as its own invitation section', () => {
   const config = { enabledSections: ['Eventos', 'Dress code', 'Confirmação de presença'] }
   assert.deepEqual(orderedSiteSections(config), ['Eventos', 'Dress code', 'Confirmação de presença'])
   assert.deepEqual(moveSiteSection(config.enabledSections, 'Dress code', -1), ['Dress code', 'Eventos', 'Confirmação de presença'])
+})
+
+test('day schedule can be enabled and ordered independently from event details', () => {
+  const config = { enabledSections: ['Eventos', 'Cronograma', 'Dress code'] }
+  assert.deepEqual(orderedSiteSections(config), ['Eventos', 'Cronograma', 'Dress code'])
+  assert.deepEqual(moveSiteSection(config.enabledSections, 'Cronograma', 1), ['Eventos', 'Dress code', 'Cronograma'])
+})
+
+test('day schedule orders dated events first and keeps undated events at the end', () => {
+  const events = [
+    { id: 'late', starts_at: '2027-11-28T22:00:00.000Z' },
+    { id: 'undated', starts_at: null },
+    { id: 'early', starts_at: '2027-11-28T17:00:00.000Z' },
+  ]
+  assert.deepEqual(sortEventsByStartTime(events).map((event) => event.id), ['early', 'late', 'undated'])
 })

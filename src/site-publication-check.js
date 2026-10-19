@@ -20,6 +20,8 @@ export function checkSitePublication(config = {}, events = []) {
   if (enabled.has('Nossa história') && !config.storyMessages?.['pt-BR']?.trim()) warnings.push('A seção Nossa história está ativa, mas ainda não tem texto.')
   if (enabled.has('Linha do tempo') && !(config.timeline || []).some((item) => item.title?.trim())) warnings.push('A seção Linha do tempo está ativa, mas ainda não tem marcos preenchidos.')
   if (enabled.has('Dress code') && !config.weddingDetails?.dressCode?.trim()) warnings.push('A seção Dress code está ativa, mas ainda não tem orientação de traje.')
+  if (enabled.has('Cronograma') && !events.length) warnings.push('O cronograma está ativo, mas ainda não há eventos cadastrados.')
+  if (enabled.has('Cronograma') && events.some((event) => !event.starts_at)) warnings.push('Há evento sem data e horário para mostrar no cronograma.')
   if ((enabled.has('Galeria de fotos') || config.siteCarouselEnabled) && !(config.siteGallery || []).length && !(config.siteCarouselEnabled && config.siteCarouselPhotos?.length)) warnings.push('A seção de galeria está ativa, mas ainda não tem fotos selecionadas.')
   if (enabled.has('Eventos')) {
     if (!events.length) warnings.push('A seção de eventos está ativa, mas ainda não há eventos cadastrados.')
