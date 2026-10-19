@@ -1,6 +1,6 @@
 # Tudo começou de um sim | Casamentos em um só lugar
 
-Uma plataforma para organizar o casamento com um site personalizado, convites, convidados, eventos, presentes e planejamento. Os noivos contam com um preço único acessível. Convidados podem acessar o convite e confirmar presença sem pagar taxa.
+Uma plataforma para organizar o casamento com um site personalizado, convites, convidados, eventos, presentes e planejamento. Os noivos contam com um preço único acessível. A plataforma não cobra taxa dos convidados pelo acesso ao convite ou pela confirmação de presença.
 
 ## Para os noivos
 
