@@ -4112,6 +4112,16 @@ img { display: block; max-width: 100%; }
   animation: invite-copy-arrive .7s cubic-bezier(.2, .7, .25, 1) both;
 }
 
+.public-wedding-page.motion-suave .public-wedding-cover-copy > * {
+  animation-duration: 1s;
+  animation-timing-function: ease-out;
+}
+
+.public-wedding-page.motion-festivo .public-wedding-cover-copy > * {
+  animation-duration: .48s;
+  animation-timing-function: cubic-bezier(.2, .7, .25, 1);
+}
+
 .public-wedding-page:not(.motion-none) .public-wedding-cover-copy > :nth-child(2) {
   animation-delay: .1s;
 }
