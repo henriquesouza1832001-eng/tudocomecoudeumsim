@@ -109,8 +109,8 @@ test('editors can access drafts and update events', async () => {
   assert.equal(event.status, 201)
 })
 
-test('couple site config saves the new cover and display choices', async () => {
-  const config = { ...siteConfig, siteGallery: [], coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
+test('couple site config saves the new cover, display, and custom accent choices', async () => {
+  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
   const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config })
   const result = await response.json()
   assert.equal(response.status, 200)
@@ -119,6 +119,7 @@ test('couple site config saves the new cover and display choices', async () => {
   assert.equal(result.draft.coverTextPosition, 'bottom')
   assert.equal(result.draft.coverOverlayOpacity, 62)
   assert.equal(result.draft.coverImagePosition, 'top')
+  assert.equal(result.draft.customAccent, '#be6f52')
   assert.equal(result.draft.giftDisplayMode, 'page')
   assert.equal(result.draft.pixDisplayMode, 'page')
   assert.equal(result.draft.pix.key, 'chave-pix')
@@ -131,6 +132,8 @@ test('couple site config rejects invalid cover and display choices', async () =>
     { coverTextPosition: 'freeform' },
     { coverOverlayOpacity: 90 },
     { coverImagePosition: 'random' },
+    { customAccent: 'green' },
+    { customAccent: '#gggggg' },
     { giftDisplayMode: 'external' },
     { pixDisplayMode: 'external' },
   ]) {

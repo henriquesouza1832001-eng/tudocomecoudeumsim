@@ -8,6 +8,7 @@ const mediaId = '22222222-2222-4222-8222-222222222222'
 const siteConfig = {
   theme: 'garden',
   paletteIndex: 0,
+  customAccent: '#be6f52',
   coverLayout: 'full',
   coverImage: 'none',
   coverPhotoId: mediaId,
@@ -88,6 +89,7 @@ test('public invitation shares only published events available to every guest', 
   assert.equal(body.wedding.slug, 'ana-e-bia')
   assert.deepEqual(body.events.map((item) => item.id), [eventId])
   assert.equal(body.siteConfig.enabledSections.includes('Confirmação de presença'), true)
+  assert.equal(body.siteConfig.customAccent, '#be6f52')
 })
 
 test('public invitation is unavailable before the wedding site is published', async () => {

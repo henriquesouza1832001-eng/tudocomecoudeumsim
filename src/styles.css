@@ -1647,6 +1647,11 @@ img { display: block; max-width: 100%; }
 .couple-role-page .theme-picker-compact .theme-option-copy small { display: block; font-size: 12px; }
 .couple-role-page .theme-option-check { width: 16px; height: 16px; }
 .couple-role-page .palette-picker { margin-top: 18px; padding-top: 16px; }
+.site-accent-picker { display: grid; justify-items: start; gap: 7px; margin-top: 12px; color: #59645b; font-size: 13px; }
+.site-accent-picker label { display: inline-flex; align-items: center; gap: 10px; color: #34473b; font-weight: 600; }
+.site-accent-picker input[type="color"] { width: 48px; height: 40px; padding: 3px; border: 1px solid #cbd2c8; background: #fffefa; cursor: pointer; }
+.site-accent-picker small { line-height: 1.45; }
+.site-accent-picker button { min-height: 38px; padding: 0 10px; }
 .couple-role-page .palette-heading strong { font-size: 14px; }
 .couple-role-page .palette-heading small { font-size: 12px; }
 .couple-role-page .palette-swatches { gap: 8px; }
