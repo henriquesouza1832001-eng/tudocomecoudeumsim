@@ -6,6 +6,7 @@ import { SITE_MEDIA_LIMITS } from './site-media-config.js'
 import { ORDERABLE_SITE_SECTIONS, moveSiteSection as moveSiteSectionOrder, orderedSiteSections, sortEventsByStartTime } from './site-sections.js'
 import { getThemePalettes, isValidCustomAccent } from './site-style.js'
 import { checkSitePublication } from './site-publication-check.js'
+import { createSiteDraftHistory, recordSiteDraftChange, redoSiteDraft, undoSiteDraft } from './site-draft-history.js'
 import {
   ArrowDown,
   ArrowLeft,
@@ -46,6 +47,8 @@ import {
   Smartphone,
   Tablet,
   Trash2,
+  Undo2,
+  Redo2,
   Users,
   UserRound,
   Video,
@@ -1565,17 +1568,19 @@ function CouplePanel({ notify, confirmAction }) {
     return result.wedding
   }
 
-  async function saveSiteDraft(profile, configOverride = siteConfig) {
+  async function saveSiteDraft(profile, configOverride = siteConfig, { silent = false } = {}) {
     setSiteConfigLoading(true)
     setError('')
     try {
       if (profile) await saveWeddingProfile(profile)
       const result = await request(`/api/couple/weddings/${weddingId}/site-config`, { method: 'PUT', body: JSON.stringify(configOverride) })
-      setSiteConfig(result.draft)
+      setSiteConfig((current) => JSON.stringify(current) === JSON.stringify(configOverride) ? result.draft : current)
       setSavedSiteConfig(result.draft)
-      notify('Rascunho do site salvo no D1')
+      if (!silent) notify('Rascunho do site salvo')
+      return true
     } catch (cause) {
       setError(cause.message === 'site_media_not_found' ? 'Uma foto do convite não está mais disponível. Remova-a ou envie novamente antes de salvar.' : cause.message === 'media_storage_unavailable' ? 'O armazenamento de fotos está indisponível no momento.' : 'Não foi possível salvar o rascunho do site. Tente novamente.')
+      return false
     } finally {
       setSiteConfigLoading(false)
     }
@@ -2252,7 +2257,7 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => loadWeddingData(weddingId)} />}
-    {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
+    {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
    </div></main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
@@ -2526,8 +2531,14 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [mediaLoadErrors, setMediaLoadErrors] = useState([])
   const mediaUrlRegistry = useRef(new Set())
   const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
+  const [draftHistory, setDraftHistory] = useState(() => createSiteDraftHistory({ config, profile: { partnerOneName, partnerTwoName, eventDate, eventTime } }))
+  const [autosaveStatus, setAutosaveStatus] = useState('saved')
   const photoInput = useRef(null)
   const videoInput = useRef(null)
+  const autosaveTimer = useRef(null)
+  const autosaveRun = useRef({ running: false, pending: false })
+  const latestDraft = useRef(null)
+  const saveDraftRef = useRef(onSave)
   const theme = THEMES.find((item) => item.id === config.theme) || THEMES[0]
   const palettes = getThemePalettes(theme, config.customAccent)
   const selectedPalette = palettes[config.paletteIndex] || palettes[0]
@@ -2539,9 +2550,67 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const coverImagePositionMobile = config.coverImagePositionMobile || coverImagePositionDesktop
   const draftChanged = JSON.stringify(config) !== JSON.stringify(savedConfig)
   const profile = { partnerOneName, partnerTwoName, eventDate: eventDate || null, eventTime: eventTime || null }
+  const historySnapshot = { config, profile: { partnerOneName, partnerTwoName, eventDate, eventTime } }
+  latestDraft.current = { config, profile }
   const profileChanged = partnerOneName !== (wedding?.partner_one_name || '') || partnerTwoName !== (wedding?.partner_two_name || '') || eventDate !== (wedding?.event_date || '') || eventTime !== (wedding?.event_time || '')
   const published = publishedAt ? new Date(publishedAt).toLocaleString('pt-BR') : ''
   const language = 'pt-BR'
+
+  useEffect(() => {
+    saveDraftRef.current = onSave
+  }, [onSave])
+
+  useEffect(() => {
+    setDraftHistory((current) => recordSiteDraftChange(current, historySnapshot))
+  }, [wedding?.id, config, partnerOneName, partnerTwoName, eventDate, eventTime])
+
+  useEffect(() => {
+    if (!draftChanged && !profileChanged) {
+      setAutosaveStatus('saved')
+      return undefined
+    }
+    if (saving) return undefined
+    autosaveRun.current.pending = true
+    setAutosaveStatus('waiting')
+    window.clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = window.setTimeout(async () => {
+      if (autosaveRun.current.running) return
+      autosaveRun.current.running = true
+      setAutosaveStatus('saving')
+      let saveFailed = false
+      while (autosaveRun.current.pending) {
+        autosaveRun.current.pending = false
+        const snapshot = latestDraft.current
+        const succeeded = await saveDraftRef.current(snapshot.profile, snapshot.config, { silent: true })
+        if (!succeeded) {
+          saveFailed = true
+          break
+        }
+        if (JSON.stringify(latestDraft.current) !== JSON.stringify(snapshot)) autosaveRun.current.pending = true
+      }
+      autosaveRun.current.running = false
+      setAutosaveStatus(saveFailed ? 'error' : 'saved')
+    }, 700)
+    return () => window.clearTimeout(autosaveTimer.current)
+  }, [wedding?.id, config, partnerOneName, partnerTwoName, eventDate, eventTime, draftChanged, profileChanged, saving])
+
+  function restoreDraftHistory(nextHistory) {
+    if (nextHistory === draftHistory) return
+    setDraftHistory(nextHistory)
+    setConfig(nextHistory.present.config)
+    setPartnerOneName(nextHistory.present.profile.partnerOneName)
+    setPartnerTwoName(nextHistory.present.profile.partnerTwoName)
+    setEventDate(nextHistory.present.profile.eventDate)
+    setEventTime(nextHistory.present.profile.eventTime)
+  }
+
+  function undoDraftChange() {
+    restoreDraftHistory(undoSiteDraft(draftHistory))
+  }
+
+  function redoDraftChange() {
+    restoreDraftHistory(redoSiteDraft(draftHistory))
+  }
   const coverMessage = config.coverMessages?.[language] || config.coverMessages?.['pt-BR'] || ''
   const storyMessage = config.storyMessages?.[language] || config.storyMessages?.['pt-BR'] || ''
   const storyEnabled = (config.enabledSections || []).includes('Nossa história')
@@ -2835,7 +2904,8 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <p className="customizer-step-note">Data, local e horários são organizados na aba Eventos. Não precisam ser preenchidos de novo aqui.</p>
       </section>}
       <PublishedInviteShare wedding={wedding} profile={profile} config={config} update={update} publishedAt={publishedAt} notify={notify} />
-      <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
+      <div className="site-draft-toolbar"><span role="status" aria-live="polite">{autosaveStatus === 'saving' || saving ? 'Salvando rascunho…' : autosaveStatus === 'waiting' ? 'Alterações aguardando salvamento' : autosaveStatus === 'error' ? 'Não foi possível salvar. Tentem novamente.' : 'Rascunho salvo automaticamente'}</span><div><button type="button" className="button-outline" onClick={undoDraftChange} disabled={!draftHistory.past.length || saving} aria-label="Desfazer alteração"><Undo2 size={16} /> Desfazer</button><button type="button" className="button-outline" onClick={redoDraftChange} disabled={!draftHistory.future.length || saving} aria-label="Refazer alteração"><Redo2 size={16} /> Refazer</button></div></div>
+      <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile, config)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho agora'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile, config)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
     <div className="customize-preview">
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>

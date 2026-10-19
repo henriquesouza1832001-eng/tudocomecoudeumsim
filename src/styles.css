@@ -3708,6 +3708,28 @@ img { display: block; max-width: 100%; }
   border-bottom: 1px solid var(--line, #ddd8ce);
 }
 
+.site-draft-toolbar,
+.site-draft-toolbar > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.site-draft-toolbar {
+  justify-content: space-between;
+  margin-top: 18px;
+}
+
+.site-draft-toolbar > span {
+  color: var(--muted, #68746b);
+  font-size: .88rem;
+}
+
+.site-draft-toolbar .button-outline {
+  min-height: 44px;
+}
+
 @media (max-width: 640px) {
   .public-wedding-schedule {
     width: min(100% - 36px, 980px);
