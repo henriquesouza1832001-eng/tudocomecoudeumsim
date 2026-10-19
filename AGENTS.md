@@ -445,6 +445,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ## 20. Atualizacao de desenvolvimento em 15/10/2026
 
+- Decisao posterior do dono: o piloto usa somente pt-BR. O editor e as previas nao oferecem seletor nem campos em ingles/espanhol. A API grava/publica `language: 'pt-BR'`; campos multilíngues preexistentes sao mantidos apenas para compatibilidade e nao sao exibidos.
 - Cloudflare Pages nao oferece subdominios curinga em `*.pages.dev`. Enquanto o dominio proprio nao for comprado e configurado, manter o acesso atual por `tudocomecoudeumsim.pages.dev/casamento/:slug`. Nao inventar nem fixar um dominio base; implementar subdominios curinga depois que o dono fornecer o dominio.
 - A entrega `b8c5297` adiciona edicao de titulo e texto por secao em pt-BR, ingles e espanhol, com rascunho, validacao server-side, previa e exibicao no convite individual publicado. Textos limitados a 120 caracteres para titulo e 4000 para corpo.
 - A landing evolui para apresentar a plataforma de ponta a ponta, com fotografia de casamento, identidade pastel/floral, textos legíveis e seções dedicadas a RSVP, presentes por Pix direto ou links de loja, convites, check-in, despesas, PWA e calendário. Evitar numeração decorativa nos cards de etapas.
