@@ -22,3 +22,9 @@ test('gifts and RSVP can be ordered with the existing invitation sections', () =
   assert.deepEqual(moveSiteSection(ordered, 'Lista de presentes', -1), ['Eventos', 'Lista de presentes', 'Confirmação de presença'])
   assert.deepEqual(orderedSiteSections({ enabledSections: ['Eventos'], giftDisplayMode: 'hidden' }), ['Eventos'])
 })
+
+test('dress code can be ordered as its own invitation section', () => {
+  const config = { enabledSections: ['Eventos', 'Dress code', 'Confirmação de presença'] }
+  assert.deepEqual(orderedSiteSections(config), ['Eventos', 'Dress code', 'Confirmação de presença'])
+  assert.deepEqual(moveSiteSection(config.enabledSections, 'Dress code', -1), ['Dress code', 'Eventos', 'Confirmação de presença'])
+})

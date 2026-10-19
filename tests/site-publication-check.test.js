@@ -18,6 +18,11 @@ test('site publication warns about incomplete event details without blocking', (
   assert.deepEqual(result.warnings, ['Há evento sem endereço. Confira se os convidados terão como localizar o local.'])
 })
 
+test('site publication warns when an active dress code section has no content', () => {
+  const result = checkSitePublication({ enabledSections: ['Dress code'], weddingDetails: { dressCode: '  ' } })
+  assert.deepEqual(result.warnings, ['A seção Dress code está ativa, mas ainda não tem orientação de traje.'])
+})
+
 test('site publication warns when enabled story, timeline, or gallery sections are empty', () => {
   const result = checkSitePublication({
     enabledSections: ['Nossa história', 'Linha do tempo', 'Galeria de fotos'],
