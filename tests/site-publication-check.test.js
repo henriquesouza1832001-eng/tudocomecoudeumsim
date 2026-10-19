@@ -18,6 +18,20 @@ test('site publication warns about incomplete event details without blocking', (
   assert.deepEqual(result.warnings, ['Há evento sem endereço. Confira se os convidados terão como localizar o local.'])
 })
 
+test('site publication warns when enabled story, timeline, or gallery sections are empty', () => {
+  const result = checkSitePublication({
+    enabledSections: ['Nossa história', 'Linha do tempo', 'Galeria de fotos'],
+    storyMessages: { 'pt-BR': '   ' },
+    timeline: [{ title: '' }],
+    siteGallery: [],
+  })
+  assert.deepEqual(result.warnings, [
+    'A seção Nossa história está ativa, mas ainda não tem texto.',
+    'A seção Linha do tempo está ativa, mas ainda não tem marcos preenchidos.',
+    'A seção de galeria está ativa, mas ainda não tem fotos selecionadas.',
+  ])
+})
+
 test('photos outside active galleries do not create accessibility blockers', () => {
   const result = checkSitePublication({ siteCarouselEnabled: false, siteCarouselPhotos: ['unused'] })
   assert.deepEqual(result.blockers, [])
