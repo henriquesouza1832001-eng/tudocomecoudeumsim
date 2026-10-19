@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import { SITE_MEDIA_LIMITS } from './site-media-config.js'
 import { ORDERABLE_SITE_SECTIONS, moveSiteSection as moveSiteSectionOrder, orderedSiteSections } from './site-sections.js'
 import { getThemePalettes, isValidCustomAccent } from './site-style.js'
+import { checkSitePublication } from './site-publication-check.js'
 import {
   ArrowDown,
   ArrowLeft,
@@ -1570,7 +1571,13 @@ function CouplePanel({ notify, confirmAction }) {
     setSiteConfigLoading(true)
     setError('')
     try {
-      if (!await confirmAction('Seu convite ficará disponível para os convidados que receberem o link individual. Deseja continuar?', 'Publicar convite', 'Publicar convite')) return
+      const publicationCheck = checkSitePublication(configOverride, events)
+      if (publicationCheck.blockers.length) {
+        setError(publicationCheck.blockers.join(' '))
+        return
+      }
+      const warningText = publicationCheck.warnings.length ? ` Antes de publicar, confira: ${publicationCheck.warnings.join(' ')}` : ''
+      if (!await confirmAction(`Seu convite ficará disponível para os convidados que receberem o link individual. Deseja continuar?${warningText}`, 'Publicar convite', 'Publicar convite')) return
       if (profile) await saveWeddingProfile(profile)
       let draft = configOverride
       if (JSON.stringify(configOverride) !== JSON.stringify(savedSiteConfig)) {
@@ -1585,7 +1592,7 @@ function CouplePanel({ notify, confirmAction }) {
       setWeddings((current) => current.map((item) => item.id === weddingId ? { ...item, status: result.status } : item))
       notify('Site publicado para os convites individuais')
     } catch (cause) {
-      setError(cause.message === 'wedding_profile_incomplete' ? 'Preencha os nomes do casal na etapa Aparência antes de publicar.' : cause.message === 'wedding_not_publishable' ? 'Este casamento está encerrado e não pode ser publicado.' : cause.message === 'wedding_suspended' ? 'Este casamento está suspenso e não pode ser publicado.' : cause.message === 'site_media_not_found' ? 'Uma foto do convite não está mais disponível. Remova-a ou envie novamente antes de publicar.' : cause.message === 'invalid_site_config' ? 'Revise os dados do convite e tente publicar novamente.' : cause.message === 'media_storage_unavailable' ? 'O armazenamento de fotos está indisponível no momento.' : 'Não foi possível publicar o convite. Tente novamente.')
+      setError(cause.message === 'wedding_profile_incomplete' ? 'Preencha os nomes do casal na etapa Aparência antes de publicar.' : cause.message === 'site_accessibility_incomplete' ? 'Preencha a descrição acessível das fotos usadas no convite antes de publicar.' : cause.message === 'wedding_not_publishable' ? 'Este casamento está encerrado e não pode ser publicado.' : cause.message === 'wedding_suspended' ? 'Este casamento está suspenso e não pode ser publicado.' : cause.message === 'site_media_not_found' ? 'Uma foto do convite não está mais disponível. Remova-a ou envie novamente antes de publicar.' : cause.message === 'invalid_site_config' ? 'Revise os dados do convite e tente publicar novamente.' : cause.message === 'media_storage_unavailable' ? 'O armazenamento de fotos está indisponível no momento.' : 'Não foi possível publicar o convite. Tente novamente.')
     } finally {
       setSiteConfigLoading(false)
     }
