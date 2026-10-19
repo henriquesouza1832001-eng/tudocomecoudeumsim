@@ -32,7 +32,15 @@ test('site publication warns when enabled story, timeline, or gallery sections a
   ])
 })
 
-test('photos outside active galleries do not create accessibility blockers', () => {
-  const result = checkSitePublication({ siteCarouselEnabled: false, siteCarouselPhotos: ['unused'] })
+test('photos in disabled sections do not create accessibility blockers', () => {
+  const result = checkSitePublication({
+    enabledSections: ['Eventos'],
+    siteGallery: ['unused-gallery-photo'],
+    siteCarouselEnabled: false,
+    siteCarouselPhotos: ['unused-carousel-photo'],
+    timeline: [{ photoId: 'unused-timeline-photo' }],
+    giftDisplayMode: 'hidden',
+    giftPresentation: { item: { photoId: 'unused-gift-photo' } },
+  })
   assert.deepEqual(result.blockers, [])
 })
