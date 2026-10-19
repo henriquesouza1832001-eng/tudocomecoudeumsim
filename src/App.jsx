@@ -708,6 +708,19 @@ function IdentityDialog({ config, onResolve }) {
 function App() {
   const [view, setView] = useState(resolveCurrentView)
   const [theme, setTheme] = useState('garden')
+
+  useEffect(() => {
+    const robotsMeta = document.querySelector('meta[name="robots"]')
+    if (view !== 'public-wedding') {
+      robotsMeta?.remove()
+      return
+    }
+    const meta = robotsMeta || document.createElement('meta')
+    meta.name = 'robots'
+    meta.content = 'noindex, nofollow'
+    if (!robotsMeta) document.head.append(meta)
+    return () => meta.remove()
+  }, [view])
   const [adminPage, setAdminPage] = useState('overview')
   const [toast, setToast] = useState('')
   const [dialog, setDialog] = useState(null)
@@ -2357,7 +2370,7 @@ function GuestPhotoAlbum({ weddingId, notify, confirmAction }) {
     }
   }
 
-  return <section className="role-card guest-photo-album"><div className="role-card-heading"><div><span className="eyebrow">LEMBRANÇAS DA CELEBRAÇÃO</span><h2>Fotos pelos olhos dos convidados</h2></div><button className="button-outline photo-album-print-button" onClick={() => window.print()} disabled={!photos.length}><Printer size={15} /> Salvar álbum em PDF</button></div><p>As fotos aparecem aqui com o nome de quem registrou o momento. Na impressão do navegador, escolha “Salvar como PDF” para guardar um álbum que se adapta à tela e ao papel.</p>{error && <p className="admin-form-error" role="alert">{error}</p>}{loading ? <p>Carregando as lembranças…</p> : photos.length ? <div className="guest-photo-grid">{photos.map((photo) => <figure key={photo.id}><img src={`/api/couple/weddings/${weddingId}/photos/${photo.id}/image`} alt={`Foto enviada por ${photo.guest_name} no evento ${photo.event_name}`} loading="lazy" /><figcaption><span><strong>{photo.guest_name}</strong><small>{photo.event_name} · {new Date(photo.created_at).toLocaleDateString('pt-BR')}</small></span><button className="button-outline guest-remove-button photo-remove-button" onClick={() => removePhoto(photo)} disabled={busyPhoto === photo.id} aria-label={`Remover foto enviada por ${photo.guest_name}`}><Trash2 size={14} /></button></figcaption></figure>)}</div> : <div className="guest-photo-empty"><Camera size={23} /><strong>O álbum começa com uma foto espontânea.</strong><span>Ativem a câmera dos convidados na personalização do convite. Vocês escolhem quantas fotos cada pessoa pode guardar.</span></div>}</section>
+  return <section className="role-card guest-photo-album"><div className="role-card-heading"><div><span className="eyebrow">LEMBRANÇAS DA CELEBRAÇÃO</span><h2>Fotos pelos olhos dos convidados</h2></div><button className="button-outline photo-album-print-button" onClick={() => window.print()} disabled={!photos.length}><Printer size={15} /> Salvar álbum em PDF</button></div><p>As fotos aparecem aqui com o nome de quem registrou o momento. Na impressão do navegador, escolha “Salvar como PDF” para guardar um álbum que se adapta à tela e ao papel.</p>{error && <p className="admin-form-error" role="alert">{error}</p>}{loading ? <p>Carregando as lembranças…</p> : photos.length ? <div className="guest-photo-grid">{photos.map((photo) => <figure key={photo.id}><img src={`/api/couple/weddings/${weddingId}/photos/${photo.id}/image`} alt={`Foto enviada por ${photo.guest_name} no evento ${photo.event_name}`} loading="lazy" /><figcaption><span><strong>{photo.guest_name}</strong><small>{photo.event_name} · {new Date(photo.created_at).toLocaleDateString('pt-BR')}</small></span><button className="button-outline guest-remove-button photo-remove-button" onClick={() => removePhoto(photo)} disabled={busyPhoto === photo.id} aria-label={`Remover foto enviada por ${photo.guest_name}`}><Trash2 size={14} /></button></figcaption></figure>)}</div> : <div className="guest-photo-empty"><Camera size={23} /><strong>O álbum começa com uma foto espontânea.</strong><span>Ativem a câmera na personalização do convite. O álbum tem um limite total compartilhado por todos os convidados.</span></div>}</section>
 }
 
 function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt, onLogout }) {
@@ -2834,7 +2847,7 @@ function pageSubtitle(page) {
     site: 'As informações que seus convidados encontram no site.',
     guests: 'Convites, respostas e grupos reunidos em um só lugar.',
     invites: 'Compartilhe seu convite por link curto, endereço ou QR code.',
-    gifts: 'Acompanhe ideias de presente, recebimentos e formas de pagamento.',
+    gifts: 'Organize presentes por Pix direto aos noivos ou links de lojas externas.',
     customize: 'Escolha um tema e ajuste apenas o que faz sentido para vocês.',
     game: 'Uma brincadeira opcional para aproximar seus convidados.',
   }
@@ -2844,7 +2857,7 @@ function pageSubtitle(page) {
 function Overview({ setPage, notify }) {
   return <>
     <div className="welcome-card"><div className="welcome-copy"><span className="eyebrow">18 DE SETEMBRO DE 2027 · PARATY, RJ</span><h2>O próximo capítulo<br />começa a ganhar forma.</h2><p>Seu site está em uma prévia de demonstração, com exemplos de conteúdo.</p><div className="welcome-actions"><button className="button-primary" onClick={() => setPage('customize')}>Personalizar site <ArrowRight size={15} /></button><button className="welcome-link" onClick={() => setPage('invites')}>Ver convite <ExternalLink size={14} /></button></div></div><div className="welcome-art"><img src="/images/wedding-pexels.webp" alt="Imagem de capa de demonstração" /><span>e<span>&</span>t</span></div><div className="welcome-bottom"><span><span className="status-dot" /> SITE DE DEMONSTRAÇÃO</span><button onClick={() => notify('O domínio será definido pelo dono do projeto')}>Endereço a definir <ArrowRight size={14} /></button></div></div>
-    <div className="stats-grid"><Stat icon={Users} label="Convidados" value="128" note="exemplos cadastrados" tint="sage" /><Stat icon={Check} label="Confirmações" value="86" note="respostas de demonstração" tint="sand" /><Stat icon={Gift} label="Presentes" value="R$ 1.130" note="valores ilustrativos" tint="rose" /></div>
+    <div className="stats-grid"><Stat icon={Users} label="Convidados" value="128" note="exemplos cadastrados" tint="sage" /><Stat icon={Check} label="Confirmações" value="86" note="respostas de demonstração" tint="sand" /><Stat icon={Gift} label="Presentes" value="3 itens" note="exemplo de lista" tint="rose" /></div>
     <div className="overview-grid"><section className="dash-card checklist-card"><div className="card-heading"><div><span className="eyebrow">PRÓXIMOS PASSOS</span><h3>Seu planejamento</h3></div><button className="round-arrow" onClick={() => notify('Lista de planejamento de demonstração')}><ArrowRight size={16} /></button></div><div className="progress-summary"><div><strong>3 de 6</strong><span>etapas iniciadas</span></div><div className="progress-track"><span style={{ width: '52%' }} /></div></div><div className="checklist-row done"><span className="check-circle"><Check size={13} /></span><span><strong>Definir data e local</strong><small>Informações de demonstração</small></span><ChevronRight size={15} /></div><div className="checklist-row done"><span className="check-circle"><Check size={13} /></span><span><strong>Montar a lista de convidados</strong><small>128 nomes de demonstração</small></span><ChevronRight size={15} /></div><div className="checklist-row"><span className="check-circle" /><span><strong>Escolher o visual do site</strong><small>Compare os oito temas</small></span><button onClick={() => setPage('customize')}>Escolher</button></div><div className="checklist-row"><span className="check-circle" /><span><strong>Enviar convites</strong><small>O domínio ainda será definido</small></span><button onClick={() => setPage('invites')}>Preparar</button></div><button className="all-checklist" onClick={() => notify('Lista demonstrativa')}>Ver planejamento completo <ArrowRight size={14} /></button></section>
       <section className="dash-card response-card"><div className="card-heading"><div><span className="eyebrow">CONVIDADOS</span><h3>Respostas recentes</h3></div><button className="text-arrow" onClick={() => setPage('guests')}>Ver todos <ArrowRight size={14} /></button></div><div className="response-visual"><div className="donut-chart"><div><strong>67%</strong><small>confirmados</small></div></div><div className="response-legend"><span><i className="legend-confirmed" /> Confirmaram <b>86</b></span><span><i className="legend-waiting" /> Aguardando <b>32</b></span><span><i className="legend-declined" /> Não poderão ir <b>10</b></span></div></div><div className="response-footer"><span>Dados ilustrativos para o mockup</span><button onClick={() => setPage('guests')}>Abrir lista <ArrowRight size={13} /></button></div></section></div>
   </>
