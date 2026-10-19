@@ -12,5 +12,13 @@ test('site section order follows the saved configuration and keeps enabled legac
 test('couple section controls reorder rendered sections without dropping other saved sections', () => {
   const initial = ['Eventos', 'Cronograma', 'Nossa história', 'Confirmação de presença']
   assert.deepEqual(moveSiteSection(initial, 'Eventos', 1), ['Nossa história', 'Cronograma', 'Eventos', 'Confirmação de presença'])
-  assert.deepEqual(moveSiteSection(initial, 'Nossa história', 1), initial)
+  assert.deepEqual(moveSiteSection(initial, 'Nossa história', 1), ['Eventos', 'Cronograma', 'Confirmação de presença', 'Nossa história'])
+})
+
+test('gifts and RSVP can be ordered with the existing invitation sections', () => {
+  const config = { enabledSections: ['Eventos', 'Confirmação de presença'], giftDisplayMode: 'inline' }
+  const ordered = orderedSiteSections(config)
+  assert.deepEqual(ordered, ['Eventos', 'Confirmação de presença', 'Lista de presentes'])
+  assert.deepEqual(moveSiteSection(ordered, 'Lista de presentes', -1), ['Eventos', 'Lista de presentes', 'Confirmação de presença'])
+  assert.deepEqual(orderedSiteSections({ enabledSections: ['Eventos'], giftDisplayMode: 'hidden' }), ['Eventos'])
 })
