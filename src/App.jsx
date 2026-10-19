@@ -2941,7 +2941,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       if (mediaType === 'image' && !config.coverPhotoId) setConfig((current) => ({ ...current, coverPhotoId: result.id }))
       if (mediaType === 'image' && usage === 'site') setConfig((current) => ({ ...current, siteGallery: [...new Set([...(current.siteGallery || []), result.id])], enabledSections: [...new Set([...(current.enabledSections || []), 'Galeria de fotos'])] }))
       else if (mediaType === 'image') setConfig((current) => ({ ...current, coverPhotoId: current.coverPhotoId || result.id, coverGallery: current.coverCarouselEnabled ? [...new Set([...(current.coverGallery || []), result.id])] : current.coverGallery || [] }))
-      else setConfig((current) => ({ ...current, coverVideoId: result.id, coverLayout: 'video' }))
+      else setConfig((current) => ({ ...current, coverVideoId: result.id }))
     } catch (error) {
       setMediaError(error.message)
     } finally {

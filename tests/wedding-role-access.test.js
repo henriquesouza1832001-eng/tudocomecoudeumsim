@@ -147,6 +147,7 @@ test('couple site config saves independent cover framing, image descriptions, di
 
 test('couple site config rejects invalid cover and display choices', async () => {
   for (const invalid of [
+    { coverLayout: 'video' },
     { coverComposition: 'freeform' },
     { coverTextAlign: 'justify' },
     { coverTextPosition: 'freeform' },
