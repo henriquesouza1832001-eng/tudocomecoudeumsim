@@ -7,3 +7,4 @@ Disallow: /convidado
 Disallow: /padrinhos
 Disallow: /equipe
 Disallow: /pre-entrada
+Sitemap: https://tudocomecoudeumsim.pages.dev/sitemap.xml

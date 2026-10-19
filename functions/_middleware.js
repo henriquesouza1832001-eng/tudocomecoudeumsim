@@ -1,3 +1,5 @@
+import { PRODUCT_BASE_URL, PRODUCT_NAME } from '../src/product-config.js'
+
 export const protectedPath = (pathname) => pathname === '/superadmin'
   || pathname.startsWith('/superadmin/')
   || pathname === '/api/superadmin'
@@ -75,6 +77,29 @@ export async function onRequest(context) {
   }
 
   response ||= await context.next()
+  const url = new URL(context.request.url)
+  const contentType = response.headers.get('Content-Type') || ''
+  if (url.pathname === '/' && context.request.method === 'GET' && response.status === 200 && contentType.includes('text/html')) {
+    const website = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: PRODUCT_NAME,
+      url: `${PRODUCT_BASE_URL}/`,
+      inLanguage: 'pt-BR',
+    }
+    const structuredData = JSON.stringify(website).replace(/</g, '\\u003c')
+    const metadata = `<link rel="canonical" href="${PRODUCT_BASE_URL}/"><script type="application/ld+json">${structuredData}</script>`
+    const html = (await response.text()).replace('</head>', `${metadata}</head>`)
+    const headers = new Headers(response.headers)
+    headers.delete('Content-Length')
+    headers.delete('Content-Encoding')
+    headers.delete('ETag')
+    response = new Response(html, { status: response.status, statusText: response.statusText, headers })
+  } else if (contentType.includes('text/html') && (url.pathname.startsWith('/casamento/') || url.pathname === '/documentos-legais/rascunho' || url.pathname.startsWith('/estudo-') || url.pathname === '/painel/demo' || url.pathname === '/criar-site' || url.pathname === '/cadastro')) {
+    const headers = new Headers(response.headers)
+    headers.set('X-Robots-Tag', 'noindex, nofollow')
+    response = new Response(response.body, { status: response.status, statusText: response.statusText, headers })
+  }
   const headers = new Headers(response.headers)
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('X-Frame-Options', 'DENY')

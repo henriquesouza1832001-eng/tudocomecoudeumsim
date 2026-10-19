@@ -478,6 +478,8 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - Na demonstração `/painel/demo`, o seletor de capa foi alinhado às três composições permitidas: foto em destaque, foto ao lado e foto em moldura. O vídeo continua opcional em controle separado no painel autenticado; não é uma composição.
 - `main`, `hen` e `lar` estavam no mesmo commit antes desta correção. `npm test` (123 testes), `npm run lint`, `npm run build` e `git diff --check` passaram.
 - O painel autenticado mantém Personalizar como primeira área. Grupos são organizados dentro de Convidados e não têm aba própria.
+- O atributo `lang="pt-BR"` já existia no HTML. A landing da raiz agora é pré-renderizada no build com o H1 e CSS; o middleware adiciona canonical e JSON-LD WebSite somente na raiz. O sitemap inclui apenas a landing, e convites, rascunho legal, cadastro e demonstrações recebem `X-Robots-Tag: noindex, nofollow`.
+- A consulta à API do PageSpeed Insights retornou HTTP 429; não foi possível obter uma pontuação real nesta rodada.
 
 ## Continuidade de trabalho — personalizador e convite compacto
 

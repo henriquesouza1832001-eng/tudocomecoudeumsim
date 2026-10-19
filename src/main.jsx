@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import '@fontsource/dm-sans/400.css'
 import '@fontsource/dm-sans/500.css'
 import '@fontsource/dm-sans/600.css'
@@ -23,16 +23,6 @@ const isMarketingConcepts = window.location.pathname === '/estudo-identidade'
 const isGiftConcepts = window.location.pathname === '/estudo-presentes'
 const isMarketingLanding = import.meta.env.PROD && window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
 
-if (isMarketingLanding) {
-  const imagePreload = document.createElement('link')
-  imagePreload.rel = 'preload'
-  imagePreload.as = 'image'
-  imagePreload.href = '/images/wedding-pexels.avif'
-  imagePreload.type = 'image/avif'
-  imagePreload.fetchPriority = 'high'
-  document.head.append(imagePreload)
-}
-
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true })
@@ -40,10 +30,17 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   })
 }
 
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root')
+const application = (
   <React.StrictMode>
     <Suspense fallback={<div className="page-loading" aria-label="Carregando página" />}>
       {isMarketingConcepts ? <MarketingConcepts /> : isGiftConcepts ? <GiftConcepts /> : isMarketingLanding ? <MarketingLanding /> : <App />}
     </Suspense>
-  </React.StrictMode>,
+  </React.StrictMode>
 )
+
+if (isMarketingLanding) hydrateRoot(rootElement, application)
+else {
+  rootElement.replaceChildren()
+  createRoot(rootElement).render(application)
+}

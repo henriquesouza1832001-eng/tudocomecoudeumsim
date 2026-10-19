@@ -43,7 +43,7 @@ function WeddingPhoto() {
   return <>
     <div className="marketing-photo-frame" ref={photoFrame} onPointerMove={movePhoto} onPointerLeave={resetPhoto}>
       <button className="marketing-photo-button" type="button" onClick={() => setIsOpen(true)} aria-label={`Ampliar foto: ${photo.alt}`} aria-haspopup="dialog">
-        <picture><source srcSet={photo.avif} type="image/avif" /><img src={photo.src} alt={photo.alt} width="1280" height="853" fetchPriority="high" decoding="async" /></picture>
+        <picture><source srcSet={photo.avif} type="image/avif" /><img src={photo.src} alt={photo.alt} width="1280" height="853" decoding="async" /></picture>
         <span className="marketing-photo-label"><span>Uma ideia para o convite de vocês</span><small>{photo.credit}</small></span>
       </button>
       <span className="marketing-flower-mark marketing-flower-hero" aria-hidden="true"><Flower2 /></span>
@@ -90,7 +90,7 @@ export default function MarketingLanding() {
   }, [])
 
   return <div className="marketing-page">
-    <header className={`marketing-header${headerVisible ? '' : ' marketing-header-hidden'}`} id="marketing-header" ref={headerRef} aria-hidden={!headerVisible} inert={!headerVisible}>
+    <header className={`marketing-header${headerVisible ? '' : ' marketing-header-hidden'}`} id="marketing-header" ref={headerRef} aria-hidden={!headerVisible} inert={headerVisible ? undefined : ''}>
       <a className="marketing-brand" href="/" aria-label="Página inicial"><span>e<span>&amp;</span>t</span><strong>sites de casamento</strong></a>
       <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#convite">O convite</a><a href="#presentes">Presentes</a><a href="#planejamento">Planejamento</a><a href="#entrada">Entrada</a><a className="marketing-login" href="/painel">Entrar</a></nav>
       <a className="marketing-header-cta" href="/cadastro">Criar acesso <ArrowRight size={17} /></a>
