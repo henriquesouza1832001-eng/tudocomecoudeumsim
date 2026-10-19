@@ -13,6 +13,7 @@ const siteConfig = {
   coverImagePosition: 'top',
   coverImagePositionDesktop: 'right',
   coverImagePositionMobile: 'bottom',
+  imageAltTexts: { [mediaId]: { 'pt-BR': 'Ana e Bia caminhando no jardim da cerimônia.' } },
   coverImage: 'none',
   coverPhotoId: mediaId,
   coverCarouselEnabled: false,
@@ -95,6 +96,7 @@ test('public invitation shares only published events available to every guest', 
   assert.equal(body.siteConfig.customAccent, '#be6f52')
   assert.equal(body.siteConfig.coverImagePositionDesktop, 'right')
   assert.equal(body.siteConfig.coverImagePositionMobile, 'bottom')
+  assert.equal(body.siteConfig.imageAltTexts[mediaId]['pt-BR'], 'Ana e Bia caminhando no jardim da cerimônia.')
 })
 
 test('public invitation migrates the legacy cover framing into both device settings', async () => {

@@ -34,7 +34,7 @@ const coverTextPositions = ['top', 'center', 'bottom']
 const coverImagePositions = ['center', 'top', 'bottom', 'left', 'right']
 const giftDisplayModes = ['inline', 'page', 'hidden']
 const pixDisplayModes = ['inline', 'page', 'hidden']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], giftPresentation: {}, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], giftPresentation: {}, sectionContent: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const guestPhotoConsentVersion = 'guest-camera-v1'
 function validPixSettings(pix) {
   if (pix === undefined) return defaultSiteConfig.pix
@@ -129,6 +129,17 @@ function validSectionContent(content) {
   return result
 }
 
+function validImageAltTexts(value) {
+  if (value === undefined) return defaultSiteConfig.imageAltTexts
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length > SITE_MEDIA_LIMITS.photosPerWedding) return null
+  const result = {}
+  for (const [id, translations] of Object.entries(value)) {
+    if (!/^[0-9a-f-]{36}$/i.test(id) || !translations || typeof translations !== 'object' || Array.isArray(translations) || Object.keys(translations).some((language) => language !== 'pt-BR') || typeof translations['pt-BR'] !== 'string' || translations['pt-BR'].length > 250) return null
+    result[id] = { 'pt-BR': translations['pt-BR'].trim() }
+  }
+  return result
+}
+
 function validTimeline(timeline) {
   if (timeline === undefined) return []
   if (!Array.isArray(timeline) || timeline.length > 6) return null
@@ -200,6 +211,8 @@ function parseSiteConfig(value) {
     if (!weddingDetails) return null
     const guestCamera = validGuestCamera(config.guestCamera)
     if (!guestCamera) return null
+    const imageAltTexts = validImageAltTexts(config.imageAltTexts)
+    if (!imageAltTexts) return null
     if ((config.siteCarouselEnabled !== undefined && typeof config.siteCarouselEnabled !== 'boolean')
       || (config.siteCarouselAutoplay !== undefined && typeof config.siteCarouselAutoplay !== 'boolean')
       || (config.siteCarouselPhotos !== undefined && (!Array.isArray(config.siteCarouselPhotos) || config.siteCarouselPhotos.length > SITE_MEDIA_LIMITS.photosPerWedding || config.siteCarouselPhotos.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))))) return null
@@ -220,7 +233,7 @@ function parseSiteConfig(value) {
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
     const coverImagePositionDesktop = config.coverImagePositionDesktop || config.coverImagePosition || 'center'
     const coverImagePositionMobile = config.coverImagePositionMobile || coverImagePositionDesktop
-    return { ...defaultSiteConfig, ...config, language: 'pt-BR', customAccent: config.customAccent || null, coverLayout: siteCoverLayouts.includes(config.coverLayout) ? config.coverLayout : 'full', coverComposition: config.coverComposition || null, coverTextAlign: config.coverTextAlign || 'left', coverTextPosition: config.coverTextPosition || 'center', coverOverlayOpacity: config.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, giftDisplayMode: normalizedGiftDisplayMode(config), pixDisplayMode: normalizedPixDisplayMode(config), coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], siteCarouselEnabled: config.siteCarouselEnabled === true, siteCarouselPhotos: config.siteCarouselPhotos || [], siteCarouselAutoplay: config.siteCarouselAutoplay === true, coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, shareMessage, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
+    return { ...defaultSiteConfig, ...config, language: 'pt-BR', customAccent: config.customAccent || null, coverLayout: siteCoverLayouts.includes(config.coverLayout) ? config.coverLayout : 'full', coverComposition: config.coverComposition || null, coverTextAlign: config.coverTextAlign || 'left', coverTextPosition: config.coverTextPosition || 'center', coverOverlayOpacity: config.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(config), pixDisplayMode: normalizedPixDisplayMode(config), coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], siteCarouselEnabled: config.siteCarouselEnabled === true, siteCarouselPhotos: config.siteCarouselPhotos || [], siteCarouselAutoplay: config.siteCarouselAutoplay === true, coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, shareMessage, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -250,6 +263,8 @@ function validateSiteConfig(body) {
   if (!weddingDetails) return null
   const guestCamera = validGuestCamera(body.guestCamera)
   if (!guestCamera) return null
+  const imageAltTexts = validImageAltTexts(body.imageAltTexts)
+  if (!imageAltTexts) return null
   if ((body.siteCarouselEnabled !== undefined && typeof body.siteCarouselEnabled !== 'boolean')
     || (body.siteCarouselAutoplay !== undefined && typeof body.siteCarouselAutoplay !== 'boolean')
     || (body.siteCarouselPhotos !== undefined && (!Array.isArray(body.siteCarouselPhotos) || body.siteCarouselPhotos.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteCarouselPhotos.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))))) return null
@@ -270,7 +285,7 @@ function validateSiteConfig(body) {
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
   const coverImagePositionDesktop = body.coverImagePositionDesktop || body.coverImagePosition || 'center'
   const coverImagePositionMobile = body.coverImagePositionMobile || coverImagePositionDesktop
-  return { theme: body.theme, paletteIndex: body.paletteIndex, customAccent: body.customAccent || null, coverLayout: body.coverLayout, coverComposition: body.coverComposition || null, coverTextAlign: body.coverTextAlign || 'left', coverTextPosition: body.coverTextPosition || 'center', coverOverlayOpacity: body.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, giftDisplayMode: normalizedGiftDisplayMode(body), pixDisplayMode: normalizedPixDisplayMode(body), coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], siteCarouselEnabled: body.siteCarouselEnabled === true, siteCarouselPhotos: body.siteCarouselPhotos || [], siteCarouselAutoplay: body.siteCarouselAutoplay === true, coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: 'pt-BR', coverMessages, storyMessages, shareMessage, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, customAccent: body.customAccent || null, coverLayout: body.coverLayout, coverComposition: body.coverComposition || null, coverTextAlign: body.coverTextAlign || 'left', coverTextPosition: body.coverTextPosition || 'center', coverOverlayOpacity: body.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(body), pixDisplayMode: normalizedPixDisplayMode(body), coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], siteCarouselEnabled: body.siteCarouselEnabled === true, siteCarouselPhotos: body.siteCarouselPhotos || [], siteCarouselAutoplay: body.siteCarouselAutoplay === true, coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: 'pt-BR', coverMessages, storyMessages, shareMessage, timeline, giftPresentation, sectionContent, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {

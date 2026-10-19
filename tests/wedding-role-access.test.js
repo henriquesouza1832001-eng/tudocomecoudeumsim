@@ -109,8 +109,8 @@ test('editors can access drafts and update events', async () => {
   assert.equal(event.status, 201)
 })
 
-test('couple site config saves independent cover framing, display, and custom accent choices', async () => {
-  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
+test('couple site config saves independent cover framing, image descriptions, display, and custom accent choices', async () => {
+  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } }, giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
   const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config })
   const result = await response.json()
   assert.equal(response.status, 200)
@@ -121,6 +121,7 @@ test('couple site config saves independent cover framing, display, and custom ac
   assert.equal(result.draft.coverImagePosition, 'bottom')
   assert.equal(result.draft.coverImagePositionDesktop, 'bottom')
   assert.equal(result.draft.coverImagePositionMobile, 'left')
+  assert.deepEqual(result.draft.imageAltTexts, { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } })
   assert.equal(result.draft.customAccent, '#be6f52')
   assert.equal(result.draft.giftDisplayMode, 'page')
   assert.equal(result.draft.pixDisplayMode, 'page')
@@ -136,6 +137,9 @@ test('couple site config rejects invalid cover and display choices', async () =>
     { coverImagePosition: 'random' },
     { coverImagePositionDesktop: 'random' },
     { coverImagePositionMobile: 'random' },
+    { imageAltTexts: { invalid: { 'pt-BR': 'Descrição' } } },
+    { imageAltTexts: { ['a'.repeat(36)]: { en: 'Description' } } },
+    { imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'x'.repeat(251) } } },
     { customAccent: 'green' },
     { customAccent: '#gggggg' },
     { giftDisplayMode: 'external' },

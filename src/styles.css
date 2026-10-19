@@ -2609,6 +2609,8 @@ img { display: block; max-width: 100%; }
 .public-customizer .customizer-extra-fields { margin-top: 1px; }
 .public-customizer .customizer-extra-fields > div { display: grid; gap: 13px; }
 .public-customizer .customizer-extra-fields .font-pair-label { display: grid; gap: 7px; color: #38453c; font-size: 14px; font-weight: 600; }
+.couple-role-page .customizer-photo-alt-field { display: grid; gap: 7px; }
+.couple-role-page .customizer-photo-alt-field > img { width: 104px; aspect-ratio: 4 / 3; border: 1px solid #d8ddd5; object-fit: cover; }
 .public-customizer .customizer-extra-fields small, .public-customizer .customizer-step label small { color: #687168; font-size: 12px; font-weight: 400; text-align: right; }
 .public-customizer .customizer-wizard-actions { margin-top: 2px; }
 .public-customizer .customizer-wizard-actions .customizer-back { margin-right: auto; }
