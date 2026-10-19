@@ -228,7 +228,7 @@ function WeddingInvitationDocument({ theme, animationPreset, style, partnerOneNa
   </main>
 }
 
-function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts, giftPresentation, mediaUrl, timezone, showGifts, showPix, rsvpSection, preview = false, onOpenGifts, onOpenPix, onCopyPix, weddingUrl = '' }) {
+function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts, giftPresentation, mediaUrl, timezone, showGifts, showPix, rsvpSection, wallSection, preview = false, onOpenGifts, onOpenPix, onCopyPix, weddingUrl = '' }) {
   const giftMode = ['inline', 'page', 'hidden'].includes(config?.giftDisplayMode) ? config.giftDisplayMode : 'hidden'
   const pixMode = ['inline', 'page', 'hidden'].includes(config?.pixDisplayMode) ? config.pixDisplayMode : 'hidden'
   const story = config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR'] || ''
@@ -242,6 +242,7 @@ function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts,
     'Nossa história': story && <section className="public-wedding-story" id="nossa-historia"><span className="eyebrow">{sectionTitle('Nossa história', 'NOSSA HISTÓRIA')}</span><p>{story}</p></section>,
     'Linha do tempo': <WeddingTimelineSection items={config?.timeline || []} mediaUrl={mediaUrl} imageAltTexts={config?.imageAltTexts} title={sectionTitle('Linha do tempo', 'Alguns capítulos de nós')} preview={preview} />,
     'Padrinhos e madrinhas': <WeddingGodparentsSection people={config?.godparents || []} mediaUrl={mediaUrl} imageAltTexts={config?.imageAltTexts} title={sectionTitle('Padrinhos e madrinhas')} />,
+    'Mural de recados': wallSection,
     Eventos: <>
       <WeddingEventsSection events={events} timezone={timezone} title={sectionTitle('Eventos', 'Esperamos vocês')} preview={preview} />
       {(details.schedule || details.menu) && <section className="public-wedding-details">{details.schedule && <article><span className="eyebrow">ORIENTAÇÕES</span><p>{details.schedule}</p></article>}{details.menu && <article><span className="eyebrow">CARDÁPIO</span><p>{details.menu}</p></article>}</section>}
@@ -260,6 +261,73 @@ function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts,
   return <>
     {orderedSections.map((section) => <div className="public-wedding-section-group" key={section}>{sectionContent[section]}</div>)}
   </>
+}
+
+function WeddingWallSection({ messages = [], slug, preview = false, title = 'Deixe um recado para os noivos' }) {
+  const [authorName, setAuthorName] = useState('')
+  const [message, setMessage] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileReset, setTurnstileReset] = useState(0)
+  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  async function submit(event) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/public/weddings/${encodeURIComponent(slug)}/wall-messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authorName, message, turnstileToken }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error === 'too_many_requests' ? 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' : result.error === 'security_challenge_unavailable' ? 'O envio está temporariamente indisponível. Tente novamente mais tarde.' : result.error === 'security_challenge_failed' ? 'A verificação de segurança não foi concluída. Tente novamente.' : 'Não foi possível enviar o recado. Tente novamente.')
+      setSubmitted(true)
+      setAuthorName('')
+      setMessage('')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setTurnstileToken('')
+      setTurnstileReset((current) => current + 1)
+      setBusy(false)
+    }
+  }
+
+  return <section className="public-wedding-wall" id="mural-de-recados"><span className="eyebrow">MENSAGENS DE CARINHO</span><h2>{title}</h2><p>Os recados passam pela aprovação dos noivos antes de aparecerem aqui.</p>{messages.length > 0 && <div className="public-wedding-wall-list">{messages.map((item) => <article key={item.id}><p>{item.message}</p><strong>{item.authorName}</strong></article>)}</div>}{preview ? <div className="public-wedding-wall-preview"><strong>Uma mensagem de carinho aparecerá aqui</strong><span>Prévia da seção publicada</span></div> : submitted ? <p className="public-wedding-wall-success" role="status">Obrigado pelo carinho. Seu recado foi enviado para aprovação.</p> : <form onSubmit={submit}><label>Seu nome<input value={authorName} onChange={(event) => setAuthorName(event.target.value)} maxLength="80" required /></label><label>Recado<textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength="1200" rows="3" required /></label><TurnstileChallenge action="wedding_message" onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button type="submit" className="button-primary" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Enviando…' : 'Enviar recado'} <MessageCircle size={15} /></button></form>}</section>
+}
+
+function WeddingWallModeration({ weddingId }) {
+  const [messages, setMessages] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function load() {
+    const response = await fetch(`/api/couple/weddings/${encodeURIComponent(weddingId)}/wall-messages`)
+    const result = await response.json()
+    if (!response.ok) throw new Error('Não foi possível carregar os recados.')
+    setMessages(result.messages || [])
+  }
+
+  useEffect(() => { load().catch((cause) => setError(cause.message)) }, [weddingId])
+
+  async function updateMessage(messageId, status) {
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${encodeURIComponent(weddingId)}/wall-messages/${encodeURIComponent(messageId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
+      if (!response.ok) throw new Error('Não foi possível atualizar o recado.')
+      await load()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <section className="role-card guest-wall-moderation"><div className="role-card-heading"><div><span className="eyebrow">MURAL DO SITE</span><h2>Recados dos convidados</h2></div><span className="task-count">{messages.filter((item) => item.status === 'pending').length} aguardando</span></div><p className="team-access-note">Aprovem os recados que desejam exibir no site publicado. Os demais ficam privados.</p>{error && <p className="admin-form-error" role="alert">{error}</p>}{messages.length ? <div className="guest-wall-message-list">{messages.map((item) => <article key={item.id}><div><strong>{item.authorName}</strong><p>{item.message}</p><small>{item.status === 'pending' ? 'Aguardando aprovação' : item.status === 'approved' ? 'Publicado' : 'Recusado'}</small></div>{item.status !== 'approved' && <button type="button" className="button-primary" disabled={busy} onClick={() => updateMessage(item.id, 'approved')}>Aprovar</button>}{item.status !== 'rejected' && <button type="button" className="button-outline" disabled={busy} onClick={() => updateMessage(item.id, 'rejected')}>Recusar</button>}</article>)}</div> : <p className="buffet-empty">Nenhum recado recebido ainda.</p>}</section>
 }
 
 function WeddingInvitationRsvp({ title, requestUrl, publicRsvpStatus, publicCredential, rsvpEmailSent, error, eventList, eventId, setEventId, name, setName, email, setEmail, phone, setPhone, attendanceStatus, setAttendanceStatus, companions, maxCompanions, changeCompanion, setCompanions, setTurnstileToken, turnstileToken, turnstileReset, submitRsvp, busy }) {
@@ -2247,7 +2315,7 @@ function CouplePanel({ notify, confirmAction }) {
         {!isReader && <button className={tab === 'expenses' ? 'selected' : ''} aria-current={tab === 'expenses' ? 'page' : undefined} onClick={() => selectPanelTab('expenses')}><Wallet size={18} /><span>Despesas</span></button>}
         <button className={tab === 'gifts' ? 'selected' : ''} aria-current={tab === 'gifts' ? 'page' : undefined} onClick={() => selectPanelTab('gifts')}><Gift size={18} /><span>Presentes</span></button>
       </>}
-    </nav><div className="couple-panel-content">{tab === 'guests' && <>
+    </nav><div className="couple-panel-content">{tab === 'guests' && !isEditor && <WeddingWallModeration weddingId={weddingId} />}{tab === 'guests' && <>
       <section className="role-card guest-import-card"><div className="role-card-heading"><div><span className="eyebrow">COMECE PELA SUA LISTA</span><h2>Importar convidados</h2></div><Users size={18} /></div><p className="team-access-note">Envie até 100 pessoas de uma vez por CSV ou planilha Excel (.xlsx). Use o modelo para organizar nomes, grupos e acompanhantes; se uma linha tiver erro, nada será importado.</p>{!isEditor && <details className="guest-group-tools"><summary>Preparar grupos para a lista <span>{groups.length} grupos</span></summary><div><form className="couple-group-form guest-group-create-form" onSubmit={createGuestGroup}><label>Nome do grupo<input value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength="100" placeholder="Ex.: Família da noiva" required /></label><label>Categoria<select value={groupType} onChange={(event) => setGroupType(event.target.value)}><option value="family">Família</option><option value="friends">Amigos</option><option value="godparent">Padrinhos</option><option value="guest">Convidados</option><option value="other">Outro</option></select></label><button type="submit" className="button-outline" disabled={busy}>Criar grupo</button></form>{groups.length > 0 && <ul aria-label="Grupos cadastrados">{groups.map((group) => <li key={group.id}>{group.name}</li>)}</ul>}<small>Os grupos ajudam a importar a planilha e definir quais eventos cada pessoa pode ver.</small></div></details>}<div className="guest-import-actions"><button type="button" className="button-outline" onClick={downloadGuestCsvTemplate}>Baixar modelo CSV</button><label className="button-primary guest-import-file">{busy ? 'Importando…' : 'Importar lista'}<input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importGuestCsv} disabled={busy} /></label></div>{guestImportErrors.length > 0 && <div className="guest-import-errors" role="alert"><strong>Revise o arquivo</strong>{guestImportErrors.map((item) => <span key={item.row}>Linha {item.row}: {item.fields.join(', ')}</span>)}</div>}{guestImportResults.length > 0 && <div className="guest-import-success"><span>{guestImportResults.length} convidados importados. Os links individuais foram criados.</span><button type="button" className="button-outline" onClick={downloadImportedGuestLinks}>Baixar links dos convites <QrCode size={14} /></button></div>}</section>
       <section className="role-card guest-manual-card"><div className="role-card-heading"><div><span className="eyebrow">CADASTRO RÁPIDO</span><h2>Adicionar uma pessoa</h2></div></div><form className="couple-guest-form" onSubmit={createGuest}><label>Nome<input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength="160" required /></label><label>Pessoas<input type="number" min="1" max="20" value={guestPartySize} onChange={(event) => setGuestPartySize(event.target.value)} required /></label><label>Grupo<select value={guestGroup} onChange={(event) => setGuestGroup(event.target.value)}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><details className="guest-extra-fields"><summary>Contato e detalhes opcionais</summary><div><label>Telefone<input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} /></label><label>E-mail<input type="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} /></label><label>Perfil<select value={guestType} onChange={(event) => setGuestType(event.target.value)}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={guestDietaryNotes} maxLength="1000" onChange={(event) => setGuestDietaryNotes(event.target.value)} /></label><small>O e-mail é opcional. Ele poderá ser usado em notificações quando esse recurso estiver disponível.</small></div></details><button type="submit" className="button-primary" disabled={busy}>Salvar pessoa e criar convite <QrCode size={15} /></button></form></section>
       {editingGuest && <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">EDITAR CONVITE</span><h2>{editingGuest.name}</h2></div></div><form className="couple-guest-form" onSubmit={saveGuest}><label>Nome<input value={editingGuest.name} onChange={(event) => setEditingGuest({ ...editingGuest, name: event.target.value })} maxLength="160" required /></label><label>Telefone<input type="tel" value={editingGuest.phone || ''} onChange={(event) => setEditingGuest({ ...editingGuest, phone: event.target.value })} /></label><label>Grupo<select value={editingGuest.group_id || ''} onChange={(event) => setEditingGuest({ ...editingGuest, group_id: event.target.value })}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>E-mail opcional<input type="email" value={editingGuest.email || ''} onChange={(event) => setEditingGuest({ ...editingGuest, email: event.target.value })} /></label><label>Pessoas<input type="number" min="1" max="20" value={editingGuest.party_size} onChange={(event) => setEditingGuest({ ...editingGuest, party_size: event.target.value })} required /></label><label>Perfil<select value={editingGuest.guest_type} onChange={(event) => setEditingGuest({ ...editingGuest, guest_type: event.target.value })}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={editingGuest.dietary_notes || ''} maxLength="1000" onChange={(event) => setEditingGuest({ ...editingGuest, dietary_notes: event.target.value })} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar alterações <Check size={15} /></button><button type="button" className="button-outline" disabled={busy} onClick={() => setEditingGuest(null)}>Cancelar</button></form></section>}
@@ -2994,7 +3062,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <WeddingInvitationDocument theme={theme.id} animationPreset={config.animationPreset} style={style} partnerOneName={partnerOneName || 'Nomes do casal'} partnerTwoName={partnerTwoName || 'seu par'} preview navigation={previewPage === 'invitation' ? <WeddingNavigation items={previewNavItems} givingOptions={previewGivingOptions} /> : <button type="button" className="button-outline" onClick={() => setPreviewPage('invitation')}>Voltar ao convite</button>}>
           {previewPage === 'invitation' ? <>
             <WeddingInvitationCover theme={theme.id} layout={coverLayout} composition={config.coverComposition} textAlign={config.coverTextAlign} textPosition={config.coverTextPosition} overlayOpacity={config.coverOverlayOpacity} imagePosition={coverImagePositionDesktop} mobileImagePosition={coverImagePositionMobile} photoAlt={imageAltText(config, previewCoverId, 'Foto escolhida pelo casal')} partnerOneName={partnerOneName} partnerTwoName={partnerTwoName} date={eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={eventTime} message={coverMessage} photoUrl={previewPhotoUrl} videoUrl={previewVideoUrl} showRsvp={(config.enabledSections || []).includes('Confirmação de presença')} preview carouselCount={config.coverCarouselEnabled ? (config.coverGallery || []).length : 0} carouselIndex={previewCoverIndex} />
-            <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} rsvpSection={(config.enabledSections || []).includes('Confirmação de presença') ? <WeddingInvitationRsvpPreview events={events} title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} /> : null} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
+            <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} rsvpSection={(config.enabledSections || []).includes('Confirmação de presença') ? <WeddingInvitationRsvpPreview events={events} title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} /> : null} wallSection={(config.enabledSections || []).includes('Mural de recados') ? <WeddingWallSection preview title={getSiteSectionTitle(config, 'Mural de recados')} /> : null} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
           </> : <WeddingDisplayPage kind={previewPage} weddingName={`${partnerOneName || 'Nomes do casal'} & ${partnerTwoName || 'seu par'}`} gifts={previewGifts.filter((gift) => gift.status === 'active')} presentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} imageAltTexts={config.imageAltTexts} pix={config.pix} preview onBack={() => setPreviewPage('invitation')} />}
         </WeddingInvitationDocument>
       </InvitationPreviewWindow>
@@ -3340,7 +3408,7 @@ function GeneralWeddingSite({ notify }) {
 
   useEffect(() => {
     if (!data || config?.animationPreset === 'Nenhum' || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return undefined
-    const sections = document.querySelectorAll('.public-wedding-story, .public-wedding-timeline, .public-wedding-countdown, .public-wedding-events, .public-wedding-details, .public-wedding-gallery, .public-wedding-gifts, .public-wedding-pix, .public-wedding-rsvp')
+    const sections = document.querySelectorAll('.public-wedding-story, .public-wedding-timeline, .public-wedding-countdown, .public-wedding-events, .public-wedding-details, .public-wedding-gallery, .public-wedding-gifts, .public-wedding-pix, .public-wedding-rsvp, .public-wedding-wall')
     sections.forEach((section) => section.classList.add('invite-section-reveal'))
     const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -3459,7 +3527,7 @@ function GeneralWeddingSite({ notify }) {
 
   return <WeddingInvitationDocument theme={config?.theme} animationPreset={config?.animationPreset} style={siteStyle} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} navigation={<WeddingNavigation items={publicNavigationItems} givingOptions={publicGivingOptions} />}>
     <WeddingInvitationCover theme={config?.theme || 'garden'} layout={config?.coverLayout} composition={config?.coverComposition} textAlign={config?.coverTextAlign} textPosition={config?.coverTextPosition} overlayOpacity={config?.coverOverlayOpacity} imagePosition={config?.coverImagePositionDesktop || config?.coverImagePosition} mobileImagePosition={config?.coverImagePositionMobile || config?.coverImagePositionDesktop || config?.coverImagePosition} photoAlt={imageAltText(config, coverId, 'Foto escolhida pelo casal')} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} date={data.wedding.eventDate ? new Date(`${data.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={data.wedding.eventTime} message={config?.coverMessages?.[config?.language] || config?.coverMessages?.['pt-BR']} photoUrl={coverUrl} videoUrl={coverVideoUrl} showRsvp={config?.enabledSections?.includes('Confirmação de presença')} carouselCount={config?.coverCarouselEnabled ? coverGallery.length : 0} carouselIndex={coverIndex} />
-    <WeddingInvitationContent config={config} eventDate={data.wedding.eventDate} eventTime={data.wedding.eventTime} events={eventList} gifts={publicGiftList} giftPresentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} timezone={data.wedding.timezone} showGifts={showGifts} showPix={showPix} rsvpSection={config?.enabledSections?.includes('Confirmação de presença') ? <WeddingInvitationRsvp title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} requestUrl={requestUrl} publicRsvpStatus={publicRsvpStatus} publicCredential={publicCredential} rsvpEmailSent={rsvpEmailSent} error={error} eventList={eventList} eventId={eventId} setEventId={setEventId} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} attendanceStatus={attendanceStatus} setAttendanceStatus={setAttendanceStatus} companions={companions} maxCompanions={maxCompanions} changeCompanion={changeCompanion} setCompanions={setCompanions} setTurnstileToken={setTurnstileToken} turnstileToken={turnstileToken} turnstileReset={turnstileReset} submitRsvp={submitRsvp} busy={busy} /> : null} onCopyPix={copyPixKey} weddingUrl={weddingUrl} />
+    <WeddingInvitationContent config={config} eventDate={data.wedding.eventDate} eventTime={data.wedding.eventTime} events={eventList} gifts={publicGiftList} giftPresentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} timezone={data.wedding.timezone} showGifts={showGifts} showPix={showPix} rsvpSection={config?.enabledSections?.includes('Confirmação de presença') ? <WeddingInvitationRsvp title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} requestUrl={requestUrl} publicRsvpStatus={publicRsvpStatus} publicCredential={publicCredential} rsvpEmailSent={rsvpEmailSent} error={error} eventList={eventList} eventId={eventId} setEventId={setEventId} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} attendanceStatus={attendanceStatus} setAttendanceStatus={setAttendanceStatus} companions={companions} maxCompanions={maxCompanions} changeCompanion={changeCompanion} setCompanions={setCompanions} setTurnstileToken={setTurnstileToken} turnstileToken={turnstileToken} turnstileReset={turnstileReset} submitRsvp={submitRsvp} busy={busy} /> : null} wallSection={config?.enabledSections?.includes('Mural de recados') ? <WeddingWallSection messages={data.wallMessages} slug={slug} title={getSiteSectionTitle(config, 'Mural de recados')} /> : null} onCopyPix={copyPixKey} weddingUrl={weddingUrl} />
   </WeddingInvitationDocument>
 }
 

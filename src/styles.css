@@ -3027,6 +3027,11 @@ img { display: block; max-width: 100%; }
 .couple-role-page .couple-panel-content:has(.guest-import-card) > .guest-manual-card,
 .couple-role-page .couple-panel-content:has(.guest-import-card) > .superadmin-card,
 .couple-role-page .couple-panel-content:has(.guest-import-card) > .couple-inline-rsvps { grid-column: 1 / -1; }
+.couple-role-page .guest-wall-moderation { grid-column: 1 / -1; background: #fffdfa; }
+.couple-role-page .guest-wall-message-list { display: grid; gap: 10px; }
+.couple-role-page .guest-wall-message-list article { padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; border: 1px solid #e0ded5; background: #fffefa; }
+.couple-role-page .guest-wall-message-list article p { margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.couple-role-page .guest-wall-message-list article small { color: #73786f; }
 .couple-role-page .guest-import-card { border-color: #cbd6c9; background: linear-gradient(130deg, #f1f4ed, #fffdfa 72%); }
 .couple-role-page .guest-manual-card .couple-guest-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .couple-role-page .guest-extra-fields { grid-column: 1 / -1; border: 1px solid #e3e1d8; background: #fffefa; }
@@ -3074,6 +3079,8 @@ img { display: block; max-width: 100%; }
   .couple-role-page .guest-extra-fields { grid-column: 1 / -1 !important; }
   .couple-role-page .guest-extra-fields > div { grid-template-columns: minmax(0, 1fr); }
   .couple-role-page .couple-guest-card-grid { grid-template-columns: minmax(0, 1fr); }
+  .couple-role-page .guest-wall-message-list article { grid-template-columns: minmax(0, 1fr) auto; }
+  .couple-role-page .guest-wall-message-list article > div { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .couple-role-page .couple-panel-tabs { transition: none; }
@@ -3490,6 +3497,7 @@ img { display: block; max-width: 100%; }
 .public-wedding-details,
 .public-wedding-editorial-section,
 .public-wedding-gallery,
+.public-wedding-wall,
 .public-wedding-gifts,
 .public-wedding-pix,
 .public-wedding-rsvp,
@@ -3833,7 +3841,8 @@ img { display: block; max-width: 100%; }
 .public-wedding-events > h2,
 .public-wedding-gifts > h2,
 .public-wedding-pix > h2,
-.public-wedding-rsvp > h2 {
+.public-wedding-rsvp > h2,
+.public-wedding-wall > h2 {
   margin-bottom: 32px;
   font-size: clamp(2rem, 4.2vw, 3.35rem);
   line-height: 1.08;
@@ -3850,6 +3859,21 @@ img { display: block; max-width: 100%; }
   font-size: clamp(1.45rem, 2.5vw, 2rem);
   line-height: 1.16;
 }
+
+.public-wedding-wall { max-width: 880px; margin-inline: auto; padding-block: clamp(48px, 7vw, 88px); }
+.public-wedding-wall > p { max-width: 640px; color: #667166; line-height: 1.65; }
+.public-wedding-wall-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; margin-block: 26px; }
+.public-wedding-wall-list article, .public-wedding-wall-preview { padding: 20px; border: 1px solid color-mix(in srgb, var(--forest) 18%, transparent); background: color-mix(in srgb, var(--paper) 72%, white); }
+.public-wedding-wall-list article p { margin: 0 0 14px; white-space: pre-wrap; line-height: 1.6; }
+.public-wedding-wall-list article strong { color: var(--forest); }
+.public-wedding-wall-preview { display: grid; gap: 8px; color: var(--forest); }
+.public-wedding-wall-preview span { color: #667166; font-size: 13px; }
+.public-wedding-wall-success { padding: 15px; border-left: 3px solid var(--forest); background: #f0f4ed; }
+.public-wedding-wall form { max-width: 680px; margin-top: 24px; display: grid; gap: 14px; }
+.public-wedding-wall form label { display: grid; gap: 6px; color: var(--forest); font-size: 14px; font-weight: 600; }
+.public-wedding-wall form input, .public-wedding-wall form textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #d7dcd3; background: #fffefa; color: var(--ink); font: inherit; }
+.public-wedding-wall form textarea { min-height: 100px; resize: vertical; }
+.public-wedding-wall form .button-primary { justify-self: start; min-height: 46px; }
 
 .public-wedding-gallery > div {
   grid-template-columns: 1.35fr .9fr .9fr;

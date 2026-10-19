@@ -1,4 +1,4 @@
-export const ORDERABLE_SITE_SECTIONS = ['Contagem regressiva', 'Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Galeria de fotos', 'Lista de presentes', 'Confirmação de presença', 'Padrinhos e madrinhas', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato']
+export const ORDERABLE_SITE_SECTIONS = ['Contagem regressiva', 'Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Galeria de fotos', 'Lista de presentes', 'Confirmação de presença', 'Padrinhos e madrinhas', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato']
 
 export function orderedSiteSections(config) {
   const sections = [...(config?.enabledSections || [])]

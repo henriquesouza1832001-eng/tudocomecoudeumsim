@@ -117,6 +117,33 @@ test('public invitation is unavailable before the wedding site is published', as
   assert.deepEqual(await response.json(), { error: 'published_site_not_found' })
 })
 
+test('published invitation loads wall messages only when the section is enabled', async () => {
+  let wallQuery = ''
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, enabledSections: [...siteConfig.enabledSections, 'Mural de recados'] }) }
+  const { response } = await call('/api/public/weddings/ana-e-bia', {
+    publishedWedding: configuredWedding,
+    all(query) {
+      if (query.includes('FROM guest_wall_messages')) wallQuery = query
+      return { results: [{ id: 'wall-1', authorName: 'Convidada', message: 'Que alegria!', createdAt: '2026-10-18T12:00:00.000Z' }] }
+    },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.match(wallQuery, /status = 'approved'/)
+  assert.equal(body.wallMessages[0].message, 'Que alegria!')
+})
+
+test('public wall submissions fail closed when Turnstile is not configured', async () => {
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, enabledSections: [...siteConfig.enabledSections, 'Mural de recados'] }) }
+  const { response } = await call('/api/public/weddings/ana-e-bia/wall-messages', {
+    method: 'POST',
+    publishedWedding: configuredWedding,
+    body: { authorName: 'Convidada', message: 'Que alegria!', turnstileToken: 'challenge-token' },
+  })
+  assert.equal(response.status, 503)
+  assert.deepEqual(await response.json(), { error: 'security_challenge_unavailable' })
+})
+
 test('published invitation preserves the event name and venue details', async () => {
   const eventName = 'CASAMENTO MELODY E PEDRO'
   const address = 'Av. Exemplo, 500, Belo Horizonte - MG'

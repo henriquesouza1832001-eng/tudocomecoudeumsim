@@ -619,12 +619,12 @@ async function allowRsvpRequest(context, guestId) {
   return { allowed: !(current?.blocked_until > now), retryAfter: current?.blocked_until > now ? current.blocked_until - now : 0 }
 }
 
-async function allowPublicWeddingRequest(context, weddingId) {
+async function allowPublicWeddingRequest(context, weddingId, requestType = 'rsvp') {
   const now = Math.floor(Date.now() / 1000)
   const windowSeconds = 600
   const maximumRequests = 8
   const remoteIp = context.req.header('CF-Connecting-IP') || 'unknown'
-  const identifierHash = await tokenHash(`public-wedding-rsvp:${weddingId}:${remoteIp}`)
+  const identifierHash = await tokenHash(`public-wedding-${requestType}:${weddingId}:${remoteIp}`)
   const current = await context.env.DB.prepare(`
     INSERT INTO public_wedding_request_limits (identifier_hash, wedding_id, request_count, window_started_at, blocked_until)
     VALUES (?, ?, 1, ?, NULL)
@@ -1850,6 +1850,25 @@ app.get('/api/couple/weddings/:weddingId/guests', requireSession, async (context
   return context.json({ guests: result.results })
 })
 
+app.get('/api/couple/weddings/:weddingId/wall-messages', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin'])) return jsonError(context, 404, 'wedding_not_found')
+  const result = await context.env.DB.prepare('SELECT id, author_name AS authorName, message, status, created_at AS createdAt FROM guest_wall_messages WHERE wedding_id = ? ORDER BY CASE status WHEN \'pending\' THEN 0 WHEN \'approved\' THEN 1 ELSE 2 END, created_at DESC LIMIT 200').bind(weddingId).all()
+  return context.json({ messages: result.results })
+})
+
+app.patch('/api/couple/weddings/:weddingId/wall-messages/:messageId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const body = await context.req.json().catch(() => null)
+  if (!['approved', 'rejected'].includes(body?.status)) return jsonError(context, 400, 'invalid_wall_message_status')
+  const result = await context.env.DB.prepare('UPDATE guest_wall_messages SET status = ? WHERE id = ? AND wedding_id = ?').bind(body.status, context.req.param('messageId'), weddingId).run()
+  if (!result.meta?.changes) return jsonError(context, 404, 'wall_message_not_found')
+  return context.json({ id: context.req.param('messageId'), status: body.status })
+})
+
 app.get('/api/couple/weddings/:weddingId/rsvps', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
@@ -2509,13 +2528,36 @@ app.get('/api/public/weddings/:slug', async (context) => {
     ? await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents
       FROM gifts WHERE wedding_id = ? AND status = 'active' AND (? = 1 OR fulfillment_type = 'store_link') ORDER BY display_order, created_at`).bind(wedding.id, showPix ? 1 : 0).all()
     : { results: [] }
+  const wallMessages = parsedConfig.enabledSections.includes('Mural de recados')
+    ? await context.env.DB.prepare("SELECT id, author_name AS authorName, message, created_at AS createdAt FROM guest_wall_messages WHERE wedding_id = ? AND status = 'approved' ORDER BY created_at DESC LIMIT 100").bind(wedding.id).all()
+    : { results: [] }
   return context.json({
     wedding: { slug: wedding.slug, partnerOneName: wedding.partner_one_name, partnerTwoName: wedding.partner_two_name, eventDate: wedding.event_date, eventTime: wedding.event_time, timezone: wedding.timezone },
     siteConfig,
     events: publicWeddingEvents(wedding),
     gifts: gifts.results,
+    wallMessages: wallMessages.results,
     guestPolicy: { companionsAllowed: Boolean(policy?.companions_allowed), maxCompanions: policy?.max_companions || 0 },
   }, 200, { 'Cache-Control': 'public, max-age=60' })
+})
+
+app.post('/api/public/weddings/:slug/wall-messages', async (context) => {
+  const wedding = await publicWeddingBySlug(context, context.req.param('slug'))
+  if (!wedding) return jsonError(context, 404, 'published_site_not_found')
+  const config = parseSiteConfig(wedding.published_site_config_json)
+  if (!config?.enabledSections.includes('Mural de recados')) return jsonError(context, 404, 'wall_unavailable')
+  const body = await context.req.json().catch(() => null)
+  const authorName = typeof body?.authorName === 'string' ? body.authorName.trim() : ''
+  const message = typeof body?.message === 'string' ? body.message.trim() : ''
+  if (!body || !authorName || authorName.length > 80 || !message || message.length > 1200) return jsonError(context, 400, 'invalid_wall_message')
+  const limit = await allowPublicWeddingRequest(context, wedding.id, 'wall')
+  if (!limit.allowed) return jsonError(context, 429, 'too_many_requests', { retryAfter: limit.retryAfter })
+  const challenge = await verifyTurnstile(context, body.turnstileToken, 'wedding_message')
+  if (!challenge.configured) return jsonError(context, 503, 'security_challenge_unavailable')
+  if (!challenge.verified) return jsonError(context, 403, 'security_challenge_failed')
+  const id = crypto.randomUUID()
+  await context.env.DB.prepare("INSERT INTO guest_wall_messages (id, wedding_id, author_name, message, status) VALUES (?, ?, ?, ?, 'pending')").bind(id, wedding.id, authorName, message).run()
+  return context.json({ id, status: 'pending' }, 201, { 'Cache-Control': 'no-store' })
 })
 
 app.get('/api/public/weddings/:slug/media/:mediaId', async (context) => {

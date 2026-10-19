@@ -249,6 +249,7 @@ test('editors and readers cannot access guest, payment, or team administration A
     '/api/couple/weddings/wedding-1/members',
     '/api/couple/weddings/wedding-1/event-assignments',
     '/api/couple/weddings/wedding-1/guests',
+    '/api/couple/weddings/wedding-1/wall-messages',
     '/api/couple/weddings/wedding-1/rsvps',
     '/api/couple/weddings/wedding-1/gifts',
     '/api/couple/weddings/wedding-1/contributions',
@@ -261,6 +262,14 @@ test('editors and readers cannot access guest, payment, or team administration A
     const groupMutation = await call('/api/couple/weddings/wedding-1/groups', role, { method: 'POST', body: { name: 'Família' } })
     assert.equal(groupMutation.status, 404, `${role} should not create guest groups`)
   }
+})
+
+test('only couple admins can approve public wall messages', async () => {
+  const blocked = await call('/api/couple/weddings/wedding-1/wall-messages/wall-1', 'reader', { method: 'PATCH', body: { status: 'approved' } })
+  const approved = await call('/api/couple/weddings/wedding-1/wall-messages/wall-1', 'couple_admin', { method: 'PATCH', body: { status: 'approved' } })
+  assert.equal(blocked.status, 404)
+  assert.equal(approved.status, 200)
+  assert.deepEqual(await approved.json(), { id: 'wall-1', status: 'approved' })
 })
 
 test('event staff can read only assigned event rosters without contact fields', async () => {
