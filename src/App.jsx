@@ -835,7 +835,7 @@ function resolveCurrentView() {
   if (path === '/estudo-personalizacao') return 'customization-study'
   if (path === '/superadmin' || path.startsWith('/superadmin/')) return 'superadmin'
   if (path === '/cadastro') return 'couple-signup'
-  if (path === '/criar-site') return 'couple-signup'
+  if (path === '/criar-site') return 'public-customizer'
   if (path === '/ajuda') return 'help-center'
   if (path === '/documentos-legais/rascunho') return 'legal-draft'
   if (path === '/painel/demo') return 'dashboard-preview'
@@ -1190,10 +1190,11 @@ function PasswordInput(props) {
 }
 
 function CoupleSignup() {
+  const publicDraft = readPublicSiteDraft()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
-  const [eventDate, setEventDate] = useState('')
+  const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
   const [eventTime, setEventTime] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
@@ -1213,10 +1214,11 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, turnstileToken }),
+        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName: publicDraft.partnerOneName || '', partnerTwoName: publicDraft.partnerTwoName || '', siteConfig: publicDraft.siteConfig || null, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'signup_failed')
+      if (publicDraft.siteConfig) window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
       setSubmitted(true)
       setPassword('')
       setConfirmation('')
@@ -1235,8 +1237,8 @@ function CoupleSignup() {
     }
   }
 
-  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : 'Cadastrem o e-mail e a senha para entrar no painel. O convite será criado depois, dentro da conta.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel, proteger o acesso por senha e permissões e criar o convite com as próprias fotos.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : publicDraft.siteConfig ? 'Criem o acesso para guardar no casamento o tema, a paleta e os textos que escolheram. A foto poderá ser enviada depois, no painel.' : 'Cadastrem o e-mail e a senha para abrir o painel e criar o convite com as próprias fotos.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel. O rascunho iniciado em “Criar site” já estará salvo no casamento; a foto pode ser enviada por lá.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
       <label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
       <div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
       <label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>

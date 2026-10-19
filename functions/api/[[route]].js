@@ -869,12 +869,16 @@ app.post('/api/auth/couple-signup', async (context) => {
   const password = typeof body?.password === 'string' ? body.password : ''
   const eventDate = body?.eventDate || null
   const eventTime = body?.eventTime || null
+  const partnerOneName = typeof body?.partnerOneName === 'string' ? body.partnerOneName.trim() : ''
+  const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
+  const siteConfig = body?.siteConfig === null || body?.siteConfig === undefined ? defaultSiteConfig : validateSiteConfig(body.siteConfig)
   const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
   const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
   if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
-    || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_signup')
+    || !dateIsValid || !timeIsValid || partnerOneName.length > 100 || partnerTwoName.length > 100
+    || !siteConfig) return jsonError(context, 400, 'invalid_signup')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
   const challenge = await verifyTurnstile(context, body.turnstileToken)
@@ -893,8 +897,8 @@ app.post('/api/auth/couple-signup', async (context) => {
     await context.env.DB.batch([
       context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status)
         VALUES (?, ?, ?, 'pending')`).bind(accountId, email, passwordHash),
-      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, event_date, event_time, timezone, status, site_config_json)
-        VALUES (?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, eventDate, eventTime, JSON.stringify(defaultSiteConfig)),
+      context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, event_time, timezone, status, site_config_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, partnerOneName || null, partnerTwoName || null, eventDate, eventTime, JSON.stringify(siteConfig)),
       context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status)
         VALUES (?, ?, ?, 'couple_admin', 'pending')`).bind(membershipId, weddingId, accountId),
       context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
@@ -1257,11 +1261,11 @@ app.patch('/api/couple/weddings/:weddingId/profile', requireSession, async (cont
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
   const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
-  if (!body || !partnerOneName || partnerOneName.length > 100 || !partnerTwoName || partnerTwoName.length > 100 || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_wedding_profile')
+  if (!body || partnerOneName.length > 100 || partnerTwoName.length > 100 || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_wedding_profile')
   const wedding = await context.env.DB.prepare('SELECT slug, site_published_at FROM weddings WHERE id = ?').bind(weddingId).first()
   if (!wedding) return jsonError(context, 404, 'wedding_not_found')
   let slug = wedding.slug
-  if (!wedding.site_published_at) {
+  if (!wedding.site_published_at && partnerOneName && partnerTwoName) {
     const base = `${partnerOneName}-${partnerTwoName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 21).replace(/-$/g, '')
     const reserved = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
     slug = base.length >= 3 && !reserved.includes(base) ? base : `casal-${weddingId.slice(0, 8)}`
@@ -1269,8 +1273,8 @@ app.patch('/api/couple/weddings/:weddingId/profile', requireSession, async (cont
     if (conflict) slug = `${slug.slice(0, 20)}-${weddingId.slice(0, 8)}`
   }
   await context.env.DB.prepare(`UPDATE weddings SET partner_one_name = ?, partner_two_name = ?, event_date = ?, event_time = ?, slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-    .bind(partnerOneName, partnerTwoName, eventDate, eventTime, slug, weddingId).run()
-  return context.json({ wedding: { id: weddingId, slug, partner_one_name: partnerOneName, partner_two_name: partnerTwoName, event_date: eventDate, event_time: eventTime } })
+    .bind(partnerOneName || null, partnerTwoName || null, eventDate, eventTime, slug, weddingId).run()
+  return context.json({ wedding: { id: weddingId, slug, partner_one_name: partnerOneName || null, partner_two_name: partnerTwoName || null, event_date: eventDate, event_time: eventTime } })
 })
 
 app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {

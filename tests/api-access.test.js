@@ -120,6 +120,23 @@ test('couple signup rejects an invalid optional event time', async () => {
   assert.deepEqual(await response.json(), { error: 'invalid_signup' })
 })
 
+test('couple signup accepts a partial draft profile and rejects an invalid saved site draft', async () => {
+  const incompleteProfile = await callApi('/api/auth/couple-signup', {
+    method: 'POST',
+    origin: base,
+    body: { email: 'casal@example.com', password: 'a-strong-password-123', partnerOneName: 'Ana' },
+  })
+  const invalidDraft = await callApi('/api/auth/couple-signup', {
+    method: 'POST',
+    origin: base,
+    body: { email: 'casal@example.com', password: 'a-strong-password-123', siteConfig: { theme: 'untrusted' } },
+  })
+  assert.equal(incompleteProfile.response.status, 503)
+  assert.deepEqual(await incompleteProfile.response.json(), { error: 'email_service_unconfigured' })
+  assert.equal(invalidDraft.response.status, 400)
+  assert.deepEqual(await invalidDraft.response.json(), { error: 'invalid_signup' })
+})
+
 test('guest and godparent endpoints reject requests without an individual invitation', async () => {
   const guest = await callApi('/api/invitation')
   const godparent = await callApi('/api/godparent/tasks')

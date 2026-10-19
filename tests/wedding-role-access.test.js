@@ -24,6 +24,7 @@ function database(role, options = {}) {
           if (query.includes('SELECT') && query.includes('FROM guest_rsvps WHERE event_id = ?')) return eventDeletion.relatedData || { rsvps: 0, checkins: 0, photos: 0, staff: 0 }
           if (query.includes('FROM auth_sessions s')) return { id: 'session-1', account_id: 'account-1', mfa_verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'editor@example.com', status: 'active', mfa_enabled_at: new Date().toISOString() }
           if (query.includes('SELECT id, role FROM wedding_memberships')) return options.teamMember || null
+          if (query.includes('SELECT slug, site_published_at FROM weddings')) return options.weddingProfile || { slug: 'ana-bia', site_published_at: null }
           if (query.includes('FROM wedding_memberships m JOIN weddings w')) {
             const allowedRoles = parameters.slice(2)
             return allowedRoles.includes(role) ? { id: 'membership-1', role, wedding_status: 'active' } : null
@@ -52,6 +53,7 @@ function database(role, options = {}) {
           return { results: [] }
         },
         async run() {
+          if (query.includes('UPDATE weddings SET partner_one_name') && options.profileCapture) options.profileCapture.parameters = parameters
           if (options.failGuestPhotoInsert && query.includes('INSERT INTO guest_photos')) throw new Error('test insert failure')
           if (query.includes('INSERT INTO guest_photos') && options.guestPhotoCount >= parameters.at(-1)) return { meta: { changes: 0 } }
           return { meta: { changes: 1 } }
@@ -107,6 +109,21 @@ test('editors can access drafts and update events', async () => {
   assert.equal(site.status, 200)
   assert.ok((await site.json()).draft)
   assert.equal(event.status, 201)
+})
+
+test('site draft profile autosave accepts missing names without replacing its temporary slug', async () => {
+  const profileCapture = {}
+  const databaseOptions = { weddingProfile: { slug: 'rascunho-12345678', site_published_at: null }, profileCapture }
+  const response = await call('/api/couple/weddings/wedding-1/profile', 'editor', {
+    method: 'PATCH',
+    body: { partnerOneName: 'Ana', partnerTwoName: '', eventDate: '2027-05-10', eventTime: null },
+    databaseOptions,
+  })
+  const result = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(result.wedding.partner_one_name, 'Ana')
+  assert.equal(result.wedding.partner_two_name, null)
+  assert.equal(profileCapture.parameters[4], 'rascunho-12345678')
 })
 
 test('couple site config saves independent cover framing, image descriptions, display, and custom accent choices', async () => {
