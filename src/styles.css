@@ -7885,3 +7885,171 @@ img { display: block; max-width: 100%; }
   font-size: 12px;
   line-height: 1.45;
 }
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form {
+  gap: 18px;
+  padding: clamp(22px, 4vw, 36px);
+}
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form label {
+  gap: 8px;
+  color: #424d43;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form input {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 13px;
+  border-color: #d4d5cf;
+  border-radius: 2px;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 16px;
+}
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form .password-input-wrap input {
+  padding-right: 52px;
+}
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form .button-primary {
+  min-height: 50px;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 15px;
+}
+
+:is(.admin-auth-main, .account-auth-page) .admin-login-form > p,
+:is(.admin-auth-main, .account-auth-page) .reset-admin-link {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+:is(.admin-auth-main, .account-auth-page) .role-intro p {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.couple-dashboard-shortcuts {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.couple-role-page .role-stat-action {
+  min-width: 0;
+  min-height: 154px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  grid-template-rows: auto auto 1fr;
+  align-content: stretch;
+  justify-items: start;
+  gap: 7px 12px;
+  border: 1px solid #d9ded4;
+  border-radius: 3px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.couple-role-page .role-stat-action:hover {
+  border-color: #738675;
+  background: #f4f6f1;
+  box-shadow: 0 5px 16px rgba(41,54,45,.07);
+}
+
+.couple-role-page .role-stat-action:focus-visible {
+  outline: 3px solid #72513b;
+  outline-offset: 3px;
+}
+
+.couple-role-page .role-stat-action > span { grid-column: 1 / -1; color: #59675b; font-size: 15px; }
+.couple-role-page .role-stat-action > strong { grid-column: 1 / -1; font-size: 32px; line-height: 1; }
+.couple-role-page .role-stat-action > small { align-self: end; color: #667166; font-size: 14px; line-height: 1.4; }
+.couple-role-page .role-stat-action > svg { align-self: end; color: var(--forest); }
+
+.couple-role-page .wedding-expense-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px 22px;
+}
+
+.couple-role-page .wedding-expense-form > label {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  color: #424d43;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.couple-role-page .wedding-expense-form > label > input,
+.couple-role-page .wedding-expense-form > label > textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #d4d5cf;
+  border-radius: 2px;
+  color: #414940;
+  background: #fff;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 16px;
+}
+
+.couple-role-page .wedding-expense-form > label > textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.couple-role-page .wedding-expense-form > .expense-reminder-toggle,
+.couple-role-page .wedding-expense-form > .expense-description-field,
+.couple-role-page .wedding-expense-form > .expense-form-actions {
+  grid-column: 1 / -1;
+}
+
+.couple-role-page .wedding-expense-form > .expense-reminder-toggle {
+  min-height: 48px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid #e2e2d9;
+  background: #f6f6f1;
+}
+
+.couple-role-page .wedding-expense-form > .expense-reminder-toggle > input {
+  width: 20px;
+  min-height: 20px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--forest);
+}
+
+.couple-role-page .wedding-expense-form > .expense-reminder-toggle > span { display: grid; gap: 3px; }
+.couple-role-page .wedding-expense-form > .expense-reminder-toggle small { color: #667166; font-size: 13px; }
+.couple-role-page .expense-form-actions .button-primary,
+.couple-role-page .expense-form-actions .button-outline { min-height: 48px; padding-inline: 18px; font-size: 14px; }
+.couple-role-page .expense-summary-grid article span { font-size: 15px; }
+.couple-role-page .expense-summary-grid article strong { font-size: clamp(22px, 2vw, 29px); }
+.couple-role-page .expense-payment-form > label { min-width: 0; display: grid; gap: 7px; color: #424d43; font-size: 14px; }
+.couple-role-page .expense-payment-form input { width: 100%; min-width: 0; min-height: 46px; padding: 9px 11px; font: 16px var(--font-body, Arial, sans-serif); }
+.couple-role-page .expense-payment-form > button { min-height: 46px; align-self: end; font-size: 14px; }
+
+.couple-role-page .site-draft-toolbar { font-family: var(--font-body, Arial, sans-serif); font-size: 14px; line-height: 1.5; }
+.couple-role-page .site-draft-toolbar > span { font-size: 14px; }
+.couple-role-page .site-draft-toolbar .button-outline,
+.couple-role-page .site-editor-actions > button { min-height: 46px; padding-inline: 15px; font-family: var(--font-body, Arial, sans-serif); font-size: 14px; }
+
+@media (max-width: 640px) {
+  .couple-dashboard-shortcuts { grid-template-columns: minmax(0, 1fr) !important; }
+  .couple-role-page .role-stat-action { min-height: 132px; padding: 16px; }
+  .couple-role-page .wedding-expense-form { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .couple-role-page .wedding-expense-form > .expense-reminder-toggle,
+  .couple-role-page .wedding-expense-form > .expense-description-field,
+  .couple-role-page .wedding-expense-form > .expense-form-actions { grid-column: 1; }
+}

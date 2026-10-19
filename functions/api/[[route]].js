@@ -3533,6 +3533,8 @@ app.post('/api/superadmin/email-test', requireSession, requireSuperadmin, async 
   return context.json({ sent: true, to: recipient })
 })
 
+app.notFound((context) => jsonError(context, 404, 'api_route_not_found'))
+
 export { app }
 
 export const onRequest = (context) => app.fetch(context.request, context.env, context)

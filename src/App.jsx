@@ -293,7 +293,7 @@ function WeddingWallSection({ messages = [], slug, preview = false, title = 'Dei
       setAuthorName('')
       setMessage('')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -316,7 +316,7 @@ function WeddingWallModeration({ weddingId }) {
     setMessages(result.messages || [])
   }
 
-  useEffect(() => { load().catch((cause) => setError(cause.message)) }, [weddingId])
+  useEffect(() => { load().catch((cause) => setError(friendlyErrorMessage(cause))) }, [weddingId])
 
   async function updateMessage(messageId, status) {
     setBusy(true)
@@ -326,7 +326,7 @@ function WeddingWallModeration({ weddingId }) {
       if (!response.ok) throw new Error('Não foi possível atualizar o recado.')
       await load()
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -492,6 +492,30 @@ function InvitationPreviewWindow({ device, animationPreset, children }) {
 }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
+const ACCOUNT_EMAIL_SESSION_KEY = 'wedding-account-email'
+
+function readRememberedAccountEmail() {
+  try {
+    return window.sessionStorage.getItem(ACCOUNT_EMAIL_SESSION_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberAccountEmail(email) {
+  try {
+    if (email.trim()) window.sessionStorage.setItem(ACCOUNT_EMAIL_SESSION_KEY, email.trim())
+    else window.sessionStorage.removeItem(ACCOUNT_EMAIL_SESSION_KEY)
+  } catch {
+    return
+  }
+}
+
+function friendlyErrorMessage(error, fallback = 'Não foi possível concluir esta etapa. Confira a conexão e tente novamente.') {
+  const message = String(error?.message || '').trim()
+  if (!message || /^[a-z][a-z0-9_-]*$/i.test(message) || /^(not found|internal server error|bad gateway|service unavailable|failed to fetch|load failed|networkerror|unexpected token|unexpected end of json)/i.test(message) || /\b(400|401|403|404|409|422|429|500|502|503)\b/.test(message)) return fallback
+  return message
+}
 let turnstileScriptPromise
 
 function loadTurnstileScript() {
@@ -1379,7 +1403,7 @@ function CoupleEmailConfirmation() {
 }
 
 function PasswordResetRequest() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(readRememberedAccountEmail)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
@@ -1416,7 +1440,7 @@ function PasswordResetRequest() {
     }
   }
 
-  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={submitted ? 'Confira sua caixa de entrada.' : 'Recupere seu acesso.'} description={submitted ? 'Se houver uma conta ativa com esse endereço, enviaremos um link válido por 30 minutos.' : 'Informe o e-mail da conta para receber um link de redefinição de senha.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
+  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={submitted ? 'Confira sua caixa de entrada.' : 'Recupere seu acesso.'} description={submitted ? 'Se houver uma conta ativa com esse endereço, enviaremos um link válido por 30 minutos.' : 'Informe o e-mail da conta para receber um link de redefinição de senha.'} secure className="account-auth-page" secureName="Recuperação de conta" secureFooter="Acesso individual">
     <form className="role-card admin-login-form" onSubmit={requestReset}><label>E-mail da conta<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitted} /></label>{!submitted && <TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />}{error && <p className="admin-form-error" role="alert">{error}</p>}{submitted ? <a className="button-primary signup-submit" href="/painel">Voltar para entrar <ArrowRight size={15} /></a> : <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Solicitando…' : 'Enviar link de recuperação'} <ArrowRight size={15} /></button>}</form>
   </RoleFrame>
 }
@@ -1457,7 +1481,7 @@ function PasswordReset() {
     }
   }
 
-  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={complete ? 'Senha atualizada.' : invalid ? 'Solicite um novo link.' : 'Escolha uma nova senha.'} description={complete ? 'As sessões anteriores foram encerradas. Entre novamente e use seu e-mail e sua senha.' : invalid ? 'O link informado expirou, já foi utilizado ou está incompleto.' : 'O link é de uso único e válido por 30 minutos.'} secure secureName="Recuperação de conta" secureFooter="Acesso individual">
+  return <RoleFrame icon={LockKeyhole} eyebrow="SEGURANÇA DA CONTA" title={complete ? 'Senha atualizada.' : invalid ? 'Solicite um novo link.' : 'Escolha uma nova senha.'} description={complete ? 'As sessões anteriores foram encerradas. Entre novamente e use seu e-mail e sua senha.' : invalid ? 'O link informado expirou, já foi utilizado ou está incompleto.' : 'O link é de uso único e válido por 30 minutos.'} secure className="account-auth-page" secureName="Recuperação de conta" secureFooter="Acesso individual">
     {complete ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/painel">Entrar no painel dos noivos <ArrowRight size={15} /></a></section> : invalid ? <section className="role-card admin-login-form"><a className="button-primary signup-submit" href="/recuperar-senha">Solicitar outro link <ArrowRight size={15} /></a></section> : <form className="role-card admin-login-form" onSubmit={resetPassword}><label>Nova senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary signup-submit" type="submit" disabled={busy}>{busy ? 'Atualizando…' : 'Redefinir senha'} <Shield size={15} /></button></form>}
   </RoleFrame>
 }
@@ -1465,7 +1489,7 @@ function PasswordReset() {
 function CouplePanel({ notify, confirmAction }) {
   const [stage, setStage] = useState('checking')
   const [account, setAccount] = useState(null)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(readRememberedAccountEmail)
   const [password, setPassword] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
@@ -1737,7 +1761,7 @@ function CouplePanel({ notify, confirmAction }) {
         return
       }
       await loadWeddings()
-    }).catch((cause) => { setError(cause.message === 'authentication_required' ? '' : cause.message); setStage('login') })
+    }).catch((cause) => { setError(cause.message === 'authentication_required' ? '' : friendlyErrorMessage(cause)); setStage('login') })
   }, [])
 
   useEffect(() => {
@@ -1755,7 +1779,7 @@ function CouplePanel({ notify, confirmAction }) {
       setAccount(result.account)
       await loadWeddings()
     } catch (cause) {
-      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : cause.message)
+      setError(cause.message === 'invalid_credentials' ? 'E-mail, senha ou código inválido.' : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.' : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.' : friendlyErrorMessage(cause))
       setStage('login')
     } finally {
       setTurnstileToken('')
@@ -1967,7 +1991,7 @@ function CouplePanel({ notify, confirmAction }) {
       await loadWeddingData(weddingId)
       notify('Dados pessoais removidos; histórico de RSVP e entrada preservado')
     } catch (cause) {
-      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de remover os dados.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
+      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirmação do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de remover os dados.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
     } finally {
       setBusy(false)
     }
@@ -2296,7 +2320,7 @@ function CouplePanel({ notify, confirmAction }) {
   }, [mobileNavOpen])
 
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com o e-mail e a senha da conta vinculada ao seu casamento." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); rememberAccountEmail(event.target.value) }} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -2304,7 +2328,7 @@ function CouplePanel({ notify, confirmAction }) {
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a><button className="button-outline" onClick={() => setTab('site')}>{isEditor ? 'Editar site' : 'Meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
-    {!isEditor && <div className="role-stat-grid"><div className="role-stat"><span>Convidados</span><strong>{guests.length}</strong></div><div className="role-stat"><span>Eventos</span><strong>{events.length}</strong></div></div>}
+    {!isEditor && <div className="role-stat-grid couple-dashboard-shortcuts"><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('guests')} aria-label={`Abrir convidados: ${guests.length} pessoas`}><span>Convidados</span><strong>{guests.length}</strong><small>Lista, convites e confirmações</small><ArrowRight size={18} aria-hidden="true" /></button><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('events')} aria-label={`Abrir eventos: ${events.length} cadastrados`}><span>Eventos</span><strong>{events.length}</strong><small>Datas, locais e programação</small><ArrowRight size={18} aria-hidden="true" /></button></div>}
     <button ref={mobileNavToggleRef} type="button" className="couple-mobile-menu-toggle" aria-expanded={mobileNavOpen} aria-controls="couple-panel-tabs" onClick={() => setMobileNavOpen(true)}><Menu size={19} />Navegação do casamento</button>
     {mobileNavOpen && <button type="button" className="couple-mobile-nav-backdrop" aria-label="Fechar navegação" onClick={closeMobileNav} />}
     <nav id="couple-panel-tabs" ref={mobileNavRef} className={`couple-panel-tabs${mobileNavOpen ? ' mobile-open' : ''}`} aria-label="Áreas do casamento">
@@ -2404,9 +2428,13 @@ function WeddingExpenseManager({ weddingId, expenses, onReload }) {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'expense_save_failed')
       resetDraft()
-      await onReload()
+      try {
+        await onReload()
+      } catch {
+        setError('O registro foi salvo, mas a lista não atualizou. Recarreguem a página para conferir.')
+      }
     } catch (cause) {
-      setError(cause.message === 'expense_total_below_paid_amount' ? 'O valor total não pode ficar abaixo do que já foi registrado como pago.' : 'Não foi possível salvar esta despesa. Tentem novamente.')
+      setError(cause.message === 'expense_total_below_paid_amount' ? 'O valor do contrato não pode ficar abaixo do que já foi pago.' : cause.message === 'wedding_expense_not_found' ? 'Esta despesa não está mais disponível. Atualizem a lista e tentem novamente.' : 'Não foi possível salvar esta despesa. Confiram os dados e tentem novamente.')
     } finally {
       setBusy(false)
     }
@@ -2424,7 +2452,11 @@ function WeddingExpenseManager({ weddingId, expenses, onReload }) {
     try {
       const response = await fetch(`/api/couple/weddings/${weddingId}/expenses/${expense.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) })
       if (!response.ok) throw new Error('expense_archive_failed')
-      await onReload()
+      try {
+        await onReload()
+      } catch {
+        setError('A despesa foi arquivada, mas a lista não atualizou. Recarreguem a página para conferir.')
+      }
     } catch {
       setError('Não foi possível arquivar este registro.')
     } finally {
@@ -2450,7 +2482,11 @@ function WeddingExpenseManager({ weddingId, expenses, onReload }) {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'expense_payment_failed')
       setPayments((current) => ({ ...current, [expense.id]: { amount: '', paidAt: new Date().toISOString().slice(0, 10), notes: '' } }))
-      await onReload()
+      try {
+        await onReload()
+      } catch {
+        setError('O pagamento foi anotado, mas a lista não atualizou. Recarreguem a página para conferir.')
+      }
     } catch (cause) {
       setError(cause.message === 'expense_payment_exceeds_balance' ? 'Esse valor ultrapassa o saldo que falta pagar.' : 'Não foi possível registrar o pagamento.')
     } finally {
@@ -2459,8 +2495,8 @@ function WeddingExpenseManager({ weddingId, expenses, onReload }) {
   }
 
   return <div className="wedding-expense-manager">
-    <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PLANEJAMENTO FINANCEIRO</span><h2>Fornecedores e despesas</h2></div><Wallet size={19} /></div><p className="team-access-note">Registrem contratos, valores pagos e próximos vencimentos. Os pagamentos são anotações privadas do casal; a plataforma não movimenta dinheiro.</p><div className="expense-summary-grid"><article><span>Valor contratado</span><strong>{formatBrlCents(totals.total)}</strong></article><article><span>Registrado como pago</span><strong>{formatBrlCents(totals.paid)}</strong></article><article><span>Saldo previsto</span><strong>{formatBrlCents(totals.total - totals.paid)}</strong></article></div></section>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO REGISTRO</span><h2>{editingId ? 'Editar fornecedor ou despesa' : 'Adicionar fornecedor ou despesa'}</h2></div></div><form id="wedding-expense-form" className="wedding-expense-form" onSubmit={submit}><label>Fornecedor<input value={draft.supplierName} maxLength="160" onChange={(event) => setDraft((current) => ({ ...current, supplierName: event.target.value }))} required /></label><label>Contato do fornecedor, opcional<input value={draft.supplierContact} maxLength="254" onChange={(event) => setDraft((current) => ({ ...current, supplierContact: event.target.value }))} /></label><label>Categoria, opcional<input value={draft.category} maxLength="80" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: decoração" /></label><label>Valor total (R$)<input inputMode="decimal" value={draft.totalAmount} onChange={(event) => setDraft((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0,00" required /></label><label>Próximo vencimento<input type="date" value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value, reminderEnabled: event.target.value ? current.reminderEnabled : false }))} /></label><label className="expense-reminder-toggle"><input type="checkbox" checked={draft.reminderEnabled} disabled={!draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, reminderEnabled: event.target.checked }))} /><span>Incluir no resumo mensal por e-mail{!draft.dueDate && <small>Informe um vencimento para ativar.</small>}</span></label><label className="expense-description-field">Descrição e observações<textarea rows="3" maxLength="2000" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} /></label><div className="expense-form-actions"><button className="button-primary" disabled={busy} type="submit">{busy ? 'Salvando…' : editingId ? 'Salvar alterações' : 'Adicionar registro'} <Check size={15} /></button>{editingId && <button className="button-outline" disabled={busy} type="button" onClick={resetDraft}>Cancelar</button>}</div></form>{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
+    <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PLANEJAMENTO FINANCEIRO</span><h2>Fornecedores e despesas</h2></div><Wallet size={19} /></div><p className="team-access-note">Registrem o valor total combinado com cada fornecedor. Depois, anotem cada pagamento no respectivo cartão; o saldo restante é calculado automaticamente.</p><div className="expense-summary-grid"><article><span>Total contratado</span><strong>{formatBrlCents(totals.total)}</strong></article><article><span>Total já pago</span><strong>{formatBrlCents(totals.paid)}</strong></article><article><span>Falta pagar</span><strong>{formatBrlCents(totals.total - totals.paid)}</strong></article></div></section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO REGISTRO</span><h2>{editingId ? 'Editar fornecedor ou despesa' : 'Adicionar fornecedor ou despesa'}</h2></div></div><form id="wedding-expense-form" className="wedding-expense-form" onSubmit={submit}><label>Fornecedor<input value={draft.supplierName} maxLength="160" onChange={(event) => setDraft((current) => ({ ...current, supplierName: event.target.value }))} required /></label><label>Contato do fornecedor, opcional<input value={draft.supplierContact} maxLength="254" onChange={(event) => setDraft((current) => ({ ...current, supplierContact: event.target.value }))} /></label><label>Categoria, opcional<input value={draft.category} maxLength="80" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: decoração" /></label><label>Valor do contrato (R$)<input inputMode="decimal" value={draft.totalAmount} onChange={(event) => setDraft((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0,00" required /></label><label>Vencimento da próxima parcela<input type="date" value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value, reminderEnabled: event.target.value ? current.reminderEnabled : false }))} /></label><label className="expense-reminder-toggle"><input type="checkbox" checked={draft.reminderEnabled} disabled={!draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, reminderEnabled: event.target.checked }))} /><span>Receber lembrete mensal por e-mail{!draft.dueDate && <small>Adicione um vencimento para ativar.</small>}</span></label><label className="expense-description-field">Descrição e observações<textarea rows="3" maxLength="2000" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} /></label><div className="expense-form-actions"><button className="button-primary" disabled={busy} type="submit">{busy ? 'Salvando…' : editingId ? 'Salvar alterações' : 'Adicionar registro'} <Check size={15} /></button>{editingId && <button className="button-outline" disabled={busy} type="button" onClick={resetDraft}>Cancelar</button>}</div></form>{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
     <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">REGISTROS DO CASAMENTO</span><h2>Despesas cadastradas</h2></div><span className="task-count">{activeExpenses.length} ativas</span></div><div className="wedding-expense-list">{expenses.map((expense) => { const remaining = expense.total_amount_cents - expense.paid_amount_cents; const payment = payments[expense.id] || { amount: '', paidAt: new Date().toISOString().slice(0, 10), notes: '' }; return <article className={expense.status === 'archived' ? 'is-archived' : ''} key={expense.id}><div className="wedding-expense-heading"><div><strong>{expense.supplier_name}</strong><small>{[expense.category, expense.description].filter(Boolean).join(' · ') || 'Sem descrição adicional'}</small></div><span className={`admin-state ${expense.status === 'active' ? 'admin-state-active' : ''}`}>{expense.status === 'active' ? 'Ativa' : 'Arquivada'}</span></div><div className="wedding-expense-values"><span>Contrato <strong>{formatBrlCents(expense.total_amount_cents)}</strong></span><span>Pago <strong>{formatBrlCents(expense.paid_amount_cents)}</strong></span><span>Saldo <strong>{formatBrlCents(remaining)}</strong></span><span>Vencimento <strong>{expense.due_date ? new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informado'}</strong></span></div>{expense.supplier_contact && <p className="team-access-note">Contato: {expense.supplier_contact}</p>}{expense.status === 'active' && <><details className="expense-payment-details"><summary>Registrar pagamento</summary><div className="expense-payment-form"><label>Valor pago (R$)<input inputMode="decimal" value={payment.amount} onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, amount: event.target.value } }))} placeholder="0,00" /></label><label>Data<input type="date" value={payment.paidAt} onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, paidAt: event.target.value } }))} /></label><label>Observação<input value={payment.notes} maxLength="500" onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, notes: event.target.value } }))} /></label><button className="button-outline" type="button" disabled={busy || remaining === 0} onClick={() => addPayment(expense)}>Salvar pagamento</button></div></details><div className="wedding-expense-actions"><button className="button-outline" type="button" disabled={busy} onClick={() => startEdit(expense)}>Editar</button><button className="button-outline" type="button" disabled={busy} onClick={() => archive(expense)}>Arquivar</button></div></>}{expense.payments.length > 0 && <details className="expense-payment-history"><summary>Histórico de pagamentos ({expense.payments.length})</summary><ul>{expense.payments.map((item) => <li key={item.id}><span>{new Date(`${item.paid_at}T12:00:00`).toLocaleDateString('pt-BR')} · {item.notes || 'Pagamento registrado'}</span><strong>{formatBrlCents(item.amount_cents)}</strong></li>)}</ul></details>}</article> })}{!expenses.length && <p className="buffet-empty">Adicionem o primeiro fornecedor para acompanhar valores e vencimentos.</p>}</div></section>
   </div>
 }
@@ -2485,7 +2521,7 @@ function GiftPresentationManager({ weddingId, gifts, config, setConfig, onSave, 
     }).then((result) => {
       if (active) setMedia(result.media || [])
     }).catch((cause) => {
-      if (active) setError(cause.message)
+      if (active) setError(friendlyErrorMessage(cause))
     }).finally(() => {
       if (active) setLoading(false)
     })
@@ -2549,7 +2585,7 @@ function GiftPresentationManager({ weddingId, gifts, config, setConfig, onSave, 
       setMedia((current) => [...current, result])
       updateGiftPresentation(giftId, { photoId: result.id })
     } catch (cause) {
-      setError(cause.message || 'Não foi possível guardar esta foto.')
+      setError(friendlyErrorMessage(cause, 'Não foi possível guardar esta foto.'))
     } finally {
       setBusy(false)
       Object.values(photoInputs.current).forEach((input) => { if (input) input.value = '' })
@@ -2576,7 +2612,7 @@ function GuestPhotoAlbum({ weddingId, notify, confirmAction }) {
         setPhotos(result.photos)
         setError('')
       } catch (cause) {
-        if (active) setError(cause.message)
+        if (active) setError(friendlyErrorMessage(cause))
       } finally {
         if (active) setLoading(false)
       }
@@ -2596,7 +2632,7 @@ function GuestPhotoAlbum({ weddingId, notify, confirmAction }) {
       setPhotos((current) => current.filter((item) => item.id !== photo.id))
       notify('Foto removida do álbum')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusyPhoto('')
     }
@@ -3309,7 +3345,7 @@ function TeamInvitationAcceptance() {
       const result = await response.json()
       if (!response.ok) throw new Error('Este convite expirou ou já foi utilizado. Peça um novo link aos noivos.')
       setInvitation(result)
-    }).catch((cause) => setError(cause.message)).finally(() => setLoading(false))
+    }).catch((cause) => setError(friendlyErrorMessage(cause))).finally(() => setLoading(false))
   }, [token])
 
   async function finishInvitationAcceptance() {
@@ -3334,7 +3370,7 @@ function TeamInvitationAcceptance() {
       }
       await finishInvitationAcceptance()
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -3402,7 +3438,7 @@ function GeneralWeddingSite({ notify }) {
       if (!active) return
       setData(result)
       setEventId(result.events[0]?.id || '')
-    }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
+    }).catch((cause) => { if (active) setError(friendlyErrorMessage(cause)) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [slug])
 
@@ -3442,7 +3478,7 @@ function GeneralWeddingSite({ notify }) {
           if (!credentialResponse.ok) throw new Error('Não foi possível recuperar o QR agora. Tente novamente mais tarde.')
           if (active) setPublicCredential(credentialResult.credentials[0] || null)
         }
-      }).catch((cause) => { if (active) setError(cause.message) })
+      }).catch((cause) => { if (active) setError(friendlyErrorMessage(cause)) })
     return () => { active = false }
   }, [savedRequestToken])
 
@@ -3492,7 +3528,7 @@ function GeneralWeddingSite({ notify }) {
       setTurnstileReset((current) => current + 1)
       notify(result.credential ? 'Presença confirmada. Seu QR individual está disponível.' : 'Resposta registrada.')
     } catch (cause) {
-      setError(cause.message || 'Não foi possível enviar a solicitação.')
+      setError(friendlyErrorMessage(cause, 'Não foi possível enviar a solicitação.'))
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
     } finally {
@@ -3565,7 +3601,7 @@ function AttendanceRequestPortal({ notify }) {
           if (!credentialResponse.ok) throw new Error('Não foi possível recuperar o QR agora. Tente novamente mais tarde.')
           if (active) setCredentials(credentialResult.credentials)
         }
-      }).catch((cause) => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) })
+      }).catch((cause) => { if (active) setError(friendlyErrorMessage(cause)) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [requestToken])
 
@@ -3588,7 +3624,7 @@ function AttendanceRequestPortal({ notify }) {
       setCredentials(result.credentials)
       notify('Confirmação atualizada. Os QRs disponíveis foram carregados.')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -3643,7 +3679,7 @@ function InvitationWallet({ token, wallets, guestName }) {
         window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
       }
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy('')
     }
@@ -3715,7 +3751,7 @@ function GuestPortal({ notify, setView }) {
       setInvitation(result)
       setError('')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setLoading(false)
     }
@@ -3835,7 +3871,7 @@ function GuestCompanionManager({ token, events, partySize, notify }) {
     setRemaining(result.remaining)
     setEventId((current) => current || confirmedEvents[0]?.id || '')
   }
-  useEffect(() => { load().catch((cause) => setError(cause.message)) }, [token, events.length])
+  useEffect(() => { load().catch((cause) => setError(friendlyErrorMessage(cause))) }, [token, events.length])
   async function submit(event) {
     event.preventDefault()
     setError('')
@@ -3854,7 +3890,7 @@ function GuestCompanionManager({ token, events, partySize, notify }) {
       await load()
       notify('Pedido de acompanhante enviado aos noivos.')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -3870,7 +3906,7 @@ function GuestCompanionManager({ token, events, partySize, notify }) {
       await load()
       notify('Nome atualizado para análise dos noivos.')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -3884,7 +3920,7 @@ function GuestCompanionManager({ token, events, partySize, notify }) {
       if (!response.ok) throw new Error('A credencial ainda não está disponível.')
       setShare({ name: companion.approved_name || companion.name, url: result.accessUrl })
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -3918,7 +3954,7 @@ function GuestCamera({ token, events, notify }) {
   }
 
   useEffect(() => {
-    loadStatus().catch((cause) => setError(cause.message))
+    loadStatus().catch((cause) => setError(friendlyErrorMessage(cause)))
   }, [token])
 
   useEffect(() => {
@@ -3978,7 +4014,7 @@ function GuestCamera({ token, events, notify }) {
       setConsent(true)
       setStatus((current) => ({ ...current, consented: true }))
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -4007,7 +4043,7 @@ function GuestCamera({ token, events, notify }) {
       await loadStatus().catch(() => setStatus((current) => current ? { ...current, saved: current.saved + 1, remaining: Math.max(0, current.remaining - 1) } : current))
     } catch (cause) {
       retryPhoto.current = cause.message === 'O álbum atingiu o limite de fotos escolhido pelo casal.' ? null : file
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -4029,7 +4065,7 @@ function GuestCamera({ token, events, notify }) {
       stopCamera()
       await sendPhoto(new File([blob], 'momento.webp', { type: 'image/webp' }))
     } catch (cause) {
-      setError(cause.message || 'Não foi possível capturar esta foto.')
+      setError(friendlyErrorMessage(cause, 'Não foi possível capturar esta foto.'))
     } finally {
       setProcessing(false)
     }
@@ -4057,7 +4093,7 @@ function InvitationEventCard({ event, timezone, maxPartySize, onSubmit, initialO
     try {
       await onSubmit({ eventId: event.id, status, partySize: 1, dietaryNotes, turnstileToken })
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -4127,7 +4163,7 @@ function GodparentPortal({ notify }) {
     setLoading(false)
   }
 
-  useEffect(() => { loadTasks().catch((cause) => { setError(cause.message); setLoading(false) }) }, [token])
+  useEffect(() => { loadTasks().catch((cause) => { setError(friendlyErrorMessage(cause)); setLoading(false) }) }, [token])
 
   async function toggleTask(task) {
     setBusyTask(task.id)
@@ -4142,7 +4178,7 @@ function GodparentPortal({ notify }) {
       await loadTasks()
       notify('Sua tarefa foi atualizada')
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusyTask('')
     }
@@ -4292,9 +4328,9 @@ function EventStaffPanel({ notify }) {
         setOfflineRoster([])
         setPendingCheckins([])
         setStage('login')
-        setError(cause.message)
+        setError(friendlyErrorMessage(cause))
       } else {
-        setError(cause.message)
+        setError(friendlyErrorMessage(cause))
       }
     } finally {
       setBusy(false)
@@ -4332,7 +4368,7 @@ function EventStaffPanel({ notify }) {
   }, [])
 
   useEffect(() => {
-    if (stage === 'ready' && selectedEvent) loadEventGuests(selectedEvent).catch((cause) => setError(cause.message))
+    if (stage === 'ready' && selectedEvent) loadEventGuests(selectedEvent).catch((cause) => setError(friendlyErrorMessage(cause)))
   }, [stage, selectedEvent])
 
   useEffect(() => {
@@ -4357,7 +4393,7 @@ function EventStaffPanel({ notify }) {
         setWalkIns([])
         setOfflineRoster([])
         if (cause.message === 'staff_access_revoked') setStage('login')
-        setError(cause.message === 'staff_access_revoked' ? 'Seu acesso foi revogado. Entre em contato com os noivos.' : cause.message)
+        setError(cause.message === 'staff_access_revoked' ? 'Seu acesso foi revogado. Entre em contato com os noivos.' : friendlyErrorMessage(cause))
       }
     }, 5000)
     return () => window.clearInterval(timer)
@@ -4393,7 +4429,7 @@ function EventStaffPanel({ notify }) {
   }, [])
 
   useEffect(() => {
-    if (stage === 'ready' && selectedEvent && isOnline) syncPendingCheckins().catch((cause) => setError(cause.message))
+    if (stage === 'ready' && selectedEvent && isOnline) syncPendingCheckins().catch((cause) => setError(friendlyErrorMessage(cause)))
   }, [stage, selectedEvent, isOnline])
 
   async function login(event) {
@@ -4407,7 +4443,7 @@ function EventStaffPanel({ notify }) {
       localStorage.removeItem('wedding-staff-locked')
       await loadEvents()
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -4433,7 +4469,7 @@ function EventStaffPanel({ notify }) {
       notify('Entrada de ultima hora registrada; buffet atualizado')
     } catch (cause) {
       if (!(cause instanceof TypeError)) {
-        setError(cause.message)
+        setError(friendlyErrorMessage(cause))
         setBusy(false)
         return
       }
@@ -4464,7 +4500,7 @@ function EventStaffPanel({ notify }) {
       notify('Entrada registrada no D1')
     } catch (cause) {
       if (!(cause instanceof TypeError)) {
-        setError(cause.message)
+        setError(friendlyErrorMessage(cause))
         setBusy(false)
         return
       }
@@ -4476,7 +4512,7 @@ function EventStaffPanel({ notify }) {
         setGuests((current) => current.map((item) => item.id === guestId ? { ...item, checked_in_at: new Date().toISOString(), offline_pending: true } : item))
         notify(`Entrada salva offline: ${guest.name}`)
       } catch (offlineError) {
-        setError(offlineError.message || 'Nao foi possivel guardar a entrada offline.')
+        setError(friendlyErrorMessage(offlineError, 'Nao foi possivel guardar a entrada offline.'))
       }
     } finally {
       setBusy(false)
@@ -4522,7 +4558,7 @@ function EventStaffPanel({ notify }) {
         await queueScannedInvitation(token)
       }
     } catch (cause) {
-      setError(cause.message)
+      setError(friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -4535,7 +4571,7 @@ function EventStaffPanel({ notify }) {
   return <RoleFrame icon={ListChecks} eyebrow="EQUIPE DO EVENTO" title={checkinAllowed ? 'Controle de entrada.' : 'Nomes dos convidados do evento.'} description={checkinAllowed ? 'A lista mostra somente presenças confirmadas e autorizadas para os eventos selecionados.' : 'Você consulta somente os nomes da lista dos eventos atribuídos.'} className={`staff-print-${printMode}`} secure headerAction={<button className="button-outline" disabled={busy} onClick={logoutStaff} title={!isOnline ? 'Bloqueia esta tela e preserva as entradas offline pendentes' : ''}>{isOnline ? 'Sair' : 'Bloquear aparelho'}</button>}>
     {events.length > 1 && <label className="staff-event-select">Evento<select value={selectedEvent} onChange={(event) => setSelectedEvent(event.target.value)}>{events.map((event) => <option key={event.id} value={event.id}>{event.name} · {event.starts_at ? new Date(event.starts_at).toLocaleDateString('pt-BR') : 'sem data'}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
-    {checkinAllowed && <div className="staff-offline-status" role="status"><span className={isOnline ? 'staff-online' : 'staff-offline'}>{isOnline ? 'Conexao ativa' : 'Modo offline'}</span><span>{pendingCheckins.length} entrada(s) aguardando sincronizacao</span>{offlineRoster.length > 0 && <span>Lista temporaria preparada neste dispositivo</span>}{isOnline && pendingCheckins.length > 0 && <button className="button-outline" disabled={busy} onClick={() => syncPendingCheckins().catch((cause) => setError(cause.message))}>Sincronizar agora</button>}</div>}
+    {checkinAllowed && <div className="staff-offline-status" role="status"><span className={isOnline ? 'staff-online' : 'staff-offline'}>{isOnline ? 'Conexao ativa' : 'Modo offline'}</span><span>{pendingCheckins.length} entrada(s) aguardando sincronizacao</span>{offlineRoster.length > 0 && <span>Lista temporaria preparada neste dispositivo</span>}{isOnline && pendingCheckins.length > 0 && <button className="button-outline" disabled={busy} onClick={() => syncPendingCheckins().catch((cause) => setError(friendlyErrorMessage(cause)))}>Sincronizar agora</button>}</div>}
     {!events.length && <p className="buffet-empty">Nenhum evento foi atribuído a esta conta.</p>}
     {currentEvent && <>
       {checkinAllowed && <div className="role-stat-grid"><div className="role-stat"><span>Total de pessoas esperadas</span><strong>{peopleCount}</strong></div><div className="role-stat"><span>Já entraram</span><strong>{arrivedCount}</strong></div><div className="role-stat"><span>Ainda aguardados</span><strong>{Math.max(0, peopleCount - arrivedCount)}</strong></div></div>}
@@ -4682,7 +4718,7 @@ function SuperAdminPanel({ notify, promptAction }) {
       setBootstrapConfirmation('')
       setStage('setup')
     } catch (cause) {
-      setError(superadminAccessMessage(cause.message) || cause.message)
+      setError(superadminAccessMessage(cause.message) || friendlyErrorMessage(cause))
     } finally {
       setBusy(false)
     }
@@ -4870,7 +4906,7 @@ function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
       await refresh()
       notify('Dados pessoais anonimizados; auditoria preservada')
     } catch (cause) {
-      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirma\u00e7\u00e3o do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de continuar.' : 'N\u00e3o foi poss\u00edvel anonimizar os dados.')
+      setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirmação do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de continuar.' : 'N\u00e3o foi poss\u00edvel anonimizar os dados.')
     } finally {
       setBusy(false)
     }

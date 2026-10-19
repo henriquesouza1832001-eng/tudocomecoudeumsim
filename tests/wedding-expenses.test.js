@@ -4,6 +4,13 @@ import { onRequest } from '../functions/api/[[route]].js'
 
 const origin = 'https://tudocomecoudeumsim.pages.dev'
 
+test('unknown API routes return a consistent JSON error', async () => {
+  const response = await onRequest({ request: new Request(`${origin}/api/unknown-resource`), env: {} })
+  assert.equal(response.status, 404)
+  assert.match(response.headers.get('content-type'), /application\/json/)
+  assert.deepEqual(await response.json(), { error: 'api_route_not_found' })
+})
+
 function database(role, options = {}) {
   return {
     prepare(query) {
