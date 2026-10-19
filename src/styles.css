@@ -680,8 +680,8 @@ img { display: block; max-width: 100%; }
 .scanner-frame { width: 150px; height: 150px; position: relative; display: grid; place-items: center; color: rgba(232,222,202,.67); }
 .scanner-frame > i { width: 24px; height: 24px; position: absolute; border-color: #d7bd98; border-style: solid; }
 .scanner-frame > i:nth-child(1) { left: 0; top: 0; border-width: 2px 0 0 2px; }.scanner-frame > i:nth-child(2) { right: 0; top: 0; border-width: 2px 2px 0 0; }.scanner-frame > i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 2px 2px; }.scanner-frame > i:nth-child(4) { right: 0; bottom: 0; border-width: 0 2px 2px 0; }
-.scanner-line { width: 124px; height: 1px; position: absolute; top: 30%; background: #d2ae7c; box-shadow: 0 0 12px 1px rgba(210,174,124,.4); animation: scan 2.4s ease-in-out infinite alternate; }
-@keyframes scan { from { top: 25%; } to { top: 75%; } }
+.scanner-line { width: 124px; height: 1px; position: absolute; top: 50%; transform: translateY(-55px); background: #d2ae7c; box-shadow: 0 0 12px 1px rgba(210,174,124,.4); animation: scan 2.4s ease-in-out infinite alternate; }
+@keyframes scan { from { transform: translateY(-55px); } to { transform: translateY(55px); } }
 .scanner-caption { position: absolute; bottom: 11px; color: rgba(255,255,255,.45); font-size: 7px; }
 .scanner-bottom { padding: 2px 2px 0; color: rgba(255,255,255,.46); font-size: 7px; letter-spacing: 0; }
 .scanner-bottom > span:first-child { display: flex; align-items: center; gap: 6px; }
