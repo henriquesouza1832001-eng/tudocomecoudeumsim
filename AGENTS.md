@@ -281,7 +281,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Todas as consultas e mutações de dados verificam conta, papel, casamento e evento no servidor. O cliente nunca escolhe livremente o identificador do casamento autorizado.
 - Convidados e padrinhos usam token individual armazenado apenas como hash; o servidor limita eventos pelo grupo autorizado. Padrinhos só consultam e atualizam tarefas ligadas ao próprio convite.
 - Equipe do evento e equipe de entrada só consultam eventos atribuídos por `membership_event_access`. A lista da equipe não inclui e-mail ou telefone; somente `checkin_staff` pode registrar entradas e acompanhantes de última hora.
-- A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando registros financeiros e trilha de auditoria. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
+- A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando trilha de auditoria e, se existirem, registros históricos legados de presentes. O fluxo atual de Pix direto e links de loja não cria registros financeiros. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
 - Nenhuma tela do casal ou superadmin deve sugerir que a plataforma recebe ou repassa os presentes no piloto.
 
 ## 9. Notificações push (VAPID)
@@ -348,7 +348,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Configurar `ACCESS_TEAM_DOMAIN`, `ACCESS_APPLICATION_AUD` e `SUPERADMIN_EMAIL` como variáveis do Pages e `MFA_ENCRYPTION_KEY` como secret. A rota falha fechada se a configuração ou o token estiver ausente ou inválido.
 - Cloudflare Access é uma barreira adicional. A API ainda valida a sessão do produto, papel superadmin e autorização no D1 em cada operação.
 - Sessões do produto usam cookie seguro HttpOnly, hash do token no D1, validade limitada e senha PBKDF2. TOTP é obrigatório somente para superadmin; contas de noivos e equipe usam senha, limites de tentativa, escopo de papel e casamento e confirmação explícita nas ações destrutivas.
-- Anonimização global exige MFA validado nos últimos cinco minutos, frase com o ID do casamento e gravação de auditoria. Preservar as linhas financeiras e de auditoria.
+- Anonimização global exige MFA validado nos últimos cinco minutos, frase com o ID do casamento e gravação de auditoria. Preservar registros históricos legados de presentes, quando existirem, e trilha de auditoria; o fluxo atual de presentes não cria linhas financeiras.
 
 ## 16. Fases
 
