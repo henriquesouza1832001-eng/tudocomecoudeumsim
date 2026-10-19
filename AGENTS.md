@@ -475,7 +475,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 ## Continuidade de trabalho — personalizador e convite compacto
 
-Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado da branch `hen` para quem continuar o projeto.
+Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o estado da branch `hen` daquele momento; consulte o estado Git atual antes de continuar.
 
 ### Pedido confirmado
 
@@ -489,7 +489,7 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 
 ### Histórico da branch de prévia
 
-- A antiga branch `preview` foi renomeada para `hen`. A branch `lar` foi criada a partir do mesmo commit. O trabalho atual continua em `hen`.
+- Naquele período, a antiga branch `preview` havia sido renomeada para `hen` e `lar` partia do mesmo commit. Atualmente, `main`, `hen` e `lar` devem ser conferidas e sincronizadas conforme as regras da seção 2.
 - O dono autorizou integrar em `main` as alterações da personalização depois de validar testes, lint e build. Antes de iniciar a integração, verificar se existe merge, rebase ou cherry-pick em andamento e confirmar que a árvore está limpa após o commit.
 - Há alterações de trabalho em `src/App.jsx` e `src/styles.css` que simplificam o editor autenticado do painel para duas áreas, aparência e recado/detalhes. O editor reduz a escolha inicial de temas, permite expandir os demais e mostra na prévia a paleta, foto, composição, mensagem, história curta e informações do evento.
 - A lista de paletas foi alterada para produzir cores visivelmente distintas; o tema noturno deixou de impor um fundo que anulava a paleta escolhida.
@@ -561,6 +561,7 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - O seletor personalizado de cor de destaque está presente no fluxo público e no painel. A configuração usa a coluna JSON já existente, sem migration; testes verificam validação/gravação da configuração e leitura no convite público. Após essa alteração, `npm run lint`, `npm run build`, `npm test` (79 testes) e `git diff --check` passaram.
 - O enquadramento independente da capa para computador e celular foi adicionado ao editor, à prévia e à configuração pública. A API valida ambos e converte configurações antigas sem perda; a mudança não exige migration D1. Validação local: `npm run lint`, `npm run build`, `npm test` (80 testes) e `git diff --check` passaram.
 - Texto alternativo editável por imagem foi adicionado ao painel e é renderizado nos usos públicos das fotos. A API valida o formato e o limite de 250 caracteres e remove descrições ligadas a fotos excluídas. A lista fica no JSON de configuração já existente, sem migration D1. Validação local: `npm run lint`, `npm run build`, `npm test` (80 testes) e `git diff --check` passaram.
-- A ordem salva agora também inclui presentes/Pix e RSVP; Pix acompanha a seção de presentes. Os recursos continuam com ativação independente. A lista de seções e suas variantes ainda não está completa. Validação local: `npm run lint`, `npm run build`, `npm test` (81 testes) e `git diff --check` passaram.
+- A ordem salva agora também inclui presentes/Pix e RSVP; Pix acompanha a seção de presentes. Os recursos continuam com ativação independente. A biblioteca completa de seções permanece incompleta. Validação local naquela entrega: `npm run lint`, `npm run build`, `npm test` (81 testes) e `git diff --check` passaram.
+- Em 18/10/2026, a aparência das seções recebeu três variantes curadas por seção, gravadas no JSON do rascunho existente e aplicadas à prévia e ao convite publicado. A API rejeita chaves de seção e variantes fora das listas permitidas; não exige migration. `npm run lint`, `npm run build`, `npm test` (121 testes) e `git diff --check` passaram. `main`, `hen` e `lar` estão no commit `0aa8805`.
 - Em 18/10/2026, o rascunho iniciado em `/criar-site` segue ao cadastro e é validado pelo Worker antes de ser gravado junto ao casamento pendente no D1. A rota do assistente foi reconectada; nomes, data, tema, paleta, escala, composição e textos sobrevivem à confirmação de e-mail. Fotos continuam sendo enviadas pelo painel autenticado, sem aceitar IDs ou arquivos do navegador no cadastro. O cadastro permanece em português, conforme decisão do dono.
 - Em 18/10/2026, o personalizador autenticado salva automaticamente perfil e configuração no D1, oferece desfazer/refazer com histórico limitado às 50 alterações recentes e remonta quando muda o casamento selecionado. O salvamento de perfil aceita rascunhos incompletos e só muda o slug quando os dois nomes estão preenchidos; a publicação continua bloqueada até completar o perfil. Não exige migration. Validação final desta rodada: `npm run lint`, `npm run build`, `npm test` (102 testes) e `git diff --check` passaram.
