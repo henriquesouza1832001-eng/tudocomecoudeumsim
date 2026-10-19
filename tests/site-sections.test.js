@@ -55,3 +55,9 @@ test('godparent profiles can be enabled and reordered with invitation sections',
   assert.ok(sections.every((section) => ORDERABLE_SITE_SECTIONS.includes(section)))
   assert.deepEqual(moveSiteSection(sections, 'Eventos', -1), ['Eventos', 'Padrinhos e madrinhas'])
 })
+
+test('guest wall can be enabled and reordered with invitation sections', () => {
+  const sections = ['Eventos', 'Mural de recados']
+  assert.ok(sections.every((section) => ORDERABLE_SITE_SECTIONS.includes(section)))
+  assert.deepEqual(moveSiteSection(sections, 'Mural de recados', -1), ['Mural de recados', 'Eventos'])
+})
