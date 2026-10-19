@@ -10,6 +10,9 @@ const siteConfig = {
   paletteIndex: 0,
   customAccent: '#be6f52',
   coverLayout: 'full',
+  coverImagePosition: 'top',
+  coverImagePositionDesktop: 'right',
+  coverImagePositionMobile: 'bottom',
   coverImage: 'none',
   coverPhotoId: mediaId,
   coverCarouselEnabled: false,
@@ -90,6 +93,20 @@ test('public invitation shares only published events available to every guest', 
   assert.deepEqual(body.events.map((item) => item.id), [eventId])
   assert.equal(body.siteConfig.enabledSections.includes('Confirmação de presença'), true)
   assert.equal(body.siteConfig.customAccent, '#be6f52')
+  assert.equal(body.siteConfig.coverImagePositionDesktop, 'right')
+  assert.equal(body.siteConfig.coverImagePositionMobile, 'bottom')
+})
+
+test('public invitation migrates the legacy cover framing into both device settings', async () => {
+  const legacyConfig = { ...siteConfig, coverImagePosition: 'left' }
+  delete legacyConfig.coverImagePositionDesktop
+  delete legacyConfig.coverImagePositionMobile
+  const { response } = await call('/api/public/weddings/ana-e-bia', { publishedWedding: { ...wedding, published_site_config_json: JSON.stringify(legacyConfig) } })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.siteConfig.coverImagePosition, 'left')
+  assert.equal(body.siteConfig.coverImagePositionDesktop, 'left')
+  assert.equal(body.siteConfig.coverImagePositionMobile, 'left')
 })
 
 test('public invitation is unavailable before the wedding site is published', async () => {

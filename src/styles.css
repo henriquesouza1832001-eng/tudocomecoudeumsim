@@ -927,6 +927,23 @@ img { display: block; max-width: 100%; }
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
+.public-wedding-cover,
+.guest-invitation-cover {
+  --cover-image-position: var(--cover-image-position-desktop, center center);
+}
+
+.invitation-preview-frame.device-mobile .public-wedding-cover,
+.invitation-preview-frame.device-mobile .guest-invitation-cover {
+  --cover-image-position: var(--cover-image-position-mobile, var(--cover-image-position-desktop, center center));
+}
+
+@media (max-width: 760px) {
+  .public-wedding-cover,
+  .guest-invitation-cover {
+    --cover-image-position: var(--cover-image-position-mobile, var(--cover-image-position-desktop, center center));
+  }
+}
+
 .walkin-card { max-width: 520px; margin: 18px auto 0; padding: 17px; border: 1px solid rgba(255,255,255,.12); background: #293831; }
 .walkin-heading, .buffet-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .walkin-heading h2 { margin: 6px 0 0; font-family: var(--serif); font-size: 20px; font-weight: 400; }
