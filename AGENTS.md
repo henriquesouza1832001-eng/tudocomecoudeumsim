@@ -512,7 +512,7 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - As três composições oferecidas (`full`, `split`, `arch`) existem no convite publicado e são aceitas pela validação da API. Rascunhos locais antigos com layouts `type`, `video` ou `collage` são normalizados para o layout correspondente ao tema escolhido.
 - Alterar a história curta ativa a seção de história no rascunho, para o conteúdo da prévia também poder aparecer no convite após cadastro/publicação.
 - O editor autenticado continua com duas áreas. Foi removido um bloco duplicado de cardápio e traje encontrado durante a revisão.
-- A API ainda aceita seis layouts antigos para compatibilidade, embora o fluxo novo mostre somente os três layouts que foram alinhados à composição do convite publicado. Não reintroduzir controles antigos sem validar a saída real.
+- A API lê configurações antigas com seis layouts para compatibilidade, mas normaliza `type`, `video` e `collage` para `full` ao servir o convite. Novas gravações e publicações aceitam somente `full`, `split` e `arch`. Não reintroduzir controles antigos sem validar a saída real.
 - `npm run lint`, `npm run build` e `git diff --check` passaram após essas alterações. A versão foi promovida à produção depois da validação registrada na seção seguinte.
 
 ## Publicação após validação — 17/10/2026
