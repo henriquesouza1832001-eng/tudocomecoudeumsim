@@ -547,3 +547,12 @@ Atualizado em 17/10/2026. Esta seção registra o pedido mais recente e o estado
 - Nenhuma migration ou dado remoto foi alterado nesta etapa. A migration `0015_gift_fulfillment_options.sql` já está aplicada no D1 e dá suporte ao tipo e URL de loja.
 - Validação: `npm run lint`, `npm test` (29/29), `npm run build` e `git diff --check` passaram.
 - O primeiro check do Pages para `9e3af68` publicou apenas o preview de `hen`. Depois da atualização única em `main` no commit `f88b718`, `https://tudocomecoudeumsim.pages.dev` respondeu HTTP 200 e passou a servir os assets gerados pelo build validado (`index-DBbvOpQJ.js`, `App-f-ODa_og.js` e `MarketingLanding-4Q1wuAh-.js`). A publicação foi feita pela integração Git do Cloudflare.
+
+## Auditoria de contradições — 18/10/2026
+
+- O painel permite reordenar com botões acessíveis as seções de contagem regressiva, história, linha do tempo, eventos e fotos. Essa ordem é salva no rascunho, refletida na prévia e usada pelo convite publicado e sua navegação. O carrossel ativo aparece junto à seção de fotos.
+- A biblioteca completa da seção 7.7 ainda não está implementada. RSVP, presentes e Pix continuam fora dos controles de reordenação; várias seções listadas na biblioteca ainda não têm editor nem renderização pública. Não declarar o requisito de reordenação de todas as seções concluído.
+- A paleta oferece seis combinações curadas por tema; a função de contraste ajusta a cor de destaque para obter 4,5:1 contra o papel. Não há seletor de cor própria nem verificador antes de publicar para todas as pendências de contraste e acessibilidade da seção 7.15.
+- Texto alternativo por idioma e recorte por ponto focal separado para celular e desktop ainda não estão disponíveis. A fotografia do convite usa descrições padrão no código.
+- Esta entrega cobre apenas a reordenação das seções já editáveis. O assistente inicial completo, variantes de layout por seção, undo/redo e demais itens ainda pendentes da Fase 1 devem ser verificados antes de considerar o personalizador concluído.
+- Validação local desta alteração: `npm run lint`, `npm run build`, `npm test` (77 testes) e `git diff --check` passaram. Os branches remotos `main`, `hen` e `lar` apontavam para o mesmo commit antes da integração desta alteração.

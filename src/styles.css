@@ -523,6 +523,11 @@ img { display: block; max-width: 100%; }
 .section-reorder-controls button { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; border: 1px solid #e6e9e3; border-radius: 6px; color: var(--forest); background: #fff; }
 .section-reorder-controls button:disabled { color: #c5c9c1; background: #f7f8f6; }
 .section-reorder-controls button:focus-visible, .toggle-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.customizer-order-heading { display: grid; gap: 3px; margin-top: 18px; }
+.customizer-order-heading small { color: #59645b; }
+.customizer-section-order { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.customizer-section-order li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 5px 8px 5px 12px; border: 1px solid #e3e4dc; background: #fffefa; }
+.customizer-section-order .section-reorder-controls button { width: 36px; height: 36px; }
 .toggle-switch { width: 29px; height: 16px; padding: 2px; display: flex; align-items: center; border: 0; border-radius: 99px; background: #dfe3dc; transition: .2s ease; }
 .toggle-switch i { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: transform .2s ease; }
 .toggle-switch.on { background: #71866d; }

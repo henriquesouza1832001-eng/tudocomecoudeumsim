@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
 import { SITE_MEDIA_LIMITS } from './site-media-config.js'
+import { ORDERABLE_SITE_SECTIONS, moveSiteSection as moveSiteSectionOrder, orderedSiteSections } from './site-sections.js'
 import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   Bell,
   CalendarDays,
   Camera,
@@ -216,21 +218,22 @@ function WeddingInvitationDocument({ theme, animationPreset, style, partnerOneNa
 }
 
 function WeddingInvitationContent({ config, eventDate, eventTime, events, gifts, giftPresentation, mediaUrl, timezone, showGifts, showPix, preview = false, onOpenGifts, onOpenPix, onCopyPix, weddingUrl = '' }) {
-  const sections = config?.enabledSections || []
   const giftMode = ['inline', 'page', 'hidden'].includes(config?.giftDisplayMode) ? config.giftDisplayMode : 'hidden'
   const pixMode = ['inline', 'page', 'hidden'].includes(config?.pixDisplayMode) ? config.pixDisplayMode : 'hidden'
   const story = config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR'] || ''
   const details = config?.weddingDetails || {}
   const gallery = config?.siteGallery || []
   const carouselPhotos = config?.siteCarouselPhotos || []
+  const orderedSections = orderedSiteSections(config).filter((section) => ['Contagem regressiva', 'Nossa história', 'Linha do tempo', 'Eventos', 'Galeria de fotos'].includes(section))
+  const sectionContent = {
+    'Contagem regressiva': <WeddingCountdown date={eventDate} time={eventTime} timezone={timezone} preview={preview} />,
+    'Nossa história': story && <section className="public-wedding-story" id="nossa-historia"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{story}</p></section>,
+    'Linha do tempo': <WeddingTimelineSection items={config?.timeline || []} mediaUrl={mediaUrl} preview={preview} />,
+    Eventos: <><WeddingEventsSection events={events} timezone={timezone} preview={preview} />{(details.schedule || details.menu || details.dressCode) && <section className="public-wedding-details">{details.schedule && <article><span className="eyebrow">ORIENTAÇÕES</span><p>{details.schedule}</p></article>}{details.dressCode && <article><span className="eyebrow">TRAJE</span><p>{details.dressCode}</p></article>}{details.menu && <article><span className="eyebrow">CARDÁPIO</span><p>{details.menu}</p></article>}</section>}</>,
+    'Galeria de fotos': <div id="fotos-do-casal">{config?.siteCarouselEnabled && carouselPhotos.length > 0 && <WeddingPhotoCarousel photos={carouselPhotos} mediaUrl={mediaUrl} autoplay={Boolean(config.siteCarouselAutoplay)} />}{gallery.length > 0 && <section className="public-wedding-gallery"><span className="eyebrow">FOTOS DO CASAL</span><div>{gallery.map((id) => mediaUrl(id) && <img key={id} src={mediaUrl(id)} alt="Foto escolhida pelo casal" />)}</div></section>}</div>,
+  }
   return <>
-    {sections.includes('Contagem regressiva') && <WeddingCountdown date={eventDate} time={eventTime} timezone={timezone} preview={preview} />}
-    {sections.includes('Nossa história') && story && <section className="public-wedding-story"><span className="eyebrow">NOSSA HISTÓRIA</span><p>{story}</p></section>}
-    {sections.includes('Linha do tempo') && <WeddingTimelineSection items={config?.timeline || []} mediaUrl={mediaUrl} preview={preview} />}
-    {config?.siteCarouselEnabled && carouselPhotos.length > 0 && <WeddingPhotoCarousel photos={carouselPhotos} mediaUrl={mediaUrl} autoplay={Boolean(config.siteCarouselAutoplay)} />}
-    {sections.includes('Eventos') && <WeddingEventsSection events={events} timezone={timezone} preview={preview} />}
-    {sections.includes('Eventos') && (details.schedule || details.menu || details.dressCode) && <section className="public-wedding-details">{details.schedule && <article><span className="eyebrow">ORIENTAÇÕES</span><p>{details.schedule}</p></article>}{details.dressCode && <article><span className="eyebrow">TRAJE</span><p>{details.dressCode}</p></article>}{details.menu && <article><span className="eyebrow">CARDÁPIO</span><p>{details.menu}</p></article>}</section>}
-    {sections.includes('Galeria de fotos') && gallery.length > 0 && <section className="public-wedding-gallery"><span className="eyebrow">FOTOS DO CASAL</span><div>{gallery.map((id) => mediaUrl(id) && <img key={id} src={mediaUrl(id)} alt="Foto escolhida pelo casal" />)}</div></section>}
+    {orderedSections.map((section) => <div className="public-wedding-section-group" key={section}>{sectionContent[section]}</div>)}
     {showGifts && (giftMode === 'inline' ? <WeddingGiftsSection gifts={gifts} presentation={giftPresentation} mediaUrl={mediaUrl} preview={preview} /> : <section className="public-wedding-display-cta"><span className="eyebrow">LISTA DE PRESENTES</span><h2>Um carinho para os noivos</h2>{preview ? <button className="button-primary" type="button" onClick={onOpenGifts}>Ver lista de presentes <ArrowRight size={15} /></button> : <a className="button-primary" href={`${weddingUrl}?pagina=presentes`}>Ver lista de presentes <ArrowRight size={15} /></a>}</section>)}
     {showPix && (pixMode === 'inline' ? <WeddingPixSection pix={config?.pix || {}} preview={preview} onCopy={onCopyPix} /> : <section className="public-wedding-display-cta"><span className="eyebrow">UM PRESENTE COM CARINHO</span><h2>Se desejarem, presenteiem os noivos via Pix.</h2>{preview ? <button className="button-primary" type="button" onClick={onOpenPix}>Presentear via Pix <ArrowRight size={15} /></button> : <a className="button-primary" href={`${weddingUrl}?pagina=pix`}>Presentear via Pix <ArrowRight size={15} /></a>}</section>)}
   </>
@@ -2454,6 +2457,11 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     const sections = current.enabledSections || []
     return { ...current, enabledSections: enabled ? [...new Set([...sections, section])] : sections.filter((item) => item !== section) }
   })
+  const moveSiteSection = (section, direction) => setConfig((current) => {
+    if (!ORDERABLE_SITE_SECTIONS.includes(section)) return current
+    const sections = moveSiteSectionOrder(current.enabledSections || [], section, direction)
+    return sections.every((item, index) => item === current.enabledSections?.[index]) ? current : { ...current, enabledSections: sections }
+  })
   const toggleStory = () => toggleSection('Nossa história', !storyEnabled)
   const updateTimelineItem = (id, values) => update({ timeline: (config.timeline || []).map((item) => item.id === id ? { ...item, ...values } : item) })
   const addTimelineItem = () => update({ timeline: [...(config.timeline || []), { id: crypto.randomUUID(), title: '', date: '', description: '', photoId: null }] })
@@ -2490,7 +2498,11 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     photos[target] = selected
     return { ...current, siteCarouselPhotos: photos }
   })
-  const toggleSiteCarousel = (enabled) => update({ siteCarouselEnabled: enabled && siteCarouselPhotos.length > 0 })
+  const toggleSiteCarousel = (enabled) => setConfig((current) => {
+    const active = enabled && (current.siteCarouselPhotos || []).length > 0
+    const sections = current.enabledSections || []
+    return { ...current, siteCarouselEnabled: active, enabledSections: active ? [...new Set([...sections, 'Galeria de fotos'])] : (current.siteGallery || []).length ? sections : sections.filter((section) => section !== 'Galeria de fotos') }
+  })
   const handlePhotoUpload = (event, usage) => {
     const input = event.currentTarget
     const files = [...input.files].slice(0, remainingPhotoSlots)
@@ -2656,12 +2668,15 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   }
 
   const previewHasGifts = previewGifts.some((gift) => !gift.status || gift.status === 'active')
-  const previewNavItems = [
-    ...(timelineEnabled && timelineItems.some((item) => item.title?.trim()) ? [{ label: 'Nossa história', href: '#historia-marcos' }] : []),
-    ...(countdownEnabled && eventDate ? [{ label: 'Contagem', href: '#contagem-regressiva' }] : []),
-    ...(eventsEnabled ? [{ label: 'Eventos', href: '#eventos' }] : []),
-    ...(config.enabledSections?.includes('Confirmação de presença') ? [{ label: 'Confirmar presença', href: '#confirmar-presenca' }] : []),
-  ]
+  const previewNavItems = orderedSiteSections(config).flatMap((section) => {
+    if (section === 'Nossa história' && storyMessage) return [{ label: 'Nossa história', href: '#nossa-historia' }]
+    if (section === 'Linha do tempo' && timelineItems.some((item) => item.title?.trim())) return [{ label: 'Linha do tempo', href: '#historia-marcos' }]
+    if (section === 'Contagem regressiva' && eventDate) return [{ label: 'Contagem', href: '#contagem-regressiva' }]
+    if (section === 'Eventos' && eventsEnabled) return [{ label: 'Eventos', href: '#eventos' }]
+    if (section === 'Galeria de fotos' && (siteGallery.length || (config.siteCarouselEnabled && siteCarouselPhotos.length))) return [{ label: 'Fotos', href: '#fotos-do-casal' }]
+    if (section === 'Confirmação de presença') return [{ label: 'Confirmar presença', href: '#confirmar-presenca' }]
+    return []
+  })
   const previewGivingOptions = [
     ...(previewHasGifts ? [{ label: 'Ver lista de presentes', href: giftDisplayMode === 'inline' ? '#presentes' : '?pagina=presentes', onSelect: giftDisplayMode === 'page' ? () => setPreviewPage('gifts') : undefined }] : []),
     ...(previewPixEnabled ? [{ label: 'Presentear via Pix', href: pixDisplayMode === 'inline' ? '#pix' : '?pagina=pix', onSelect: pixDisplayMode === 'page' ? () => setPreviewPage('pix') : undefined }] : []),
@@ -2690,7 +2705,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <div className="customizer-content-group"><div className="customizer-content-heading"><span>02</span><div><strong>Nossa história</strong><small>Uma lembrança curta sobre vocês.</small></div></div><label className="customizer-story-toggle"><input type="checkbox" checked={storyEnabled} onChange={toggleStory} /><span><strong>Mostrar nossa história no convite</strong><small>Opcional. Um parágrafo já é suficiente.</small></span></label>{storyEnabled && <label className="font-pair-label">Como tudo começou<textarea rows="3" maxLength="360" value={storyMessage} onChange={(event) => updateStory(event.target.value)} placeholder="Contem em poucas linhas como se conheceram." /><small>{storyMessage.length}/360 caracteres</small></label>}</div>
         <div className="customizer-content-group"><div className="customizer-content-heading"><span>03</span><div><strong>Linha do tempo</strong><small>Adicionem até seis marcos reais da história de vocês.</small></div></div><label className="customizer-story-toggle"><input type="checkbox" checked={timelineEnabled} onChange={(event) => toggleSection('Linha do tempo', event.target.checked)} /><span><strong>Mostrar a linha do tempo</strong><small>Ela só aparece no convite quando houver marcos com título.</small></span></label>{timelineEnabled && <div className="customizer-timeline-editor">{timelineItems.map((item, index) => <fieldset key={item.id}><legend>Marco {index + 1}</legend><label className="font-pair-label">Título<input maxLength="100" value={item.title} onChange={(event) => updateTimelineItem(item.id, { title: event.target.value })} placeholder="Ex.: Onde nos conhecemos" /></label><label className="font-pair-label">Data, opcional<input type="date" value={item.date || ''} onChange={(event) => updateTimelineItem(item.id, { date: event.target.value })} /></label><label className="font-pair-label">Descrição<textarea rows="2" maxLength="1200" value={item.description || ''} onChange={(event) => updateTimelineItem(item.id, { description: event.target.value })} placeholder="Escrevam com as próprias palavras." /></label><label className="font-pair-label">Fotografia, opcional<select value={item.photoId || ''} onChange={(event) => updateTimelineItem(item.id, { photoId: event.target.value || null })}><option value="">Sem fotografia</option>{uploadedImages.map((image) => <option key={image.id} value={image.id}>Foto enviada · {image.id.slice(0, 8)}</option>)}</select></label><button type="button" className="button-outline" onClick={() => removeTimelineItem(item.id)}>Remover marco</button></fieldset>)}<button type="button" className="button-outline" disabled={timelineItems.length >= 6} onClick={addTimelineItem}>Adicionar marco {timelineItems.length}/6</button></div>}</div>
         <div className="customizer-content-group"><div className="customizer-content-heading"><span>04</span><div><strong>Contagem regressiva</strong><small>Usa a data, o horário e o fuso do casamento.</small></div></div><label className="customizer-story-toggle"><input type="checkbox" checked={countdownEnabled} onChange={(event) => toggleSection('Contagem regressiva', event.target.checked)} /><span><strong>Mostrar a contagem regressiva</strong><small>Quando o horário chegar, ela muda para “Hoje é o grande dia!”.</small></span></label></div>
-        <div className="customizer-content-group"><div className="customizer-content-heading"><span>05</span><div><strong>O que aparece no convite</strong><small>Escolham como os convidados acessam cada opção.</small></div></div><div className="customizer-section-toggles">{[['Eventos', 'Programação dos eventos'], ['Confirmação de presença', 'Confirmação de presença']].map(([section, label]) => <label key={section}><input type="checkbox" checked={(config.enabledSections || []).includes(section)} onChange={(event) => toggleSection(section, event.target.checked)} /><span>{label}</span></label>)}</div></div>
+        <div className="customizer-content-group"><div className="customizer-content-heading"><span>05</span><div><strong>O que aparece no convite</strong><small>Escolham como os convidados acessam cada opção.</small></div></div><div className="customizer-section-toggles">{[['Eventos', 'Programação dos eventos'], ['Confirmação de presença', 'Confirmação de presença']].map(([section, label]) => <label key={section}><input type="checkbox" checked={(config.enabledSections || []).includes(section)} onChange={(event) => toggleSection(section, event.target.checked)} /><span>{label}</span></label>)}</div><div className="customizer-order-heading"><strong>Ordem das seções</strong><small>Use as setas para escolher o que aparece primeiro no site.</small></div><ol className="customizer-section-order">{(config.enabledSections || []).filter((section) => ORDERABLE_SITE_SECTIONS.includes(section)).map((section, index, ordered) => <li key={section}><span>{section === 'Contagem regressiva' ? 'Contagem regressiva' : section === 'Nossa história' ? 'Nossa história' : section === 'Linha do tempo' ? 'Linha do tempo' : section === 'Eventos' ? 'Programação dos eventos' : 'Fotos do casal'}</span><div className="section-reorder-controls"><button type="button" aria-label={`Mover ${section} para cima`} disabled={index === 0} onClick={() => moveSiteSection(section, -1)}><ArrowUp size={14} /></button><button type="button" aria-label={`Mover ${section} para baixo`} disabled={index === ordered.length - 1} onClick={() => moveSiteSection(section, 1)}><ArrowDown size={14} /></button></div></li>)}</ol></div>
         <details className="customizer-extra-fields"><summary>Mais fotos no convite, opcional</summary><div><label className="customizer-story-toggle"><input type="checkbox" checked={config.coverCarouselEnabled || false} onChange={(event) => update({ coverCarouselEnabled: event.target.checked, ...(event.target.checked && config.coverPhotoId ? { coverGallery: [...new Set([config.coverPhotoId, ...(config.coverGallery || [])])] } : {}) })} /><span><strong>Alternar a foto de abertura</strong><small>Escolham as fotos na etapa Aparência. Sem esta opção, o convite mantém uma foto fixa.</small></span></label>{config.coverCarouselEnabled && !config.coverGallery?.length && <p className="customizer-step-note">Na etapa Aparência, marquem quais fotos entram no carrossel.</p>}</div></details>
         <details className="customizer-extra-fields"><summary>Informações adicionais, se forem importantes</summary><div><label className="font-pair-label">Cardápio<textarea rows="2" maxLength="1200" value={config.weddingDetails?.menu || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, menu: event.target.value } })} placeholder="Uma observação breve para os convidados." /></label><label className="font-pair-label">Traje sugerido<input maxLength="120" value={config.weddingDetails?.dressCode || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, dressCode: event.target.value } })} placeholder="Ex.: esporte fino" /></label><label className="font-pair-label">Orientações aos convidados<textarea rows="3" maxLength="1200" value={config.weddingDetails?.schedule || ''} onChange={(event) => update({ weddingDetails: { ...config.weddingDetails, schedule: event.target.value } })} placeholder="Informações úteis sobre chegada, estacionamento ou acessibilidade." /></label></div></details>
         <details className="customizer-extra-fields"><summary>Fotos espontâneas dos convidados</summary><GuestCameraSettings settings={config.guestCamera} onChange={(guestCamera) => update({ guestCamera })} /></details>
@@ -3141,12 +3156,15 @@ function GeneralWeddingSite({ notify }) {
   if (loading) return <RoleFrame icon={Heart} eyebrow="CONVITE DO CASAMENTO" title="Abrindo o convite." description="Carregando as informações publicadas pelos noivos." publicPage secureName="Convite do casamento" secureFooter="Link do convite" />
   if (error && !data) return <RoleFrame icon={Heart} eyebrow="CONVITE DO CASAMENTO" title="Este convite não está disponível." description={error} publicPage secureName="Convite do casamento" secureFooter="Link do convite" />
 
-  const publicNavigationItems = [
-    ...(config?.enabledSections?.includes('Linha do tempo') && config.timeline?.some((item) => item.title?.trim()) ? [{ label: 'Nossa história', href: '#historia-marcos' }] : []),
-    ...(config?.enabledSections?.includes('Contagem regressiva') && data.wedding.eventDate ? [{ label: 'Contagem', href: '#contagem-regressiva' }] : []),
-    ...(config?.enabledSections?.includes('Eventos') ? [{ label: 'Eventos', href: '#eventos' }] : []),
-    ...(config?.enabledSections?.includes('Confirmação de presença') ? [{ label: 'Confirmar presença', href: '#confirmar-presenca' }] : []),
-  ]
+  const publicNavigationItems = orderedSiteSections(config).flatMap((section) => {
+    if (section === 'Nossa história' && (config?.storyMessages?.[config?.language] || config?.storyMessages?.['pt-BR'])) return [{ label: 'Nossa história', href: '#nossa-historia' }]
+    if (section === 'Linha do tempo' && config?.timeline?.some((item) => item.title?.trim())) return [{ label: 'Linha do tempo', href: '#historia-marcos' }]
+    if (section === 'Contagem regressiva' && data.wedding.eventDate) return [{ label: 'Contagem', href: '#contagem-regressiva' }]
+    if (section === 'Eventos') return [{ label: 'Eventos', href: '#eventos' }]
+    if (section === 'Galeria de fotos' && (config?.siteGallery?.length || (config?.siteCarouselEnabled && config?.siteCarouselPhotos?.length))) return [{ label: 'Fotos', href: '#fotos-do-casal' }]
+    if (section === 'Confirmação de presença') return [{ label: 'Confirmar presença', href: '#confirmar-presenca' }]
+    return []
+  })
   const publicGivingOptions = [
     ...(showGifts ? [{ label: 'Ver lista de presentes', href: giftDisplayMode === 'inline' ? '#presentes' : `${weddingUrl}?pagina=presentes` }] : []),
     ...(showPix ? [{ label: 'Presentear via Pix', href: pixDisplayMode === 'inline' ? '#pix' : `${weddingUrl}?pagina=pix` }] : []),
