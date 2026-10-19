@@ -3567,6 +3567,147 @@ img { display: block; max-width: 100%; }
   color: var(--muted, #68746b);
 }
 
+.expense-summary-grid,
+.wedding-expense-form,
+.wedding-expense-values,
+.expense-payment-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.expense-summary-grid article {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--line, #ddd8ce);
+  background: var(--paper, #fffdf9);
+}
+
+.expense-summary-grid article span,
+.wedding-expense-values > span {
+  color: var(--muted, #68746b);
+  font-size: .85rem;
+}
+
+.expense-summary-grid article strong {
+  color: var(--forest, #31483c);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.wedding-expense-form,
+.expense-payment-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.expense-reminder-toggle,
+.expense-description-field,
+.expense-form-actions {
+  grid-column: 1 / -1;
+}
+
+.expense-reminder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.expense-form-actions,
+.wedding-expense-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wedding-expense-list {
+  display: grid;
+  gap: 14px;
+}
+
+.wedding-expense-list > article {
+  padding: 18px;
+  border: 1px solid var(--line, #ddd8ce);
+  background: var(--paper, #fffdf9);
+}
+
+.wedding-expense-list > article.is-archived {
+  opacity: .7;
+}
+
+.wedding-expense-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wedding-expense-heading > div,
+.wedding-expense-values > span {
+  display: grid;
+  gap: 5px;
+}
+
+.wedding-expense-heading > div > strong {
+  color: var(--forest, #31483c);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.wedding-expense-heading small {
+  color: var(--muted, #68746b);
+}
+
+.wedding-expense-values {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-block: 16px;
+  padding-block: 14px;
+  border-block: 1px solid var(--line, #ddd8ce);
+}
+
+.wedding-expense-values strong {
+  color: var(--ink, #24372f);
+  font-size: .95rem;
+}
+
+.expense-payment-details,
+.expense-payment-history {
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--line, #ddd8ce);
+}
+
+.expense-payment-details > summary,
+.expense-payment-history > summary {
+  color: var(--forest, #31483c);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.expense-payment-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.expense-payment-history ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.expense-payment-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--line, #ddd8ce);
+}
+
 @media (max-width: 640px) {
   .public-wedding-schedule {
     width: min(100% - 36px, 980px);
@@ -3575,6 +3716,25 @@ img { display: block; max-width: 100%; }
   .public-wedding-schedule article {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
+  }
+
+  .expense-summary-grid,
+  .wedding-expense-form,
+  .wedding-expense-values,
+  .expense-payment-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .expense-reminder-toggle,
+  .expense-description-field,
+  .expense-form-actions {
+    grid-column: auto;
+  }
+
+  .wedding-expense-heading,
+  .expense-payment-history li {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

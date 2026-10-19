@@ -1374,6 +1374,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [events, setEvents] = useState([])
   const [rsvps, setRsvps] = useState([])
   const [gifts, setGifts] = useState([])
+  const [expenses, setExpenses] = useState([])
   const [editingGift, setEditingGift] = useState(null)
   const [giftType, setGiftType] = useState('fixed')
   const [giftTitle, setGiftTitle] = useState('')
@@ -1486,6 +1487,7 @@ function CouplePanel({ notify, confirmAction }) {
       setEvents(result.events)
       setRsvps([])
       setGifts([])
+      setExpenses([])
       setMembers([])
       setAssignments([])
       setGodparentTasks([])
@@ -1511,6 +1513,7 @@ function CouplePanel({ notify, confirmAction }) {
       setEvents(eventResult.events)
       setRsvps([])
       setGifts([])
+      setExpenses([])
       setMembers([])
       setAssignments([])
       setGodparentTasks([])
@@ -1521,12 +1524,13 @@ function CouplePanel({ notify, confirmAction }) {
       setSiteConfigLoading(false)
       return
     }
-    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, memberResult, assignmentResult, taskResult, siteConfigResult, guestPolicyResult, attendanceResult, authorizationResult] = await Promise.all([
+    const [guestResult, groupResult, eventResult, rsvpResult, giftResult, expenseResult, memberResult, assignmentResult, taskResult, siteConfigResult, guestPolicyResult, attendanceResult, authorizationResult] = await Promise.all([
       request(`${base}/guests`),
       request(`${base}/groups`),
       request(`${base}/events`),
       request(`${base}/rsvps`),
       request(`${base}/gifts`),
+      request(`${base}/expenses`),
       request(`${base}/members`),
       request(`${base}/event-assignments`),
       request(`${base}/godparent-tasks`),
@@ -1544,6 +1548,7 @@ function CouplePanel({ notify, confirmAction }) {
     setEvents(eventResult.events)
     setRsvps(rsvpResult.rsvps)
     setGifts(giftResult.gifts)
+    setExpenses(expenseResult.expenses)
     setMembers(memberResult.members)
     setAssignments(assignmentResult.assignments)
     setGodparentTasks(taskResult.tasks)
@@ -2199,6 +2204,7 @@ function CouplePanel({ notify, confirmAction }) {
         <button className={tab === 'team' ? 'selected' : ''} aria-current={tab === 'team' ? 'page' : undefined} onClick={() => selectPanelTab('team')}><Shield size={18} /><span>Equipe</span></button>
         <button className={tab === 'godparents' ? 'selected' : ''} aria-current={tab === 'godparents' ? 'page' : undefined} onClick={() => selectPanelTab('godparents')}><Heart size={18} /><span>Padrinhos</span></button>
         <button className={tab === 'memories' ? 'selected' : ''} aria-current={tab === 'memories' ? 'page' : undefined} onClick={() => selectPanelTab('memories')}><Camera size={18} /><span>Álbum</span></button>
+        {!isReader && <button className={tab === 'expenses' ? 'selected' : ''} aria-current={tab === 'expenses' ? 'page' : undefined} onClick={() => selectPanelTab('expenses')}><Wallet size={18} /><span>Despesas</span></button>}
         <button className={tab === 'gifts' ? 'selected' : ''} aria-current={tab === 'gifts' ? 'page' : undefined} onClick={() => selectPanelTab('gifts')}><Gift size={18} /><span>Presentes</span></button>
       </>}
     </nav><div className="couple-panel-content">{tab === 'guests' && <>
@@ -2245,8 +2251,105 @@ function CouplePanel({ notify, confirmAction }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
+    {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => loadWeddingData(weddingId)} />}
     {tab === 'site' && <CoupleSiteEditor wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
    </div></main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+}
+
+function WeddingExpenseManager({ weddingId, expenses, onReload }) {
+  const [draft, setDraft] = useState({ supplierName: '', supplierContact: '', category: '', description: '', totalAmount: '', dueDate: '', reminderEnabled: false })
+  const [editingId, setEditingId] = useState('')
+  const [payments, setPayments] = useState({})
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const activeExpenses = expenses.filter((expense) => expense.status === 'active')
+  const totals = activeExpenses.reduce((sum, expense) => ({
+    total: sum.total + expense.total_amount_cents,
+    paid: sum.paid + expense.paid_amount_cents,
+  }), { total: 0, paid: 0 })
+
+  function resetDraft() {
+    setDraft({ supplierName: '', supplierContact: '', category: '', description: '', totalAmount: '', dueDate: '', reminderEnabled: false })
+    setEditingId('')
+  }
+
+  async function submit(event) {
+    event.preventDefault()
+    const totalAmountCents = parseBrlCents(draft.totalAmount)
+    if (totalAmountCents === null || totalAmountCents < 1) {
+      setError('Informem um valor total válido em reais.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${weddingId}/expenses${editingId ? `/${editingId}` : ''}`, {
+        method: editingId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...draft, totalAmountCents, dueDate: draft.dueDate || null }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'expense_save_failed')
+      resetDraft()
+      await onReload()
+    } catch (cause) {
+      setError(cause.message === 'expense_total_below_paid_amount' ? 'O valor total não pode ficar abaixo do que já foi registrado como pago.' : 'Não foi possível salvar esta despesa. Tentem novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function startEdit(expense) {
+    setEditingId(expense.id)
+    setDraft({ supplierName: expense.supplier_name, supplierContact: expense.supplier_contact, category: expense.category, description: expense.description, totalAmount: (expense.total_amount_cents / 100).toFixed(2), dueDate: expense.due_date || '', reminderEnabled: expense.reminder_enabled })
+    document.getElementById('wedding-expense-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  async function archive(expense) {
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${weddingId}/expenses/${expense.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) })
+      if (!response.ok) throw new Error('expense_archive_failed')
+      await onReload()
+    } catch {
+      setError('Não foi possível arquivar este registro.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function addPayment(expense) {
+    const payment = payments[expense.id] || { amount: '', paidAt: new Date().toISOString().slice(0, 10), notes: '' }
+    const amountCents = parseBrlCents(payment.amount)
+    if (amountCents === null || amountCents < 1) {
+      setError('Informem um valor válido para registrar o pagamento.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/couple/weddings/${weddingId}/expenses/${expense.id}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amountCents, paidAt: payment.paidAt, notes: payment.notes }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'expense_payment_failed')
+      setPayments((current) => ({ ...current, [expense.id]: { amount: '', paidAt: new Date().toISOString().slice(0, 10), notes: '' } }))
+      await onReload()
+    } catch (cause) {
+      setError(cause.message === 'expense_payment_exceeds_balance' ? 'Esse valor ultrapassa o saldo que falta pagar.' : 'Não foi possível registrar o pagamento.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <div className="wedding-expense-manager">
+    <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PLANEJAMENTO FINANCEIRO</span><h2>Fornecedores e despesas</h2></div><Wallet size={19} /></div><p className="team-access-note">Registrem contratos, valores pagos e próximos vencimentos. Os pagamentos são anotações privadas do casal; a plataforma não movimenta dinheiro.</p><div className="expense-summary-grid"><article><span>Valor contratado</span><strong>{formatBrlCents(totals.total)}</strong></article><article><span>Registrado como pago</span><strong>{formatBrlCents(totals.paid)}</strong></article><article><span>Saldo previsto</span><strong>{formatBrlCents(totals.total - totals.paid)}</strong></article></div></section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO REGISTRO</span><h2>{editingId ? 'Editar fornecedor ou despesa' : 'Adicionar fornecedor ou despesa'}</h2></div></div><form id="wedding-expense-form" className="wedding-expense-form" onSubmit={submit}><label>Fornecedor<input value={draft.supplierName} maxLength="160" onChange={(event) => setDraft((current) => ({ ...current, supplierName: event.target.value }))} required /></label><label>Contato do fornecedor, opcional<input value={draft.supplierContact} maxLength="254" onChange={(event) => setDraft((current) => ({ ...current, supplierContact: event.target.value }))} /></label><label>Categoria, opcional<input value={draft.category} maxLength="80" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} placeholder="Ex.: decoração" /></label><label>Valor total (R$)<input inputMode="decimal" value={draft.totalAmount} onChange={(event) => setDraft((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0,00" required /></label><label>Próximo vencimento<input type="date" value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value, reminderEnabled: event.target.value ? current.reminderEnabled : false }))} /></label><label className="expense-reminder-toggle"><input type="checkbox" checked={draft.reminderEnabled} disabled={!draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, reminderEnabled: event.target.checked }))} /><span>Incluir no resumo mensal por e-mail{!draft.dueDate && <small>Informe um vencimento para ativar.</small>}</span></label><label className="expense-description-field">Descrição e observações<textarea rows="3" maxLength="2000" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} /></label><div className="expense-form-actions"><button className="button-primary" disabled={busy} type="submit">{busy ? 'Salvando…' : editingId ? 'Salvar alterações' : 'Adicionar registro'} <Check size={15} /></button>{editingId && <button className="button-outline" disabled={busy} type="button" onClick={resetDraft}>Cancelar</button>}</div></form>{error && <p className="admin-form-error" role="alert">{error}</p>}</section>
+    <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">REGISTROS DO CASAMENTO</span><h2>Despesas cadastradas</h2></div><span className="task-count">{activeExpenses.length} ativas</span></div><div className="wedding-expense-list">{expenses.map((expense) => { const remaining = expense.total_amount_cents - expense.paid_amount_cents; const payment = payments[expense.id] || { amount: '', paidAt: new Date().toISOString().slice(0, 10), notes: '' }; return <article className={expense.status === 'archived' ? 'is-archived' : ''} key={expense.id}><div className="wedding-expense-heading"><div><strong>{expense.supplier_name}</strong><small>{[expense.category, expense.description].filter(Boolean).join(' · ') || 'Sem descrição adicional'}</small></div><span className={`admin-state ${expense.status === 'active' ? 'admin-state-active' : ''}`}>{expense.status === 'active' ? 'Ativa' : 'Arquivada'}</span></div><div className="wedding-expense-values"><span>Contrato <strong>{formatBrlCents(expense.total_amount_cents)}</strong></span><span>Pago <strong>{formatBrlCents(expense.paid_amount_cents)}</strong></span><span>Saldo <strong>{formatBrlCents(remaining)}</strong></span><span>Vencimento <strong>{expense.due_date ? new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informado'}</strong></span></div>{expense.supplier_contact && <p className="team-access-note">Contato: {expense.supplier_contact}</p>}{expense.status === 'active' && <><details className="expense-payment-details"><summary>Registrar pagamento</summary><div className="expense-payment-form"><label>Valor pago (R$)<input inputMode="decimal" value={payment.amount} onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, amount: event.target.value } }))} placeholder="0,00" /></label><label>Data<input type="date" value={payment.paidAt} onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, paidAt: event.target.value } }))} /></label><label>Observação<input value={payment.notes} maxLength="500" onChange={(event) => setPayments((current) => ({ ...current, [expense.id]: { ...payment, notes: event.target.value } }))} /></label><button className="button-outline" type="button" disabled={busy || remaining === 0} onClick={() => addPayment(expense)}>Salvar pagamento</button></div></details><div className="wedding-expense-actions"><button className="button-outline" type="button" disabled={busy} onClick={() => startEdit(expense)}>Editar</button><button className="button-outline" type="button" disabled={busy} onClick={() => archive(expense)}>Arquivar</button></div></>}{expense.payments.length > 0 && <details className="expense-payment-history"><summary>Histórico de pagamentos ({expense.payments.length})</summary><ul>{expense.payments.map((item) => <li key={item.id}><span>{new Date(`${item.paid_at}T12:00:00`).toLocaleDateString('pt-BR')} · {item.notes || 'Pagamento registrado'}</span><strong>{formatBrlCents(item.amount_cents)}</strong></li>)}</ul></details>}</article> })}{!expenses.length && <p className="buffet-empty">Adicionem o primeiro fornecedor para acompanhar valores e vencimentos.</p>}</div></section>
+  </div>
 }
 
 function GiftPresentationManager({ weddingId, gifts, config, setConfig, onSave, onPublish, saving }) {

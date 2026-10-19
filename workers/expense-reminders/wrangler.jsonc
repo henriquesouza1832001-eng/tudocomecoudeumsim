@@ -1,0 +1,16 @@
+{
+  "name": "tudocomecoudeumsim-expense-reminders",
+  "main": "./index.js",
+  "compatibility_date": "2026-10-12",
+  "triggers": {
+    "crons": ["0 12 * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tudocomecoudeumsim-db",
+      "database_id": "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555",
+      "migrations_dir": "../../migrations"
+    }
+  ]
+}

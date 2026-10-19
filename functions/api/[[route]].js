@@ -4,6 +4,7 @@ import { zipSync, zlibSync } from 'fflate'
 import { createOpenSslCompatiblePkcs7Signature } from '@swapnanildhol/passkit-pkcs7-signature'
 import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import { checkSitePublication } from '../../src/site-publication-check.js'
+import { PRODUCT_NAME } from '../../src/product-config.js'
 import {
   authenticate,
   checkLoginLimit,
@@ -19,8 +20,14 @@ import {
 } from '../../src/server/auth.js'
 
 const app = new Hono()
-const PRODUCT_NAME = 'Tudo começou de um sim'
 const accessKeySets = new Map()
+function isValidDateOnly(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
+
 const siteThemes = ['garden', 'editorial', 'minimal', 'floral', 'rustic', 'beach', 'tropical', 'night']
 const siteCoverLayouts = ['full', 'split', 'arch']
 const legacySiteCoverLayouts = [...siteCoverLayouts, 'type', 'video', 'collage']
@@ -2038,6 +2045,111 @@ app.patch('/api/couple/weddings/:weddingId/companion-requests/:companionId', req
     }
   }
   return context.json({ id: companionId, status: body.decision, guestId, emailSent })
+})
+
+app.get('/api/couple/weddings/:weddingId/expenses', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin'])) return jsonError(context, 404, 'wedding_not_found')
+  const [expenseResult, paymentResult] = await Promise.all([
+    context.env.DB.prepare(`SELECT e.id, e.supplier_name, e.supplier_contact, e.category, e.description,
+      e.total_amount_cents, e.due_date, e.reminder_enabled, e.status, e.created_at, e.updated_at,
+      COALESCE(SUM(p.amount_cents), 0) AS paid_amount_cents
+      FROM wedding_expenses e LEFT JOIN wedding_expense_payments p ON p.expense_id = e.id AND p.wedding_id = e.wedding_id
+      WHERE e.wedding_id = ? GROUP BY e.id ORDER BY e.status, e.due_date IS NULL, e.due_date, e.supplier_name`).bind(weddingId).all(),
+    context.env.DB.prepare(`SELECT id, expense_id, amount_cents, paid_at, notes, created_at
+      FROM wedding_expense_payments WHERE wedding_id = ? ORDER BY paid_at DESC, created_at DESC`).bind(weddingId).all(),
+  ])
+  const payments = new Map()
+  for (const payment of paymentResult.results) payments.set(payment.expense_id, [...(payments.get(payment.expense_id) || []), payment])
+  return context.json({ expenses: expenseResult.results.map((expense) => ({ ...expense, reminder_enabled: Boolean(expense.reminder_enabled), payments: payments.get(expense.id) || [] })) })
+})
+
+app.post('/api/couple/weddings/:weddingId/expenses', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  const body = await context.req.json().catch(() => null)
+  const supplierName = typeof body?.supplierName === 'string' ? body.supplierName.trim() : ''
+  const supplierContact = typeof body?.supplierContact === 'string' ? body.supplierContact.trim() : ''
+  const category = typeof body?.category === 'string' ? body.category.trim() : ''
+  const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const dueDate = body?.dueDate || null
+  const totalAmountCents = body?.totalAmountCents
+  const reminderEnabled = body?.reminderEnabled
+  if (!supplierName || supplierName.length > 160 || supplierContact.length > 254 || category.length > 80 || description.length > 2000
+    || !Number.isSafeInteger(totalAmountCents) || totalAmountCents < 1 || (dueDate && !isValidDateOnly(dueDate))
+    || typeof reminderEnabled !== 'boolean' || (reminderEnabled && !dueDate)) return jsonError(context, 400, 'invalid_wedding_expense')
+  const id = crypto.randomUUID()
+  await context.env.DB.batch([
+    context.env.DB.prepare(`INSERT INTO wedding_expenses (id, wedding_id, supplier_name, supplier_contact, category, description, total_amount_cents, due_date, reminder_enabled, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, weddingId, supplierName, supplierContact, category, description, totalAmountCents, dueDate, Number(reminderEnabled), context.get('session').account_id),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'wedding_expense_created', 'wedding_expense', ?, ?)`)
+      .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, id, JSON.stringify({ supplierName, totalAmountCents, dueDate })),
+  ])
+  return context.json({ id, supplierName, supplierContact, category, description, totalAmountCents, paidAmountCents: 0, dueDate, reminderEnabled, status: 'active', payments: [] }, 201)
+})
+
+app.patch('/api/couple/weddings/:weddingId/expenses/:expenseId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const expenseId = context.req.param('expenseId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin'])) return jsonError(context, 404, 'wedding_not_found')
+  const body = await context.req.json().catch(() => null)
+  if (body?.status === 'archived') {
+    const result = await context.env.DB.prepare(`UPDATE wedding_expenses SET status = 'archived', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND wedding_id = ? AND status = 'active'`).bind(expenseId, weddingId).run()
+    if (!result.meta.changes) return jsonError(context, 404, 'wedding_expense_not_found')
+    await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'wedding_expense_archived', 'wedding_expense', ?, '{}')`)
+      .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, expenseId).run()
+    return context.json({ id: expenseId, status: 'archived' })
+  }
+  const supplierName = typeof body?.supplierName === 'string' ? body.supplierName.trim() : ''
+  const supplierContact = typeof body?.supplierContact === 'string' ? body.supplierContact.trim() : ''
+  const category = typeof body?.category === 'string' ? body.category.trim() : ''
+  const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const dueDate = body?.dueDate || null
+  const totalAmountCents = body?.totalAmountCents
+  const reminderEnabled = body?.reminderEnabled
+  if (!supplierName || supplierName.length > 160 || supplierContact.length > 254 || category.length > 80 || description.length > 2000
+    || !Number.isSafeInteger(totalAmountCents) || totalAmountCents < 1 || (dueDate && !isValidDateOnly(dueDate))
+    || typeof reminderEnabled !== 'boolean' || (reminderEnabled && !dueDate)) return jsonError(context, 400, 'invalid_wedding_expense')
+  const existing = await context.env.DB.prepare(`SELECT total_amount_cents, COALESCE((SELECT SUM(amount_cents) FROM wedding_expense_payments WHERE expense_id = ? AND wedding_id = ?), 0) AS paid_amount_cents
+    FROM wedding_expenses WHERE id = ? AND wedding_id = ? AND status = 'active'`).bind(expenseId, weddingId, expenseId, weddingId).first()
+  if (!existing) return jsonError(context, 404, 'wedding_expense_not_found')
+  if (totalAmountCents < existing.paid_amount_cents) return jsonError(context, 409, 'expense_total_below_paid_amount')
+  await context.env.DB.batch([
+    context.env.DB.prepare(`UPDATE wedding_expenses SET supplier_name = ?, supplier_contact = ?, category = ?, description = ?, total_amount_cents = ?, due_date = ?, reminder_enabled = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND wedding_id = ? AND status = 'active'`)
+      .bind(supplierName, supplierContact, category, description, totalAmountCents, dueDate, Number(reminderEnabled), expenseId, weddingId),
+    context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+      VALUES (?, ?, ?, 'wedding_expense_updated', 'wedding_expense', ?, ?)`)
+      .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, expenseId, JSON.stringify({ supplierName, totalAmountCents, dueDate })),
+  ])
+  return context.json({ id: expenseId, status: 'active' })
+})
+
+app.post('/api/couple/weddings/:weddingId/expenses/:expenseId/payments', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const expenseId = context.req.param('expenseId')
+  if (!await weddingMembership(context, weddingId, ['couple_admin'])) return jsonError(context, 404, 'wedding_not_found')
+  const body = await context.req.json().catch(() => null)
+  const amountCents = body?.amountCents
+  const paidAt = body?.paidAt
+  const notes = typeof body?.notes === 'string' ? body.notes.trim() : ''
+  if (!Number.isSafeInteger(amountCents) || amountCents < 1 || !isValidDateOnly(paidAt) || notes.length > 500) return jsonError(context, 400, 'invalid_expense_payment')
+  const paymentId = crypto.randomUUID()
+  const insert = await context.env.DB.prepare(`INSERT INTO wedding_expense_payments (id, wedding_id, expense_id, amount_cents, paid_at, notes, created_by)
+    SELECT ?, ?, e.id, ?, ?, ?, ? FROM wedding_expenses e
+    WHERE e.id = ? AND e.wedding_id = ? AND e.status = 'active'
+      AND COALESCE((SELECT SUM(p.amount_cents) FROM wedding_expense_payments p WHERE p.expense_id = e.id AND p.wedding_id = e.wedding_id), 0) + ? <= e.total_amount_cents`)
+    .bind(paymentId, weddingId, amountCents, paidAt, notes, context.get('session').account_id, expenseId, weddingId, amountCents).run()
+  if (!insert.meta.changes) return jsonError(context, 409, 'expense_payment_exceeds_balance')
+  await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, wedding_id, action, target_type, target_id, details_json)
+    VALUES (?, ?, ?, 'wedding_expense_payment_recorded', 'wedding_expense', ?, ?)`)
+    .bind(crypto.randomUUID(), context.get('session').account_id, weddingId, expenseId, JSON.stringify({ amountCents, paidAt })).run()
+  return context.json({ id: paymentId, expenseId, amountCents, paidAt, notes }, 201)
 })
 
 app.get('/api/couple/weddings/:weddingId/gifts', requireSession, async (context) => {
