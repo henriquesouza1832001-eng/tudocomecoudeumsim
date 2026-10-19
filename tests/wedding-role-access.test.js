@@ -159,6 +159,8 @@ test('couple site config rejects invalid cover and display choices', async () =>
     { imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'x'.repeat(251) } } },
     { customAccent: 'green' },
     { customAccent: '#gggggg' },
+    { sectionLayouts: { Eventos: 'unbounded' } },
+    { sectionLayouts: { 'Secao livre': 'classic' } },
     { giftDisplayMode: 'external' },
     { pixDisplayMode: 'external' },
     { enabledSections: ['Playlist'], sectionContent: { Playlist: { 'pt-BR': { body: 'http://example.com/playlist' } } } },
@@ -168,6 +170,16 @@ test('couple site config rejects invalid cover and display choices', async () =>
     assert.equal(response.status, 400)
     assert.deepEqual(await response.json(), { error: 'invalid_site_config' })
   }
+})
+
+test('couple site config accepts curated layout choices for active site sections', async () => {
+  const sectionLayouts = { Eventos: 'framed', 'Nossa história': 'compact' }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', {
+    method: 'PUT',
+    body: { ...siteConfig, siteGallery: [], sectionLayouts },
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual((await response.json()).draft.sectionLayouts, sectionLayouts)
 })
 
 test('couple site config accepts HTTPS links for playlist and video sections', async () => {

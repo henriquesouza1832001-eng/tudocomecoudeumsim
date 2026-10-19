@@ -529,6 +529,10 @@ img { display: block; max-width: 100%; }
 .customizer-title-editor summary { min-height: 44px; display: flex; align-items: center; color: var(--forest); font-weight: 600; cursor: pointer; }
 .customizer-title-editor > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding-top: 12px; }
 .customizer-title-editor input { min-height: 44px; }
+.customizer-layout-editor { margin-top: 14px; padding: 12px; border: 1px solid #e3e4dc; background: #fffefa; }
+.customizer-layout-editor summary { min-height: 44px; display: flex; align-items: center; color: var(--forest); font-weight: 600; cursor: pointer; }
+.customizer-layout-editor > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding-top: 12px; }
+.customizer-layout-editor select { min-height: 44px; }
 .customizer-section-order { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
 .customizer-section-order li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 5px 8px 5px 12px; border: 1px solid #e3e4dc; background: #fffefa; }
 .customizer-section-order .section-reorder-controls button { width: 36px; height: 36px; }
@@ -2358,6 +2362,7 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 640px) {
   .customizer-title-editor > div { grid-template-columns: 1fr; }
+  .customizer-layout-editor > div { grid-template-columns: 1fr; }
   .guest-camera-settings { padding: 17px; }
   .guest-camera-preview > div > button { flex: 1 1 140px; }
   .guest-photo-album > .role-card-heading { align-items: flex-start; flex-direction: column; }
@@ -4976,6 +4981,23 @@ img { display: block; max-width: 100%; }
   max-width: 900px;
   border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+.public-wedding-section-group.section-layout-framed > * {
+  width: min(100% - 40px, 1120px);
+  margin: clamp(24px, 4vw, 44px) auto;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 20%, transparent);
+  background: color-mix(in srgb, var(--paper, #f7f4ed) 72%, white);
+}
+
+.public-wedding-section-group.section-layout-compact > * {
+  padding-top: clamp(20px, 3vw, 32px);
+  padding-bottom: clamp(20px, 3vw, 32px);
+}
+
+.public-wedding-section-group.section-layout-framed .public-wedding-editorial-section {
+  border: 1px solid color-mix(in srgb, var(--forest, #40594a) 20%, transparent);
 }
 
 .public-wedding-editorial-section h2 {
