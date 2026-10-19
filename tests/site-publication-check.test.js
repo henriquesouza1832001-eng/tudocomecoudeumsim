@@ -56,3 +56,28 @@ test('photos in disabled sections do not create accessibility blockers', () => {
   })
   assert.deepEqual(result.blockers, [])
 })
+
+test('site publication warns when editorial sections lack their required content', () => {
+  const result = checkSitePublication({
+    enabledSections: ['Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato'],
+    sectionContent: {},
+  })
+  assert.deepEqual(result.warnings, [
+    'A seção Hospedagem e dicas está ativa, mas ainda não tem conteúdo.',
+    'A seção Perguntas frequentes está ativa, mas ainda não tem conteúdo.',
+    'A seção Contato está ativa, mas ainda não tem conteúdo.',
+    'A seção Playlist está ativa, mas precisa de um link HTTPS válido.',
+    'A seção Vídeo está ativa, mas precisa de um vídeo enviado ou de um link HTTPS válido.',
+  ])
+})
+
+test('site publication accepts HTTPS playlist and video links', () => {
+  const result = checkSitePublication({
+    enabledSections: ['Playlist', 'Vídeo'],
+    sectionContent: {
+      Playlist: { 'pt-BR': { body: 'https://example.com/playlist' } },
+      'Vídeo': { 'pt-BR': { body: 'https://example.com/video' } },
+    },
+  })
+  assert.deepEqual(result.warnings, [])
+})

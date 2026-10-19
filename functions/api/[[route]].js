@@ -118,7 +118,7 @@ function validStoryMessages(messages) {
   return Object.fromEntries(Object.entries(messages).map(([language, value]) => [language, value.trim()]))
 }
 
-function validSectionContent(content) {
+function validSectionContent(content, enabledSections = []) {
   if (content === undefined) return defaultSiteConfig.sectionContent
   if (!content || typeof content !== 'object' || Array.isArray(content) || Object.keys(content).some((section) => !siteSections.includes(section))) return null
   const result = {}
@@ -131,6 +131,14 @@ function validSectionContent(content) {
       const title = item.title ?? ''
       const body = item.body ?? ''
       if (typeof title !== 'string' || title.length > 120 || typeof body !== 'string' || body.length > 4000) return null
+      if (language === 'pt-BR' && enabledSections.includes(section) && ['Playlist', 'Vídeo'].includes(section) && body.trim()) {
+        try {
+          const url = new URL(body.trim())
+          if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return null
+        } catch {
+          return null
+        }
+      }
       result[section][language] = { title: title.trim(), body: body.trim() }
     }
   }
@@ -209,7 +217,7 @@ function parseSiteConfig(value) {
     if (!storyMessages) return null
     const shareMessage = validShareMessage(config.shareMessage)
     if (shareMessage === null) return null
-    const sectionContent = validSectionContent(config.sectionContent)
+    const sectionContent = validSectionContent(config.sectionContent, config.enabledSections)
     if (!sectionContent) return null
     const timeline = validTimeline(config.timeline)
     if (!timeline) return null
@@ -261,7 +269,7 @@ function validateSiteConfig(body) {
   if (!storyMessages) return null
   const shareMessage = validShareMessage(body.shareMessage)
   if (shareMessage === null) return null
-  const sectionContent = validSectionContent(body.sectionContent)
+  const sectionContent = validSectionContent(body.sectionContent, body.enabledSections)
   if (!sectionContent) return null
   const timeline = validTimeline(body.timeline)
   if (!timeline) return null

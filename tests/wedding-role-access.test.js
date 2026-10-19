@@ -161,11 +161,27 @@ test('couple site config rejects invalid cover and display choices', async () =>
     { customAccent: '#gggggg' },
     { giftDisplayMode: 'external' },
     { pixDisplayMode: 'external' },
+    { enabledSections: ['Playlist'], sectionContent: { Playlist: { 'pt-BR': { body: 'http://example.com/playlist' } } } },
+    { enabledSections: ['Vídeo'], sectionContent: { 'Vídeo': { 'pt-BR': { body: 'javascript:alert(1)' } } } },
   ]) {
     const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: { ...siteConfig, ...invalid } })
     assert.equal(response.status, 400)
     assert.deepEqual(await response.json(), { error: 'invalid_site_config' })
   }
+})
+
+test('couple site config accepts HTTPS links for playlist and video sections', async () => {
+  const sectionContent = {
+    Playlist: { 'pt-BR': { title: 'Nossa trilha', body: 'https://example.com/playlist' } },
+    'Vídeo': { 'pt-BR': { title: 'Uma lembrança', body: 'https://example.com/video' } },
+  }
+  const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', {
+    method: 'PUT',
+    body: { ...siteConfig, siteGallery: [], enabledSections: ['Playlist', 'Vídeo'], sectionContent },
+  })
+  const result = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(result.draft.sectionContent, sectionContent)
 })
 
 test('couple can save a HTTPS store link for a physical gift', async () => {

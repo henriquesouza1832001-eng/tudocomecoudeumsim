@@ -1,3 +1,5 @@
+import { safeHttpsLink } from './site-section-content.js'
+
 const referencedPhotoIds = (config = {}) => {
   const enabled = new Set(config.enabledSections || [])
   const galleryEnabled = enabled.has('Galeria de fotos') || config.siteCarouselEnabled
@@ -23,6 +25,11 @@ export function checkSitePublication(config = {}, events = []) {
   if (enabled.has('Cronograma') && !events.length) warnings.push('O cronograma está ativo, mas ainda não há eventos cadastrados.')
   if (enabled.has('Cronograma') && events.some((event) => !event.starts_at)) warnings.push('Há evento sem data e horário para mostrar no cronograma.')
   if ((enabled.has('Galeria de fotos') || config.siteCarouselEnabled) && !(config.siteGallery || []).length && !(config.siteCarouselEnabled && config.siteCarouselPhotos?.length)) warnings.push('A seção de galeria está ativa, mas ainda não tem fotos selecionadas.')
+  for (const section of ['Hospedagem e dicas', 'Perguntas frequentes', 'Contato']) {
+    if (enabled.has(section) && !config.sectionContent?.[section]?.['pt-BR']?.body?.trim()) warnings.push(`A seção ${section} está ativa, mas ainda não tem conteúdo.`)
+  }
+  if (enabled.has('Playlist') && !safeHttpsLink(config.sectionContent?.Playlist?.['pt-BR']?.body)) warnings.push('A seção Playlist está ativa, mas precisa de um link HTTPS válido.')
+  if (enabled.has('Vídeo') && !config.coverVideoId && !safeHttpsLink(config.sectionContent?.['Vídeo']?.['pt-BR']?.body)) warnings.push('A seção Vídeo está ativa, mas precisa de um vídeo enviado ou de um link HTTPS válido.')
   if (enabled.has('Eventos')) {
     if (!events.length) warnings.push('A seção de eventos está ativa, mas ainda não há eventos cadastrados.')
     if (events.some((event) => !event.address?.trim())) warnings.push('Há evento sem endereço. Confira se os convidados terão como localizar o local.')

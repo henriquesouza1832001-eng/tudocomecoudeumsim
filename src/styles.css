@@ -3488,6 +3488,7 @@ img { display: block; max-width: 100%; }
 .public-wedding-timeline,
 .public-wedding-events,
 .public-wedding-details,
+.public-wedding-editorial-section,
 .public-wedding-gallery,
 .public-wedding-gifts,
 .public-wedding-pix,
@@ -4932,6 +4933,7 @@ img { display: block; max-width: 100%; }
 .public-wedding-story,
 .public-wedding-events,
 .public-wedding-details,
+.public-wedding-editorial-section,
 .public-wedding-gallery,
 .public-wedding-gifts,
 .public-wedding-pix,
@@ -4944,6 +4946,37 @@ img { display: block; max-width: 100%; }
 .public-wedding-story {
   max-width: 760px;
   text-align: center;
+}
+
+.public-wedding-editorial-section {
+  max-width: 900px;
+  border-top: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--forest, #40594a) 18%, transparent);
+}
+
+.public-wedding-editorial-section h2 {
+  margin: 10px 0 18px;
+  color: var(--ink, #31443a);
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(1.9rem, 3.8vw, 2.8rem);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.public-wedding-editorial-section p {
+  max-width: 760px;
+  margin: 0 0 12px;
+  color: color-mix(in srgb, var(--ink, #31443a) 78%, transparent);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.public-wedding-section-video {
+  display: block;
+  width: min(100%, 880px);
+  max-height: 70svh;
+  margin: 0 auto;
+  background: #202720;
 }
 
 .public-wedding-story > p {

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { moveSiteSection, orderedSiteSections, sortEventsByStartTime } from '../src/site-sections.js'
+import { ORDERABLE_SITE_SECTIONS, moveSiteSection, orderedSiteSections, sortEventsByStartTime } from '../src/site-sections.js'
 
 test('site section order follows the saved configuration and keeps enabled legacy carousels visible', () => {
   const config = { enabledSections: ['Eventos', 'Nossa história'], siteCarouselEnabled: true }
@@ -42,4 +42,10 @@ test('day schedule orders dated events first and keeps undated events at the end
     { id: 'early', starts_at: '2027-11-28T17:00:00.000Z' },
   ]
   assert.deepEqual(sortEventsByStartTime(events).map((event) => event.id), ['early', 'late', 'undated'])
+})
+
+test('editorial invitation sections can be activated and reordered', () => {
+  const sections = ['Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato']
+  assert.ok(sections.every((section) => ORDERABLE_SITE_SECTIONS.includes(section)))
+  assert.deepEqual(moveSiteSection(sections, 'Playlist', -1), ['Hospedagem e dicas', 'Playlist', 'Perguntas frequentes', 'Vídeo', 'Contato'])
 })
