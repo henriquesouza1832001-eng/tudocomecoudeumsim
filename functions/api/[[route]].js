@@ -5,7 +5,8 @@ import { createOpenSslCompatiblePkcs7Signature } from '@swapnanildhol/passkit-pk
 import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import { normalizeSectionLayouts } from '../../src/site-section-layouts.js'
 import { checkSitePublication } from '../../src/site-publication-check.js'
-import { PRODUCT_NAME } from '../../src/product-config.js'
+import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_BASE_URL, PRODUCT_NAME } from '../../src/product-config.js'
+import { checkMercadoPagoAccount, createMercadoPagoTestPreference, getMercadoPagoTestPayment, validateMercadoPagoWebhookSignature } from '../../src/server/mercado-pago.js'
 import {
   authenticate,
   checkLoginLimit,
@@ -892,7 +893,8 @@ async function staffCanSeeGuest(context, eventId, weddingId, guestId) {
 app.use('/api/*', async (context, next) => {
   context.header('Cache-Control', 'no-store')
   context.header('X-Content-Type-Options', 'nosniff')
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(context.req.method) && !validOrigin(context)) return jsonError(context, 403, 'invalid_origin')
+  const signedWebhook = context.req.path === '/api/webhooks/mercadopago/test'
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(context.req.method) && !validOrigin(context) && !signedWebhook) return jsonError(context, 403, 'invalid_origin')
   await next()
 })
 
@@ -1239,6 +1241,77 @@ app.get('/api/superadmin/bootstrap/status', requireCloudflareAccess, async (cont
   if (!context.env.SUPERADMIN_EMAIL) return jsonError(context, 503, 'superadmin_email_unconfigured')
   const admin = await context.env.DB.prepare("SELECT 1 AS configured FROM platform_admins WHERE role = 'superadmin' LIMIT 1").first()
   return context.json({ available: !admin, email: context.env.SUPERADMIN_EMAIL })
+})
+
+function mercadoPagoTestUnavailable(context) {
+  if (context.env.MERCADOPAGO_MODE !== 'test') return jsonError(context, 503, 'mercado_pago_test_mode_unavailable')
+  if (!context.env.MERCADOPAGO_ACCESS_TOKEN) return jsonError(context, 503, 'mercado_pago_access_token_unconfigured')
+  return null
+}
+
+app.post('/api/webhooks/mercadopago/test', async (context) => {
+  const unavailable = mercadoPagoTestUnavailable(context)
+  if (unavailable) return unavailable
+  if (!context.env.MERCADOPAGO_WEBHOOK_SECRET) return jsonError(context, 503, 'mercado_pago_webhook_secret_unconfigured')
+  const dataId = new URL(context.req.url).searchParams.get('data.id') || ''
+  const valid = await validateMercadoPagoWebhookSignature({
+    signature: context.req.header('x-signature'),
+    requestId: context.req.header('x-request-id'),
+    dataId,
+    secret: context.env.MERCADOPAGO_WEBHOOK_SECRET,
+  })
+  if (!valid) return jsonError(context, 401, 'mercado_pago_webhook_signature_invalid')
+  const notification = await context.req.json().catch(() => null)
+  if (!notification || notification.type !== 'payment' || String(notification.data?.id || '') !== dataId) return jsonError(context, 400, 'mercado_pago_webhook_payload_invalid')
+  try {
+    const payment = await getMercadoPagoTestPayment(context.env.MERCADOPAGO_ACCESS_TOKEN, dataId)
+    if (payment.liveMode) return jsonError(context, 409, 'mercado_pago_live_payment_rejected_in_test_mode')
+    return context.json({ received: true, mode: 'test', payment })
+  } catch (error) {
+    return jsonError(context, 502, error.status ? 'mercado_pago_payment_lookup_failed' : 'mercado_pago_invalid_response')
+  }
+})
+
+app.get('/api/superadmin/mercadopago/test/connection', requireSession, requireSuperadmin, async (context) => {
+  const unavailable = mercadoPagoTestUnavailable(context)
+  if (unavailable) return unavailable
+  try {
+    const account = await checkMercadoPagoAccount(context.env.MERCADOPAGO_ACCESS_TOKEN)
+    return context.json({ connected: true, mode: 'test', ...account })
+  } catch (error) {
+    return jsonError(context, 502, error.status ? 'mercado_pago_connection_failed' : 'mercado_pago_invalid_response')
+  }
+})
+
+app.post('/api/superadmin/mercadopago/test/preferences', requireSession, requireSuperadmin, async (context) => {
+  const unavailable = mercadoPagoTestUnavailable(context)
+  if (unavailable) return unavailable
+  const body = await context.req.json().catch(() => null)
+  if (body?.confirmation !== 'create-test-checkout') return jsonError(context, 400, 'mercado_pago_test_confirmation_required')
+  try {
+    const result = await createMercadoPagoTestPreference(context.env.MERCADOPAGO_ACCESS_TOKEN, {
+      amountCents: PLATFORM_ACCESS_PRICE_CENTS,
+      productName: PRODUCT_NAME,
+      reference: crypto.randomUUID(),
+      baseUrl: PRODUCT_BASE_URL,
+    })
+    return context.json({ mode: 'test', amountCents: PLATFORM_ACCESS_PRICE_CENTS, ...result }, 201)
+  } catch (error) {
+    return jsonError(context, 502, error.status ? 'mercado_pago_preference_failed' : 'mercado_pago_invalid_preference_response')
+  }
+})
+
+app.get('/api/superadmin/mercadopago/test/payments/:paymentId', requireSession, requireSuperadmin, async (context) => {
+  const unavailable = mercadoPagoTestUnavailable(context)
+  if (unavailable) return unavailable
+  try {
+    const payment = await getMercadoPagoTestPayment(context.env.MERCADOPAGO_ACCESS_TOKEN, context.req.param('paymentId'))
+    return context.json({ mode: 'test', ...payment })
+  } catch (error) {
+    const invalidId = error.message === 'invalid_payment_id'
+    const livePayment = error.message === 'mercado_pago_live_payment_rejected_in_test_mode'
+    return jsonError(context, invalidId ? 400 : livePayment ? 409 : 502, invalidId ? 'invalid_payment_id' : livePayment ? 'mercado_pago_live_payment_rejected_in_test_mode' : error.status ? 'mercado_pago_payment_lookup_failed' : 'mercado_pago_invalid_response')
+  }
 })
 
 app.post('/api/superadmin/bootstrap', requireCloudflareAccess, async (context) => {
