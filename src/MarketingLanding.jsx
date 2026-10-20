@@ -43,7 +43,7 @@ function WeddingPhoto() {
 
   return <>
     <div className="marketing-photo-frame" ref={photoFrame} onPointerMove={movePhoto} onPointerLeave={resetPhoto}>
-      <button className="marketing-photo-button" type="button" onClick={() => setIsOpen(true)} aria-label={`Ampliar foto: ${photo.alt}`} aria-haspopup="dialog">
+      <button className="marketing-photo-button" type="button" onClick={() => setIsOpen(true)} aria-haspopup="dialog">
         <picture><source srcSet={photo.avif} type="image/avif" /><img src={photo.src} alt={photo.alt} width="1280" height="853" decoding="async" /></picture>
         <span className="marketing-photo-label"><span>Uma ideia para o convite de vocês</span><small>{photo.credit}</small></span>
       </button>
