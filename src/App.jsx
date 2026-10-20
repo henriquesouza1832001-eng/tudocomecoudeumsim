@@ -4778,6 +4778,11 @@ function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
   const [weddingDate, setWeddingDate] = useState('')
   const [coupleInvitation, setCoupleInvitation] = useState(null)
   const [emailTestState, setEmailTestState] = useState('')
+  const [mercadoPagoConnection, setMercadoPagoConnection] = useState(null)
+  const [mercadoPagoPaymentId, setMercadoPagoPaymentId] = useState('')
+  const [mercadoPagoPayment, setMercadoPagoPayment] = useState(null)
+  const [mercadoPagoCheckoutUrl, setMercadoPagoCheckoutUrl] = useState('')
+  const [mercadoPagoState, setMercadoPagoState] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -4895,6 +4900,61 @@ function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
     }
   }
 
+  async function checkMercadoPagoConnection() {
+    setBusy(true)
+    setMercadoPagoState('')
+    setError('')
+    try {
+      const result = await request('/api/superadmin/mercadopago/test/connection')
+      setMercadoPagoConnection(result)
+      setMercadoPagoState(`Conexão de teste ativa. Conta Mercado Pago: ${result.accountId}.`)
+    } catch {
+      setMercadoPagoConnection(null)
+      setMercadoPagoState('Não foi possível validar a conexão. Confira se a credencial de teste está cadastrada no Worker.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createMercadoPagoTestCheckout() {
+    const checkoutWindow = window.open('', '_blank')
+    if (checkoutWindow) checkoutWindow.opener = null
+    setBusy(true)
+    setMercadoPagoState('')
+    setMercadoPagoCheckoutUrl('')
+    setError('')
+    try {
+      const result = await request('/api/superadmin/mercadopago/test/preferences', {
+        method: 'POST',
+        body: JSON.stringify({ confirmation: 'create-test-checkout' }),
+      })
+      if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl
+      else setMercadoPagoCheckoutUrl(result.checkoutUrl)
+      setMercadoPagoState(`Checkout sandbox criado no valor de R$ ${(result.amountCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O pagamento é de teste e não libera acesso automaticamente.`)
+    } catch {
+      checkoutWindow?.close()
+      setMercadoPagoState('Não foi possível criar o checkout de teste. Confira a conexão e o modo de teste do Worker.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function lookupMercadoPagoPayment(event) {
+    event.preventDefault()
+    setBusy(true)
+    setMercadoPagoPayment(null)
+    setMercadoPagoState('')
+    try {
+      const result = await request(`/api/superadmin/mercadopago/test/payments/${encodeURIComponent(mercadoPagoPaymentId.trim())}`)
+      setMercadoPagoPayment(result)
+      setMercadoPagoState('Pagamento consultado no ambiente de teste.')
+    } catch {
+      setMercadoPagoState('Não foi possível consultar. Confira o ID do pagamento e use somente IDs de teste.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function anonymizeWedding() {
     if (!purgeTarget || confirmation !== `ANONIMIZAR ${purgeTarget.id}`) return
     setBusy(true)
@@ -4916,13 +4976,14 @@ function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
   return <div className="role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Administração da plataforma</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Shield size={19} /></span><span className="eyebrow">CONTROLE DA PLATAFORMA</span><h1>Visão global, com trilha de auditoria.</h1><p>Os dados e alterações deste painel são consultados e gravados no D1 após validação de papel no servidor.</p></div>
     {error && <p className="admin-form-error" role="alert">{error}</p>}
     <div className="role-stat-grid"><div className="role-stat"><span>Casamentos ativos</span><strong>{data.weddings.active || 0}</strong></div><div className="role-stat"><span>Contas ativas</span><strong>{data.accounts.active || 0}</strong></div><div className="role-stat"><span>Convidados registrados</span><strong>{data.guests.total || 0}</strong></div></div>
-     <nav className="superadmin-tabs" aria-label="Seções do superadmin" role="tablist">{[{ id: 'overview', label: 'Visão geral', icon: House }, { id: 'weddings', label: 'Casamentos', icon: Heart }, { id: 'accounts', label: 'Contas', icon: Users }, { id: 'audit', label: 'Auditoria', icon: LockKeyhole }].map((item) => <button key={item.id} id={`superadmin-tab-${item.id}`} type="button" role="tab" aria-selected={adminSection === item.id} aria-controls={`superadmin-panel-${item.id}`} className={adminSection === item.id ? 'active' : ''} onClick={() => setAdminSection(item.id)}><item.icon size={15} /> {item.label}</button>)}</nav>
+     <nav className="superadmin-tabs" aria-label="Seções do superadmin" role="tablist">{[{ id: 'overview', label: 'Visão geral', icon: House }, { id: 'weddings', label: 'Casamentos', icon: Heart }, { id: 'accounts', label: 'Contas', icon: Users }, { id: 'payments', label: 'Pagamentos de teste', icon: Wallet }, { id: 'audit', label: 'Auditoria', icon: LockKeyhole }].map((item) => <button key={item.id} id={`superadmin-tab-${item.id}`} type="button" role="tab" aria-selected={adminSection === item.id} aria-controls={`superadmin-panel-${item.id}`} className={adminSection === item.id ? 'active' : ''} onClick={() => setAdminSection(item.id)}><item.icon size={15} /> {item.label}</button>)}</nav>
      {adminSection === 'overview' && <div className="superadmin-section" id="superadmin-panel-overview" role="tabpanel" aria-labelledby="superadmin-tab-overview"><section className="role-card superadmin-card email-test-card"><div className="role-card-heading"><div><span className="eyebrow">CONFIGURAÇÃO DE E-MAIL</span><h2>Testar envio pelo Resend</h2></div><Mail size={19} /></div><p>Envia uma única mensagem para a conta superadmin ({account?.email}). O teste exige autenticação recente e fica limitado a um envio por hora.</p><button className="button-primary" type="button" onClick={sendEmailTest} disabled={busy}><Mail size={15} /> {busy ? 'Enviando teste…' : 'Enviar e-mail de teste'}</button>{emailTestState && <p className="email-test-state" role="status">{emailTestState}</p>}</section></div>}
      {adminSection === 'weddings' && <div className="superadmin-section" id="superadmin-panel-weddings" role="tabpanel" aria-labelledby="superadmin-tab-weddings">
     <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">NOVO CASAMENTO</span><h2>Criar espaço dos noivos</h2></div><Users size={19} /></div><p className="team-access-note">O casamento começa como rascunho. O slug fica reservado no D1 e não depende do domínio da plataforma. O link pode ser enviado manualmente até o serviço de e-mail ser escolhido.</p><form className="superadmin-wedding-form" onSubmit={inviteCouple}><label>E-mail dos noivos<input type="email" value={coupleEmail} onChange={(event) => setCoupleEmail(event.target.value)} maxLength="254" required /></label><label>Nome do primeiro noivo<input value={partnerOneName} onChange={(event) => { const next = event.target.value; setPartnerOneName(next); setWeddingSlug(createWeddingSlug(next, partnerTwoName)) }} maxLength="100" required /></label><label>Nome do segundo noivo<input value={partnerTwoName} onChange={(event) => { const next = event.target.value; setPartnerTwoName(next); setWeddingSlug(createWeddingSlug(partnerOneName, next)) }} maxLength="100" required /></label><label>Slug reservado<input value={weddingSlug} onChange={(event) => setWeddingSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))} minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" required /></label><label>Data do casamento<input type="date" value={weddingDate} onChange={(event) => setWeddingDate(event.target.value)} /></label><button className="button-primary" type="submit" disabled={busy}>Criar e gerar convite <ArrowRight size={15} /></button></form>{coupleInvitation && <div className="team-invitation-result"><strong>Convite de {coupleInvitation.email}</strong><span>{coupleInvitation.requiresLogin ? 'A pessoa entrará com a conta existente.' : 'A pessoa criará uma senha para ativar a conta.'} Link válido até {new Date(coupleInvitation.expiresAt).toLocaleString('pt-BR')}.</span><div><input readOnly value={coupleInvitation.invitationUrl} aria-label="Link de convite dos noivos" onFocus={(event) => event.target.select()} /><button className="button-outline" onClick={copyCoupleInvitation}><Copy size={14} /> Copiar</button></div></div>}</section>
     <section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">CONTAS E SITES</span><h2>Casamentos cadastrados</h2></div><span className="task-count">{data.weddings.total || 0} registros</span></div><div className="superadmin-table-wrap"><table className="superadmin-table"><thead><tr><th>CASAL</th><th>SLUG</th><th>RESPONSÁVEL</th><th>CONVIDADOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>{weddings.map((item) => <tr key={item.id}><td><strong>{item.partner_one_name} & {item.partner_two_name}</strong><small>{item.event_date || 'Data não definida'}</small></td><td>{item.slug}</td><td>{item.owner_email}</td><td>{item.guest_count}</td><td><span className={`admin-state ${item.status === 'active' ? 'admin-state-active' : ''}`}>{item.status}</span></td><td><div className="admin-row-actions"><button onClick={() => changeWeddingStatus(item)}>{item.status === 'active' ? 'Suspender' : 'Ativar'}</button><button onClick={() => { setPurgeTarget(item); setConfirmation('') }}><Trash2 size={14} /> Limpar dados</button></div></td></tr>)}</tbody></table></div><div className="admin-pagination"><span>Página {weddingsPage}</span><div><button className="button-outline" type="button" disabled={weddingsPage === 1 || busy} onClick={() => setWeddingsPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!weddingsHasMore || busy} onClick={() => setWeddingsPage((page) => page + 1)}>Próxima</button></div></div>{purgeTarget && <div className="purge-confirm"><div><span className="eyebrow">LIMPEZA IRREVERSÍVEL DE DADOS</span><p>Remove convidados, respostas, tarefas, check-ins e eventos operacionais. Preserva registros históricos legados de presentes, se existirem, e a auditoria. O fluxo atual de presentes não registra pagamentos. Exige MFA recente.</p></div><label>Digite ANONIMIZAR {purgeTarget.id}<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label><div className="admin-row-actions"><button onClick={() => setPurgeTarget(null)}>Cancelar</button><button disabled={busy || confirmation !== `ANONIMIZAR ${purgeTarget.id}`} onClick={anonymizeWedding}>Confirmar limpeza e anonimização</button></div></div>}</section>
      </div>}
      {adminSection === 'accounts' && <div className="superadmin-section" id="superadmin-panel-accounts" role="tabpanel" aria-labelledby="superadmin-tab-accounts"><section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">ACESSO À PLATAFORMA</span><h2>Contas cadastradas</h2></div><span className="task-count">{data.accounts.total || 0} contas</span></div><div className="superadmin-table-wrap"><table className="superadmin-table accounts-table"><thead><tr><th>E-MAIL</th><th>CASAMENTOS</th><th>STATUS</th><th>AÇÃO</th></tr></thead><tbody>{accounts.map((item) => <tr key={item.id}><td><strong>{item.email}</strong><small>{item.email_verified_at ? 'E-mail verificado' : 'E-mail pendente'}</small><small>Criada {new Date(item.created_at).toLocaleDateString('pt-BR')}</small><small>Ultimo acesso: {item.last_login_at ? new Date(item.last_login_at).toLocaleString('pt-BR') : 'nunca'}</small></td><td>{item.wedding_count}</td><td><span className={`admin-state ${item.status === 'active' ? 'admin-state-active' : ''}`}>{item.status}</span></td><td><button className="account-status-action" disabled={item.id === account?.id && item.status === 'active'} onClick={() => changeAccountStatus(item)}>{item.status === 'active' ? 'Suspender' : 'Ativar'}</button></td></tr>)}</tbody></table></div><div className="admin-pagination"><span>Página {accountsPage}</span><div><button className="button-outline" type="button" disabled={accountsPage === 1 || busy} onClick={() => setAccountsPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!accountsHasMore || busy} onClick={() => setAccountsPage((page) => page + 1)}>Próxima</button></div></div></section></div>}
+     {adminSection === 'payments' && <div className="superadmin-section" id="superadmin-panel-payments" role="tabpanel" aria-labelledby="superadmin-tab-payments"><section className="role-card superadmin-card"><div className="role-card-heading"><div><span className="eyebrow">MERCADO PAGO · SANDBOX</span><h2>Testar a integração</h2></div><Wallet size={19} /></div><p>Estas ações usam somente credenciais e checkout de teste. Criar ou aprovar um pagamento aqui não concede acesso à plataforma.</p><div className="admin-row-actions"><button className="button-outline" type="button" onClick={checkMercadoPagoConnection} disabled={busy}>Verificar conexão</button><button className="button-primary" type="button" onClick={createMercadoPagoTestCheckout} disabled={busy}>Criar checkout de teste</button></div>{mercadoPagoConnection && <p className="team-access-note">Ambiente: teste · Conta: {mercadoPagoConnection.accountId}</p>}{mercadoPagoCheckoutUrl && <p><a href={mercadoPagoCheckoutUrl} target="_blank" rel="noreferrer">Abrir checkout sandbox <ExternalLink size={14} /></a></p>}<form className="superadmin-wedding-form" onSubmit={lookupMercadoPagoPayment}><label>ID de pagamento de teste<input inputMode="numeric" pattern="[0-9]{1,24}" value={mercadoPagoPaymentId} onChange={(event) => setMercadoPagoPaymentId(event.target.value)} required /></label><button className="button-outline" type="submit" disabled={busy || !mercadoPagoPaymentId.trim()}>Consultar pagamento</button></form>{mercadoPagoPayment && <dl className="mercado-pago-result"><div><dt>Status</dt><dd>{mercadoPagoPayment.status}{mercadoPagoPayment.statusDetail ? ` · ${mercadoPagoPayment.statusDetail}` : ''}</dd></div><div><dt>Valor</dt><dd>{mercadoPagoPayment.amount == null ? '—' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: mercadoPagoPayment.currency || 'BRL' }).format(mercadoPagoPayment.amount)}</dd></div><div><dt>Referência de teste</dt><dd>{mercadoPagoPayment.externalReference || '—'}</dd></div></dl>}{mercadoPagoState && <p className="email-test-state" role="status">{mercadoPagoState}</p>}</section></div>}
      {adminSection === 'audit' && <div className="superadmin-section" id="superadmin-panel-audit" role="tabpanel" aria-labelledby="superadmin-tab-audit"><section className="role-card audit-card"><div className="role-card-heading"><div><span className="eyebrow">SEGURANÇA</span><h2>Atividade administrativa</h2></div><span><LockKeyhole size={15} /> {data.auditTotal} registros</span></div>{data.audit.length ? <div className="audit-list">{data.audit.map((item, index) => <div key={`${item.target_id}-${item.created_at}-${index}`}><span>{item.action}</span><strong>{item.target_type} · {item.target_id || '—'}</strong><small>{item.actor_email || 'Conta de sistema'} {' \u00b7 '} {new Date(item.created_at).toLocaleString('pt-BR')}</small></div>)}</div> : <p className="buffet-empty">Ainda não há ações administrativas registradas.</p>}<div className="admin-pagination"><span>P\u00e1gina {data.auditPage} de {Math.max(1, Math.ceil(data.auditTotal / 20))}</span><div><button className="button-outline" type="button" disabled={auditPage === 1 || busy} onClick={() => setAuditPage((page) => page - 1)}>Anterior</button><button className="button-outline" type="button" disabled={!auditHasMore || busy} onClick={() => setAuditPage((page) => page + 1)}>Pr\u00f3xima</button></div></div></section></div>}
     <div className="admin-security-note"><Shield size={16} /><span>Cloudflare Access, sessão com MFA e papel superadmin são verificados antes das operações. A anonimização preserva a auditoria e registros históricos legados de presentes, se existirem; o fluxo atual não registra pagamentos.</span></div>
   </main><footer className="role-footer"><span>Administração da plataforma</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
