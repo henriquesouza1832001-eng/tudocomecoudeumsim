@@ -1294,6 +1294,7 @@ app.post('/api/superadmin/mercadopago/test/preferences', requireSession, require
       productName: PRODUCT_NAME,
       reference: crypto.randomUUID(),
       baseUrl: PRODUCT_BASE_URL,
+      notificationUrl: context.env.MERCADOPAGO_WEBHOOK_SECRET ? `${PRODUCT_BASE_URL}/api/webhooks/mercadopago/test` : null,
     })
     return context.json({ mode: 'test', amountCents: PLATFORM_ACCESS_PRICE_CENTS, ...result }, 201)
   } catch (error) {

@@ -22,6 +22,7 @@ test('test preference uses the fixed BRL amount and sandbox checkout URL', async
     productName: 'Tudo começou de um sim',
     reference,
     baseUrl: 'https://tudocomecoudeumsim.pages.dev',
+    notificationUrl: 'https://tudocomecoudeumsim.pages.dev/api/webhooks/mercadopago/test',
   }, async (url, options) => {
     request = { url, options }
     return Response.json({ id: 'preference-1', sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=preference-1' })

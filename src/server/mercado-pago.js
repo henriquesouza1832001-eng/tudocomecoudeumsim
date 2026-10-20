@@ -27,7 +27,7 @@ export async function checkMercadoPagoAccount(accessToken, fetchImpl) {
   return { accountId: String(account.id) }
 }
 
-export async function createMercadoPagoTestPreference(accessToken, { amountCents, productName, reference, baseUrl }, fetchImpl) {
+export async function createMercadoPagoTestPreference(accessToken, { amountCents, productName, reference, baseUrl, notificationUrl }, fetchImpl) {
   if (!Number.isSafeInteger(amountCents) || amountCents < 1 || typeof reference !== 'string' || !/^[0-9a-f-]{36}$/i.test(reference)) {
     throw new Error('invalid_test_preference')
   }
@@ -38,7 +38,7 @@ export async function createMercadoPagoTestPreference(accessToken, { amountCents
       items: [{ id: 'platform-access-test', title: `${productName} — acesso de teste`, quantity: 1, currency_id: 'BRL', unit_price: amountCents / 100 }],
       external_reference: `test-${reference}`,
       metadata: { environment: 'test', test_reference: reference },
-      notification_url: `${baseUrl}/api/webhooks/mercadopago/test`,
+      ...(notificationUrl ? { notification_url: notificationUrl } : {}),
       back_urls: {
         success: `${baseUrl}/?mp_test=approved`,
         pending: `${baseUrl}/?mp_test=pending`,
