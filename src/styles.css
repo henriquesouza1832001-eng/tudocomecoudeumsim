@@ -8114,3 +8114,41 @@ img { display: block; max-width: 100%; }
   .staff-checkin-portal .staff-guest-row:not(.walkin-entry) { grid-template-columns: minmax(0, 1fr); }
   .staff-checkin-portal .staff-guest-row:not(.walkin-entry) .status-pill { justify-self: start; }
 }
+
+.staff-checkin-portal .role-preview { color: var(--forest); font-size: 14px; }
+.staff-checkin-portal .role-intro .eyebrow,
+.staff-checkin-portal .role-card .eyebrow { color: var(--forest); font-size: 14px; line-height: 1.4; letter-spacing: .09em; }
+.staff-checkin-portal .role-intro p { font-size: 16px; line-height: 1.55; }
+.staff-checkin-portal .role-stat { min-height: 88px; gap: 8px; }
+.staff-checkin-portal .role-stat > span { color: var(--forest); font-size: 14px; line-height: 1.35; }
+.staff-checkin-portal .role-stat strong { font-size: 25px; line-height: 1; }
+.staff-checkin-portal .staff-scanner-card > .button-primary { min-height: 48px; font-size: 16px; }
+.staff-checkin-portal .staff-walkin-form > button { min-width: 128px; min-height: 48px; font-size: 16px; }
+.staff-checkin-portal .staff-walkin-form label { color: var(--forest); }
+.staff-checkin-portal .staff-walkin-form input { border-color: color-mix(in srgb, var(--forest) 30%, transparent); }
+.staff-checkin-portal .staff-list-card .role-card-heading { align-items: center; gap: 16px; }
+.staff-checkin-portal .staff-list-card .role-card-heading h2 { font-size: clamp(23px, 2.4vw, 27px); line-height: 1.2; }
+.staff-checkin-portal .staff-list-card .role-card-heading .eyebrow { letter-spacing: .04em; }
+.staff-checkin-portal .staff-list-card .print-button { min-height: 46px; padding: 8px 14px; font-size: 14px; }
+.staff-checkin-portal .staff-roster-search { width: min(100%, 440px); margin: 16px 0 18px; display: grid; gap: 7px; }
+.staff-checkin-portal .staff-roster-search > label { color: var(--forest); font-size: 14px; font-weight: 600; line-height: 1.4; }
+.staff-checkin-portal .staff-list-card .search-field { width: 100%; max-width: none; height: 48px; margin: 0; padding: 0 13px; border-color: color-mix(in srgb, var(--forest) 30%, transparent); color: var(--forest); background: #fff; }
+.staff-checkin-portal .staff-list-card .search-field:focus-within { outline: 2px solid var(--forest); outline-offset: 2px; }
+.staff-checkin-portal .staff-list-card .search-field input { min-width: 0; height: 100%; font: 16px var(--font-body, Arial, sans-serif); }
+.staff-checkin-portal .staff-list-card .search-field input::placeholder { color: #647166; opacity: 1; }
+.staff-checkin-portal .status-pill { font-size: 14px; }
+.staff-checkin-portal .role-footer { min-height: 56px; color: var(--forest); font-size: 14px; }
+.staff-checkin-portal .role-footer > span:first-child { font-size: 14px; }
+.staff-checkin-portal .role-footer a { font-size: 14px; }
+
+@media (max-width: 600px) {
+  .staff-checkin-portal .staff-list-card .role-card-heading { align-items: stretch; }
+  .staff-checkin-portal .staff-list-card .print-button { width: 100%; }
+  .staff-checkin-portal .role-footer { gap: 8px; padding-block: 14px; }
+}
+
+@media print {
+  .staff-print-list .staff-roster-search,
+  .staff-print-list .checkin-toggle { display: none !important; }
+  .staff-print-list .staff-list-card .role-card-heading .eyebrow { font-size: 8pt; }
+}
