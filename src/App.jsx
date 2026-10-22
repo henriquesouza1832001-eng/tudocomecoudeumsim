@@ -895,10 +895,10 @@ function App() {
   }
 
   function navigateView(nextView) {
-    const paths = { guest: '/', dashboard: '/painel', 'guest-portal': '/convidado', godparent: '/padrinhos', 'event-staff': '/equipe', superadmin: '/superadmin', checkin: '/pre-entrada', 'public-wedding': '/casamento/ana-e-caio' }
+    const keepLocalTest = window.__APP_DEMO_MODE__ === true && new URLSearchParams(window.location.search).has('teste-local')
+    const paths = { guest: keepLocalTest ? '/site-casal-demo' : '/', dashboard: '/painel', 'guest-portal': '/convidado', godparent: '/padrinhos', 'event-staff': '/equipe', superadmin: '/superadmin', checkin: '/pre-entrada', 'public-wedding': '/casamento/ana-e-caio' }
     const path = paths[nextView]
     const keepInvitation = ['guest-portal', 'godparent'].includes(nextView) && window.location.hash.startsWith('#convite/')
-    const keepLocalTest = window.__APP_DEMO_MODE__ === true && new URLSearchParams(window.location.search).has('teste-local')
     const testQuery = keepLocalTest ? '?teste-local=1' : ''
     const invitationHash = keepInvitation ? window.location.hash : keepLocalTest && ['guest-portal', 'godparent'].includes(nextView) ? '#convite/convite-de-teste-local' : ''
     if (path) window.history.pushState({}, '', `${path}${testQuery}${invitationHash}`)

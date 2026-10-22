@@ -25,7 +25,7 @@ const isMarketingConcepts = window.location.pathname === '/estudo-identidade'
 const isGiftConcepts = window.location.pathname === '/estudo-presentes'
 const isNavigationConcepts = import.meta.env.DEV && window.location.pathname === '/estudo-navegacao'
 const isDeviceExperienceConcepts = import.meta.env.DEV && window.location.pathname === '/estudo-dispositivos'
-const isMarketingLanding = !new URLSearchParams(window.location.search).has('teste-local') && window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
+const isMarketingLanding = window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
