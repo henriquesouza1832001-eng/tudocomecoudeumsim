@@ -34,6 +34,7 @@ img { display: block; max-width: 100%; }
 .theme-night { --forest: #38424c; --deep: #202831; --accent: #8b3441; --sand: #e4e0d7; --paper: #f3f1ec; }
 .prototype-bar { min-height: 48px; padding: 6px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #26352e; color: rgba(255,255,255,.8); font-size: 10px; letter-spacing: .08em; position: relative; z-index: 20; }
 .prototype-label { display: flex; gap: 8px; align-items: center; white-space: nowrap; font-weight: 600; }
+.prototype-test-warning { padding: 5px 7px; border: 1px solid rgba(247,225,183,.42); color: #f7e1b7; font-size: 8px; letter-spacing: .04em; }
 .prototype-dot, .save-state > span, .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #b8cf91; display: inline-block; }
 .prototype-divider { color: rgba(255,255,255,.32); }
 .prototype-switch { display: flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid rgba(255,255,255,.12); border-radius: 99px; background: rgba(255,255,255,.05); }
@@ -295,7 +296,6 @@ img { display: block; max-width: 100%; }
 .dashboard-nav button.active { color: var(--forest); background: #e9efe8; font-weight: 600; }
 .dashboard-nav button.active::before { content: ''; width: 3px; height: 24px; position: absolute; margin-left: -10px; border-radius: 0 3px 3px 0; background: var(--forest); }
 .dashboard-nav button > span:nth-of-type(1) { flex: 1; }
-.optional-mark { padding: 3px 5px; border-radius: 99px; color: #a1805e; background: #f1eadf; font-size: 7px; }
 .sidebar-bottom { margin-top: auto; }
 .help-card { min-height: 59px; padding: 9px; display: flex; align-items: center; gap: 8px; border: 1px solid #e9ebe7; border-radius: 5px; }
 .help-card > span { width: 27px; height: 27px; display: grid; place-items: center; color: var(--forest); background: #edf1eb; }
@@ -320,7 +320,7 @@ img { display: block; max-width: 100%; }
 .preview-site-button { height: 31px; padding: 0 10px; display: flex; align-items: center; gap: 7px; border: 1px solid #dce2dc; border-radius: 3px; color: var(--forest); background: #fff; font-size: 9px; }
 .dashboard-content { width: min(1190px, 100%); margin: 0 auto; padding: 33px clamp(22px, 3.4vw, 50px) 54px; }
 .dash-page-head { margin-bottom: 23px; display: flex; justify-content: space-between; align-items: flex-end; }
-.dash-page-head .eyebrow, .card-heading .eyebrow, .welcome-copy .eyebrow, .invite-link-card small, .game-preview-card .quiz-day { color: #a1815f; }
+.dash-page-head .eyebrow, .card-heading .eyebrow, .welcome-copy .eyebrow, .invite-link-card small { color: #a1815f; }
 .dash-page-head h1 { margin: 7px 0 5px; font-family: var(--serif); font-size: 27px; font-weight: 400; letter-spacing: -.02em; }
 .dash-page-head p { margin: 0; color: #888d85; font-size: 10px; }
 .more-button { width: 32px; height: 32px; border: 1px solid #e1e5df; border-radius: 4px; color: #8a9188; background: #fff; letter-spacing: 2px; }
@@ -634,32 +634,6 @@ img { display: block; max-width: 100%; }
 .preview-quality strong { color: #687267; font-size: 7px; font-weight: 600; }
 .preview-quality small { color: #a0a59d; font-size: 6px; }
 .preview-quality > button { padding: 7px 0 0; display: flex; align-items: center; gap: 6px; border: 0; border-top: 1px solid #edf0eb; color: var(--forest); background: transparent; font-size: 7px; }
-.game-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
-.game-settings { padding: 19px; }
-.game-state { padding: 5px 8px; border-radius: 99px; color: #a1825d; background: #f3eee3; font-size: 7px; }
-.game-state.enabled { color: #5d7b57; background: #eaf2e6; }
-.game-settings > p { color: #899087; font-size: 9px; line-height: 1.7; }
-.game-toggle-card { min-height: 67px; margin-top: 15px; padding: 10px; display: flex; align-items: center; gap: 10px; border: 1px solid #e9ece6; }
-.game-sparkle { width: 33px; height: 33px; display: grid; place-items: center; color: #9c805e; background: #f3ede1; }
-.game-toggle-card > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.game-toggle-card strong { color: #586158; font-size: 8px; }
-.game-toggle-card small { color: #9a9f97; font-size: 7px; }
-.game-details { margin: 16px 0; display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid #edf0eb; }
-.game-details > div { min-height: 59px; padding: 11px 8px; display: flex; flex-direction: column; justify-content: center; gap: 5px; border-right: 1px solid #edf0eb; }
-.game-details > div:last-child { border: 0; }
-.game-details small { color: #a1a69e; font-size: 6px; letter-spacing: .1em; }
-.game-details strong { color: #5b655a; font-size: 7px; font-weight: 600; }
-.game-preview-card { overflow: hidden; color: #f6f2e9; background: #38483d; box-shadow: 0 13px 30px rgba(43,57,46,.11); }
-.quiz-top { padding: 24px 23px 20px; background: radial-gradient(ellipse at 92% 2%, rgba(221,193,153,.17), transparent 46%); }
-.quiz-mark { width: 33px; height: 33px; margin-bottom: 16px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; color: #dec39f; }
-.game-preview-card .quiz-day { display: block; color: #d8bd9b; font-size: 7px; letter-spacing: .14em; }
-.quiz-top h3 { margin: 10px 0 7px; font-family: var(--serif); font-size: 24px; font-weight: 400; line-height: 1.15; }
-.quiz-top p { margin: 0; color: rgba(255,255,255,.63); font-size: 8px; }
-.quiz-options { padding: 0 23px 18px; display: flex; flex-direction: column; gap: 7px; }
-.quiz-options button { min-height: 37px; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,.19); color: rgba(255,255,255,.83); background: rgba(255,255,255,.04); font-size: 8px; text-align: left; }
-.quiz-options button:hover { border-color: #d8bd9b; background: rgba(255,255,255,.1); }
-.quiz-options button span { color: #d8bd9b; font-family: var(--serif); }
-.quiz-footer { padding: 11px 23px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.5); font-size: 7px; }
 
 .checkin-page { min-height: calc(100vh - 48px); color: #e9eee8; background: #202c26; }
 .checkin-top { min-height: 69px; padding: 0 5.5%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.1); }
@@ -844,7 +818,7 @@ img { display: block; max-width: 100%; }
   .stat-arrow { display: none; }
   .overview-grid { grid-template-columns: 1fr; gap: 10px; }
   .checklist-card, .response-card { min-height: unset; }
-  .site-settings-grid, .invite-layout, .gift-admin-grid, .customize-layout, .game-layout { grid-template-columns: 1fr; }
+  .site-settings-grid, .invite-layout, .gift-admin-grid, .customize-layout { grid-template-columns: 1fr; }
   .section-list-card { grid-column: auto; }
   .section-chips { grid-template-columns: 1fr 1fr; }
   .guest-filters { overflow-x: auto; }
@@ -861,7 +835,6 @@ img { display: block; max-width: 100%; }
   .gift-summary-grid .stat-card { min-height: 76px; }
   .customize-preview { position: static; }
   .site-editor-actions { grid-template-columns: 1fr; }
-  .game-layout { gap: 11px; }
   .checkin-content { width: 90%; padding: 35px 0 45px; }
   .checkin-heading h1 { font-size: 34px; }
 }
@@ -1045,7 +1018,7 @@ img { display: block; max-width: 100%; }
 .couple-panel-tabs button { min-height: 36px; padding: 0 14px; border: 1px solid rgba(48,55,47,.14); color: #6f7369; background: #fbfaf7; font-size: 10px; }
 .couple-panel-tabs button.selected { border-color: var(--forest); color: #fff; background: var(--forest); }
 .couple-guest-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.couple-guest-form label, .couple-group-form label { display: grid; gap: 5px; color: #77796f; font-size: 9px; }
+.couple-guest-form label, .couple-group-form label { display: grid; gap: 5px; color: #586258; font-size: 14px; }
 .couple-guest-form input, .couple-guest-form select, .couple-guest-form textarea, .couple-group-form input, .couple-group-form select { width: 100%; min-height: 37px; padding: 0 9px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
 .couple-guest-form textarea { padding: 9px; resize: vertical; }
 .couple-guest-wide, .couple-guest-form .button-primary { grid-column: 1 / -1; }
@@ -1286,7 +1259,7 @@ img { display: block; max-width: 100%; }
 .fee-fields input:disabled, .fee-fields select:disabled { color: #a4a59d; background: #f0efea; }
 .fee-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .superadmin-wedding-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.superadmin-wedding-form label { display: grid; gap: 5px; color: #77796f; font-size: 9px; }
+.superadmin-wedding-form label { display: grid; gap: 5px; color: #586258; font-size: 14px; }
 .superadmin-wedding-form input { width: 100%; min-height: 38px; padding: 6px 9px; border: 1px solid rgba(48,55,47,.16); color: #4e554c; background: white; font: inherit; }
 .superadmin-wedding-form > .button-primary { grid-column: 1 / -1; justify-content: center; min-height: 42px; }
 .fee-form-footer p { max-width: 440px; margin: 0; font-size: 8px; }
@@ -1557,7 +1530,7 @@ img { display: block; max-width: 100%; }
   .role-card p { font-size: 14px; }
   .role-card-heading { align-items: flex-start; flex-wrap: wrap; }
   .role-card-heading .eyebrow, .role-card > .eyebrow { font-size: 10px; }
-  .role-card label, .admin-login-form label, .staff-event-select { font-size: 12px; }
+  .role-card label, .admin-login-form label, .staff-event-select { font-size: 14px; }
   .role-card input, .role-card select, .role-card textarea, .admin-login-form input { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
   .role-card textarea { padding: 10px; }
   .role-card .button-primary, .role-card .button-outline, .role-actions .button-primary, .role-actions .button-outline, .couple-panel-tabs button { min-height: 44px; font-size: 12px; }
@@ -2909,6 +2882,13 @@ img { display: block; max-width: 100%; }
 .customizer-photo-placeholder, .browser-cover-placeholder, .guest-cover-placeholder { min-height: 250px; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; color: #354c3e; background: linear-gradient(135deg, #e5ece3, #f3eee4 58%, #eadfd3); text-align: center; }
 .guest-invitation-actions { margin: 16px 0 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .guest-invitation-actions > * { min-height: 52px; justify-content: center; }
+.guest-invitation-actions .guest-action-main,
+.guest-invitation-actions .guest-action-secondary { width: 100%; min-width: 0; padding: 10px 14px; gap: 8px; color: #fff; font-size: 15px; line-height: 1.3; text-align: center; white-space: normal; }
+.guest-invitation-actions .guest-action-main { color: #fff; background: var(--forest); }
+.guest-invitation-actions .guest-action-secondary { border: 1px solid color-mix(in srgb, var(--forest) 42%, transparent); color: var(--forest); background: color-mix(in srgb, var(--paper) 90%, white); }
+.guest-invitation-actions .guest-action-secondary:hover,
+.guest-invitation-actions .guest-action-secondary:focus-visible { color: #fff; background: var(--forest); }
+.guest-invitation-actions button > span { min-width: 0; }
 .guest-full-site-heading { margin: 24px 0 12px; padding: clamp(18px, 3vw, 28px); display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 1px solid #d8ddd5; background: #f1f4ee; }
 .guest-full-site-heading h2 { margin: 6px 0 0; font: 400 clamp(25px, 3vw, 34px)/1.2 Georgia, 'Times New Roman', serif; }
 .guest-site-events { scroll-margin-top: 20px; }
@@ -3351,7 +3331,7 @@ img { display: block; max-width: 100%; }
 
 .couple-role-page .guest-group-create-form label {
   color: #52594f;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .couple-role-page .guest-group-create-form input,
@@ -8052,4 +8032,24 @@ img { display: block; max-width: 100%; }
   .couple-role-page .wedding-expense-form > .expense-reminder-toggle,
   .couple-role-page .wedding-expense-form > .expense-description-field,
   .couple-role-page .wedding-expense-form > .expense-form-actions { grid-column: 1; }
+}
+
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo { min-height: 190px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; background: linear-gradient(135deg, color-mix(in srgb, var(--forest) 8%, var(--paper)), var(--paper)); }
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo::before,
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo::after,
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo > .guest-cover-placeholder { display: none; }
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo > div:last-child { max-width: none; grid-column: 1; grid-row: 1; padding: 28px 24px; color: var(--forest); text-shadow: none; }
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo h2,
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo h2 i,
+.guest-invitation-page .guest-invitation-cover.guest-cover-no-photo p { color: var(--forest); text-shadow: none; }
+.staff-walkin-form label, .walkin-form label { font-size: 15px; line-height: 1.5; }
+.staff-walkin-form input, .walkin-form input { min-height: 46px; font-size: 16px; }
+.staff-event-field, .staff-search { font-size: 15px; }
+.guest-invitation-actions .guest-action-main:hover, .guest-invitation-actions .guest-action-main:focus-visible { color: #fff; background: var(--forest); outline: 3px solid var(--forest); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .couple-role-page .customizer-layout-options > div { grid-template-columns: repeat(3, minmax(0, 1fr)); overflow-x: visible; }
+  .couple-role-page .customizer-layout-options button.customizer-layout-choice { min-height: 116px; padding: 8px 5px; font-size: 14px; overflow-wrap: anywhere; }
+  .customizer-layout-thumb { max-width: 100%; }
+  .guest-invitation-page .guest-invitation-cover.guest-cover-no-photo { min-height: 160px; }
+  .guest-invitation-page .guest-invitation-cover.guest-cover-no-photo > div:last-child { padding: 24px 18px; }
 }

@@ -1,3 +1,4 @@
+import { safeStoreLink } from '../../src/site-section-content.js'
 import { Hono } from 'hono'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import { zipSync, zlibSync } from 'fflate'
@@ -2303,11 +2304,8 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
   let safeStoreUrl = null
   if (fulfillmentType === 'store_link') {
-    try {
-      const parsed = new URL(storeUrl)
-      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
-      safeStoreUrl = parsed.toString()
-    } catch { return jsonError(context, 400, 'invalid_store_url') }
+    safeStoreUrl = safeStoreLink(storeUrl)
+    if (!safeStoreUrl) return jsonError(context, 400, 'invalid_store_url')
   }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
@@ -2342,11 +2340,8 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
   let safeStoreUrl = null
   if (fulfillmentType === 'store_link') {
-    try {
-      const parsed = new URL(storeUrl)
-      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || storeUrl.length > 2048) throw new Error('invalid_store_url')
-      safeStoreUrl = parsed.toString()
-    } catch { return jsonError(context, 400, 'invalid_store_url') }
+    safeStoreUrl = safeStoreLink(storeUrl)
+    if (!safeStoreUrl) return jsonError(context, 400, 'invalid_store_url')
   }
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents

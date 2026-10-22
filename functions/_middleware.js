@@ -66,7 +66,10 @@ export async function verifyAccessAssertion(assertion, env) {
 
 export async function onRequest(context) {
   let response
-  if (protectedPath(new URL(context.request.url).pathname)) {
+  const requestUrl = new URL(context.request.url)
+  const previewHost = requestUrl.hostname.endsWith('.tudocomecoudeumsim.pages.dev') && requestUrl.hostname !== 'tudocomecoudeumsim.pages.dev'
+  const previewDemoPage = previewHost && requestUrl.searchParams.has('teste-local') && (requestUrl.pathname === '/superadmin' || requestUrl.pathname.startsWith('/superadmin/'))
+  if (protectedPath(requestUrl.pathname) && !previewDemoPage) {
     const assertion = context.request.headers.get('Cf-Access-Jwt-Assertion')
     if (!assertion || !await verifyAccessAssertion(assertion, context.env)) {
       response = new Response('Acesso não autorizado', {
@@ -77,7 +80,7 @@ export async function onRequest(context) {
   }
 
   response ||= await context.next()
-  const url = new URL(context.request.url)
+  const url = requestUrl
   const contentType = response.headers.get('Content-Type') || ''
   if (url.pathname === '/' && context.request.method === 'GET' && response.status === 200 && contentType.includes('text/html')) {
     const website = {

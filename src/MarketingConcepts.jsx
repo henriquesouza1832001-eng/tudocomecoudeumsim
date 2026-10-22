@@ -1,6 +1,8 @@
 import { ArrowRight, Bell, CalendarDays, Flower2, Gift, Heart, MapPin, Printer, QrCode, ShieldCheck, Users, Wallet } from 'lucide-react'
 import './MarketingConcepts.css'
-import { PRODUCT_NAME } from './product-config.js'
+import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_NAME } from './product-config.js'
+
+const accessPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(PLATFORM_ACCESS_PRICE_CENTS / 100)
 
 const options = [
   {
@@ -54,8 +56,8 @@ function ConceptOption({ option }) {
           <span className="concept-kicker">{option.kicker}</span>
           <h3>{option.headline}</h3>
           <p>{option.body}</p>
-          <a className="concept-cta" href="/criar-site">Criar meu site grátis <ArrowRight size={17} /></a>
-          <span className="concept-free-note">Site gratuito no piloto. Pix direto e links de loja.</span>
+          <a className="concept-cta" href="/criar-site">Conhecer a plataforma <ArrowRight size={17} /></a>
+          <span className="concept-free-note">Acesso em pagamento único de {accessPrice}. Presentes vão direto aos noivos, sem taxa para convidados.</span>
         </div>
       </div>
       <div className="concept-quick-links" aria-label="Destaques da plataforma">

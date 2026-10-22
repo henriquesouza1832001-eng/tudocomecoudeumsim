@@ -4,7 +4,7 @@ Este arquivo é a fonte de verdade para o agente. Siga exatamente o que está es
 
 ## 1. Visão
 
-Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. O uso é gratuito no piloto; presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas acessadas por links do casal. A plataforma não recebe nem processa esses valores.
+Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. O casal paga uma única vez pelo acesso à plataforma; o valor e as condições ficam centralizados em configuração. Presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas acessadas por links do casal. A plataforma não recebe nem processa valores de presentes.
 
 Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única constante de configuração, nunca espalhado pelo código.
 
@@ -45,9 +45,9 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 13. Jogo diário, uma partida por dia por convidado, com ranking entre convidados. Opcional: os noivos ligam ou desligam.
 14. Idioma do piloto: somente português brasileiro (pt-BR). Suporte multilíngue é uma evolução futura que depende de autorização do dono.
 15. Cada casal tem seu subdomínio.
-16. Piloto gratuito. Não cobrar taxa por presente nem processar valores dentro da plataforma.
-17. A lista pode conter Pix direto aos noivos e links de produtos em lojas externas. O link apenas encaminha para a loja; compra e entrega ocorrem fora da plataforma. O casal usa o site gratuitamente no piloto.
-18. O produto pode ter potencial comercial futuro, mas não publicar taxas ou promessas comerciais até o dono aprovar um modelo.
+16. Cobrar uma única vez pelo acesso do casal à plataforma, conforme preço centralizado em configuração. Não cobrar taxa por presente, nem processar valores de presentes.
+17. A lista pode conter Pix direto aos noivos e links de produtos em lojas externas. O link apenas encaminha para a loja; compra e entrega ocorrem fora da plataforma. A cobrança pelo acesso da plataforma é uma transação separada.
+18. O preço único e as condições de reembolso do acesso podem ser comunicados claramente; não sugerir que a plataforma processa presentes ou cobra convidados.
 19. O painel apresenta o planejamento de despesas com fornecedores, registro de valores e vencimentos e lembretes mensais por e-mail ou push como parte da experiência da plataforma.
 20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
 
@@ -282,7 +282,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Convidados e padrinhos usam token individual armazenado apenas como hash; o servidor limita eventos pelo grupo autorizado. Padrinhos só consultam e atualizam tarefas ligadas ao próprio convite.
 - Equipe do evento e equipe de entrada só consultam eventos atribuídos por `membership_event_access`. A lista da equipe não inclui e-mail ou telefone; somente `checkin_staff` pode registrar entradas e acompanhantes de última hora.
 - A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando trilha de auditoria e, se existirem, registros históricos legados de presentes. O fluxo atual de Pix direto e links de loja não cria registros financeiros. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
-- Nenhuma tela do casal ou superadmin deve sugerir que a plataforma recebe ou repassa os presentes no piloto.
+- Nenhuma tela do casal ou superadmin deve sugerir que a plataforma recebe ou repassa valores de presentes. A cobrança única de acesso é uma transação separada, identificada como pagamento à plataforma.
 
 ## 9. Notificações push (VAPID)
 
@@ -310,8 +310,28 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - O casal pode cadastrar presente físico com nome, descrição, imagem opcional e URL de uma loja. O botão abre a página externa para o convidado concluir a compra e combinar a entrega. A plataforma não vende o item nem promete disponibilidade ou preço.
 - Validar URLs como HTTPS e mostrar claramente quando o convidado sairá do site. Rejeitar esquemas de script, URLs locais e protocolos que não sejam HTTP(S).
 - Não expor endereços residenciais ou dados privados de entrega em páginas públicas; orientar a combinação direta entre convidado e casal.
-- Nenhuma taxa por presente está ativa no piloto. Qualquer futura monetização depende de nova decisão do dono e da atualização deste arquivo.
+- Não cobrar taxa por presente. A cobrança única pelo acesso da plataforma é separada da lista de presentes.
 - A lista pública mostra somente formas habilitadas pelo casal e dados explicitamente marcados como públicos.
+
+## 11.1 Cobrança única pelo acesso à plataforma
+
+- O casal paga uma única vez pelo acesso à plataforma. O preço é definido em uma única configuração compartilhada entre checkout, interface e comunicações; não duplicar valores no código.
+- A cobrança é processada por um provedor de pagamentos. O provedor recebe e liquida o pagamento; a plataforma recebe apenas os identificadores, estados e valores necessários para provisionar acesso, conciliar pagamentos, processar reembolsos e auditoria.
+- Checkout, credenciais, tokens do provedor e assinatura de webhooks são exclusivos do lado servidor e ficam em secrets do Worker. Nunca confiar na URL de retorno, no estado enviado pelo navegador ou no conteúdo não autenticado de um webhook para liberar acesso ou devolver dinheiro.
+- Validar a assinatura do webhook e consultar o pagamento no provedor antes de mudar o estado do pedido. Operações devem ser idempotentes, vinculadas a um pedido interno imutável e registradas com IDs do provedor, valores, moeda, datas, estado e trilha de auditoria.
+- Após confirmação do pagamento, liberar a criação do site. O acesso continua ativo depois da liquidação, salvo cancelamento, reembolso, fraude ou outra regra informada na oferta.
+- Informar antes da compra o preço total, que é uma cobrança única, o que está incluído, os meios aceitos, o momento de início do serviço, a identificação do fornecedor e os canais de atendimento/cancelamento. Não publicar a oferta enquanto a página de compra e os termos aplicáveis não estiverem revisados.
+- Garantir o direito de arrependimento de sete dias corridos para contratação à distância, contado conforme a legislação aplicável. Exibir claramente que são dias corridos. Não exigir justificativa nem impor validação discricionária que atrase ou impeça pedido feito no prazo.
+- Exibir no comprovante e na área da compra a data e hora do pagamento e a data e hora-limite calculada para o pedido dentro dos sete dias corridos, após revisão do marco inicial aplicável aos serviços digitais.
+- Ao receber pedido dentro do prazo legal, registrar imediatamente sua data e hora, confirmar o recebimento ao comprador sem demora e enviar imediatamente ao provedor a solicitação de cancelamento/reembolso. A confirmação final do provedor pode depender do meio de pagamento, mas o sistema deve exibir o protocolo e o estado atualizado; não prometer prazo bancário que não controla.
+- Pedidos de reembolso voluntário recebidos após o prazo legal podem ser avaliados em até dois dias úteis, com decisão registrada e comunicação ao comprador. Esta análise discricionária não pode reduzir direitos legais por defeito, cobrança indevida ou outros fundamentos aplicáveis.
+- Não usar a janela de repasse como período de análise do pedido de arrependimento. O prazo de repasse não altera o direito de solicitar cancelamento dentro dos sete dias.
+- Para gestão de caixa, registrar `paid_at`, `refund_deadline`, `release_at` (dez dias corridos após a confirmação do pagamento), status de reembolso/contestação e ID de repasse. Webhook registra eventos; um Cron Trigger consulta pagamentos elegíveis e solicita o payout apenas quando houver saldo disponível e nenhuma solicitação de reembolso, contestação ou bloqueio pendente. Usar idempotência e nunca repetir um payout já confirmado.
+- A automação de payout deve permanecer desligada por padrão com `PAYOUT_AUTOMATION_ENABLED=false`. Enquanto estiver desligada, o sistema pode registrar elegibilidade e mostrar uma prévia de repasse, mas não pode enviar instrução de transferência ao provedor. Só ativar após validar a conta, testar o fluxo e receber autorização expressa do dono.
+- Dez dias de retenção são uma política operacional, não uma garantia contra contestação posterior. Manter reserva financeira compatível com reembolsos, chargebacks, tarifas e tributos; não tratar como livre para uso o saldo ainda indisponível ou reservado pelo provedor.
+- Definir a retenção dos registros de pedidos, pagamentos e reembolsos com orientação contábil, distinguindo dados necessários para obrigações fiscais e defesa de direitos dos dados de convidados sujeitos aos prazos da política de privacidade.
+- Transferências automáticas para uma conta cadastrada só podem ser ativadas após confirmar elegibilidade da conta e do produto de payout do provedor, custos, limites, prazo de liquidação, tratamento de falhas e requisitos cadastrais. Começar com conta de titularidade do responsável pelo produto; não implementar split nem repasses a terceiros.
+- A plataforma não vende presentes, não recebe nem repassa valores dos convidados destinados aos noivos e não cobra comissão sobre presentes.
 ## 12. Controle de entrada
 
 - Cada convidado recebe QR único com token assinado e não adivinhável.
@@ -352,6 +372,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 ## 16. Fases
 
+0. Cobrança e acesso: checkout único da plataforma, verificação server-side do pagamento, início do prazo legal de arrependimento, solicitação de reembolso e controle de liquidação/repasse em dez dias. Não habilitar transferências automáticas antes de confirmar as permissões, tarifas, saldo disponível e regras do provedor.
 1. Personalização: assistente inicial, tokens de tema e fonte aplicados à prévia e ao convite publicado, conteúdo e seções, mídia, responsividade, rascunho e publicação.
 2. Convidados e convites: lista, grupos, eventos, RSVP, acesso individual por link curto e QR code.
 3. Entrada: leitor de QR para a equipe, funcionamento offline, registro manual de última hora, buffet e exportação de entradas.
@@ -400,8 +421,8 @@ Stripe
 ## 18. Perguntar ao dono do projeto antes de implementar
 
 - Domínio base dos subdomínios.
-- Não há provedor ou split no piloto. O Pix é transferido diretamente pelos convidados aos noivos.
-- Não há taxa por presente no piloto. Um modelo comercial futuro exige nova decisão do dono.
+- A cobrança de acesso à plataforma é separada dos presentes. O provedor e a disponibilidade de payout precisam ser confirmados na conta do responsável antes da integração; não implementar split ou repasses a terceiros.
+- Não cobrar taxa por presente. O preço único de acesso aprovado é R$ 90,00; mantê-lo centralizado em configuração, sujeito à validação dos custos e da oferta antes de publicar o checkout.
 - Idioma confirmado para o piloto: somente pt-BR. Idiomas adicionais dependem de nova decisão do dono.
 - Referências próprias do dono do projeto, a enviar.
 - Serviço de e-mail transacional para verificação de conta e recuperação de senha.
@@ -414,9 +435,10 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 
 - O dono retomou o desenvolvimento nesta conversa. Continue o trabalho a partir das fases definidas neste arquivo; nao trate a transferencia anterior como uma pausa vigente.
 - A identidade visual aprovada para a landing e jardim editorial: fotografia de casamento em destaque, tons pasteis e detalhes florais discretos, com texto legivel e navegacao clara.
-- O piloto é gratuito. A lista de presentes aceita Pix direto aos noivos e links externos de lojas; a plataforma apenas exibe o Pix ou encaminha para a loja, sem processar pagamentos.
-- Não cobrar taxa no piloto. Qualquer modelo comercial futuro depende de decisão expressa do dono. A comunicação pública não deve sugerir que a plataforma processa pagamentos.
-- O Pix é pago diretamente ao casal, fora da plataforma. Não mencionar split, repasse ou taxas da plataforma.
+- Decisão atual de 19/10/2026: o casal paga R$ 90,00 uma única vez pelo acesso à plataforma. O pagamento não tem relação com presentes.
+- A lista de presentes aceita Pix direto aos noivos e links externos de lojas; a plataforma apenas exibe o Pix ou encaminha para a loja, sem processar pagamentos de presentes.
+- O Pix é pago diretamente ao casal, fora da plataforma. Não mencionar split, repasse nem taxas sobre presentes.
+- A cobrança única de acesso à plataforma é separada do Pix de presentes e pode ser informada com preço e condições próprios; nunca apresentar o valor como taxa sobre presentes.
 - O fluxo público de presentes pode oferecer Pix direto ao casal e redirecionamento para loja externa, sem compra dentro da plataforma.
 - A prioridade e corrigir a porta de entrada e preparar o personalizador para a Fase 1 da secao 7.20. O personalizador deve ser curado e seguro, sem CSS, HTML ou JavaScript livre.
 - O dono pediu para nao usar numeracao decorativa nos blocos de etapas da landing.
@@ -440,7 +462,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - O dono pediu para continuar o desenvolvimento seguindo este arquivo. A landing pode apresentar a visão completa do produto conforme a decisão da seção 20; não anunciar oficialmente o lançamento antes da autorização do dono nem ativar fluxos incompletos como se estivessem operacionais.
 - Concluir e conferir o personalizador da Fase 1 dentro dos limites definidos na secao 7. Nao considerar layouts ou temas implementados so porque aparecem numa previa: comparar controles, persistencia e saida publicada.
 - `npm run lint`, `npm run build` e `git diff --check` passaram para `b8c5297`; repetir depois de qualquer nova alteracao.
-- A decisão sobre domínio próprio e qualquer modelo comercial futuro permanece pendente. Não implementar processamento de pagamentos.
+- A decisão comercial foi atualizada em 19/10/2026: implementar cobrança única de acesso conforme a seção 11.1. Esta cobrança não habilita processamento de presentes.
 - Segredos e credenciais nao devem ser copiados para este arquivo, para o repositorio ou para mensagens. Usar secrets e variaveis apropriados e confirmar valores sem revela-los.
 
 ## 20. Atualizacao de desenvolvimento em 15/10/2026
@@ -452,7 +474,7 @@ Estas notas registram o estado conhecido em 15/10/2026. Atualize-as quando o tra
 - A Fase 1 continua incompleta. O editor já permite enviar fotos ao R2, definir ponto focal por dispositivo, verificar contraste de cores e descrições acessíveis antes de publicar, além de aplicar três variantes curadas por seção: clássico, moldura suave e compacto. O assistente inicial `/criar-site` foi conectado depois, conforme o registro de 18/10/2026; continuam pendentes a biblioteca completa de seções e partes do site público. O idioma do piloto foi confirmado como pt-BR. Não apresentar o personalizador como completo até verificar os itens da seção 7.20.
 - A edição de títulos em pt-BR agora alcança 16 seções renderizadas, com rascunho, prévia, navegação e convite publicado conectados. Hospedagem e dicas, perguntas frequentes e contato usam texto; playlist e vídeo aceitam links HTTPS, e vídeo também pode usar arquivo enviado. Padrinhos e madrinhas têm perfis públicos escolhidos pelo casal, com foto, nome e mensagem. A paleta pode sugerir cores extraídas localmente da foto de capa, preservando o ajuste de contraste. O mural permite envio público protegido por Turnstile e moderação do casal antes de publicar. O quiz ainda precisa de seu fluxo próprio, então a biblioteca da Fase 1 permanece incompleta.
 - A diretriz mais recente do dono determina que a comunicacao da landing descreva a experiencia completa do produto sem rotulos ou ressalvas de desenvolvimento, pois o lancamento publico ainda sera anunciado por ele. Essa decisao substitui as notas anteriores que pediam omitir recursos futuros.
-- Links externos de lojas são permitidos somente como redirecionamento para compra fora da plataforma. Não processar pagamento nem cobrar taxa no piloto.
+- Links externos de lojas são permitidos somente como redirecionamento para compra fora da plataforma. Não processar pagamento de presentes nem cobrar taxa sobre eles. A cobrança de R$ 90,00 pelo acesso é separada e segue a seção 11.1.
 - A tela de cadastro recebeu ajuste de escala tipografica e marca; confirmar no Pages que o monograma nao empilha letras em telas estreitas.
 - Em 15/10/2026, o dono reorganizou a entrega por esforço e dependencias: personalizador primeiro; convidados/convites e QR; controle de entrada por QR com excecao manual; despesas antes de presentes; presentes por Pix direto ou links externos; impressao/carteira digital depois da base de convites.
 - O painel dos noivos agora abre em “Personalizar site” e ordena as abas pelo fluxo, deixando Presentes no fim. Os oito pares tipograficos curados agora fornecem tokens de fonte para a previa do editor e o convite individual publicado, com familias locais do sistema e fallbacks.
@@ -539,11 +561,11 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 
 ## 21. Decisão de produto confirmada em 17/10/2026
 
-- O objetivo imediato é concluir uma plataforma utilizável no chá de panela dos amigos e no casamento no ano seguinte, gratuita no piloto e adequada como case de portfólio com potencial comercial futuro.
-- Presentes: Pix diretamente aos noivos ou redirecionamento para loja externa. A plataforma não realiza a compra, não recebe ou repassa valores e não cobra taxa no piloto.
+- Registro histórico de 17/10/2026, supersedido pela decisão comercial de 19/10/2026: objetivo era um piloto gratuito para o chá de panela e o casamento.
+- Decisão atual: acesso à plataforma custa R$ 90,00 em cobrança única; presentes continuam sendo Pix diretamente aos noivos ou redirecionamento para loja externa, sem recebimento, repasse ou taxa por presente.
 - Priorizar a experiência real do casal e dos convidados, especialmente site público, mobile, compartilhamento por link/QR, informações do evento, RSVP e presentes configurados pelo casal.
 - Não confundir mockups, dados de demonstração ou controles visuais com recursos persistidos e funcionais.
-- Exceção de ordem aprovada pelo dono para o piloto: concluir Presentes por Pix direto e links externos antes da Fase 4 (Despesas), para uso imediato no chá de panela. A plataforma não recebe nem registra pagamentos. Esta exceção não muda a sequência das demais fases.
+- Exceção histórica de ordem aprovada para o piloto: concluir Presentes por Pix direto e links externos antes da Fase 4 (Despesas), para uso imediato no chá de panela. A regra para cobrança de acesso está descrita na seção 11.1 e na Fase 0.
 - Em 17/10, o D1 tinha as migrations até `0015` aplicadas; não renomear nem reaplicar as duas migrations `0014`, pois alteram tabelas/colunas distintas e o histórico registra o nome exato.
 - Auditoria remota de 18/10/2026: o D1 `tudocomecoudeumsim-db` tem aplicadas todas as migrations de `0001` a `0018`, incluindo as duas `0014`; Wrangler informou que não há migrations pendentes. A próxima migration deve usar o prefixo `0019`. Esta conferência só consulta o histórico; não aplicou SQL.
 
@@ -552,7 +574,7 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - O painel do casal cadastra contribuições com valor Pix sugerido ou livre e presentes físicos com URL HTTPS de loja. Para presentes de loja não se pede nem se exibe preço, que pode mudar; compra e entrega são concluídas fora da plataforma.
 - Ativar o Pix no painel também ativa a seção de presentes no rascunho. A chave só aparece aos convidados depois de publicada e fica visível para quem acessa a lista. O convite permite copiar a chave, mostra como usar um valor sugerido e lembra conferir o titular no app do banco.
 - A lista pública oculta contribuições Pix quando a chave não está publicada; cada contribuição visível aponta para o Pix direto. Itens físicos abrem o endereço HTTPS em outra aba e informam que compra e entrega são combinadas com a loja.
-- A landing, os estudos visuais de presentes e o painel de demonstração foram atualizados para não prometer split, recebimentos ou taxas e explicar o modelo gratuito do piloto.
+- Registro histórico: a landing, os estudos visuais de presentes e o painel de demonstração explicavam o modelo gratuito anterior. Atualizar textos comerciais quando a oferta de R$ 90,00 e os termos de cobrança/reembolso forem implementados e validados.
 - Nenhuma migration ou dado remoto foi alterado nesta etapa. A migration `0015_gift_fulfillment_options.sql` já está aplicada no D1 e dá suporte ao tipo e URL de loja.
 - Validação: `npm run lint`, `npm test` (29/29), `npm run build` e `git diff --check` passaram.
 - O primeiro check do Pages para `9e3af68` publicou apenas o preview de `hen`. Depois da atualização única em `main` no commit `f88b718`, `https://tudocomecoudeumsim.pages.dev` respondeu HTTP 200 e passou a servir os assets gerados pelo build validado (`index-DBbvOpQJ.js`, `App-f-ODa_og.js` e `MarketingLanding-4Q1wuAh-.js`). A publicação foi feita pela integração Git do Cloudflare.
@@ -578,3 +600,21 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Em 18/10/2026, o personalizador autenticado salva automaticamente perfil e configuração no D1, oferece desfazer/refazer com histórico limitado às 50 alterações recentes e remonta quando muda o casamento selecionado. O salvamento de perfil aceita rascunhos incompletos e só muda o slug quando os dois nomes estão preenchidos; a publicação continua bloqueada até completar o perfil. Não exige migration. Validação final desta rodada: `npm run lint`, `npm run build`, `npm test` (102 testes) e `git diff --check` passaram.
 - O rascunho de política e termos exibe o nome, CPF e e-mail informados pelo responsável e registra os prazos escolhidos para convidados, fotos e demais dados. Não inclui endereço físico. Continua explicitamente como minuta porque a execução dos prazos ainda não foi implementada e os subprocessadores e a natureza jurídica da operação precisam ser confirmados.
 - O verificador de publicação avisa quando o Pix consta como ativo sem chave preenchida, cobrindo configurações inconsistentes além da validação normal do editor e da API. `npm run lint`, `npm run build`, `npm test` (123 testes) e `git diff --check` passaram. `main`, `hen` e `lar` foram sincronizadas nos commits `682ef95` e `081b268`.
+
+## 22. Auditoria de fluxos e navegação — 20/10/2026
+
+- A auditoria confirmou que o quiz não tem endpoints, gravação de respostas ou ranking. A tela existente era apenas uma demonstração com estado local; removi o item e os controles que pareciam funcionais do menu demonstrativo e retirei o quiz da seleção de seções até a Fase 8. Não apresentar o jogo como disponível.
+- As 107 rotas HTTP estão distribuídas entre autenticação, casal, convite público/individual, padrinhos, equipe e superadmin. A suíte antes da auditoria tinha 131 testes em 17 arquivos; depois das novas verificações de rotas e do simulador local, há 19 arquivos de teste. A suíte não equivale a uma passagem de ponta a ponta autenticada por todas as telas nem a chamadas reais de provedores externos.
+- Adicionado `tests/api-route-surface.test.js`, que despacha todas as 107 definições de rota com chamada não autenticada ou corpo inválido e rejeita rotas desconhecidas e respostas HTTP 500. Esse teste de superfície não cobre resultado de sucesso, persistência real, sessão válida em cada papel ou provedor externo; não afirmar que todos os fluxos ponta a ponta estão validados.
+- O README foi alinhado ao preço único de R$ 90,00 definido em `src/product-config.js`, aos presentes pagos diretamente aos noivos ou comprados em lojas externas, e ao estado de teste do Mercado Pago.
+- O preço do acesso foi alinhado na minuta de termos. O texto continua identificado como minuta e precisa da revisão jurídica e operacional prevista nas seções 11.1 e 19 antes de ser tratado como documento vigente ou de publicar checkout.
+- `src/NavigationConcepts.jsx` e seu CSS apresentam duas alternativas locais, em `/estudo-navegacao` somente durante o Vite em desenvolvimento: navegação lateral por áreas e etapas compactas no topo com atalhos. São mockups funcionais de interface, sem dados de produção; aguardar a escolha do dono antes de alterar a navegação final e adicionar onboarding ao painel real.
+- Lighthouse do site público em produção, em 20/10/2026: mobile 83/100 em desempenho e 100/100 em acessibilidade, boas práticas e SEO; LCP 4,5 s, FCP 2,0 s, TBT 0 ms, CLS 0. No build local depois de corrigir o reload extra do service worker e a ordem duplicada da capa: mobile 88/100, desktop 100/100, acessibilidade/boas práticas/SEO 100/100 em ambos; nenhum audit binário falhou. Mobile ainda tem LCP de 3,9 s e requer otimização antes de afirmar que passou em desempenho.
+- A cobertura estática do build confirmou que o mockup `/estudo-navegacao` só pode ser carregado no Vite de desenvolvimento e que o chunk da prévia não entra no build de produção. A rota local respondeu HTTP 200.
+- Foi adicionado `src/development-access-simulator.js`, carregado somente em Vite DEV com `?teste-local=1`. A barra de demonstração abre páginas do casal, convite público, convidado, padrinhos, equipe e superadmin com dados fictícios; chamadas `/api/*` são interceptadas no navegador e não alcançam o Worker. As respostas de escrita são temporárias e não persistem. O módulo e o marcador de modo local não aparecem no build de produção. Isso valida renderização e navegação da UI, não substitui autenticação real, testes de integração com D1 nem autorização no servidor.
+- `tests/development-access-simulator.test.js` verifica amostras das respostas simuladas de casal, site público, convidado, padrinho, equipe e superadmin, incluindo bloqueio de chamadas de rede para rotas `/api/*` não mapeadas.
+- `npm test` passou com 263/263 casos, incluindo os 107 casos de despacho, verificações do simulador e fluxos executados em SQLite com todas as migrações locais; `npm run lint`, `npm run build`, `git diff --check` e `wrangler pages functions build` passaram na revisão de 21/10/2026. Os fluxos SQL usam SQLite local e não equivalem a validar cada endpoint em Worker remoto.
+- Foi criado um ambiente temporário de prévia Cloudflare para a revisão manual: D1 `tudocomecoudeumsim-qa-20261021`, bucket R2 `tudocomecoudeumsim-qa-20261021`, binding apenas em `env.preview`, migrations 0001–0020 aplicadas e registros fictícios preparados por `scripts/qa-preview-seed.sql`. Não inserir dados reais. Excluir esses dois recursos depois que o dono confirmar o fim dos testes.
+- `public/verificar/index.html` é o índice responsivo das telas a conferir. A simulação sem login só é ativada com `?teste-local=1` no Vite local ou num subdomínio de prévia `*.tudocomecoudeumsim.pages.dev`; a API continua exigindo autenticação. O superadmin só ignora Cloudflare Access para servir a página estática dessa demonstração; `/api/superadmin/*` continua protegido. A simulação intercepta as chamadas no navegador, não persiste no D1. A base temporária serve para a próxima rodada de integração dos endpoints autenticados.
+- A navegação visual foi exercitada em Chromium nas larguras 360, 768 e 1440 px. As abas de casal e superadmin renderizaram sem exceções JavaScript e sem rolagem horizontal. O teste encontrou e corrigiu dados de pagamento ausentes no fixture de despesas e rótulos abaixo de 14 px em grupos e superadmin. Testes de provedor, e-mail, envio para R2 no Cloudflare e todas as mutações ponta a ponta ainda dependem de validação autenticada específica.
+- Lighthouse mobile local da página inicial em 21/10/2026: desempenho 99, acessibilidade 100, boas práticas 100 e SEO 100; FCP 1,4 s, LCP 2,0 s e TTI 2,0 s. O teste usa build local e não é PageSpeed público nem resultado do deploy do Cloudflare.

@@ -169,3 +169,15 @@ test('the Pages Access middleware does not block public routes', async () => {
   assert.equal(response.status, 200)
   assert.equal(response.headers.get('X-Frame-Options'), 'DENY')
 })
+
+test('the QA preview can open only the superadmin screen while its API stays protected', async () => {
+  const preview = 'https://abc123.tudocomecoudeumsim.pages.dev'
+  let nextCalled = false
+  const page = await accessMiddleware({ request: new Request(`${preview}/superadmin?teste-local=1`), env: {}, next: async () => { nextCalled = true; return new Response('demo') } })
+  assert.equal(page.status, 200)
+  assert.equal(nextCalled, true)
+  for (const url of [`${preview}/superadmin`, `${preview}/api/superadmin/overview?teste-local=1`, `${base}/superadmin?teste-local=1`]) {
+    const response = await accessMiddleware({ request: new Request(url), env: {}, next: async () => new Response('unexpected') })
+    assert.equal(response.status, 403)
+  }
+})

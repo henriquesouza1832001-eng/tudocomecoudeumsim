@@ -1,0 +1,127 @@
+.nav-concepts-page {
+  min-height: 100vh;
+  color: #263d31;
+  background: #f6f3ed url('/images/floral-watercolor-overlay.png') center top / min(100%, 1180px) auto repeat-y;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.nav-concepts-header,
+.nav-concepts-intro,
+.nav-concepts-options,
+.nav-concepts-footer {
+  width: min(1440px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+.nav-concepts-header {
+  min-height: 72px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #deded5;
+}
+
+.nav-concepts-header a { display: inline-flex; align-items: center; gap: 10px; color: #344c3d; text-decoration: none; }
+.nav-concepts-header a > span { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #cbd4c8; border-radius: 50%; font-family: 'Playfair Display', serif; font-size: 16px; }
+.nav-concepts-header a strong { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 500; }
+.nav-concepts-header > span { color: #6e766d; font-size: 13px; }
+
+.nav-concepts-intro { padding: 48px 0 28px; text-align: center; }
+.nav-concept-eyebrow { color: #ad764b; font-size: 11px; font-weight: 700; letter-spacing: .16em; }
+.nav-concepts-intro h1 { margin: 10px 0; font-family: 'Playfair Display', serif; font-size: clamp(34px, 4vw, 54px); font-weight: 400; }
+.nav-concepts-intro > p { max-width: 720px; margin: 0 auto; color: #68736a; font-size: 16px; line-height: 1.6; }
+.nav-concepts-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 22px; padding-bottom: 38px; }
+.nav-concept-option { min-width: 0; overflow: hidden; border: 1px solid #d9ded3; background: rgba(255, 253, 249, .97); box-shadow: 0 10px 30px rgba(47, 58, 47, .07); }
+.nav-concept-option > header { min-height: 130px; padding: 20px 22px; }
+.nav-concept-option > header h2 { margin: 7px 0; font-family: 'Playfair Display', serif; font-size: 25px; font-weight: 500; }
+.nav-concept-option > header p { max-width: 600px; margin: 0; color: #69736b; font-size: 14px; line-height: 1.5; }
+.nav-concept-frame { min-height: 630px; border-top: 1px solid #dfe2d9; background: #f8f7f2; }
+.nav-concept-sidebar-frame { display: grid; grid-template-columns: 204px minmax(0, 1fr); }
+.nav-concept-sidebar { padding: 16px 12px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid #dfe2d9; background: #fffdf9; }
+.nav-concept-brand { display: flex; align-items: center; gap: 9px; padding: 0 4px 13px; border-bottom: 1px solid #e5e5dc; }
+.nav-concept-brand > span { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid #cbd4c8; border-radius: 50%; color: #405849; font-family: 'Playfair Display', serif; font-size: 13px; }
+.nav-concept-brand > div { display: grid; gap: 2px; }
+.nav-concept-brand strong { color: #334a3b; font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 500; }
+.nav-concept-brand small { color: #84887d; font-size: 11px; }
+.nav-concept-nav-group { display: grid; gap: 4px; }
+.nav-concept-nav-group > small { padding: 0 8px 3px; color: #a27350; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.nav-concept-nav-group button,
+.nav-concept-sidebar > a { min-height: 40px; padding: 0 9px; display: flex; align-items: center; gap: 9px; border: 1px solid transparent; color: #4c5c50; background: transparent; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.nav-concept-nav-group button.active { border-color: #cdd8ca; color: #344b3c; background: #eff3ec; font-weight: 700; }
+.nav-concept-sidebar > a { margin-top: auto; border-top: 1px solid #e5e5dc; color: #59665b; text-decoration: none; }
+.nav-concept-workspace { min-width: 0; padding: 22px; }
+.nav-concept-mobile-bar { display: none; }
+.nav-concept-guide { padding: 17px; border: 1px solid #d2dbcf; background: #f0f4ed; }
+.nav-concept-guide-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.nav-concept-guide-heading > span { display: grid; gap: 4px; }
+.nav-concept-guide-heading small { color: #a27350; font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+.nav-concept-guide-heading strong { color: #344b3c; font-size: 15px; }
+.nav-concept-guide-heading > button { min-height: 34px; padding: 0 9px; border: 1px solid #cbd5c9; color: #45594b; background: #fffefa; font: inherit; font-size: 12px; cursor: pointer; }
+.nav-concept-steps { display: grid; gap: 7px; margin-top: 13px; }
+.nav-concept-steps button { min-height: 42px; padding: 0 10px; display: grid; grid-template-columns: 24px minmax(0, 1fr) 15px; align-items: center; gap: 8px; border: 1px solid #e0e4dc; color: #45554a; background: #fffefa; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.nav-concept-steps button > span { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid #c5d0c2; border-radius: 50%; font-size: 11px; }
+.nav-concept-steps button.done > span { color: white; background: #405849; }
+.nav-concept-progress { display: block; margin-top: 10px; color: #737c70; font-size: 11px; }
+.nav-concept-reopen { min-height: 42px; padding: 0 13px; border: 1px solid #cbd5c9; color: #405849; background: #f0f4ed; font: inherit; cursor: pointer; }
+.nav-concept-content { margin-top: 22px; padding: 19px; border: 1px solid #e0dfd7; background: #fffefa; }
+.nav-concept-content-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-top: 5px; }
+.nav-concept-content-heading h3 { margin: 0; font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 500; }
+.nav-concept-content-heading p { margin: 6px 0 0; color: #6a746b; font-size: 12px; line-height: 1.5; }
+.nav-concept-content-heading > button { min-height: 40px; padding: 0 10px; display: inline-flex; align-items: center; gap: 7px; border: 0; color: #fffefa; background: #405849; font: inherit; font-size: 11px; white-space: nowrap; }
+.nav-concept-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 15px; }
+.nav-concept-cards article { min-width: 0; padding: 13px; display: grid; gap: 7px; border: 1px solid #e3e2da; background: #fcfbf7; }
+.nav-concept-cards article > span { color: #a27350; font-size: 9px; font-weight: 700; letter-spacing: .11em; }
+.nav-concept-cards article strong { font-size: 12px; line-height: 1.35; }
+.nav-concept-cards article small { color: #737c70; font-size: 11px; line-height: 1.4; }
+.nav-concept-stage-bar { padding: 14px 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; border-bottom: 1px solid #dfe2d9; background: #fffefa; }
+.nav-concept-stage-bar button { min-height: 56px; padding: 7px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #d9ded5; color: #4c5c50; background: #fffefa; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.nav-concept-stage-bar button > span { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid #c7d0c4; border-radius: 50%; font-size: 10px; }
+.nav-concept-stage-bar button.active { border-color: #405849; color: #fffefa; background: #405849; }
+.nav-concept-stage-bar button.active > span { border-color: rgba(255,255,255,.65); }
+.nav-concept-stage-workspace { max-width: 820px; margin: 0 auto; padding: 22px; }
+.nav-concept-welcome { margin-bottom: 16px; padding: 20px; display: flex; justify-content: space-between; gap: 16px; border: 1px solid #e0ded4; background: #fffefa; }
+.nav-concept-welcome h3 { max-width: 550px; margin: 7px 0; font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 500; }
+.nav-concept-welcome p { max-width: 550px; margin: 0; color: #6b756c; font-size: 13px; line-height: 1.55; }
+.nav-concept-welcome > svg { flex: 0 0 auto; color: #80917d; }
+.nav-concept-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 15px; }
+.nav-concept-shortcuts button { min-height: 68px; padding: 12px; display: flex; align-items: center; gap: 9px; border: 1px solid #dfdfd6; color: #45594b; background: #fffefa; text-align: left; cursor: pointer; }
+.nav-concept-shortcuts button > span { min-width: 0; display: grid; gap: 3px; flex: 1; }
+.nav-concept-shortcuts strong { font-size: 12px; }
+.nav-concept-shortcuts small { color: #747c72; font-size: 10px; }
+.nav-concepts-footer { min-height: 55px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #dfe0d8; color: #737c70; font-size: 12px; }
+.nav-concepts-footer a { color: #405849; }
+
+@media (max-width: 1050px) {
+  .nav-concepts-options { width: min(820px, calc(100% - 32px)); grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .nav-concepts-header,
+  .nav-concepts-intro,
+  .nav-concepts-footer { width: calc(100% - 32px); }
+  .nav-concepts-header > span { max-width: 125px; font-size: 11px; text-align: right; }
+  .nav-concepts-intro { padding: 34px 0 22px; }
+  .nav-concepts-intro > p { font-size: 14px; }
+  .nav-concepts-options { width: calc(100% - 24px); gap: 16px; }
+  .nav-concept-option > header { min-height: 0; padding: 16px; }
+  .nav-concept-option > header h2 { font-size: 22px; }
+  .nav-concept-frame { min-height: 620px; }
+  .nav-concept-sidebar-frame { display: block; }
+  .nav-concept-sidebar { display: none; }
+  .nav-concept-workspace { padding: 12px; }
+  .nav-concept-mobile-bar { min-height: 40px; margin-bottom: 12px; display: flex; align-items: center; gap: 9px; color: #405849; }
+  .nav-concept-mobile-bar button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #d6ddd2; color: #405849; background: #fffefa; }
+  .nav-concept-guide { padding: 12px; }
+  .nav-concept-guide-heading strong { font-size: 13px; }
+  .nav-concept-content { padding: 14px; }
+  .nav-concept-content-heading { flex-direction: column; }
+  .nav-concept-content-heading > button { min-height: 44px; }
+  .nav-concept-cards { grid-template-columns: minmax(0, 1fr); }
+  .nav-concept-stage-bar { padding: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nav-concept-stage-bar button { min-height: 48px; justify-content: flex-start; font-size: 11px; }
+  .nav-concept-stage-workspace { padding: 12px; }
+  .nav-concept-welcome { padding: 14px; }
+  .nav-concept-welcome h3 { font-size: 21px; }
+  .nav-concept-shortcuts { grid-template-columns: minmax(0, 1fr); }
+  .nav-concepts-footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 10px 0; }
+}

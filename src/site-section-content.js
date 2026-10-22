@@ -59,3 +59,11 @@ export function safeHttpsLink(value) {
     return ''
   }
 }
+
+export function safeStoreLink(value) {
+  const href = safeHttpsLink(value)
+  if (!href || href.length > 2048) return ''
+  const hostname = new URL(href).hostname.toLowerCase().replace(/\.$/, '')
+  if (!hostname.includes('.') || hostname.startsWith('[') || /^[\d.]+$/.test(hostname) || /(?:^|\.)(localhost|local|internal|test)$/.test(hostname)) return ''
+  return href
+}

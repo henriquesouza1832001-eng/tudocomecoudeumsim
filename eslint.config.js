@@ -19,6 +19,7 @@ export default [
       ...react.configs.flat.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['fetchpriority'] }],
     },
   },
   {

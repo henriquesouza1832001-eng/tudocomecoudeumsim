@@ -20,5 +20,28 @@
                          "database_id":  "ba62dd90-d4ae-4270-aadd-fa1b9b9e4555",
                          "migrations_dir":  "migrations"
                          }
-                     ]
+    ],
+    "env": {
+        "preview": {
+            "vars": {
+                "ACCESS_TEAM_DOMAIN": "https://quarta-amstel-pages.cloudflareaccess.com",
+                "ACCESS_APPLICATION_AUD": "1db573da6440a8939d5a164852d6ff202d9e1721fb43cc219b6720740e496e3e",
+                "MERCADOPAGO_MODE": "test"
+            },
+            "r2_buckets": [
+                {
+                    "binding": "GUEST_PHOTOS",
+                    "bucket_name": "tudocomecoudeumsim-qa-20261021"
+                }
+            ],
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "tudocomecoudeumsim-qa-20261021",
+                    "database_id": "5add7634-9874-4392-ae0e-2651343a515e",
+                    "migrations_dir": "migrations"
+                }
+            ]
+        }
+    }
 }
