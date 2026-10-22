@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Bell,
   CalendarDays,
   Camera,
   Check,
@@ -32,10 +31,8 @@ import {
   Gift,
   Heart,
   House,
-  Image,
   ListChecks,
   LockKeyhole,
-  Link,
   Mail,
   MapPin,
   Menu,
@@ -48,7 +45,6 @@ import {
   Search,
   Shield,
   Settings2,
-  Sparkles,
   Smartphone,
   Tablet,
   Trash2,
@@ -536,40 +532,6 @@ function loadTurnstileScript() {
   return turnstileScriptPromise
 }
 
-const NAV_ITEMS = [
-  { id: 'overview', label: 'Visão geral', icon: House },
-  { id: 'site', label: 'Seu site', icon: Image },
-  { id: 'guests', label: 'Convidados', icon: Users },
-  { id: 'invites', label: 'Convites e acesso', icon: QrCode },
-  { id: 'gifts', label: 'Lista de presentes', icon: Gift },
-  { id: 'customize', label: 'Personalização', icon: Paintbrush },
-]
-
-const GUEST_ROWS = [
-  { name: 'Ana Beatriz Costa', group: 'Família da noiva', status: 'Confirmado', people: '2 pessoas' },
-  { name: 'Bruno e Camila Alves', group: 'Amigos', status: 'Confirmado', people: '2 pessoas' },
-  { name: 'Carolina Mendes', group: 'Família do noivo', status: 'Aguardando', people: '1 pessoa' },
-  { name: 'Daniel Ferreira', group: 'Trabalho', status: 'Aguardando', people: '1 pessoa' },
-  { name: 'Eduarda e família', group: 'Família da noiva', status: 'Não poderá ir', people: '3 pessoas' },
-]
-
-const GIFT_ROWS = [
-  { title: 'Contribuição para a viagem', type: 'Pix direto', description: 'Valor sugerido pelos noivos' },
-  { title: 'Jogo de jantar', type: 'Loja externa', description: 'Compra concluída na loja escolhida' },
-  { title: 'Contribuição livre', type: 'Pix direto', description: 'O convidado escolhe o valor no banco' },
-]
-
-function readCountdown() {
-  const remaining = Math.max(0, new Date('2027-09-18T16:00:00-03:00').getTime() - Date.now())
-  const totalSeconds = Math.floor(remaining / 1000)
-  return {
-    days: Math.floor(totalSeconds / 86400),
-    hours: Math.floor((totalSeconds % 86400) / 3600),
-    minutes: Math.floor((totalSeconds % 3600) / 60),
-    seconds: totalSeconds % 60,
-  }
-}
-
 function parseGuestCsv(source) {
   const text = source.replace(/^\uFEFF/, '')
   const firstLine = text.split(/\r?\n/, 1)[0] || ''
@@ -849,7 +811,6 @@ function IdentityDialog({ config, onResolve }) {
 
 function App() {
   const [view, setView] = useState(resolveCurrentView)
-  const [theme, setTheme] = useState('garden')
 
   useEffect(() => {
     const robotsMeta = document.querySelector('meta[name="robots"]')
@@ -863,7 +824,6 @@ function App() {
     if (!robotsMeta) document.head.append(meta)
     return () => meta.remove()
   }, [view])
-  const [adminPage, setAdminPage] = useState('overview')
   const [toast, setToast] = useState('')
   const [dialog, setDialog] = useState(null)
   const dialogResolver = useRef(null)
@@ -896,7 +856,7 @@ function App() {
 
   function navigateView(nextView) {
     const keepLocalTest = window.__APP_DEMO_MODE__ === true && new URLSearchParams(window.location.search).has('teste-local')
-    const paths = { guest: keepLocalTest ? '/site-casal-demo' : '/', dashboard: '/painel', 'guest-portal': '/convidado', godparent: '/padrinhos', 'event-staff': '/equipe', superadmin: '/superadmin', checkin: '/pre-entrada', 'public-wedding': '/casamento/ana-e-caio' }
+    const paths = { dashboard: '/painel', 'guest-portal': '/convidado', godparent: '/padrinhos', 'event-staff': '/equipe', superadmin: '/superadmin', 'public-wedding': '/casamento/ana-e-caio' }
     const path = paths[nextView]
     const keepInvitation = ['guest-portal', 'godparent'].includes(nextView) && window.location.hash.startsWith('#convite/')
     const testQuery = keepLocalTest ? '?teste-local=1' : ''
@@ -905,8 +865,6 @@ function App() {
     setView(nextView)
   }
 
-  const localTestMode = window.__APP_DEMO_MODE__ === true && new URLSearchParams(window.location.search).has('teste-local')
-
   useEffect(() => {
     const syncView = () => setView(resolveCurrentView())
     window.addEventListener('popstate', syncView)
@@ -914,23 +872,7 @@ function App() {
   }, [])
 
   return (
-    <main className={`app-shell theme-${theme}`}>
-      {(import.meta.env.DEV || localTestMode) && <div className="prototype-bar">
-        <div className="prototype-label"><span className="prototype-dot" /> ESTUDO VISUAL <span className="prototype-divider">/</span> Plataforma de casamento{localTestMode && <strong className="prototype-test-warning">SIMULAÇÃO LOCAL · DADOS FICTÍCIOS · NÃO PERSISTE</strong>}</div>
-        <div className="prototype-switch" role="group" aria-label="Demonstrações do mockup">
-          <button aria-pressed={view === 'guest'} className={view === 'guest' ? 'selected' : ''} onClick={() => navigateView('guest')}><Heart size={15} /> Site do casal</button>
-          {localTestMode && <button aria-pressed={view === 'public-wedding'} className={view === 'public-wedding' ? 'selected' : ''} onClick={() => navigateView('public-wedding')}><ExternalLink size={15} /> Convite público</button>}
-          <button aria-pressed={view === 'dashboard'} className={view === 'dashboard' ? 'selected' : ''} onClick={() => navigateView('dashboard')}><Settings2 size={15} /> Painel dos noivos</button>
-          <button aria-pressed={view === 'guest-portal'} className={view === 'guest-portal' ? 'selected' : ''} onClick={() => navigateView('guest-portal')}><UserRound size={15} /> Convidado</button>
-          <button aria-pressed={view === 'godparent'} className={view === 'godparent' ? 'selected' : ''} onClick={() => navigateView('godparent')}><Heart size={15} /> Padrinhos</button>
-          <button aria-pressed={view === 'event-staff'} className={view === 'event-staff' ? 'selected' : ''} onClick={() => navigateView('event-staff')}><ListChecks size={15} /> Equipe de entrada</button>
-          <button aria-pressed={view === 'superadmin'} className={view === 'superadmin' ? 'selected' : ''} onClick={() => navigateView('superadmin')}><Shield size={15} /> Superadmin</button>
-          <button aria-pressed={view === 'checkin'} className={view === 'checkin' ? 'selected' : ''} onClick={() => navigateView('checkin')}><QrCode size={15} /> Prévia da entrada</button>
-        </div>
-        <span className="prototype-badge">Demonstração</span>
-      </div>}
-
-      {view === 'guest' && (import.meta.env.DEV || localTestMode) && <GuestSite theme={theme} setTheme={setTheme} notify={notify} />}
+    <main className="app-shell">
       {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} />}
       {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'help-center' && <HelpCenter />}
@@ -940,7 +882,6 @@ function App() {
       {view === 'password-reset-request' && <PasswordResetRequest />}
       {view === 'password-reset' && <PasswordReset />}
       {view === 'team-invitation' && <TeamInvitationAcceptance />}
-      {view === 'dashboard-preview' && <Dashboard theme={theme} setTheme={setTheme} page={adminPage} setPage={setAdminPage} notify={notify} demo />}
       {view === 'customization-study' && <CustomizationStudy />}
       {view === 'guest-portal' && <GuestPortal notify={notify} setView={navigateView} />}
       {view === 'public-wedding' && <GeneralWeddingSite notify={notify} />}
@@ -948,7 +889,7 @@ function App() {
       {view === 'godparent' && <GodparentPortal notify={notify} />}
       {view === 'event-staff' && <EventStaffPanel notify={notify} />}
       {view === 'superadmin' && <SuperAdminPanel notify={notify} promptAction={promptAction} />}
-      {view === 'checkin' && <CheckIn notify={notify} />}
+      {view === 'not-found' && <RoleFrame icon={CircleHelp} eyebrow="PÁGINA NÃO ENCONTRADA" title="Vamos voltar ao caminho." description="Este endereço não está disponível. Acesse o início ou entre na sua conta para continuar." publicPage secureName={PRODUCT_NAME} secureFooter="Acesso seguro" headerAction={<a className="button-outline" href="/">Ir para o início</a>}><section className="role-card"><a className="button-primary" href="/painel">Entrar no painel <ArrowRight size={15} /></a></section></RoleFrame>}
       {toast && <div className="toast" role="status"><Check size={16} /> {toast}</div>}
       {dialog && <IdentityDialog key={`${dialog.title}-${dialog.type}`} config={dialog} onResolve={finishDialog} />}
     </main>
@@ -962,7 +903,7 @@ function CustomizationStudy() {
   const steps = ['Foto e vídeo', 'Identidade visual', 'Texto do convite', 'Detalhes do site']
   const preview = <div className={`study-preview-device study-device-${device}`}><div className="study-browser-bar"><i /><i /><i /><span>henrique-laryssa.convite</span></div><div className="study-cover"><img src="/images/wedding-moments.webp" alt="Noivos caminham juntos por um jardim" /><div><small>15 de outubro de 2028</small><h3>Henrique <i>&</i><br />Laryssa</h3><p>Com alegria, convidamos você.</p><button type="button">Ver convite <ArrowRight size={14} /></button></div></div><div className="study-preview-links"><span>Evento</span><i>·</i><span>Nossa história</span><i>·</i><span>Presença</span></div></div>
   const sectionCards = <><section className="study-paper-card study-photo-card"><div className="study-card-heading"><span className="study-number">01</span><div><small>PRIMEIRO PASSO</small><h3>A foto de vocês</h3></div><Camera size={19} /></div><p>A foto principal dá o tom do convite. Adicionem outras imagens ou um vídeo quando quiserem.</p><button type="button" className="study-upload"><Camera size={17} /> Escolher foto do casal</button><div className="study-mini-gallery"><img src="/images/wedding-moments.webp" alt="Prévia de uma foto do casal" /><img src="/images/wedding-pexels.webp" alt="Prévia de outra foto do casal" /><span>+ adicionar</span></div></section><section className="study-paper-card"><div className="study-card-heading"><span className="study-number">02</span><div><small>IDENTIDADE</small><h3>Escolham o clima</h3></div><Flower2 size={19} /></div><div className="study-theme-row"><button className="study-theme selected" type="button"><span className="study-theme-art study-theme-garden">H <i>&</i> L</span><strong>Jardim editorial</strong><Check size={16} /></button><button className="study-theme" type="button"><span className="study-theme-art study-theme-sunset">H <i>&</i> L</span><strong>Romance ao entardecer</strong></button></div><span className="study-field-label">Paleta do jardim</span><div className="study-swatches"><i /><i /><i /><i /><i /><span>Oliva e areia</span></div></section><section className="study-paper-card study-copy-card"><div className="study-card-heading"><span className="study-number">03</span><div><small>RECADO DE ABERTURA</small><h3>Uma frase de vocês</h3></div><Pencil size={18} /></div><p>Uma mensagem breve aparece na capa do convite. As informações do evento ficam organizadas no site.</p><div className="study-input-preview">Com alegria, convidamos você.</div><span className="study-inline-hint"><Check size={14} /> Prévia atualizada ao editar</span></section><section className="study-paper-card study-details-card"><div className="study-card-heading"><span className="study-number">04</span><div><small>O SITE DO CASAL</small><h3>Contem a história toda</h3></div><Heart size={18} /></div><p>Ativem só as partes que fazem sentido para vocês. Datas e locais vêm da aba Eventos.</p><div className="study-content-chips"><span>✓ Nossa história</span><span>✓ Fotos do casal</span><span>＋ Padrinhos</span><span>＋ Hospedagem</span></div></section></>
-  return <div className="customization-study"><header className="study-header"><a className="study-brand" href="/"><span>e<span>&</span>t</span><strong>Estudo do editor</strong></a><span>PRÉVIAS DE DIREÇÃO VISUAL</span><a href="/painel/demo">Voltar ao painel <ArrowRight size={15} /></a></header><main className="study-main"><div className="study-intro"><span className="study-kicker"><Flower2 size={15} /> JARDIM EDITORIAL · PERSONALIZAÇÃO</span><h1>Um editor com cara de celebração.</h1><p>Comparamos duas formas de organizar as escolhas do casal. As cores, os detalhes botânicos e a foto seguem a identidade aprovada.</p></div><div className="study-option-tabs" role="tablist" aria-label="Opções de organização do editor"><button type="button" role="tab" aria-selected={isAtelier} className={isAtelier ? 'selected' : ''} onClick={() => setOption('atelier')}><span>01</span><strong>Ateliê do convite</strong><small>Etapas claras e prévia sempre ao lado</small></button><button type="button" role="tab" aria-selected={!isAtelier} className={!isAtelier ? 'selected' : ''} onClick={() => setOption('caderno')}><span>02</span><strong>Caderno do casal</strong><small>Blocos organizados como uma coleção</small></button></div>{isAtelier ? <section className="study-editor study-editor-atelier" aria-label="Prévia Ateliê do convite"><aside className="study-steps"><span className="study-kicker">MONTEM A CELEBRAÇÃO</span><h2>Seu convite,<br />do seu jeito.</h2><nav>{steps.map((step, index) => <div className={index === 0 ? 'current' : ''} key={step}><span>{index + 1}</span>{step}{index === 0 && <i>Em edição</i>}</div>)}</nav><div className="study-steps-note"><Flower2 size={18} /><span>As mudanças aparecem na prévia antes de publicar.</span></div></aside><div className="study-controls"><div className="study-controls-heading"><div><span className="study-kicker">ETAPA 1 DE 4</span><h2>Comecem pela foto</h2></div><span>Salvo neste rascunho</span></div><div className="study-control-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> A foto pode ser adicionada depois</span><button type="button">Continuar <ArrowRight size={15} /></button></div></div><aside className="study-live-preview"><div className="study-live-heading"><span><i /> PRÉVIA AO VIVO</span><div>{[['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]].map(([size, Icon]) => <button key={size} className={device === size ? 'selected' : ''} type="button" aria-label={`Prévia ${size}`} onClick={() => setDevice(size)}><Icon size={16} /></button>)}</div></div>{preview}<p>A prévia acompanha o tema, as fotos e os textos escolhidos.</p></aside></section> : <section className="study-editor study-editor-notebook" aria-label="Prévia Caderno do casal"><div className="study-notebook-top"><div><span className="study-kicker"><Flower2 size={14} /> O PROJETO DE HENRIQUE & LARYSSA</span><h2>Uma história que começa<br />pelo convite.</h2><p>Organizem as ideias no ritmo de vocês. Cada bloco abre só quando quiserem editar.</p></div><div className="study-notebook-cover">{preview}</div></div><div className="study-notebook-progress"><span>O convite está tomando forma</span><div><i /></div><small>1 de 4 partes</small></div><div className="study-notebook-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> Rascunho salvo automaticamente</span><button type="button">Abrir prévia completa <ArrowRight size={15} /></button></div></section>}<p className="study-footer"><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a> · Estudo de organização do editor</p></main></div>
+  return <div className="customization-study"><header className="study-header"><a className="study-brand" href="/"><span>e<span>&</span>t</span><strong>Estudo do editor</strong></a><span>PRÉVIAS DE DIREÇÃO VISUAL</span><a href="/painel">Voltar ao painel <ArrowRight size={15} /></a></header><main className="study-main"><div className="study-intro"><span className="study-kicker"><Flower2 size={15} /> JARDIM EDITORIAL · PERSONALIZAÇÃO</span><h1>Um editor com cara de celebração.</h1><p>Comparamos duas formas de organizar as escolhas do casal. As cores, os detalhes botânicos e a foto seguem a identidade aprovada.</p></div><div className="study-option-tabs" role="tablist" aria-label="Opções de organização do editor"><button type="button" role="tab" aria-selected={isAtelier} className={isAtelier ? 'selected' : ''} onClick={() => setOption('atelier')}><span>01</span><strong>Ateliê do convite</strong><small>Etapas claras e prévia sempre ao lado</small></button><button type="button" role="tab" aria-selected={!isAtelier} className={!isAtelier ? 'selected' : ''} onClick={() => setOption('caderno')}><span>02</span><strong>Caderno do casal</strong><small>Blocos organizados como uma coleção</small></button></div>{isAtelier ? <section className="study-editor study-editor-atelier" aria-label="Prévia Ateliê do convite"><aside className="study-steps"><span className="study-kicker">MONTEM A CELEBRAÇÃO</span><h2>Seu convite,<br />do seu jeito.</h2><nav>{steps.map((step, index) => <div className={index === 0 ? 'current' : ''} key={step}><span>{index + 1}</span>{step}{index === 0 && <i>Em edição</i>}</div>)}</nav><div className="study-steps-note"><Flower2 size={18} /><span>As mudanças aparecem na prévia antes de publicar.</span></div></aside><div className="study-controls"><div className="study-controls-heading"><div><span className="study-kicker">ETAPA 1 DE 4</span><h2>Comecem pela foto</h2></div><span>Salvo neste rascunho</span></div><div className="study-control-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> A foto pode ser adicionada depois</span><button type="button">Continuar <ArrowRight size={15} /></button></div></div><aside className="study-live-preview"><div className="study-live-heading"><span><i /> PRÉVIA AO VIVO</span><div>{[['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]].map(([size, Icon]) => <button key={size} className={device === size ? 'selected' : ''} type="button" aria-label={`Prévia ${size}`} onClick={() => setDevice(size)}><Icon size={16} /></button>)}</div></div>{preview}<p>A prévia acompanha o tema, as fotos e os textos escolhidos.</p></aside></section> : <section className="study-editor study-editor-notebook" aria-label="Prévia Caderno do casal"><div className="study-notebook-top"><div><span className="study-kicker"><Flower2 size={14} /> O PROJETO DE HENRIQUE & LARYSSA</span><h2>Uma história que começa<br />pelo convite.</h2><p>Organizem as ideias no ritmo de vocês. Cada bloco abre só quando quiserem editar.</p></div><div className="study-notebook-cover">{preview}</div></div><div className="study-notebook-progress"><span>O convite está tomando forma</span><div><i /></div><small>1 de 4 partes</small></div><div className="study-notebook-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> Rascunho salvo automaticamente</span><button type="button">Abrir prévia completa <ArrowRight size={15} /></button></div></section>}<p className="study-footer"><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a> · Estudo de organização do editor</p></main></div>
 }
 
 function resolveCurrentView() {
@@ -973,7 +914,7 @@ function resolveCurrentView() {
   if (path === '/criar-site') return 'public-customizer'
   if (path === '/ajuda') return 'help-center'
   if (path === '/documentos-legais/rascunho') return 'legal-draft'
-  if (path === '/painel/demo') return 'dashboard-preview'
+  if (path === '/painel/demo' || path === '/site-casal-demo') return 'not-found'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/confirmar-presenca') return 'attendance-request'
   if (path.startsWith('/casamento/')) return 'public-wedding'
@@ -983,10 +924,13 @@ function resolveCurrentView() {
   if (path === '/equipe' || path === '/entrada') return 'event-staff'
   if (path === '/convidado' || path === '/convidados') return 'guest-portal'
   if (path === '/padrinho' || path === '/padrinhos') return 'godparent'
-  if (path === '/pre-entrada') return import.meta.env.DEV || window.__APP_DEMO_MODE__ === true ? 'checkin' : 'event-staff'
+  if (path === '/pre-entrada') {
+    window.history.replaceState({}, '', `/equipe${window.location.search}${window.location.hash}`)
+    return 'event-staff'
+  }
   if (window.location.hash.startsWith('#aceitar-equipe/')) return 'team-invitation'
   if (window.location.hash.startsWith('#convite/')) return 'guest-portal'
-  return 'guest'
+  return 'not-found'
 }
 
 function LegalDraft() {
@@ -1012,15 +956,12 @@ function LegalDraft() {
 }
 
 function HelpCenter() {
-  return <RoleFrame icon={CircleHelp} eyebrow="AJUDA PARA ORGANIZAR COM CALMA" title="Um passo de cada vez." description="Encontre o próximo passo do convite e saiba quem pode ajudar. As respostas são curtas; os detalhes ficam onde você precisa deles." className="help-center-page" publicPage secureName="Central de ajuda" secureFooter="Ajuda da plataforma" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
-    <section className="role-card help-center-start"><span className="eyebrow">POR ONDE COMEÇAR</span><h2>Comecem criando o acesso do casal.</h2><p>Depois de confirmar o e-mail, preencham os nomes e as fotos na personalização. Cadastrem datas, horários e locais na área Eventos; traje e outras orientações ficam nos detalhes do site.</p><div className="help-center-actions"><a className="button-primary" href="/cadastro">Criar acesso <ArrowRight size={15} /></a><a className="button-outline" href="/painel">Entrar no painel</a></div></section>
-    <section className="help-center-topics" aria-label="Ajuda por assunto">
-      <details className="role-card"><summary>Como escolher e ajustar um tema</summary><p>O tema define as cores de fundo, os detalhes, os títulos e a composição inicial da capa. Escolham uma opção pela prévia; depois, se quiserem, ajustem a paleta, a fonte e o formato da foto.</p></details>
-      <details className="role-card"><summary>O que informar aos convidados</summary><p>Comecem pelo essencial: data, local, horário e confirmação de presença. Cadastrem data, local e horário em Eventos. Traje, paleta, cardápio e dicas para quem vem de longe podem ser organizados nos detalhes do site.</p></details>
-      <details className="role-card"><summary>Como pedir ajuda ao cerimonialista</summary><p>No painel, abram “Equipe e acessos”, informem o e-mail do cerimonialista e escolham “Editor do site e eventos”. Copiem o convite gerado e enviem diretamente. Esse perfil pode editar o site e os eventos; não recebe a lista de convidados nem as áreas financeiras.</p><a className="text-arrow" href="/painel#equipe">Ver equipe e acessos <ArrowRight size={14} /></a></details>
-      <details className="role-card"><summary>Como compartilhar o convite</summary><p>Na área de convidados, criem os convites individuais e compartilhem o link ou o QR code correspondente. Cada pessoa acessa apenas os eventos liberados para o seu convite.</p></details>
-      <details className="role-card"><summary>Precisa falar com a equipe?</summary><p>Escreva por e-mail ou WhatsApp. Conte em qual etapa está e, se puder, inclua uma captura de tela.</p><div className="help-center-actions"><a className="button-outline" href="mailto:henriquesouza1832001@gmail.com"><Mail size={15} /> Enviar e-mail</a><a className="button-outline" href="https://wa.me/5531988924409" target="_blank" rel="noreferrer"><MessageCircle size={15} /> Abrir WhatsApp</a></div></details>
+  return <RoleFrame icon={CircleHelp} eyebrow="AJUDA" title="O que você precisa fazer?" description="Atalhos diretos para as etapas mais comuns." className="help-center-page" publicPage secureName="Ajuda" secureFooter="Suporte da plataforma" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
+    <section className="role-card help-center-directory" aria-label="Ações da conta">
+      <span className="eyebrow">ATALHOS DA CONTA</span>
+      <nav className="help-center-links"><a href="/cadastro"><span><strong>Criar acesso do casal</strong><small>Começar a montar o convite</small></span><ArrowRight size={17} /></a><a href="/painel"><span><strong>Entrar no painel</strong><small>Abrir o espaço do casamento</small></span><ArrowRight size={17} /></a><a href="/recuperar-senha"><span><strong>Recuperar senha</strong><small>Receber um link por e-mail</small></span><ArrowRight size={17} /></a></nav>
     </section>
+    <section className="role-card help-center-support"><span className="eyebrow">AINDA PRECISA DE AJUDA?</span><p>Envie o endereço da página e diga em que etapa parou.</p><div className="help-center-actions"><a className="button-outline" href="mailto:henriquesouza1832001@gmail.com"><Mail size={15} /> E-mail</a><a className="button-outline" href="https://wa.me/5531988924409" target="_blank" rel="noreferrer"><MessageCircle size={15} /> WhatsApp</a></div></section>
   </RoleFrame>
 }
 
@@ -1052,122 +993,6 @@ function coupleMonogram(partnerOneName, partnerTwoName) {
     return Array.from(value)[0].toLocaleUpperCase('pt-BR')
   }
   return `${initial(partnerOneName, 'A')} & ${initial(partnerTwoName, 'R')}`
-}
-
-function GuestSite({ theme, setTheme, notify }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [gift, setGift] = useState(null)
-  const [rsvpDone, setRsvpDone] = useState(false)
-  const [calendar, setCalendar] = useState('')
-  const [guestName, setGuestName] = useState('')
-  const [countdown, setCountdown] = useState(readCountdown)
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setCountdown(readCountdown()), 1000)
-    return () => window.clearInterval(timer)
-  }, [])
-
-  function submitRsvp(event) {
-    event.preventDefault()
-    setRsvpDone(true)
-    notify('Resposta de demonstração registrada nesta tela')
-  }
-
-  return (
-    <div className="guest-page">
-      <div className="demo-ribbon"><span>CONTEÚDO DEMONSTRATIVO</span><span>Casal, data e valores fictícios</span><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Topo <ArrowDown size={13} className="rotate-up" /></button></div>
-      <header className="guest-nav">
-        <a className="guest-brand" href="#inicio" aria-label="Elisa e Tomás, início"><span>e<span className="brand-amp">&</span>t</span><small>18 · 09 · 2027</small></a>
-        <button className="mobile-menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="guest-navigation">{menuOpen ? <X /> : <Menu />}</button>
-        <nav id="guest-navigation" className={menuOpen ? 'nav-links open' : 'nav-links'}>
-          <a href="#historia" onClick={() => setMenuOpen(false)}>Nossa história</a>
-          <a href="#celebracao" onClick={() => setMenuOpen(false)}>A celebração</a>
-          <a href="#presentes" onClick={() => setMenuOpen(false)}>Presentes</a>
-          <a href="#presenca" onClick={() => setMenuOpen(false)}>Presença</a>
-        </nav>
-        <a className="nav-rsvp nav-signup" href="/cadastro">Criar acesso <ArrowRight size={15} /></a>
-      </header>
-
-      <section className="guest-hero" id="inicio">
-        <div className="hero-photo" />
-        <div className="hero-shadow" />
-        <div className="hero-content">
-          <span className="hero-overline">COM ALEGRIA, CONVIDAMOS VOCÊ</span>
-          <h1>Elisa <i>&</i><br />Tomás</h1>
-          <div className="hero-rule"><span /> <Heart size={13} fill="currentColor" /> <span /></div>
-          <p>Um dia para celebrar o amor<br className="desktop-only" /> e as pessoas que fazem parte dele.</p>
-          <div className="hero-date"><CalendarDays size={17} /><span>18 de setembro de 2027</span><b>·</b><span>Paraty, RJ</span></div>
-          <a className="hero-cta" href="#celebracao">Descubra os detalhes <ArrowDown size={15} /></a>
-        </div>
-        <div className="hero-side-note">UM CONVITE PARA CELEBRAR</div>
-        <div className="hero-scroll"><span /> role para descobrir</div>
-      </section>
-
-      <section className="theme-showcase section-shell">
-        <div className="theme-showcase-text"><span className="eyebrow">ESCOLHA DE ESTILO</span><h2>Oito jeitos de contar<br />a mesma história.</h2></div>
-        <ThemePicker theme={theme} setTheme={setTheme} />
-      </section>
-
-      <section className="countdown-band">
-        <div className="countdown-label"><span className="eyebrow">O GRANDE DIA CHEGA EM</span><span className="countdown-sentence">Estamos contando os dias.</span></div>
-        <div className="countdown-items"><div><strong>{countdown.days}</strong><small>dias</small></div><span>:</span><div><strong>{String(countdown.hours).padStart(2, '0')}</strong><small>horas</small></div><span>:</span><div><strong>{String(countdown.minutes).padStart(2, '0')}</strong><small>minutos</small></div><span>:</span><div><strong>{String(countdown.seconds).padStart(2, '0')}</strong><small>segundos</small></div></div>
-        <span className="countdown-flower">✳</span>
-      </section>
-
-      <section className="story-section section-shell" id="historia">
-        <div className="story-image-wrap"><img src="/images/wedding-pexels.webp" alt="Casal demonstrativo caminha de mãos dadas por um jardim no dia do casamento" /><div className="story-photo-label">UM DIA, UMA HISTÓRIA, DOIS CAMINHOS</div><div className="story-image-index">01 <span>/</span> 04</div></div>
-        <div className="story-copy"><span className="eyebrow">NOSSA HISTÓRIA</span><h2>O acaso fez<br />a primeira parte.<br /><i>O resto, nós dois.</i></h2><p>Nos encontramos sem planejar, em uma tarde que parecia igual a tantas outras. Desde então, cada escolha ganhou um novo lugar para chamar de casa: ao lado um do outro.</p><p>Agora queremos celebrar essa história perto de quem também faz parte dela.</p><a className="text-link" href="#galeria">Um pouco mais sobre nós <ArrowRight size={15} /></a><span className="story-flower">✳</span></div>
-      </section>
-
-      <section className="celebration-section" id="celebracao">
-        <div className="section-shell celebration-inner">
-          <div className="section-heading centered-heading"><span className="eyebrow">UM DIA PARA GUARDAR</span><h2>A celebração</h2><p>Queremos viver cada momento com calma — e com vocês por perto.</p></div>
-          <div className="event-cards">
-            <article className="event-card"><div className="event-card-number">01</div><span className="event-icon"><Heart size={19} /></span><span className="eyebrow">CERIMÔNIA</span><h3>O sim</h3><p>Capela de Santa Rita<br />Largo de Santa Rita, Paraty</p><div className="event-meta"><CalendarDays size={15} /> 18 de setembro · 16h</div><a href="https://maps.google.com/?q=Capela+de+Santa+Rita+Paraty" target="_blank" rel="noreferrer">Ver no mapa <ExternalLink size={13} /></a></article>
-            <article className="event-card event-card-highlight"><div className="event-card-number">02</div><span className="event-icon"><Sparkles size={19} /></span><span className="eyebrow">RECEPÇÃO</span><h3>Vamos celebrar</h3><p>Casa da Figueira<br />Estrada do Corisco, Paraty</p><div className="event-meta"><CalendarDays size={15} /> 18 de setembro · 18h30</div><a href="https://maps.google.com/?q=Paraty+RJ" target="_blank" rel="noreferrer">Ver no mapa <ExternalLink size={13} /></a></article>
-          </div>
-          <div className="event-note"><Sparkles size={15} /><span>Traje: passeio completo. Venha confortável para dançar com a gente.</span></div>
-        </div>
-      </section>
-
-      <section className="schedule-section section-shell">
-        <div className="schedule-intro"><span className="eyebrow">SEM PRESSA, COM MUITA ALEGRIA</span><h2>Um dia inteiro<br />para celebrar.</h2><p>Um pequeno roteiro para você aproveitar tudo com a gente.</p></div>
-        <div className="schedule-list"><div className="schedule-item"><time>16:00</time><span className="schedule-marker"><Heart size={13} /></span><div><strong>Chegada à cerimônia</strong><small>Receba seu lugar e aproveite a vista.</small></div></div><div className="schedule-item"><time>16:30</time><span className="schedule-marker"><Heart size={13} /></span><div><strong>O nosso sim</strong><small>Capela de Santa Rita.</small></div></div><div className="schedule-item"><time>18:30</time><span className="schedule-marker"><Sparkles size={13} /></span><div><strong>Brinde e recepção</strong><small>Casa da Figueira, com jantar e música.</small></div></div><div className="schedule-item"><time>22:00</time><span className="schedule-marker"><span>✳</span></span><div><strong>Pista aberta</strong><small>O próximo passo é escolher a música.</small></div></div></div>
-      </section>
-
-      <section className="gallery-section" id="galeria">
-        <div className="gallery-heading section-shell"><div><span className="eyebrow">PEDACINHOS DA NOSSA VIDA</span><h2>Entre um lugar<br />e outro.</h2></div><p>Os lugares, as viagens, os domingos sem pressa. Cada pedacinho levou a gente até aqui.</p></div>
-        <div className="gallery-grid"><div className="gallery-main"><img src="/images/wedding-pexels.webp" alt="Noivos sorrindo enquanto caminham por um jardim" /><span>01 — Um dia para lembrar</span></div><div className="gallery-small gallery-warm"><Camera size={25} /><span>02 — Dias de sol</span></div><div className="gallery-small gallery-green"><Heart size={24} /><span>03 — Sempre juntos</span></div></div>
-      </section>
-
-      <section className="gift-section section-shell" id="presentes">
-        <div className="gift-heading"><span className="eyebrow">UM CARINHO EM FORMA DE PRESENTE</span><h2>O melhor presente<br />é ter você por perto.</h2><p>Se quiser nos presentear, preparamos algumas ideias para a nossa nova etapa. Escolha uma lembrança com o valor que fizer sentido para você.</p><button className="text-link" onClick={() => notify('No produto final, os noivos escolhem os meios de presente')}>Como funcionam os presentes <ArrowRight size={15} /></button></div>
-        <div className="gift-grid">{[{ icon: '✳', title: 'Um jantar especial', desc: 'Um brinde na nossa viagem.', amount: 'R$ 90' }, { icon: '⌁', title: 'Uma aventura a dois', desc: 'Um passeio para guardar.', amount: 'R$ 180' }, { icon: '♡', title: 'Lua de mel', desc: 'Ajude a escrever esse capítulo.', amount: 'Valor livre' }].map((item) => <article className="gift-card" key={item.title}><span className="gift-art">{item.icon}</span><h3>{item.title}</h3><p>{item.desc}</p><div className="gift-card-bottom"><strong>{item.amount}</strong><button onClick={() => setGift(item)} aria-label={`Escolher ${item.title}`}><ArrowRight size={17} /></button></div></article>)}</div>
-      </section>
-
-      <section className="rsvp-section" id="presenca">
-        <div className="rsvp-copy"><span className="eyebrow">ATÉ 20 DE AGOSTO</span><h2>Você vem<br />celebrar com a gente?</h2><p>Conta pra gente até 20 de agosto. Assim conseguimos preparar tudo com carinho.</p><div className="rsvp-note"><MessageCircle size={17} /><span>Seu convite pode incluir acompanhantes. Confira o link enviado pelos noivos.</span></div></div>
-        <div className="rsvp-form-card">
-          {rsvpDone ? <div className="rsvp-success"><span className="success-icon"><Check size={22} /></span><span className="eyebrow">RESPOSTA DE DEMONSTRAÇÃO</span><h3>Que alegria!</h3><p>{guestName || 'Sua resposta'} aparece confirmada nesta prévia.</p><button className="button-outline" onClick={() => setRsvpDone(false)}>Editar resposta</button></div> : <form onSubmit={submitRsvp}>
-            <span className="form-kicker">CONFIRMAÇÃO DE PRESENÇA</span><label>Seu nome<input required value={guestName} onChange={(event) => setGuestName(event.target.value)} placeholder="Como está no convite" /></label><label>Você poderá ir?<select required defaultValue=""><option value="" disabled>Escolha uma opção</option><option>Sim, estarei lá!</option><option>Infelizmente não poderei</option></select><ChevronDown className="select-chevron" size={15} /></label><div className="form-two"><label>Acompanhantes<select defaultValue="0"><option value="0">Nenhum</option><option>1 acompanhante</option><option>2 acompanhantes</option></select></label><label>Restrição alimentar<input placeholder="Opcional" /></label></div><button className="button-primary" type="submit">Enviar resposta <ArrowRight size={16} /></button><small className="form-footnote">Prévia visual: a resposta não é enviada nem armazenada.</small>
-          </form>}
-        </div>
-      </section>
-
-      <section className="access-section section-shell">
-        <div className="access-intro"><span className="eyebrow">UM CONVITE QUE CHEGA ATÉ VOCÊ</span><h2>Presente onde<br />a vida acontece.</h2><p>O convite final poderá ser aberto por link, QR code ou pelo endereço enviado pelos noivos. O domínio e os links ainda serão definidos.</p></div>
-        <div className="access-options"><article><span className="access-icon"><Link size={19} /></span><strong>Link de acesso</strong><small>Um endereço individual para cada convite.</small><span className="access-status">Domínio a definir</span></article><article><span className="access-icon"><QrCode size={19} /></span><strong>QR code</strong><small>Pronto para compartilhar no convite digital.</small><span className="qr-placeholder"><i /><i /><i /><i /><i /><i /><i /><i /><i /></span><span className="access-status">Prévia ilustrativa</span></article></div>
-      </section>
-
-      <section className="calendar-section section-shell"><div><span className="eyebrow">PARA NÃO PERDER NENHUM MOMENTO</span><h2>Guarde essa data.</h2><p>Escolha seu calendário para adicionar o casamento.</p></div><div className="calendar-controls"><label className="sr-only" htmlFor="calendar-choice">Escolha seu calendário</label><select id="calendar-choice" value={calendar} onChange={(event) => setCalendar(event.target.value)}><option value="">Qual calendário você usa?</option><option value="Google Calendar">Google Calendar</option><option value="Outlook">Outlook</option><option value="Apple Calendar">Apple Calendar</option></select><button onClick={() => notify(calendar ? `Fluxo de ${calendar} demonstrativo` : 'Escolha um calendário primeiro')}>Adicionar data <CalendarDays size={15} /></button><small>Esta prévia não cria um evento de calendário.</small></div></section>
-
-      <section className="wall-section"><div className="wall-mark">“</div><span className="eyebrow">UM MURAL DE CARINHO</span><h2>Deixe um recado<br />para os noivos.</h2><p>Mensagens de quem a gente ama tornam a lembrança ainda mais bonita.</p><button className="button-outline" onClick={() => notify('O mural é uma prévia visual')}>Escrever um recado <MessageCircle size={15} /></button><div className="wall-note">“Que a vida de vocês seja sempre cheia de encontros felizes.”<small>Mensagem de demonstração</small></div></section>
-
-      <footer className="guest-footer"><div className="footer-monogram">e<span>&</span>t</div><p>Feito com carinho, para celebrar o amor.</p><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com <ExternalLink size={12} /></a><span className="footer-demo">ESTUDO VISUAL · CONTEÚDO FICTÍCIO</span></footer>
-
-      {gift && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setGift(null)}><div className="gift-modal" role="dialog" aria-modal="true" aria-labelledby="gift-modal-title"><button className="modal-close" onClick={() => setGift(null)} aria-label="Fechar"><X size={19} /></button><span className="modal-flower">{gift.icon}</span><span className="eyebrow">PRESENTE DE DEMONSTRAÇÃO</span><h3 id="gift-modal-title">{gift.title}</h3><p>No site do casal, os presentes podem usar Pix direto aos noivos ou um link para uma loja externa.</p><div className="payment-choice"><span><Wallet size={17} /> Pix direto</span><span className="future-tag">Pelo aplicativo do banco</span></div><div className="payment-choice"><span><ArrowRight size={17} /> Loja externa</span><span className="future-tag">Compra fora do site</span></div><button className="button-primary" onClick={() => { setGift(null); notify('Esta prévia não inicia transferências nem compras') }}>Entendi <Check size={16} /></button><small>A plataforma não recebe pagamentos nem conclui compras.</small></div></div>}
-    </div>
-  )
 }
 
 function TotpSetupQr({ enrollment }) {
@@ -2325,7 +2150,7 @@ function CouplePanel({ notify, confirmAction }) {
   }, [mobileNavOpen])
 
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com o e-mail e a senha da conta vinculada ao seu casamento." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
-    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); rememberAccountEmail(event.target.value) }} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p><p className="signup-login-link">Querem conhecer o painel? <a href="/painel/demo">Abrir demonstração sem cadastro</a></p></form>
+    <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); rememberAccountEmail(event.target.value) }} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}<button className="button-primary" type="submit" disabled={busy || stage === 'checking' || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p></form>
   </SuperAdminAccessFrame>
 
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
@@ -3205,120 +3030,8 @@ function InvitationShare({ share, onClose, notify }) {
   return <section className="role-card invitation-share-card"><div><span className="eyebrow">LINK INDIVIDUAL GERADO</span><h2>{share.name}</h2><p>Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela.</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions"><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><a className="button-outline" href={individualWhatsAppUrl} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enviar pelo WhatsApp</a><button className="button-outline" onClick={onClose}>Fechar</button></div></div>{qr && <img src={qr} alt={`QR code do convite individual de ${share.name}`} />}</section>
 }
 
-function Dashboard({ theme, setTheme, page, setPage, notify, demo = false }) {
-  const [guestFilter, setGuestFilter] = useState('Todos')
-  const [query, setQuery] = useState('')
-  const [enabledSections, setEnabledSections] = useState(['Nossa história', 'Eventos', 'Lista de presentes', 'Galeria de fotos', 'Mural de recados'])
-
-  const pageTitle = NAV_ITEMS.find((item) => item.id === page)?.label || 'Visão geral'
-
-  function toggleSection(name) {
-    setEnabledSections((current) => current.includes(name) ? current.filter((item) => item !== name) : [...current, name])
-  }
-
-  return (
-    <div className="dashboard-layout">
-      <aside className="dashboard-sidebar">
-        <div className="dash-brand"><span className="dash-monogram">e<span>&</span>t</span><div><strong>Elisa & Tomás</strong><small>Casal demonstrativo</small></div></div>
-        <div className="sidebar-label">SEU CASAMENTO</div>
-        <nav className="dashboard-nav">{NAV_ITEMS.map((item) => { const Icon = item.icon; return <button key={item.id} className={page === item.id ? 'active' : ''} onClick={() => setPage(item.id)}><Icon size={17} /><span>{item.label}</span></button> })}</nav>
-        <div className="sidebar-bottom"><a className="help-card" href="/ajuda"><span><CircleHelp size={17} /></span><div><strong>Precisa de ajuda?</strong><small>Estamos por aqui.</small></div><ChevronRight size={15} /></a><button className="sidebar-profile" onClick={() => notify('Perfil de demonstração')}><span className="profile-avatar">ET</span><span><strong>Elisa e Tomás</strong><small>Conta de demonstração</small></span><ChevronDown size={15} /></button></div>
-      </aside>
-
-      <div className="dashboard-main">
-        <header className="dashboard-topbar"><div className="dash-breadcrumb"><span>Meu espaço</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div><div className="dash-top-actions"><span className="save-state"><span /> Prévia local</span><button className="icon-button" aria-label="Notificações" onClick={() => notify('Nenhuma notificação de demonstração')}><Bell size={18} /><i /></button><button className="preview-site-button" onClick={() => demo ? window.location.assign('/cadastro') : notify('A prévia pública está na aba Site do casal')}>{demo ? 'Criar acesso' : 'Ver meu site'} <ExternalLink size={14} /></button></div></header>
-        <div className="dashboard-content">
-          {demo && <aside className="dashboard-demo-notice"><span><Eye size={17} /> Demonstração do painel</span><p>Explore os menus e teste os controles com dados fictícios. Para criar o convite, crie seu acesso, confirme o e-mail e personalize dentro do painel.</p><a href="/cadastro">Criar acesso <ArrowRight size={14} /></a></aside>}
-          <div className="dash-page-head"><div><span className="eyebrow">ÁREA DOS NOIVOS · DEMONSTRAÇÃO</span><h1>{page === 'overview' ? 'Um espaço para organizar tudo.' : pageTitle}</h1><p>{pageSubtitle(page)}</p></div><button aria-label="Mais opções da demonstração" className="more-button" onClick={() => notify('Ações de demonstração')}><span>•••</span></button></div>
-          {page === 'overview' && <Overview setPage={setPage} notify={notify} />}
-          {page === 'site' && <SiteSettings setPage={setPage} notify={notify} />}
-          {page === 'guests' && <GuestManager guestFilter={guestFilter} setGuestFilter={setGuestFilter} query={query} setQuery={setQuery} notify={notify} />}
-          {page === 'invites' && <InviteManager notify={notify} />}
-          {page === 'gifts' && <GiftManager notify={notify} />}
-          {page === 'customize' && <Customize theme={theme} setTheme={setTheme} enabledSections={enabledSections} toggleSection={toggleSection} notify={notify} />}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function pageSubtitle(page) {
-  const subtitles = {
-    overview: 'Acompanhe os preparativos e veja o que já está pronto.',
-    site: 'As informações que seus convidados encontram no site.',
-    guests: 'Convites, respostas e grupos reunidos em um só lugar.',
-    invites: 'Compartilhe seu convite por link curto, endereço ou QR code.',
-    gifts: 'Organize presentes por Pix direto aos noivos ou links de lojas externas.',
-    customize: 'Escolha um tema e ajuste apenas o que faz sentido para vocês.',
-  }
-  return subtitles[page]
-}
-
-function Overview({ setPage, notify }) {
-  return <>
-    <div className="welcome-card"><div className="welcome-copy"><span className="eyebrow">18 DE SETEMBRO DE 2027 · PARATY, RJ</span><h2>O próximo capítulo<br />começa a ganhar forma.</h2><p>Seu site está em uma prévia de demonstração, com exemplos de conteúdo.</p><div className="welcome-actions"><button className="button-primary" onClick={() => setPage('customize')}>Personalizar site <ArrowRight size={15} /></button><button className="welcome-link" onClick={() => setPage('invites')}>Ver convite <ExternalLink size={14} /></button></div></div><div className="welcome-art"><img src="/images/wedding-pexels.webp" alt="Imagem de capa de demonstração" /><span>e<span>&</span>t</span></div><div className="welcome-bottom"><span><span className="status-dot" /> SITE DE DEMONSTRAÇÃO</span><button onClick={() => notify('O domínio será definido pelo dono do projeto')}>Endereço a definir <ArrowRight size={14} /></button></div></div>
-    <div className="stats-grid"><Stat icon={Users} label="Convidados" value="128" note="exemplos cadastrados" tint="sage" /><Stat icon={Check} label="Confirmações" value="86" note="respostas de demonstração" tint="sand" /><Stat icon={Gift} label="Presentes" value="3 itens" note="exemplo de lista" tint="rose" /></div>
-    <div className="overview-grid"><section className="dash-card checklist-card"><div className="card-heading"><div><span className="eyebrow">PRÓXIMOS PASSOS</span><h3>Seu planejamento</h3></div><button className="round-arrow" onClick={() => notify('Lista de planejamento de demonstração')}><ArrowRight size={16} /></button></div><div className="progress-summary"><div><strong>3 de 6</strong><span>etapas iniciadas</span></div><div className="progress-track"><span style={{ width: '52%' }} /></div></div><div className="checklist-row done"><span className="check-circle"><Check size={13} /></span><span><strong>Definir data e local</strong><small>Informações de demonstração</small></span><ChevronRight size={15} /></div><div className="checklist-row done"><span className="check-circle"><Check size={13} /></span><span><strong>Montar a lista de convidados</strong><small>128 nomes de demonstração</small></span><ChevronRight size={15} /></div><div className="checklist-row"><span className="check-circle" /><span><strong>Escolher o visual do site</strong><small>Compare os oito temas</small></span><button onClick={() => setPage('customize')}>Escolher</button></div><div className="checklist-row"><span className="check-circle" /><span><strong>Enviar convites</strong><small>O domínio ainda será definido</small></span><button onClick={() => setPage('invites')}>Preparar</button></div><button className="all-checklist" onClick={() => notify('Lista demonstrativa')}>Ver planejamento completo <ArrowRight size={14} /></button></section>
-      <section className="dash-card response-card"><div className="card-heading"><div><span className="eyebrow">CONVIDADOS</span><h3>Respostas recentes</h3></div><button className="text-arrow" onClick={() => setPage('guests')}>Ver todos <ArrowRight size={14} /></button></div><div className="response-visual"><div className="donut-chart"><div><strong>67%</strong><small>confirmados</small></div></div><div className="response-legend"><span><i className="legend-confirmed" /> Confirmaram <b>86</b></span><span><i className="legend-waiting" /> Aguardando <b>32</b></span><span><i className="legend-declined" /> Não poderão ir <b>10</b></span></div></div><div className="response-footer"><span>Dados ilustrativos para o mockup</span><button onClick={() => setPage('guests')}>Abrir lista <ArrowRight size={13} /></button></div></section></div>
-  </>
-}
-
-function Stat({ icon: Icon, label, value, note, tint }) {
-  return <article className="stat-card"><span className={`stat-icon ${tint}`}><Icon size={17} /></span><div><span className="stat-label">{label}</span><strong>{value}</strong><small>{note}</small></div><span className="stat-arrow"><ArrowRight size={14} /></span></article>
-}
-
-function SiteSettings({ setPage, notify }) {
-  const sections = ['Nossa história', 'Cerimônia e recepção', 'Cronograma', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas']
-  return <div className="site-settings-grid"><section className="dash-card settings-card"><div className="card-heading"><div><span className="eyebrow">CONTEÚDO DO SITE</span><h3>Suas informações principais</h3></div><button className="text-arrow" onClick={() => notify('Campos editáveis serão definidos na implementação')}>Editar <ArrowRight size={14} /></button></div><div className="site-info-row"><span className="site-info-icon"><CalendarDays size={16} /></span><div><small>Data do casamento</small><strong>18 de setembro de 2027</strong></div><span className="info-status">Preenchido</span></div><div className="site-info-row"><span className="site-info-icon"><MapPin size={16} /></span><div><small>Local da celebração</small><strong>Paraty, Rio de Janeiro</strong></div><span className="info-status">Preenchido</span></div><div className="site-info-row"><span className="site-info-icon"><Heart size={16} /></span><div><small>História do casal</small><strong>Uma história de encontros</strong></div><span className="info-status">Prévia</span></div><div className="site-info-row"><span className="site-info-icon"><LanguagesIcon /></span><div><small>Idiomas</small><strong>Português (Brasil)</strong></div><span className="info-status info-pending">A confirmar</span></div><button className="settings-full-button" onClick={() => notify('Edição de conteúdo não conectada neste mockup')}>Revisar conteúdo <ArrowRight size={14} /></button></section><section className="dash-card site-preview-card"><div className="card-heading"><div><span className="eyebrow">PRÉ-VISUALIZAÇÃO</span><h3>Como seus convidados veem</h3></div><button className="round-arrow" onClick={() => notify('Use a aba Site do casal para ver o mockup completo')}><ExternalLink size={15} /></button></div><div className="mini-site"><img src="/images/wedding-pexels.webp" alt="Capa do site de demonstração" /><div><span className="mini-script">Elisa & Tomás</span><span className="mini-date">18 · 09 · 2027</span></div></div><div className="preview-meta"><span><span className="status-dot" /> Conteúdo demonstrativo</span><button onClick={() => setPage('customize')}>Editar visual <Paintbrush size={14} /></button></div></section><section className="dash-card section-list-card"><div className="card-heading"><div><span className="eyebrow">SEÇÕES PUBLICADAS</span><h3>O que aparece no seu site</h3></div><button className="text-arrow" onClick={() => setPage('customize')}>Organizar <ArrowRight size={14} /></button></div><div className="section-chips">{sections.map((section, index) => <span key={section}><b>{String(index + 1).padStart(2, '0')}</b>{section}<Check size={14} /></span>)}</div></section></div>
-}
-
-function LanguagesIcon() {
-  return <span className="language-symbol">文</span>
-}
-
-function GuestManager({ guestFilter, setGuestFilter, query, setQuery, notify }) {
-  const filtered = GUEST_ROWS.filter((guest) => (guestFilter === 'Todos' || guest.status === guestFilter) && guest.name.toLowerCase().includes(query.toLowerCase()))
-  return <div className="dash-card guests-card"><div className="guests-toolbar"><div className="guest-filters">{['Todos', 'Confirmado', 'Aguardando', 'Não poderá ir'].map((filter) => <button key={filter} className={guestFilter === filter ? 'active' : ''} onClick={() => setGuestFilter(filter)}>{filter}<span>{filter === 'Todos' ? '128' : filter === 'Confirmado' ? '86' : filter === 'Aguardando' ? '32' : '10'}</span></button>)}</div><div className="guest-actions"><label className="search-field"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar convidado" /></label><button className="button-outline" onClick={() => notify('Importação CSV será implementada na fase do painel')}><span>Importar CSV</span></button><button className="button-primary" onClick={() => notify('Cadastro de demonstração')}>+ Adicionar</button></div></div><div className="guest-table-wrap"><table className="guest-table"><thead><tr><th>CONVIDADO</th><th>GRUPO</th><th>ACOMPANHANTES</th><th>RESPOSTA</th><th></th></tr></thead><tbody>{filtered.length ? filtered.map((guest, index) => <tr key={guest.name}><td><span className={`guest-avatar guest-avatar-${index % 4}`}>{guest.name.charAt(0)}</span><strong>{guest.name}</strong></td><td>{guest.group}</td><td>{guest.people}</td><td><span className={`status-pill ${guest.status === 'Confirmado' ? 'confirmed' : guest.status === 'Aguardando' ? 'waiting' : 'declined'}`}><i />{guest.status}</span></td><td><button className="row-more" onClick={() => notify(`Convidado demonstrativo: ${guest.name}`)}>•••</button></td></tr>) : <tr><td colSpan="5" className="empty-state">Nenhum nome encontrado nesta demonstração.</td></tr>}</tbody></table></div><div className="table-footer"><span>Mostrando {filtered.length} de 128 convidados demonstrativos</span><div><button disabled>Anterior</button><button className="page-number">1</button><button>2</button><button>3</button><button>Próxima <ArrowRight size={13} /></button></div></div><div className="privacy-note"><CircleHelp size={15} /> Informações de convidados ficam visíveis apenas aos noivos de cada casamento.</div></div>
-}
-
-function InviteManager({ notify }) {
-  return <div className="invite-layout"><section className="dash-card invite-main-card"><div className="card-heading"><div><span className="eyebrow">COMPARTILHE COM CARINHO</span><h3>Seu convite, do seu jeito</h3></div><span className="invite-status"><span /> Prévia</span></div><p className="invite-explainer">Os três caminhos de acesso previstos para seus convidados. O endereço final depende do domínio da plataforma.</p><div className="invite-link-card"><span className="invite-icon"><Link size={18} /></span><div><small>LINK CURTO DO CASAMENTO</small><strong>link.a-definir/elisa-tomas</strong><span>Endereço ilustrativo · domínio a definir</span></div><button onClick={() => notify('Link ilustrativo copiado para a demonstração')}><Copy size={15} /> Copiar</button></div><div className="invite-link-card"><span className="invite-icon"><House size={18} /></span><div><small>SUBDOMÍNIO DOS NOIVOS</small><strong>elisa-tomas.dominio-a-definir</strong><span>O domínio base será escolhido antes da implementação.</span></div><button className="text-only-button" onClick={() => notify('Domínio pendente de definição')}>Configurar <ArrowRight size={14} /></button></div><div className="invite-link-card"><span className="invite-icon"><Users size={18} /></span><div><small>LINK INDIVIDUAL OU POR GRUPO</small><strong>Convite com acesso controlado</strong><span>Link assinado, com expiração configurável.</span></div><button className="text-only-button" onClick={() => notify('Links individuais previstos na fase inicial')}>Ver opções <ArrowRight size={14} /></button></div><div className="invite-note"><CircleHelp size={15} /> Os links aqui são exemplos visuais, não podem ser usados para acessar um convite real.</div></section><section className="dash-card qr-card"><div className="card-heading"><div><span className="eyebrow">PRONTO PARA IMPRIMIR</span><h3>QR code do convite</h3></div><QrCode size={19} className="qr-heading-icon" /></div><div className="large-qr-placeholder"><span className="qr-corner qr-corner-one" /><span className="qr-corner qr-corner-two" /><span className="qr-corner qr-corner-three" /><div className="qr-pattern">{Array.from({ length: 49 }, (_, index) => <i key={index} className={(index * 7 + index % 3) % 5 === 0 ? 'blank' : ''} />)}</div><span className="qr-center">e<span>&</span>t</span></div><p>Prévia ilustrativa<br />Link ainda não configurado</p><button className="button-outline" onClick={() => notify('O QR real será gerado no produto final')}>Baixar QR code <ArrowDown size={14} /></button></section></div>
-}
-
-function GiftManager({ notify }) {
-  return <><div className="gift-summary-grid"><Stat icon={Gift} label="Itens na lista" value="3" note="exemplo de organização" tint="rose" /><Stat icon={Wallet} label="Pix" value="Direto" note="transferido ao casal" tint="sand" /><Stat icon={Users} label="Compras" value="Na loja" note="fora da plataforma" tint="sage" /></div><div className="gift-admin-grid"><section className="dash-card admin-gift-list"><div className="card-heading"><div><span className="eyebrow">LISTA DE PRESENTES</span><h3>Ideias para presentear</h3></div><button className="button-primary" onClick={() => notify('Entre no painel do casal para adicionar presentes')}>+ Novo presente</button></div><div className="gift-admin-rows">{GIFT_ROWS.map((gift) => <div className="gift-admin-row" key={gift.title}><span className="gift-row-icon"><Gift size={18} /></span><div className="gift-row-copy"><strong>{gift.title}</strong><small>{gift.type} · {gift.description}</small></div><span className="future-tag">Exemplo</span></div>)}</div></section><section className="dash-card payment-method-card"><span className="eyebrow">COMO OS PRESENTES FUNCIONAM</span><h3>O casal decide como quer receber.</h3><p>Esta lista de exemplo mostra duas opções que podem ser configuradas pelo casal.</p><div className="method-row"><span className="payment-method-icon"><Wallet size={17} /></span><div><strong>Pix direto aos noivos</strong><small>O convidado copia a chave e transfere pelo banco.</small></div></div><div className="method-row"><span className="payment-method-icon pix">↗</span><div><strong>Presente físico</strong><small>Link para comprar na loja e combinar a entrega.</small></div></div><div className="fee-note"><CircleHelp size={14} /> A plataforma não recebe nem acompanha pagamentos ou compras.</div><button className="button-outline full-width" onClick={() => notify('Configure a chave Pix e os itens na aba Presentes do casamento')}>Configurar presentes</button></section></div></>
-}
-
-function Customize({ theme, setTheme, enabledSections, toggleSection, notify }) {
-  const sectionNames = ['Nossa história', 'Linha do tempo', 'Eventos', 'Cronograma', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados', 'Hospedagem e dicas', 'Perguntas frequentes', 'Playlist', 'Vídeo', 'Contato']
-  const layouts = [{ id: 'full', label: 'Foto em destaque' }, { id: 'split', label: 'Foto ao lado' }, { id: 'arch', label: 'Foto em moldura' }]
-  const [device, setDevice] = useState('desktop')
-  const [coverLayout, setCoverLayout] = useState('full')
-  const [paletteIndex, setPaletteIndex] = useState(0)
-  const selectTheme = (themeId) => { setTheme(themeId); setPaletteIndex(0); setCoverLayout(THEME_PRESETS[themeId]?.coverLayout || 'full') }
-  const [animationPreset, setAnimationPreset] = useState('Elegante')
-  const palette = THEMES.find((item) => item.id === theme)?.colors || THEMES[0].colors
-  const languageCopy = { date: '18 · 09 · 2027', message: 'Com alegria, convidamos você.', button: 'Descobrir o convite' }
-  const palettes = [
-    [palette[0], palette[1], palette[2]],
-    [palette[0], '#d2b994', '#fbf8f1'],
-    [palette[0], '#bf8b67', '#f6ece2'],
-    [palette[0], '#d08e91', '#f5ebec'],
-    [palette[0], '#9d9c70', '#f1efe3'],
-    [palette[0], '#d7b862', '#faf5dd'],
-  ]
-  const selectedPalette = palettes[paletteIndex]
-
-  return <div className="customize-layout"><div className="customize-controls">
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">1 · ESCOLHA UMA BASE</span><h3>Temas curados</h3></div><span className="step-counter">8 opções</span></div><p>Comece por uma direção visual. O conteúdo permanece ao trocar de tema.</p><ThemePicker theme={theme} setTheme={selectTheme} compact /><div className="palette-picker"><div className="palette-heading"><strong>Paletas deste tema</strong><small>Combinações com contraste previsto</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button className={paletteIndex === index ? 'active' : ''} key={index} onClick={() => setPaletteIndex(index)} aria-label={`Paleta ${PALETTE_NAMES[index]}`}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div></div><label className="font-pair-label">Par de fontes<select defaultValue="Clássico editorial"><option>Clássico editorial</option><option>Romântico leve</option><option>Moderno sem serifa</option><option>Elegante de alto contraste</option><option>Contemporâneo humanista</option><option>Floral delicado</option><option>Minimalista geométrico</option><option>Rústico acolhedor</option></select></label></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">2 · PERSONALIZE A CAPA</span><h3>Escolha uma das três composições</h3></div><span className="step-counter">3 opções</span></div><div className="cover-layout-grid">{layouts.map((layout) => <button key={layout.id} className={coverLayout === layout.id ? 'active' : ''} onClick={() => setCoverLayout(layout.id)}><span className={`layout-thumb layout-thumb-${layout.id}`}><i /><b /><em /></span><small>{layout.label}</small></button>)}</div><div className="focal-note"><CircleHelp size={13} /> Ponto focal e recorte podem ser ajustados separadamente para celular e desktop.</div></section>
-    <section className="dash-card customize-card"><div className="card-heading"><div><span className="eyebrow">3 · ORGANIZE O CONTEÚDO</span><h3>Biblioteca de seções</h3></div><span className="section-count">{enabledSections.length} ativas</span></div><p>Ative ou desligue blocos. Variações e ordem podem ser refinadas depois.</p><div className="toggle-list">{sectionNames.map((name, index) => <div className="toggle-row" key={name}><span className="drag-handle">⠿</span><span className="toggle-index">{String(index + 1).padStart(2, '0')}</span><span className="toggle-name">{name}</span><button className={`toggle-switch ${enabledSections.includes(name) ? 'on' : ''}`} aria-label={`${enabledSections.includes(name) ? 'Desativar' : 'Ativar'} ${name}`} onClick={() => toggleSection(name)}><i /></button></div>)}</div><div className="section-limit-note">Até 6 blocos de conteúdo livre, além das seções prontas.</div></section>
-    <section className="dash-card customize-card animation-card"><div className="card-heading"><div><span className="eyebrow">4 · MOVIMENTO</span><h3>Preset de animação</h3></div><Sparkles size={17} /></div><div className="segmented-control">{['Suave', 'Elegante', 'Festivo', 'Nenhum'].map((preset) => <button key={preset} className={animationPreset === preset ? 'selected' : ''} onClick={() => setAnimationPreset(preset)}>{preset}</button>)}</div><small>Respeita a preferência de movimento e economia de dados do dispositivo.</small></section><button className="button-primary save-customize" onClick={() => notify('Preferências demonstrativas selecionadas')}>Salvar rascunho <Check size={15} /></button>
-  </div><div className="customize-preview" style={{ '--forest': selectedPalette[0], '--accent': selectedPalette[1], '--paper': selectedPalette[2], '--font-heading': SITE_FONT_PAIRS[THEME_PRESETS[theme]?.fontPair]?.[0] || SITE_FONT_PAIRS['Clássico editorial'][0], '--font-body': SITE_FONT_PAIRS[THEME_PRESETS[theme]?.fontPair]?.[1] || SITE_FONT_PAIRS['Clássico editorial'][1] }}><div className="preview-sticky-label"><span><span className="status-dot" /> PRÉVIA AO VIVO</span><div className="preview-device-switch"><button className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div><span className="preview-language">Português (Brasil)</span></div><div className={`browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>elisa-tomas.dominio-a-definir</div><ExternalLink size={12} /></div><div className={`browser-content cover-${coverLayout} cover-empty`}><div className="browser-overlay" /><span className="browser-date">{languageCopy.date}</span><strong>Elisa <i>&</i><br />Tomás</strong><small>{languageCopy.message}</small><button onClick={() => notify('A prévia visual não abre um endereço publicado')}>{languageCopy.button} <ArrowRight size={13} /></button></div><div className="browser-below"><span>um dia para celebrar</span><i>♡</i><span>nossa história</span></div></div><div className="preview-quality"><div><Check size={14} /><span><strong>Contraste do tema</strong><small>Combinação dentro da paleta curada</small></span></div><div><Check size={14} /><span><strong>Layout responsivo</strong><small>Prévia em {device === 'mobile' ? 'celular' : device === 'tablet' ? 'tablet' : 'desktop'}</small></span></div><button onClick={() => notify('Verificador de publicação demonstrativo')}>Verificador antes de publicar <ArrowRight size={13} /></button></div><div className="preview-notice"><CircleHelp size={15} /> A prévia mostra opções viáveis. Conteúdo e publicação ainda não estão conectados.</div></div></div>
-}
-
 function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, publicPage = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento', headerAction = null, compactIntro = false, style }) {
-  return <div className={`role-page ${className}`} style={style}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{secure || publicPage ? secureName : 'Elisa & Tomás'}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : publicPage ? 'AJUDA DA PLATAFORMA' : 'PRÉVIA INTERATIVA · DADOS FICTÍCIOS'}</span>{headerAction}</header><main className="role-main">{compactIntro && <h1 className="sr-only">{title}</h1>}{!compactIntro && <div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>}{children}{!secure && !publicPage && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure || publicPage ? secureFooter : 'e&t · celebração em 18.09.2027'}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+  return <div className={`role-page ${className}`} style={style}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{secure || publicPage ? secureName : PRODUCT_NAME}</strong></a><span className="role-preview"><i /> {secure ? 'ACESSO CONTROLADO' : publicPage ? 'AJUDA DA PLATAFORMA' : 'INFORMAÇÕES DA PLATAFORMA'}</span>{headerAction}</header><main className="role-main">{compactIntro && <h1 className="sr-only">{title}</h1>}{!compactIntro && <div className="role-intro"><span className="role-icon"><Icon size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>}{children}{!secure && !publicPage && <div className="role-demo-note"><LockKeyhole size={15} /> Protótipo com dados locais. O controle de acesso real será validado no servidor antes de uso com dados de convidados.</div>}</main><footer className="role-footer"><span>{secure || publicPage ? secureFooter : PRODUCT_NAME}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
 function TeamInvitationAcceptance() {
@@ -3584,7 +3297,7 @@ function AttendanceRequestPortal({ notify }) {
     let active = true
     if (!requestToken) {
       setLoading(false)
-      setError('Abra o link seguro que apareceu após enviar a solicitação.')
+      setError('')
       return undefined
     }
     fetch('/api/public/attendance-requests/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestToken }) })
@@ -3630,7 +3343,8 @@ function AttendanceRequestPortal({ notify }) {
 
   const request = data?.request
   const reviewLabel = request?.reviewStatus === 'pending' ? 'Aguardando análise dos noivos' : request?.reviewStatus === 'rejected' ? 'Resposta não aprovada' : 'Resposta registrada'
-  return <RoleFrame icon={QrCode} eyebrow="ACOMPANHAMENTO DO CONVITE" title={loading ? 'Abrindo solicitação.' : request ? `Olá, ${request.name}.` : 'Solicitação de presença.'} description={loading ? 'Consultando o andamento.' : request ? `${request.partnerOneName} e ${request.partnerTwoName} · ${request.eventName}` : error} secure secureName="Acompanhamento da presença" secureFooter="Link individual e privado">
+  return <RoleFrame icon={QrCode} eyebrow="ACOMPANHAMENTO DO CONVITE" title={loading ? 'Abrindo solicitação.' : request ? `Olá, ${request.name}.` : 'Acompanhe sua solicitação.'} description={loading ? 'Consultando o andamento.' : request ? `${request.partnerOneName} e ${request.partnerTwoName} · ${request.eventName}` : requestToken ? error : 'Use o link seguro recebido após enviar sua resposta.'} secure secureName="Acompanhamento da presença" secureFooter="Link individual e privado">
+    {!loading && !request && !requestToken && <section className="role-card attendance-request-empty"><span className="eyebrow">LINK INDIVIDUAL</span><h2>Abra o link que apareceu após o envio.</h2><p>Esse endereço mostra a análise dos noivos e os QR codes liberados para o convite. Volte à conversa em que você enviou sua resposta e abra o link completo.</p><a className="button-outline" href="/">Voltar ao início <ArrowLeft size={15} /></a></section>}
     {request && <section className="role-card attendance-request-card"><span className={`admin-state ${request.reviewStatus === 'approved' ? 'admin-state-active' : ''}`}>{reviewLabel}</span><p>Resposta: {request.attendanceStatus === 'confirmed' ? 'Vou comparecer' : 'Não poderei comparecer'}.</p>{request.reviewStatus === 'pending' && <p>Os noivos ainda estão analisando esta resposta.</p>}{request.reviewStatus === 'rejected' && <p>Fale diretamente com os noivos se precisar revisar esta resposta.</p>}{data.companions.length > 0 && <div className="attendance-request-companions"><strong>Acompanhantes solicitados</strong>{data.companions.map((item) => <span key={item.id}>{item.name || 'Nome ainda não informado'} · {item.status === 'pending' ? 'Aguardando análise' : item.status === 'approved' ? 'Aprovado' : 'Não aprovado'}</span>)}</div>}{request.reviewStatus === 'approved' && request.attendanceStatus === 'confirmed' && <button type="button" className="button-outline" disabled={busy} onClick={recoverCredentials}>{busy ? 'Carregando…' : 'Atualizar QR individual'} <QrCode size={15} /></button>}</section>}
     {credentials.map((item) => <CredentialCard key={item.guestId} credential={item} />)}
     {error && !loading && <p className="admin-form-error" role="alert">{error}</p>}
@@ -3824,7 +3538,7 @@ function GuestPortal({ notify, setView }) {
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${coverComposition ? ` public-wedding-cover-composition-${coverComposition}` : ''}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`} style={guestCoverStyle}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} poster={activeCoverUrl || undefined} autoPlay={autoplayCoverVideo} controls={!autoplayCoverVideo} muted loop playsInline aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt={imageAltText(invitation.siteConfig, activeCoverId, "Foto do casal no convite")} /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions"><button type="button" className="button-primary guest-action-main" onClick={() => setSiteOpen(true)}><span>Abrir site do casamento</span><ArrowRight size={16} /></button>{showRsvp && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }} aria-label="Confirmar presença neste casamento"><span>Confirmar presença</span></button>}{showGifts && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusGifts(giftDisplayMode === 'inline'); setGuestPage(giftDisplayMode === 'page' ? 'gifts' : ''); setSiteOpen(true) }}><span>{giftDisplayMode === 'page' ? 'Ver lista de presentes' : 'Lista de presentes'}</span> <Gift size={15} /></button>}{showPix && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusPix(pixDisplayMode === 'inline'); setGuestPage(pixDisplayMode === 'page' ? 'pix' : ''); setSiteOpen(true) }}><span>{pixDisplayMode === 'page' ? 'Presentear via Pix' : 'Contribuir via Pix'}</span> <Wallet size={15} /></button>}</div></section>
+      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${coverComposition ? ` public-wedding-cover-composition-${coverComposition}` : ''}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`} style={guestCoverStyle}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} poster={activeCoverUrl || undefined} autoPlay={autoplayCoverVideo} controls={!autoplayCoverVideo} muted loop playsInline aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt={imageAltText(invitation.siteConfig, activeCoverId, "Foto do casal no convite")} /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions">{showRsvp && <button type="button" className="button-primary guest-action-main" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}><span>Confirmar presença</span><Check size={16} /></button>}<button type="button" className="button-outline guest-action-secondary guest-action-details" onClick={() => setSiteOpen(true)}><span>Ver detalhes do casamento</span><ArrowRight size={16} /></button>{showGifts && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusGifts(giftDisplayMode === 'inline'); setGuestPage(giftDisplayMode === 'page' ? 'gifts' : ''); setSiteOpen(true) }}><span>{giftDisplayMode === 'page' ? 'Ver lista de presentes' : 'Lista de presentes'}</span> <Gift size={15} /></button>}{showPix && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusPix(pixDisplayMode === 'inline'); setGuestPage(pixDisplayMode === 'page' ? 'pix' : ''); setSiteOpen(true) }}><span>{pixDisplayMode === 'page' ? 'Presentear via Pix' : 'Contribuir via Pix'}</span> <Wallet size={15} /></button>}</div></section>
       <InvitationWallet token={token} wallets={invitation.wallets} guestName={invitation.guest.name} />
       {siteOpen && <div className="guest-full-site-heading"><div><span className="eyebrow">SITE DO CASAMENTO</span><h2>{guestPage === 'gifts' ? 'Lista de presentes' : guestPage === 'pix' ? 'Presentear via Pix' : 'Informações para celebrar com vocês'}</h2></div><button type="button" className="button-outline" onClick={() => { if (guestPage) { setGuestPage(''); return } setSiteOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{guestPage ? 'Voltar ao site' : 'Voltar ao convite'}</button></div>}
       {siteOpen && guestPage && <section className="guest-invitation-content guest-invitation-subpage">{guestPage === 'gifts' ? <WeddingGiftsSection gifts={publicGifts} presentation={invitation.siteConfig.giftPresentation || {}} mediaUrl={(id) => invitationMedia[id] || ''} imageAltTexts={invitation.siteConfig.imageAltTexts} /> : <WeddingPixSection pix={invitation.siteConfig.pix} onCopy={copyPixKey} />}</section>}
@@ -4184,7 +3898,7 @@ function GodparentPortal({ notify }) {
     }
   }
 
-  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS PADRINHOS" title="Sua participação faz parte da história." description="Esta área individual mostra apenas tarefas atribuídas ao seu convite. A lista de convidados não está disponível neste perfil." secure secureName="Área dos padrinhos" secureFooter="Acesso individual">
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS PADRINHOS" title="Sua participação faz parte da história." description="Esta área individual mostra apenas tarefas atribuídas ao seu convite. A lista de convidados não está disponível neste perfil." className="godparent-portal" secure secureName="Área dos padrinhos" secureFooter="Acesso individual">
     {loading && <section className="role-card"><p>Carregando suas orientações…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {!loading && !error && <section className="role-card task-card"><div className="role-card-heading"><div><span className="eyebrow">SUAS ORIENTAÇÕES</span><h2>Combinados importantes</h2></div><span className="task-count">{tasks.filter((task) => task.status === 'done').length}/{tasks.length} concluídos</span></div>{tasks.length ? <div className="task-list">{tasks.map((task) => <button className={`task-row ${task.status === 'done' ? 'done' : ''}`} key={task.id} disabled={busyTask === task.id} onClick={() => toggleTask(task)}><span className="task-check"><Check size={14} /></span><span><strong>{task.title}</strong><small>{task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo definido'}{task.details ? ` · ${task.details}` : ''}</small></span><ChevronRight size={15} /></button>)}</div> : <p className="buffet-empty">Os noivos ainda não enviaram tarefas para você.</p>}<p className="godparent-privacy"><LockKeyhole size={14} /> Área individual. Nenhum dado ou lista de convidados é exibido.</p></section>}
@@ -4993,44 +4707,4 @@ function SuperAdminWorkspace({ notify, promptAction, account, onLogout }) {
   </main><footer className="role-footer"><span>Administração da plataforma</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function CheckIn({ notify }) {
-  const [checkedIn, setCheckedIn] = useState(false)
-  const [walkIns, setWalkIns] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('wedding-walk-ins') || '[]') } catch { return [] }
-  })
-  const [name, setName] = useState('')
-  const [partySize, setPartySize] = useState('1')
-  const [dietary, setDietary] = useState('')
-
-  useEffect(() => { localStorage.setItem('wedding-walk-ins', JSON.stringify(walkIns)) }, [walkIns])
-
-  const addWalkIn = (event) => {
-    event.preventDefault()
-    const cleanName = name.trim()
-    const count = Number(partySize)
-    if (!cleanName || !Number.isInteger(count) || count < 1) return
-    setWalkIns((current) => [{ id: crypto.randomUUID(), name: cleanName, partySize: count, dietary: dietary.trim(), createdAt: new Date().toISOString() }, ...current])
-    setName('')
-    setPartySize('1')
-    setDietary('')
-    notify('Entrada manual registrada e incluída na lista do buffet')
-  }
-
-  const exportBuffetList = () => {
-    const rows = [['Nome do convidado', 'Pessoas', 'Restrição alimentar'], ...walkIns.map((guest) => [guest.name, guest.partySize, guest.dietary || 'Nenhuma informada'])]
-    const csv = rows.map((row) => row.map(csvCell).join(';')).join('\n')
-    const url = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'lista-do-buffet.csv'
-    link.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    notify('Lista do buffet exportada')
-  }
-
-  const buffetCount = walkIns.reduce((total, guest) => total + guest.partySize, 0)
-  return <div className="checkin-page"><div className="checkin-top"><a href="#entrada" className="checkin-brand"><span>e<span>&</span>t</span><div><strong>Entrada do evento</strong><small>Elisa & Tomás · demonstração local</small></div></a><span className="checkin-demo-tag">PRÉVIA INTERATIVA</span></div><div className="checkin-content"><div className="checkin-heading"><span className="eyebrow">MODO EQUIPE</span><h1>Uma chegada<br />tranquila começa aqui.</h1><p>Registre a entrada pelo convite ou inclua alguém que chegou de última hora. As entradas manuais compõem a lista do buffet.</p></div><div className="scanner-card"><div className="scanner-topline"><span><i /> LEITOR DE CONVITES</span><span>18 SET 2027</span></div><div className="scanner-view"><div className="scanner-frame"><i /><i /><i /><i /><span className="scanner-line" /><QrCode size={48} strokeWidth={1} /></div><span className="scanner-caption">Leitor de QR ilustrativo nesta prévia</span></div><div className="scanner-bottom"><span><span className="connection-indicator" /> Dados de demonstração salvos neste dispositivo</span><span>1.248 convites preparados</span></div></div><div className={`checkin-result ${checkedIn ? 'checked-in' : ''}`}><span className="guest-avatar guest-avatar-1">A</span><div><span className="eyebrow">CONVIDADA DE EXEMPLO</span><strong>Ana Beatriz Costa</strong><small>Convite para 2 pessoas · Família da noiva</small></div><span className={`status-pill ${checkedIn ? 'confirmed' : 'waiting'}`}><i />{checkedIn ? 'Entrada registrada' : 'Ainda não entrou'}</span></div><button className="button-primary checkin-action" onClick={() => { setCheckedIn(!checkedIn); notify(checkedIn ? 'Entrada de demonstração desfeita' : 'Entrada de demonstração registrada') }}>{checkedIn ? 'Desfazer entrada de exemplo' : 'Registrar entrada de exemplo'} <Check size={16} /></button>
-    <section className="walkin-card"><div className="walkin-heading"><div><span className="eyebrow">CONVIDADO DE ÚLTIMA HORA</span><h2>Adicionar entrada manual</h2></div><span className="walkin-count">{buffetCount} {buffetCount === 1 ? 'pessoa' : 'pessoas'} no buffet</span></div><form className="walkin-form" onSubmit={addWalkIn}><label>Nome do convidado<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Marina Oliveira" required /></label><label>Número de pessoas<input type="number" min="1" max="20" value={partySize} onChange={(event) => setPartySize(event.target.value)} required /></label><label className="walkin-dietary">Restrição alimentar ou observação<input value={dietary} onChange={(event) => setDietary(event.target.value)} placeholder="Opcional · ex.: vegetariano" /></label><button className="button-primary" type="submit">Registrar e incluir no buffet <Check size={15} /></button></form><div className="buffet-heading"><strong>Lista para o buffet</strong><button type="button" className="buffet-export" onClick={exportBuffetList} disabled={!walkIns.length}>Exportar CSV</button></div>{walkIns.length ? <div className="buffet-list">{walkIns.map((guest) => <div className="buffet-row" key={guest.id}><span className="guest-avatar">{guest.name.charAt(0).toUpperCase()}</span><div><strong>{guest.name}</strong><small>{guest.dietary || 'Sem observação alimentar'}</small></div><span>{guest.partySize} {guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>)}</div> : <p className="buffet-empty">As entradas manuais aparecerão aqui e serão somadas para o buffet.</p>}</section>
-    <div className="checkin-footnote"><CircleHelp size={15} /> A câmera, os convites e a sincronização com o banco ainda não estão conectados; esta prévia salva entradas localmente neste navegador.</div></div><footer className="checkin-footer"><span>e<span>&</span>t · ferramenta de entrada</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
-}
 export default App
