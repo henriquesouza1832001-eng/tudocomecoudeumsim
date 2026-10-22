@@ -8096,7 +8096,7 @@ img { display: block; max-width: 100%; }
   .public-wedding-page .public-wedding-gifts > .public-gift-grid { grid-template-columns: minmax(0, 1fr); }
   .public-wedding-page .public-wedding-gifts > .public-gift-grid > article { grid-template-columns: 80px minmax(0, 1fr); gap: 10px 14px; padding: 14px; }
   .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-photo,
-  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-monogram { width: 80px; grid-row: 1 / span 2; }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-monogram { width: 80px; grid-row: 1 / span 2; align-self: start; }
   .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > div:not(.public-gift-monogram) { grid-column: 2; grid-row: 1; }
   .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > a,
   .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > span { grid-column: 2; grid-row: 2; justify-self: start; align-self: end; }
