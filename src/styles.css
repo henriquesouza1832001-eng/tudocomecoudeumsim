@@ -8057,3 +8057,60 @@ img { display: block; max-width: 100%; }
 .help-center-links svg { flex: 0 0 auto; color: var(--forest); }
 .help-center-links a:hover, .help-center-links a:focus-visible { color: var(--forest); outline: 2px solid color-mix(in srgb, var(--forest) 26%, transparent); outline-offset: 2px; }
 .help-center-support > p { margin: 8px 0 12px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+.public-wedding-page { width: 100%; max-width: none; overflow-x: clip; }
+.public-wedding-page > .public-wedding-cover { width: 100%; max-width: none; margin-inline: 0; }
+.public-wedding-page.theme-garden .public-wedding-cover-composition-side .public-wedding-cover-media { margin: 0; }
+.public-cover-theme-garden .public-wedding-cover-ornament::before { background-size: 100% 100%; }
+.public-wedding-page .public-wedding-events > article { grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr); align-items: start; gap: 8px 28px; }
+.public-wedding-page .public-wedding-events > article > div:first-child { min-width: 0; }
+.public-wedding-page .public-wedding-events > article > p { justify-self: end; text-align: right; }
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; margin-top: 8px; }
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > strong,
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > span { grid-column: 1; }
+.public-wedding-page .public-wedding-events > article > .public-wedding-event-location > a { grid-column: 2; grid-row: 1 / span 2; justify-self: end; }
+.public-wedding-page .public-wedding-details { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px 32px; }
+.public-wedding-page .public-wedding-details article { min-width: 0; }
+.public-wedding-page .public-wedding-gifts { max-width: 1120px; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); align-items: stretch; gap: 16px; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article { min-width: 0; min-height: 160px; display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; align-items: center; gap: 10px 18px; padding: 20px; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-photo,
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-monogram { width: 112px; grid-column: 1; grid-row: 1 / span 2; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article > div:not(.public-gift-monogram) { min-width: 0; grid-column: 2; grid-row: 1 / -1; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article > a,
+.public-wedding-page .public-wedding-gifts > .public-gift-grid > article > span { grid-column: 3; grid-row: 1 / -1; justify-self: end; align-self: end; min-height: 44px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.public-wedding-page .public-wedding-gifts > .public-gift-grid h3 { overflow-wrap: break-word; }
+.guest-invitation-actions .guest-action-details { grid-column: auto; }
+.staff-checkin-portal .status-pill { min-height: 32px; padding: 6px 10px; gap: 7px; font-size: 13px; line-height: 1.3; white-space: nowrap; }
+.staff-checkin-portal .status-pill i { width: 7px; height: 7px; }
+.staff-checkin-portal .staff-guest-row { min-height: 72px; gap: 14px; }
+.staff-checkin-portal .staff-guest-row:not(.walkin-entry) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+.staff-checkin-portal .staff-guest-copy { gap: 3px; }
+.staff-checkin-portal .checkin-toggle { min-width: 150px; }
+
+@media (max-width: 760px) {
+  .public-wedding-page .public-wedding-events > article { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .public-wedding-page .public-wedding-events > article > p { justify-self: start; text-align: left; }
+  .public-wedding-page .public-wedding-events > article > .public-wedding-event-location { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .public-wedding-page .public-wedding-events > article > .public-wedding-event-location > a { grid-column: 1; grid-row: auto; justify-self: start; }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid { grid-template-columns: minmax(0, 1fr); }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article { grid-template-columns: 80px minmax(0, 1fr); gap: 10px 14px; padding: 14px; }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-photo,
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-monogram { width: 80px; grid-row: 1 / span 2; }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > div:not(.public-gift-monogram) { grid-column: 2; grid-row: 1; }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > a,
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > span { grid-column: 2; grid-row: 2; justify-self: start; align-self: end; }
+  .staff-checkin-portal .staff-guest-row:not(.walkin-entry) { grid-template-columns: minmax(0, 1fr) auto; }
+  .staff-checkin-portal .staff-guest-row:not(.walkin-entry) .checkin-toggle { grid-column: 1 / -1; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .staff-checkin-portal .role-stat-grid { grid-template-columns: minmax(0, 1fr); }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article { grid-template-columns: 64px minmax(0, 1fr); }
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-photo,
+  .public-wedding-page .public-wedding-gifts > .public-gift-grid > article > .public-gift-monogram { width: 64px; }
+  .guest-invitation-actions { grid-template-columns: minmax(0, 1fr); }
+  .guest-invitation-actions .guest-action-main { grid-column: 1; }
+  .staff-checkin-portal .staff-guest-row:not(.walkin-entry) { grid-template-columns: minmax(0, 1fr); }
+  .staff-checkin-portal .staff-guest-row:not(.walkin-entry) .status-pill { justify-self: start; }
+}
