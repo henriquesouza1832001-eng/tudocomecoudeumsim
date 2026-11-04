@@ -939,7 +939,7 @@ app.post('/api/auth/couple-signup', async (context) => {
       context.env.DB.prepare(`INSERT INTO accounts (id, email, password_hash, status)
         VALUES (?, ?, ?, 'pending')`).bind(accountId, email, passwordHash),
       context.env.DB.prepare(`INSERT INTO weddings (id, slug, owner_account_id, partner_one_name, partner_two_name, event_date, event_time, timezone, status, site_config_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, partnerOneName || null, partnerTwoName || null, eventDate, eventTime, JSON.stringify(siteConfig)),
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'America/Sao_Paulo', 'draft', ?)`).bind(weddingId, slug, accountId, partnerOneName, partnerTwoName, eventDate, eventTime, JSON.stringify(siteConfig)),
       context.env.DB.prepare(`INSERT INTO wedding_memberships (id, wedding_id, account_id, role, status)
         VALUES (?, ?, ?, 'couple_admin', 'pending')`).bind(membershipId, weddingId, accountId),
       context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)

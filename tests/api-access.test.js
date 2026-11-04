@@ -193,6 +193,42 @@ test('couple signup accepts a partial draft profile and rejects an invalid saved
   assert.deepEqual(await invalidDraft.response.json(), { error: 'invalid_signup_site_config' })
 })
 
+test('couple signup stores empty names when the optional names are omitted', async () => {
+  const originalFetch = globalThis.fetch
+  const inserted = []
+  globalThis.fetch = async (url) => String(url).includes('siteverify')
+    ? new Response(JSON.stringify({ success: true, action: 'account', hostname: new URL(base).hostname }), { status: 200 })
+    : new Response(JSON.stringify({ id: 'email-test-id' }), { status: 200 })
+  const env = {
+    DB: {
+      prepare(sql) {
+        let args = []
+        return {
+          sql,
+          get args() { return args },
+          bind(...values) { args = values; return this },
+          async run() { return { success: true, meta: { changes: 1 } } },
+        }
+      },
+      async batch(statements) { inserted.push(...statements.map(({ sql, args }) => ({ sql, args }))); return [] },
+    },
+    EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 'test-only', EMAIL_FROM: 'test@example.test', TURNSTILE_SECRET_KEY: 'test-only',
+  }
+  try {
+    const request = new Request(`${base}/api/auth/couple-signup`, {
+      method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'casal@example.test', password: 'a-strong-password-123', turnstileToken: 'test-token' }),
+    })
+    const response = await apiRequest({ request, env })
+    assert.equal(response.status, 201)
+    const weddingInsert = inserted.find(({ sql }) => sql.includes('INSERT INTO weddings'))
+    assert.equal(weddingInsert.args[3], '')
+    assert.equal(weddingInsert.args[4], '')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('guest and godparent endpoints reject requests without an individual invitation', async () => {
   const guest = await callApi('/api/invitation')
   const godparent = await callApi('/api/godparent/tasks')
