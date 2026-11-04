@@ -110,6 +110,33 @@ test('couple signup accepts account details without invitation names or a slug',
   assert.deepEqual(await response.json(), { error: 'email_service_unconfigured' })
 })
 
+test('couple signup only reports an unavailable email when the account email is duplicated', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, action: 'account', hostname: new URL(base).hostname }), { status: 200 })
+  const errors = [
+    { message: 'UNIQUE constraint failed: accounts.email', status: 409, code: 'email_unavailable' },
+    { message: 'UNIQUE constraint failed: weddings.slug', status: 500, code: 'signup_unavailable' },
+    { message: 'no such table: weddings', status: 500, code: 'signup_unavailable' },
+  ]
+  try {
+    for (const [index, expected] of errors.entries()) {
+      const env = {
+        DB: { prepare() { return { bind() { return this } } }, async batch() { throw new Error(expected.message) } },
+        EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 'test-only', EMAIL_FROM: 'test@example.test', TURNSTILE_SECRET_KEY: 'test-only',
+      }
+      const request = new Request(`${base}/api/auth/couple-signup`, {
+        method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: `casal${index}@example.test`, password: 'a-strong-password-123', turnstileToken: 'test-token' }),
+      })
+      const response = await apiRequest({ request, env })
+      assert.equal(response.status, expected.status)
+      assert.deepEqual(await response.json(), { error: expected.code })
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('couple signup rejects an invalid optional event time', async () => {
   const { response } = await callApi('/api/auth/couple-signup', {
     method: 'POST',

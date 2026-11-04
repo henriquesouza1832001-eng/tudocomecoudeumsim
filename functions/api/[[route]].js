@@ -918,8 +918,10 @@ app.post('/api/auth/couple-signup', async (context) => {
       context.env.DB.prepare(`INSERT INTO auth_challenges (id, account_id, purpose, token_hash, expires_at, membership_id)
         VALUES (?, ?, 'email_verification', ?, ?, ?)`).bind(challengeId, accountId, challengeHash, expiresAt, membershipId),
     ])
-  } catch {
-    return jsonError(context, 409, 'email_unavailable')
+  } catch (error) {
+    if (String(error?.message || '').includes('UNIQUE constraint failed: accounts.email')) return jsonError(context, 409, 'email_unavailable')
+    console.error('couple_signup_persistence_failed', { errorName: error?.name || 'Error' })
+    return jsonError(context, 500, 'signup_unavailable')
   }
   let sent = false
   try {

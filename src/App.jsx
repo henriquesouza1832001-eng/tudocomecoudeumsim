@@ -1194,6 +1194,7 @@ function CoupleSignup() {
             : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confira os dados e tente entrar.'
               : cause.message.startsWith('too_many_attempts:') ? `O limite de segurança foi atingido nesta rede. Tente novamente em cerca de ${Math.max(1, Math.ceil(Number(cause.message.split(':')[1]) / 60))} minutos.`
                 : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
+                  : cause.message === 'signup_unavailable' ? 'O cadastro não pôde ser salvo por um erro temporário. Tente novamente em instantes.'
                   : 'Não foi possível criar o acesso. Confira os campos e tente novamente.')
     } finally {
       setTurnstileToken('')
