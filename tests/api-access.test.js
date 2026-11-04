@@ -144,7 +144,22 @@ test('couple signup rejects an invalid optional event time', async () => {
     body: { email: 'casal@example.com', password: 'a-strong-password-123', eventTime: '25:90' },
   })
   assert.equal(response.status, 400)
-  assert.deepEqual(await response.json(), { error: 'invalid_signup' })
+  assert.deepEqual(await response.json(), { error: 'invalid_signup_event_time' })
+})
+
+test('couple signup identifies invalid password and event date separately', async () => {
+  const shortPassword = await callApi('/api/auth/couple-signup', {
+    method: 'POST', origin: base,
+    body: { email: 'casal@example.com', password: 'short' },
+  })
+  const invalidDate = await callApi('/api/auth/couple-signup', {
+    method: 'POST', origin: base,
+    body: { email: 'casal@example.com', password: 'a-strong-password-123', eventDate: '2027-02-30' },
+  })
+  assert.equal(shortPassword.response.status, 400)
+  assert.deepEqual(await shortPassword.response.json(), { error: 'invalid_signup_password' })
+  assert.equal(invalidDate.response.status, 400)
+  assert.deepEqual(await invalidDate.response.json(), { error: 'invalid_signup_event_date' })
 })
 
 test('couple signup accepts a partial draft profile and rejects an invalid saved site draft', async () => {
@@ -161,7 +176,7 @@ test('couple signup accepts a partial draft profile and rejects an invalid saved
   assert.equal(incompleteProfile.response.status, 503)
   assert.deepEqual(await incompleteProfile.response.json(), { error: 'email_service_unconfigured' })
   assert.equal(invalidDraft.response.status, 400)
-  assert.deepEqual(await invalidDraft.response.json(), { error: 'invalid_signup' })
+  assert.deepEqual(await invalidDraft.response.json(), { error: 'invalid_signup_site_config' })
 })
 
 test('guest and godparent endpoints reject requests without an individual invitation', async () => {

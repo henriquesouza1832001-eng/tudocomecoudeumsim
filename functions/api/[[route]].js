@@ -891,9 +891,13 @@ app.post('/api/auth/couple-signup', async (context) => {
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
   const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
-  if (!body || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || password.length < 12 || password.length > 1024
-    || !dateIsValid || !timeIsValid || partnerOneName.length > 100 || partnerTwoName.length > 100
-    || !siteConfig) return jsonError(context, 400, 'invalid_signup')
+  if (!body) return jsonError(context, 400, 'invalid_signup')
+  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) return jsonError(context, 400, 'invalid_signup_email')
+  if (password.length < 12 || password.length > 1024) return jsonError(context, 400, 'invalid_signup_password')
+  if (!dateIsValid) return jsonError(context, 400, 'invalid_signup_event_date')
+  if (!timeIsValid) return jsonError(context, 400, 'invalid_signup_event_time')
+  if (partnerOneName.length > 100 || partnerTwoName.length > 100) return jsonError(context, 400, 'invalid_signup_profile')
+  if (!siteConfig) return jsonError(context, 400, 'invalid_signup_site_config')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   const challenge = await verifyTurnstile(context, body.turnstileToken)
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')

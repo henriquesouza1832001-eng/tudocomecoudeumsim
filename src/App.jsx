@@ -1188,7 +1188,13 @@ function CoupleSignup() {
       setPassword('')
       setConfirmation('')
     } catch (cause) {
-      setError(cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
+      setError(cause.message === 'invalid_signup_email' ? 'Digite um e-mail válido.'
+        : cause.message === 'invalid_signup_password' ? 'A senha precisa ter pelo menos 12 caracteres.'
+          : cause.message === 'invalid_signup_event_date' ? 'Confira a data do casamento ou deixe o campo vazio.'
+            : cause.message === 'invalid_signup_event_time' ? 'Confira o horário do casamento ou deixe o campo vazio.'
+              : cause.message === 'invalid_signup_profile' ? 'Confira os nomes informados no convite.'
+                : cause.message === 'invalid_signup_site_config' ? 'O rascunho do convite está inválido. Volte ao criador do site e salve novamente.'
+                  : cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
         : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
           : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.'
             : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confira os dados e tente entrar.'
