@@ -918,10 +918,10 @@ app.post('/api/auth/couple-signup', async (context) => {
     || !dateIsValid || !timeIsValid || partnerOneName.length > 100 || partnerTwoName.length > 100
     || !siteConfig) return jsonError(context, 400, 'invalid_signup')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
-  if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600' })
   const challenge = await verifyTurnstile(context, body.turnstileToken)
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
   if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
+  if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600', 'Cache-Control': 'no-store' })
   const accountId = crypto.randomUUID()
   const weddingId = crypto.randomUUID()
   const membershipId = crypto.randomUUID()

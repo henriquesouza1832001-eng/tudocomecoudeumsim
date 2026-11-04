@@ -1179,7 +1179,10 @@ function CoupleSignup() {
         body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName: publicDraft.partnerOneName || '', partnerTwoName: publicDraft.partnerTwoName || '', siteConfig: publicDraft.siteConfig || null, turnstileToken }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'signup_failed')
+      if (!response.ok) {
+        const retryAfter = response.headers.get('Retry-After')
+        throw new Error(result.error === 'too_many_attempts' ? `too_many_attempts:${retryAfter || 3600}` : result.error || 'signup_failed')
+      }
       if (publicDraft.siteConfig) window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
       setSubmitted(true)
       setPassword('')
@@ -1189,7 +1192,7 @@ function CoupleSignup() {
         : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
           : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.'
             : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confira os dados e tente entrar.'
-              : cause.message === 'too_many_attempts' ? 'Muitas tentativas neste aparelho. Aguarde e tente novamente.'
+              : cause.message.startsWith('too_many_attempts:') ? `O limite de segurança foi atingido nesta rede. Tente novamente em cerca de ${Math.max(1, Math.ceil(Number(cause.message.split(':')[1]) / 60))} minutos.`
                 : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
                   : 'Não foi possível criar o acesso. Confira os campos e tente novamente.')
     } finally {
