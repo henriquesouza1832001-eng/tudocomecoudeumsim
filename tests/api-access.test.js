@@ -120,8 +120,15 @@ test('couple signup only reports an unavailable email when the account email is 
   ]
   try {
     for (const [index, expected] of errors.entries()) {
+      const diagnosticWrites = []
       const env = {
-        DB: { prepare() { return { bind() { return this } } }, async batch() { throw new Error(expected.message) } },
+        DB: {
+          prepare(sql) {
+            let args = []
+            return { bind(...values) { args = values; return this }, async run() { diagnosticWrites.push({ sql, args }); return { success: true } } }
+          },
+          async batch() { throw new Error(expected.message) },
+        },
         EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 'test-only', EMAIL_FROM: 'test@example.test', TURNSTILE_SECRET_KEY: 'test-only',
       }
       const request = new Request(`${base}/api/auth/couple-signup`, {
@@ -131,6 +138,13 @@ test('couple signup only reports an unavailable email when the account email is 
       const response = await apiRequest({ request, env })
       assert.equal(response.status, expected.status)
       assert.deepEqual(await response.json(), { error: expected.code })
+      if (expected.code === 'email_unavailable') assert.equal(diagnosticWrites.length, 0)
+      else {
+        assert.equal(diagnosticWrites.length, 1)
+        assert.equal(diagnosticWrites[0].args[1], expected.message.includes('no such table') ? 'missing_table' : 'unique_constraint')
+        assert.equal(diagnosticWrites[0].args[2], expected.message)
+        assert.equal(JSON.stringify(diagnosticWrites).includes(`casal${index}@example.test`), false)
+      }
     }
   } finally {
     globalThis.fetch = originalFetch

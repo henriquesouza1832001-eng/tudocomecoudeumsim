@@ -336,6 +336,29 @@ function jsonError(context, status, error) {
   return context.json({ error }, status, { 'Cache-Control': 'no-store' })
 }
 
+function signupPersistenceErrorDetails(error) {
+  const message = typeof error?.message === 'string' ? error.message : ''
+  const patterns = [
+    [/no such column:\s*([a-z0-9_.]+)/i, 'missing_column'],
+    [/has no column named\s+([a-z0-9_.]+)/i, 'missing_column'],
+    [/no such table:\s*([a-z0-9_.]+)/i, 'missing_table'],
+    [/no such index:\s*([a-z0-9_.]+)/i, 'missing_index'],
+    [/UNIQUE constraint failed:\s*([a-z0-9_., ]+)/i, 'unique_constraint'],
+    [/NOT NULL constraint failed:\s*([a-z0-9_.]+)/i, 'not_null_constraint'],
+    [/FOREIGN KEY constraint failed/i, 'foreign_key_constraint'],
+    [/CHECK constraint failed(?::\s*([a-z0-9_.]+))?/i, 'check_constraint'],
+    [/duplicate column name:\s*([a-z0-9_]+)/i, 'duplicate_column'],
+    [/database is locked/i, 'database_locked'],
+    [/readonly database/i, 'database_read_only'],
+    [/too many SQL variables/i, 'too_many_sql_variables'],
+  ]
+  for (const [pattern, errorCode] of patterns) {
+    const match = message.match(pattern)
+    if (match) return { errorCode, detail: match[0].slice(0, 240) }
+  }
+  return { errorCode: 'unclassified_database_error', detail: 'The signup batch failed with an unclassified database error.' }
+}
+
 async function purgeR2Prefix(bucket, prefix) {
   if (!bucket) return
   let cursor
@@ -924,7 +947,14 @@ app.post('/api/auth/couple-signup', async (context) => {
     ])
   } catch (error) {
     if (String(error?.message || '').includes('UNIQUE constraint failed: accounts.email')) return jsonError(context, 409, 'email_unavailable')
-    console.error('couple_signup_persistence_failed', { errorName: error?.name || 'Error' })
+    const diagnostic = signupPersistenceErrorDetails(error)
+    console.error('couple_signup_persistence_failed', { errorName: error?.name || 'Error', ...diagnostic })
+    try {
+      await context.env.DB.prepare(`INSERT INTO signup_diagnostics (id, error_code, error_detail)
+        VALUES (?, ?, ?)`).bind(crypto.randomUUID(), diagnostic.errorCode, diagnostic.detail).run()
+    } catch (diagnosticError) {
+      console.error('couple_signup_diagnostic_write_failed', { errorName: diagnosticError?.name || 'Error' })
+    }
     return jsonError(context, 500, 'signup_unavailable')
   }
   let sent = false
