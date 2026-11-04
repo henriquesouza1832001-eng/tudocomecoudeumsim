@@ -3,10 +3,15 @@ import assert from 'node:assert/strict'
 import { ORDERABLE_SITE_SECTIONS, moveSiteSection, orderedSiteSections, sortEventsByStartTime } from '../src/site-sections.js'
 
 test('site section order follows the saved configuration and keeps enabled legacy carousels visible', () => {
-  const config = { enabledSections: ['Eventos', 'Nossa história'], siteCarouselEnabled: true }
+  const config = { enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], siteCarouselEnabled: true }
   const ordered = orderedSiteSections(config)
-  assert.deepEqual(ordered, ['Eventos', 'Nossa história', 'Galeria de fotos'])
-  assert.deepEqual(moveSiteSection(ordered, 'Galeria de fotos', -1), ['Eventos', 'Galeria de fotos', 'Nossa história'])
+  assert.deepEqual(ordered, ['Nossa história', 'Galeria de fotos', 'Eventos', 'Confirmação de presença'])
+  assert.deepEqual(moveSiteSection(ordered, 'Galeria de fotos', 1), ['Nossa história', 'Eventos', 'Galeria de fotos', 'Confirmação de presença'])
+})
+
+test('the saved invitation section order keeps the carousel in the position selected in the editor', () => {
+  const config = { enabledSections: ['Nossa história', 'Galeria de fotos', 'Eventos', 'Confirmação de presença'], siteCarouselEnabled: true }
+  assert.deepEqual(orderedSiteSections(config), config.enabledSections)
 })
 
 test('couple section controls reorder rendered sections without dropping other saved sections', () => {

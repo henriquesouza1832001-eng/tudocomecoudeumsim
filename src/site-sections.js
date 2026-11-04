@@ -2,7 +2,10 @@ export const ORDERABLE_SITE_SECTIONS = ['Contagem regressiva', 'Nossa história'
 
 export function orderedSiteSections(config) {
   const sections = [...(config?.enabledSections || [])]
-  if (config?.siteCarouselEnabled && !sections.includes('Galeria de fotos')) sections.push('Galeria de fotos')
+  if (config?.siteCarouselEnabled && !sections.includes('Galeria de fotos')) {
+    const storyIndex = sections.indexOf('Nossa história')
+    sections.splice(storyIndex >= 0 ? storyIndex + 1 : sections.length, 0, 'Galeria de fotos')
+  }
   if ((['inline', 'page'].includes(config?.giftDisplayMode) || ['inline', 'page'].includes(config?.pixDisplayMode)) && !sections.includes('Lista de presentes')) sections.push('Lista de presentes')
   return [...new Set(sections)]
 }

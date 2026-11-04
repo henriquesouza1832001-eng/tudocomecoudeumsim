@@ -1273,6 +1273,8 @@ img { display: block; max-width: 100%; }
 .wedding-profile-fields { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line, #ded8ce); border-radius: 14px; background: rgba(255,255,255,.56); }
 .wedding-profile-fields label { display: grid; gap: 6px; color: var(--ink, #34453b); font-size: 13px; font-weight: 600; }
 .wedding-profile-fields input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--line, #ded8ce); border-radius: 8px; color: var(--ink, #34453b); background: white; font: inherit; }
+.wedding-profile-settings { max-width: 760px; }
+.wedding-profile-settings .form-success { margin: 0; color: #28573a; font-size: 13px; font-weight: 600; }
 .couple-cover-upload { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line, #ded8ce); border-radius: 14px; background: rgba(255,255,255,.56); }
 .couple-cover-upload > span { color: var(--ink, #34453b); font-size: 14px; font-weight: 650; }
 .couple-cover-upload p, .couple-cover-upload small { margin: 0; color: var(--muted, #788078); font-size: 12px; line-height: 1.5; }
