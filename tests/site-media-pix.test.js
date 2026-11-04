@@ -21,7 +21,7 @@ function database({ role = 'couple_admin', draftConfig = {}, publishedConfig = {
           if (query.includes('FROM auth_sessions s')) return { id: 'session-1', account_id: 'account-1', mfa_verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'couple@example.com', status: 'active', mfa_enabled_at: new Date().toISOString() }
           if (query.includes('FROM wedding_memberships m JOIN weddings w')) return parameters.slice(2).includes(role) ? { id: 'membership-1', role, wedding_status: 'active' } : null
           if (query.includes('SELECT site_config_json, published_site_config_json FROM weddings')) return { site_config_json: JSON.stringify(draftConfig), published_site_config_json: JSON.stringify(publishedConfig) }
-          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: null, name: 'Convidado', party_size: 1, guest_type: 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', event_time: null, timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(invitationConfig), published_events_json: '[]' }
+          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: null, name: 'Convidado', party_size: 1, guest_type: 'guest', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', event_time: null, timezone: 'America/Sao_Paulo', wedding_status: 'active', site_published_at: '2026-10-14T12:00:00.000Z', published_site_config_json: JSON.stringify(invitationConfig), published_events_json: '[]' }
           return null
         },
         async all() {
@@ -161,11 +161,11 @@ test('couples can save ordered photos and autoplay settings for the invitation c
 })
 
 test('public invitation reveals the Pix key when enabled independently of the gifts section', async () => {
-  const baseConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Lista de presentes'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' }, pix: { enabled: true, key: '  chave-copia-cola  ' } }
+  const baseConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Lista de presentes'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Convite', en: 'Invitation', es: 'Invitación' }, pix: { enabled: true, key: '  pix@example.com  ' } }
   const visible = await call('/api/invitation', { invitationConfig: baseConfig })
-  assert.equal((await visible.json()).siteConfig.pix.key, 'chave-copia-cola')
+  assert.equal((await visible.json()).siteConfig.pix.key, 'pix@example.com')
   const visibleWithoutGifts = await call('/api/invitation', { invitationConfig: { ...baseConfig, enabledSections: [] } })
-  assert.equal((await visibleWithoutGifts.json()).siteConfig.pix.key, 'chave-copia-cola')
+  assert.equal((await visibleWithoutGifts.json()).siteConfig.pix.key, 'pix@example.com')
   const hidden = await call('/api/invitation', { invitationConfig: { ...baseConfig, pix: { ...baseConfig.pix, enabled: false } } })
   assert.deepEqual((await hidden.json()).siteConfig.pix, { enabled: false, key: '', holderName: '' })
 })

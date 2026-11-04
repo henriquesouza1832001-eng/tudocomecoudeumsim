@@ -36,7 +36,7 @@ function database(role, options = {}) {
           if (query.includes('SELECT g.id, g.name, 1 AS party_size') && query.includes('WHERE g.access_token_hash = ?')) return options.scanGuest || null
           if (query.includes('SELECT g.id, COALESCE(r.status, g.rsvp_status) AS rsvp_status FROM guests g')) return options.visibleGuest || null
           if (query.includes('SELECT checked_in_at FROM check_ins WHERE wedding_id = ? AND event_id = ? AND guest_id = ?')) return options.existingCheckIn || null
-          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', photo_consent_at: options.photoConsentAt === null ? null : '2026-10-17T12:00:00.000Z', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', published_site_config_json: JSON.stringify(options.invitationConfig || (options.guestPhotoLimit === undefined ? siteConfig : { ...siteConfig, guestCamera: { enabled: true, photoLimit: options.guestPhotoLimit } })), published_events_json: JSON.stringify([publishedEvent]) }
+          if (query.includes('FROM guests g JOIN weddings w')) return { id: 'guest-1', wedding_id: 'wedding-1', group_id: 'group-1', name: 'Convidada', party_size: 2, guest_type: role === 'godparent' ? 'godparent' : 'guest', photo_consent_at: options.photoConsentAt === null ? null : '2026-10-17T12:00:00.000Z', partner_one_name: 'Ana', partner_two_name: 'Bia', event_date: '2027-05-10', timezone: 'America/Sao_Paulo', wedding_status: 'active', site_published_at: '2026-10-14T12:00:00.000Z', published_site_config_json: JSON.stringify(options.invitationConfig || (options.guestPhotoLimit === undefined ? siteConfig : { ...siteConfig, guestCamera: { enabled: true, photoLimit: options.guestPhotoLimit } })), published_events_json: JSON.stringify([publishedEvent]) }
           if (query.includes('SELECT published_events_json FROM weddings')) return { published_events_json: JSON.stringify([publishedEvent]) }
           if (query.includes('SELECT COUNT(*) AS total FROM guest_photos')) return { total: options.guestPhotoCount || 0 }
           if (query.includes('SELECT site_config_json, published_site_config_json')) return { site_config_json: JSON.stringify(options.draftConfig || siteConfig), published_site_config_json: JSON.stringify(options.publishedConfig || siteConfig), site_published_at: '2026-10-14T12:00:00.000Z' }
@@ -45,6 +45,7 @@ function database(role, options = {}) {
           return null
         },
         async all() {
+          if (query.includes('FROM guest_rsvps r JOIN events e')) return { results: options.rsvpRows || [] }
           if (query.includes('SELECT w.id FROM weddings w JOIN wedding_memberships')) return { results: ['couple_admin', 'editor', 'reader'].includes(role) ? [{ id: 'wedding-1' }] : [] }
           if (query.includes('SELECT id FROM events WHERE wedding_id = ? AND id IN')) return { results: parameters.slice(1).map((id) => ({ id })) }
           if (query.includes('SELECT g.id, g.name') && !query.includes('LEFT JOIN')) return { results: [{ id: 'guest-1', name: 'Convidada' }] }
@@ -127,7 +128,7 @@ test('site draft profile autosave accepts missing names without replacing its te
 })
 
 test('couple site config saves independent cover framing, image descriptions, display, and custom accent choices', async () => {
-  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } }, giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'chave-pix', holderName: 'Ana e Bia' } }
+  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } }, giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'pix@example.com', holderName: 'Ana e Bia' } }
   const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config })
   const result = await response.json()
   assert.equal(response.status, 200)
@@ -142,7 +143,7 @@ test('couple site config saves independent cover framing, image descriptions, di
   assert.equal(result.draft.customAccent, '#be6f52')
   assert.equal(result.draft.giftDisplayMode, 'page')
   assert.equal(result.draft.pixDisplayMode, 'page')
-  assert.equal(result.draft.pix.key, 'chave-pix')
+  assert.equal(result.draft.pix.key, 'pix@example.com')
 })
 
 test('couple site config rejects invalid cover and display choices', async () => {
@@ -164,6 +165,7 @@ test('couple site config rejects invalid cover and display choices', async () =>
     { sectionLayouts: { 'Secao livre': 'classic' } },
     { giftDisplayMode: 'external' },
     { pixDisplayMode: 'external' },
+    { pix: { enabled: true, key: 'abc', holderName: '' } },
     { enabledSections: ['Playlist'], sectionContent: { Playlist: { 'pt-BR': { body: 'http://example.com/playlist' } } } },
     { enabledSections: ['Vídeo'], sectionContent: { 'Vídeo': { 'pt-BR': { body: 'javascript:alert(1)' } } } },
   ]) {
@@ -240,6 +242,17 @@ test('event deletion is blocked when attendance data is linked', async () => {
   })
   assert.equal(response.status, 409)
   assert.deepEqual(await response.json(), { error: 'event_has_related_data', relatedData: { rsvps: 2, checkins: 1, photos: 0, staff: 0 } })
+})
+
+test('couple RSVP history keeps anonymized responses visible without enabling edits', async () => {
+  const response = await call('/api/couple/weddings/wedding-1/rsvps', 'couple_admin', {
+    databaseOptions: { rsvpRows: [{ id: 'rsvp-1', event_id: 'event-1', event_name: 'Cerimônia', guest_id: null, guest_name: 'Convidado removido', is_anonymized: 1, status: 'confirmed', party_size: 1 }] },
+  })
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  assert.equal(body.rsvps.length, 1)
+  assert.equal(body.rsvps[0].guest_name, 'Convidado removido')
+  assert.equal(body.rsvps[0].is_anonymized, 1)
 })
 
 test('readers can see published snapshots but cannot access drafts', async () => {

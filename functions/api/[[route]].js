@@ -6,6 +6,7 @@ import { createOpenSslCompatiblePkcs7Signature } from '@swapnanildhol/passkit-pk
 import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import { normalizeSectionLayouts } from '../../src/site-section-layouts.js'
 import { checkSitePublication } from '../../src/site-publication-check.js'
+import { isValidPixKey } from '../../src/pix-key.js'
 import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_BASE_URL, PRODUCT_NAME } from '../../src/product-config.js'
 import { checkMercadoPagoAccount, createMercadoPagoTestPreference, getMercadoPagoTestPayment, validateMercadoPagoWebhookSignature } from '../../src/server/mercado-pago.js'
 import {
@@ -47,12 +48,12 @@ const giftDisplayModes = ['inline', 'page', 'hidden']
 const pixDisplayModes = ['inline', 'page', 'hidden']
 const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const guestPhotoConsentVersion = 'guest-camera-v1'
-function validPixSettings(pix) {
+function validPixSettings(pix, strict = false) {
   if (pix === undefined) return defaultSiteConfig.pix
   if (!pix || typeof pix !== 'object' || Array.isArray(pix) || typeof pix.enabled !== 'boolean' || typeof pix.key !== 'string' || pix.key.length > 200 || /\p{Cc}/u.test(pix.key) || (pix.holderName !== undefined && (typeof pix.holderName !== 'string' || pix.holderName.length > 120 || /\p{Cc}/u.test(pix.holderName)))) return null
   const key = pix.key.trim()
   const holderName = (pix.holderName || '').trim()
-  if (pix.enabled && !key) return null
+  if (pix.enabled && (!key || (strict && !isValidPixKey(key)))) return null
   return { enabled: pix.enabled, key, holderName }
 }
 
@@ -311,7 +312,7 @@ function validateSiteConfig(body) {
   if ((body.siteCarouselEnabled !== undefined && typeof body.siteCarouselEnabled !== 'boolean')
     || (body.siteCarouselAutoplay !== undefined && typeof body.siteCarouselAutoplay !== 'boolean')
     || (body.siteCarouselPhotos !== undefined && (!Array.isArray(body.siteCarouselPhotos) || body.siteCarouselPhotos.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteCarouselPhotos.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))))) return null
-  const pix = validPixSettings(body.pix)
+  const pix = validPixSettings(body.pix, true)
   if (!pix) return null
   if ((body.coverComposition !== undefined && body.coverComposition !== null && !coverCompositions.includes(body.coverComposition))
     || (body.coverTextAlign !== undefined && !coverTextAlignments.includes(body.coverTextAlign))
@@ -660,7 +661,7 @@ async function allowPublicWeddingRequest(context, weddingId, requestType = 'rsvp
   return { allowed: !(current?.blocked_until > now), retryAfter: current?.blocked_until > now ? current.blocked_until - now : 0 }
 }
 
-async function invitationGuest(context) {
+async function invitationGuest(context, includeDraft = false) {
   const authorization = context.req.header('Authorization') || ''
   const match = authorization.match(/^Bearer ([A-Za-z0-9_-]{40,60})$/)
   if (!match) return null
@@ -670,11 +671,12 @@ async function invitationGuest(context) {
       CASE WHEN w.site_published_at IS NULL THEN w.partner_two_name ELSE w.published_partner_two_name END AS partner_two_name,
       CASE WHEN w.site_published_at IS NULL THEN w.event_date ELSE w.published_event_date END AS event_date,
       CASE WHEN w.site_published_at IS NULL THEN w.event_time ELSE w.published_event_time END AS event_time,
-      w.timezone, w.status AS wedding_status,
+      w.timezone, w.status AS wedding_status, w.site_published_at,
       w.published_site_config_json, w.published_events_json
     FROM guests g JOIN weddings w ON w.id = g.wedding_id
-    WHERE g.access_token_hash = ? AND g.deleted_at IS NULL AND w.status = 'active'
-  `).bind(await tokenHash(match[1])).first()
+    WHERE g.access_token_hash = ? AND g.deleted_at IS NULL
+      AND (w.status = 'active' OR (? = 1 AND w.status = 'draft'))
+  `).bind(await tokenHash(match[1]), includeDraft ? 1 : 0).first()
 }
 
 function walletReady(env, provider) {
@@ -1954,11 +1956,13 @@ app.get('/api/couple/weddings/:weddingId/rsvps', requireSession, async (context)
   const membership = await weddingMembership(context, weddingId, ['couple_admin'])
   if (!membership) return jsonError(context, 404, 'wedding_not_found')
   const result = await context.env.DB.prepare(`
-    SELECT r.id, r.event_id, e.name AS event_name, r.guest_id, g.name AS guest_name,
-      r.status, r.party_size, g.party_size AS invited_party_size, r.dietary_notes, r.updated_at
+    SELECT r.id, r.event_id, e.name AS event_name, r.guest_id,
+      CASE WHEN g.deleted_at IS NULL THEN g.name ELSE 'Convidado removido' END AS guest_name,
+      CASE WHEN g.deleted_at IS NULL THEN 0 ELSE 1 END AS is_anonymized,
+      r.status, r.party_size, COALESCE(g.party_size, r.party_size) AS invited_party_size, r.dietary_notes, r.updated_at
     FROM guest_rsvps r JOIN events e ON e.id = r.event_id AND e.wedding_id = r.wedding_id
-    JOIN guests g ON g.id = r.guest_id AND g.wedding_id = r.wedding_id
-    WHERE r.wedding_id = ? AND g.deleted_at IS NULL
+    LEFT JOIN guests g ON g.id = r.guest_id AND g.wedding_id = r.wedding_id
+    WHERE r.wedding_id = ?
     ORDER BY e.starts_at, g.name COLLATE NOCASE
   `).bind(weddingId).all()
   return context.json({ rsvps: result.results })
@@ -2904,8 +2908,9 @@ app.post('/api/invitation/companions/:companionId/credential', async (context) =
 })
 
 app.get('/api/invitation', async (context) => {
-  const guest = await invitationGuest(context)
+  const guest = await invitationGuest(context, true)
   if (!guest) return jsonError(context, 401, 'invitation_invalid')
+  if (guest.wedding_status !== 'active' || !guest.site_published_at) return jsonError(context, 409, 'invitation_not_published')
   const publishedEvents = JSON.parse(guest.published_events_json || '[]')
   const invitationConfig = parseSiteConfig(guest.published_site_config_json)
   const invitationShowsGifts = normalizedGiftDisplayMode(invitationConfig) !== 'hidden'

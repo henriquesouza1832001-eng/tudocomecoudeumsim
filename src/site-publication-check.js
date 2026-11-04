@@ -1,4 +1,5 @@
 import { safeHttpsLink } from './site-section-content.js'
+import { isValidPixKey } from './pix-key.js'
 
 const referencedPhotoIds = (config = {}) => {
   const enabled = new Set(config.enabledSections || [])
@@ -32,10 +33,13 @@ export function checkSitePublication(config = {}, events = []) {
   }
   if (enabled.has('Playlist') && !safeHttpsLink(config.sectionContent?.Playlist?.['pt-BR']?.body)) warnings.push('A seção Playlist está ativa, mas precisa de um link HTTPS válido.')
   if (enabled.has('Vídeo') && !config.coverVideoId && !safeHttpsLink(config.sectionContent?.['Vídeo']?.['pt-BR']?.body)) warnings.push('A seção Vídeo está ativa, mas precisa de um vídeo enviado ou de um link HTTPS válido.')
-  if (config.pix?.enabled && !config.pix.key?.trim()) warnings.push('O Pix está ativado, mas falta informar uma chave válida.')
+  const invalidPix = config.pix?.enabled && !isValidPixKey(config.pix.key)
+  if (invalidPix) warnings.push('O Pix está ativado, mas falta informar uma chave Pix válida.')
   if (enabled.has('Eventos')) {
     if (!events.length) warnings.push('A seção de eventos está ativa, mas ainda não há eventos cadastrados.')
     if (events.some((event) => !event.address?.trim())) warnings.push('Há evento sem endereço. Confira se os convidados terão como localizar o local.')
   }
-  return { blockers: missingAlt.length ? [`Preencha a descrição acessível de ${missingAlt.length} foto(s) usada(s) no convite.`] : [], warnings }
+  const blockers = [...(missingAlt.length ? [`Preencha a descrição acessível de ${missingAlt.length} foto(s) usada(s) no convite.`] : [])]
+  if (invalidPix) blockers.push('Corrija a chave Pix antes de publicar o convite.')
+  return { blockers, warnings }
 }

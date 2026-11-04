@@ -86,6 +86,19 @@ async function call(path, { method = 'GET', body, publishedWedding, env = {}, he
   return { response, batches }
 }
 
+test('individual guest links explain that the site must be published first', async () => {
+  const token = 'a'.repeat(43)
+  const { response } = await call('/api/invitation', {
+    headers: { Authorization: `Bearer ${token}` },
+    first(query) {
+      if (!query.includes('FROM guests g JOIN weddings w')) return undefined
+      return { id: 'guest-1', wedding_id: 'wedding-1', source: 'individual', wedding_status: 'draft', site_published_at: null }
+    },
+  })
+  assert.equal(response.status, 409)
+  assert.deepEqual(await response.json(), { error: 'invitation_not_published' })
+})
+
 test('public invitation shares only published events available to every guest', async () => {
   const { response } = await call('/api/public/weddings/ana-e-bia')
   const body = await response.json()
@@ -159,7 +172,7 @@ test('published invitation preserves the event name and venue details', async ()
 test('published invitation shows only the catalog entries allowed by its gift and Pix settings', async () => {
   const pixGift = { id: 'gift-pix', gift_type: 'fixed', fulfillment_type: 'pix_direct', title: 'Jantar', description: '', amount_cents: 12000, goal_cents: null }
   const storeGift = { id: 'gift-store', gift_type: 'fixed', fulfillment_type: 'store_link', store_url: 'https://shop.example/item', title: 'Vaso', description: '', amount_cents: 8000, goal_cents: null }
-  const config = { ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'chave-privada', holderName: 'Noivos' } }
+  const config = { ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'noivos@example.com', holderName: 'Noivos' } }
   const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify(config) }
   const { response } = await call('/api/public/weddings/ana-e-bia', {
     publishedWedding: configuredWedding,
@@ -174,7 +187,7 @@ test('published invitation shows only the catalog entries allowed by its gift an
 
 test('published invitation does not query or expose gifts when their display mode is hidden', async () => {
   let giftsQueried = false
-  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'chave-privada' } }) }
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'noivos@example.com' } }) }
   const { response } = await call('/api/public/weddings/ana-e-bia', {
     publishedWedding: configuredWedding,
     all(query) { if (query.includes('FROM gifts')) giftsQueried = true; return { results: [] } },
