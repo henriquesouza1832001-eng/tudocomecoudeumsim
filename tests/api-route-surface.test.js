@@ -26,7 +26,7 @@ function concretePath(path) {
 }
 
 test('all registered API routes dispatch without an unknown-route response or server exception', async (context) => {
-  assert.equal(routeDefinitions.length, 107)
+  assert.equal(routeDefinitions.length, 111)
 
   for (const route of routeDefinitions) {
     await context.test(`${route.method} ${route.path}`, async () => {

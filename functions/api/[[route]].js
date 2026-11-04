@@ -1603,6 +1603,38 @@ app.post('/api/couple/weddings/:weddingId/groups', requireSession, async (contex
   return context.json({ id, name, groupType }, 201)
 })
 
+app.put('/api/couple/weddings/:weddingId/groups/:groupId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const body = await context.req.json().catch(() => null)
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const groupType = body?.groupType || 'other'
+  if (!body || !name || name.length > 100 || !['guest', 'godparent', 'family', 'friends', 'other'].includes(groupType)) return jsonError(context, 400, 'invalid_guest_group')
+  try {
+    const result = await context.env.DB.prepare('UPDATE guest_groups SET name = ?, group_type = ? WHERE id = ? AND wedding_id = ?').bind(name, groupType, context.req.param('groupId'), weddingId).run()
+    if (!result.meta?.changes) return jsonError(context, 404, 'guest_group_not_found')
+  } catch {
+    return jsonError(context, 409, 'guest_group_already_exists')
+  }
+  return context.json({ id: context.req.param('groupId'), name, groupType })
+})
+
+app.delete('/api/couple/weddings/:weddingId/groups/:groupId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const groupId = context.req.param('groupId')
+  const group = await context.env.DB.prepare('SELECT id FROM guest_groups WHERE id = ? AND wedding_id = ?').bind(groupId, weddingId).first()
+  if (!group) return jsonError(context, 404, 'guest_group_not_found')
+  const references = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guests WHERE wedding_id = ? AND group_id = ? AND deleted_at IS NULL').bind(weddingId, groupId).first()
+  if (references?.total) return context.json({ error: 'guest_group_has_guests', guestCount: references.total }, 409)
+  await context.env.DB.prepare('DELETE FROM guest_groups WHERE id = ? AND wedding_id = ?').bind(groupId, weddingId).run()
+  return context.json({ id: groupId, deleted: true })
+})
+
 app.get('/api/couple/weddings/:weddingId/events', requireSession, async (context) => {
   const weddingId = context.req.param('weddingId')
   const membership = await weddingMembership(context, weddingId, ['couple_admin', 'editor'])
@@ -1916,6 +1948,34 @@ app.post('/api/couple/weddings/:weddingId/godparent-tasks', requireSession, asyn
   await context.env.DB.prepare('INSERT INTO godparent_tasks (id, wedding_id, guest_id, title, details, due_at) VALUES (?, ?, ?, ?, ?, ?)')
     .bind(id, weddingId, godparent.id, title, details, dueAt).run()
   return context.json({ id, guestId: godparent.id, title, details, dueAt, status: 'open' }, 201)
+})
+
+app.put('/api/couple/weddings/:weddingId/godparent-tasks/:taskId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const body = await context.req.json().catch(() => null)
+  const title = typeof body?.title === 'string' ? body.title.trim() : ''
+  const details = typeof body?.details === 'string' ? body.details.trim() : ''
+  const dueAt = body?.dueAt || null
+  if (!body || !title || title.length > 160 || details.length > 2000 || (dueAt && (typeof dueAt !== 'string' || !Number.isFinite(Date.parse(dueAt))))) return jsonError(context, 400, 'invalid_task')
+  const godparent = await context.env.DB.prepare("SELECT id FROM guests WHERE id = ? AND wedding_id = ? AND guest_type = 'godparent' AND deleted_at IS NULL").bind(body.guestId, weddingId).first()
+  if (!godparent) return jsonError(context, 404, 'godparent_not_found')
+  const result = await context.env.DB.prepare('UPDATE godparent_tasks SET guest_id = ?, title = ?, details = ?, due_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND wedding_id = ?')
+    .bind(godparent.id, title, details, dueAt, context.req.param('taskId'), weddingId).run()
+  if (!result.meta?.changes) return jsonError(context, 404, 'godparent_task_not_found')
+  return context.json({ id: context.req.param('taskId'), guestId: godparent.id, title, details, dueAt })
+})
+
+app.delete('/api/couple/weddings/:weddingId/godparent-tasks/:taskId', requireSession, async (context) => {
+  const weddingId = context.req.param('weddingId')
+  const membership = await weddingMembership(context, weddingId, ['couple_admin'])
+  if (!membership) return jsonError(context, 404, 'wedding_not_found')
+  if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
+  const result = await context.env.DB.prepare('DELETE FROM godparent_tasks WHERE id = ? AND wedding_id = ?').bind(context.req.param('taskId'), weddingId).run()
+  if (!result.meta?.changes) return jsonError(context, 404, 'godparent_task_not_found')
+  return context.json({ id: context.req.param('taskId'), deleted: true })
 })
 
 app.get('/api/couple/weddings/:weddingId/guests', requireSession, async (context) => {

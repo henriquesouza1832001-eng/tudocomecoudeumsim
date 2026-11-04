@@ -1337,6 +1337,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [groups, setGroups] = useState([])
   const [groupName, setGroupName] = useState('')
   const [groupType, setGroupType] = useState('family')
+  const [editingGuestGroup, setEditingGuestGroup] = useState(null)
   const [events, setEvents] = useState([])
   const [rsvps, setRsvps] = useState([])
   const [gifts, setGifts] = useState([])
@@ -1383,6 +1384,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [guestType, setGuestType] = useState('guest')
   const [guestDietaryNotes, setGuestDietaryNotes] = useState('')
   const [taskGuestId, setTaskGuestId] = useState('')
+  const [editingGodparentTask, setEditingGodparentTask] = useState(null)
   const [taskTitle, setTaskTitle] = useState('')
   const [taskDetails, setTaskDetails] = useState('')
   const [taskDueAt, setTaskDueAt] = useState('')
@@ -1657,15 +1659,44 @@ function CouplePanel({ notify, confirmAction }) {
     setBusy(true)
     setError('')
     try {
-      await request(`/api/couple/weddings/${weddingId}/groups`, {
-        method: 'POST',
+      await request(`/api/couple/weddings/${weddingId}/groups${editingGuestGroup ? `/${editingGuestGroup.id}` : ''}`, {
+        method: editingGuestGroup ? 'PUT' : 'POST',
         body: JSON.stringify({ name: groupName, groupType }),
       })
       setGroupName('')
+      setGroupType('family')
+      setEditingGuestGroup(null)
       await loadWeddingData(weddingId)
-      notify('Grupo criado para organizar os convites.')
+      notify(editingGuestGroup ? 'Grupo atualizado.' : 'Grupo criado para organizar os convites.')
     } catch (cause) {
       setError(cause.message === 'guest_group_already_exists' ? 'Já existe um grupo com esse nome.' : 'Não foi possível criar o grupo. Confira o nome e tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function editGuestGroup(group) {
+    setEditingGuestGroup(group)
+    setGroupName(group.name)
+    setGroupType(group.group_type)
+  }
+
+  function cancelGuestGroupEdit() {
+    setEditingGuestGroup(null)
+    setGroupName('')
+    setGroupType('family')
+  }
+
+  async function deleteGuestGroup(group) {
+    if (!await confirmAction(`Excluir o grupo “${group.name}”? Convidados vinculados precisam ser transferidos para outro grupo antes.`, 'Excluir grupo', 'Excluir grupo', true)) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/groups/${group.id}`, { method: 'DELETE' })
+      await loadWeddingData(weddingId)
+      notify('Grupo excluído.')
+    } catch (cause) {
+      setError(cause.message === 'guest_group_has_guests' ? 'Transfiram os convidados deste grupo para outro antes de excluí-lo.' : 'Não foi possível excluir este grupo.')
     } finally {
       setBusy(false)
     }
@@ -2118,17 +2149,51 @@ function CouplePanel({ notify, confirmAction }) {
     setBusy(true)
     setError('')
     try {
-      await request(`/api/couple/weddings/${weddingId}/godparent-tasks`, {
-        method: 'POST',
+      await request(`/api/couple/weddings/${weddingId}/godparent-tasks${editingGodparentTask ? `/${editingGodparentTask.id}` : ''}`, {
+        method: editingGodparentTask ? 'PUT' : 'POST',
         body: JSON.stringify({ guestId: taskGuestId, title: taskTitle, details: taskDetails, dueAt: taskDueAt || null }),
       })
+      setTaskGuestId('')
       setTaskTitle('')
       setTaskDetails('')
       setTaskDueAt('')
+      setEditingGodparentTask(null)
       await loadWeddingData(weddingId)
-      notify('Tarefa individual atribuída ao padrinho')
+      notify(editingGodparentTask ? 'Orientação atualizada no convite individual.' : 'Tarefa individual atribuída ao padrinho')
     } catch {
       setError('Não foi possível salvar a tarefa para este padrinho.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function editGodparentTask(task) {
+    setEditingGodparentTask(task)
+    setTaskGuestId(task.guest_id)
+    setTaskTitle(task.title)
+    setTaskDetails(task.details || '')
+    setTaskDueAt(task.due_at ? new Date(new Date(task.due_at).getTime() - new Date(task.due_at).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '')
+  }
+
+  function cancelGodparentTaskEdit() {
+    setEditingGodparentTask(null)
+    setTaskGuestId('')
+    setTaskTitle('')
+    setTaskDetails('')
+    setTaskDueAt('')
+  }
+
+  async function deleteGodparentTask(task) {
+    if (!await confirmAction(`Excluir a orientação “${task.title}” de ${task.guest_name}? Ela deixará de aparecer no convite individual.`, 'Excluir orientação', 'Excluir orientação', true)) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/godparent-tasks/${task.id}`, { method: 'DELETE' })
+      await loadWeddingData(weddingId)
+      if (editingGodparentTask?.id === task.id) cancelGodparentTaskEdit()
+      notify('Orientação excluída do convite individual.')
+    } catch {
+      setError('Não foi possível excluir esta orientação.')
     } finally {
       setBusy(false)
     }
@@ -2185,7 +2250,7 @@ function CouplePanel({ notify, confirmAction }) {
         <button className={tab === 'gifts' ? 'selected' : ''} aria-current={tab === 'gifts' ? 'page' : undefined} onClick={() => selectPanelTab('gifts')}><Gift size={18} /><span>Presentes</span></button>
       </>}
     </nav><div className="couple-panel-content">{tab === 'guests' && !isEditor && <WeddingWallModeration weddingId={weddingId} />}{tab === 'guests' && <>
-      <section className="role-card guest-import-card"><div className="role-card-heading"><div><span className="eyebrow">COMECE PELA SUA LISTA</span><h2>Importar convidados</h2></div><Users size={18} /></div><p className="team-access-note">Envie até 100 pessoas de uma vez por CSV ou planilha Excel (.xlsx). Use o modelo para organizar nomes, grupos e acompanhantes; se uma linha tiver erro, nada será importado.</p>{!isEditor && <details className="guest-group-tools"><summary>Preparar grupos para a lista <span>{groups.length} grupos</span></summary><div><form className="couple-group-form guest-group-create-form" onSubmit={createGuestGroup}><label>Nome do grupo<input value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength="100" placeholder="Ex.: Família da noiva" required /></label><label>Categoria<select value={groupType} onChange={(event) => setGroupType(event.target.value)}><option value="family">Família</option><option value="friends">Amigos</option><option value="godparent">Padrinhos</option><option value="guest">Convidados</option><option value="other">Outro</option></select></label><button type="submit" className="button-outline" disabled={busy}>Criar grupo</button></form>{groups.length > 0 && <ul aria-label="Grupos cadastrados">{groups.map((group) => <li key={group.id}>{group.name}</li>)}</ul>}<small>Os grupos ajudam a importar a planilha e definir quais eventos cada pessoa pode ver.</small></div></details>}<div className="guest-import-actions"><button type="button" className="button-outline" onClick={downloadGuestCsvTemplate}>Baixar modelo CSV</button><label className="button-primary guest-import-file">{busy ? 'Importando…' : 'Importar lista'}<input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importGuestCsv} disabled={busy} /></label></div>{guestImportErrors.length > 0 && <div className="guest-import-errors" role="alert"><strong>Revise o arquivo</strong>{guestImportErrors.map((item) => <span key={item.row}>Linha {item.row}: {item.fields.join(', ')}</span>)}</div>}{guestImportResults.length > 0 && <div className="guest-import-success"><span>{guestImportResults.length} convidados importados. Os links individuais foram criados.</span><button type="button" className="button-outline" onClick={downloadImportedGuestLinks}>Baixar links dos convites <QrCode size={14} /></button></div>}</section>
+      <section className="role-card guest-import-card"><div className="role-card-heading"><div><span className="eyebrow">COMECE PELA SUA LISTA</span><h2>Importar convidados</h2></div><Users size={18} /></div><p className="team-access-note">Envie até 100 pessoas de uma vez por CSV ou planilha Excel (.xlsx). Use o modelo para organizar nomes, grupos e acompanhantes; se uma linha tiver erro, nada será importado.</p>{!isEditor && <details className="guest-group-tools"><summary>Preparar grupos para a lista <span>{groups.length} grupos</span></summary><div><form className="couple-group-form guest-group-create-form" onSubmit={createGuestGroup}><label>Nome do grupo<input value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength="100" placeholder="Ex.: Família da noiva" required /></label><label>Categoria<select value={groupType} onChange={(event) => setGroupType(event.target.value)}><option value="family">Família</option><option value="friends">Amigos</option><option value="godparent">Padrinhos</option><option value="guest">Convidados</option><option value="other">Outro</option></select></label><button type="submit" className="button-outline" disabled={busy}>{editingGuestGroup ? 'Salvar grupo' : 'Criar grupo'}</button>{editingGuestGroup && <button type="button" className="button-outline" disabled={busy} onClick={cancelGuestGroupEdit}>Cancelar</button>}</form>{groups.length > 0 && <ul className="guest-group-list" aria-label="Grupos cadastrados">{groups.map((group) => <li key={group.id}><span>{group.name}</span><div><button type="button" className="button-outline" disabled={busy} onClick={() => editGuestGroup(group)}>Editar</button><button type="button" className="button-outline guest-remove-button" disabled={busy} onClick={() => deleteGuestGroup(group)}>Excluir</button></div></li>)}</ul>}<small>Os grupos ajudam a importar a planilha e definir quais eventos cada pessoa pode ver.</small></div></details>}<div className="guest-import-actions"><button type="button" className="button-outline" onClick={downloadGuestCsvTemplate}>Baixar modelo CSV</button><label className="button-primary guest-import-file">{busy ? 'Importando…' : 'Importar lista'}<input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importGuestCsv} disabled={busy} /></label></div>{guestImportErrors.length > 0 && <div className="guest-import-errors" role="alert"><strong>Revise o arquivo</strong>{guestImportErrors.map((item) => <span key={item.row}>Linha {item.row}: {item.fields.join(', ')}</span>)}</div>}{guestImportResults.length > 0 && <div className="guest-import-success"><span>{guestImportResults.length} convidados importados. Os links individuais foram criados.</span><button type="button" className="button-outline" onClick={downloadImportedGuestLinks}>Baixar links dos convites <QrCode size={14} /></button></div>}</section>
       <section className="role-card guest-manual-card"><div className="role-card-heading"><div><span className="eyebrow">CADASTRO RÁPIDO</span><h2>Adicionar uma pessoa</h2></div></div><form className="couple-guest-form" onSubmit={createGuest}><label>Nome<input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength="160" required /></label><label>Pessoas<input type="number" min="1" max="20" value={guestPartySize} onChange={(event) => setGuestPartySize(event.target.value)} required /></label><label>Grupo<select value={guestGroup} onChange={(event) => setGuestGroup(event.target.value)}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><details className="guest-extra-fields"><summary>Contato e detalhes opcionais</summary><div><label>Telefone<input type="tel" value={guestPhone} onChange={(event) => setGuestPhone(event.target.value)} /></label><label>E-mail<input type="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} /></label><label>Perfil<select value={guestType} onChange={(event) => setGuestType(event.target.value)}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={guestDietaryNotes} maxLength="1000" onChange={(event) => setGuestDietaryNotes(event.target.value)} /></label><small>O e-mail é opcional. Ele poderá ser usado em notificações quando esse recurso estiver disponível.</small></div></details><button type="submit" className="button-primary" disabled={busy}>Salvar pessoa e criar convite <QrCode size={15} /></button></form></section>
       {editingGuest && <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">EDITAR CONVITE</span><h2>{editingGuest.name}</h2></div></div><form className="couple-guest-form" onSubmit={saveGuest}><label>Nome<input value={editingGuest.name} onChange={(event) => setEditingGuest({ ...editingGuest, name: event.target.value })} maxLength="160" required /></label><label>Telefone<input type="tel" value={editingGuest.phone || ''} onChange={(event) => setEditingGuest({ ...editingGuest, phone: event.target.value })} /></label><label>Grupo<select value={editingGuest.group_id || ''} onChange={(event) => setEditingGuest({ ...editingGuest, group_id: event.target.value })}><option value="">Sem grupo</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><label>E-mail opcional<input type="email" value={editingGuest.email || ''} onChange={(event) => setEditingGuest({ ...editingGuest, email: event.target.value })} /></label><label>Pessoas<input type="number" min="1" max="20" value={editingGuest.party_size} onChange={(event) => setEditingGuest({ ...editingGuest, party_size: event.target.value })} required /></label><label>Perfil<select value={editingGuest.guest_type} onChange={(event) => setEditingGuest({ ...editingGuest, guest_type: event.target.value })}><option value="guest">Convidado</option><option value="godparent">Padrinho ou madrinha</option></select></label><label className="couple-guest-wide">Restrição alimentar<input value={editingGuest.dietary_notes || ''} maxLength="1000" onChange={(event) => setEditingGuest({ ...editingGuest, dietary_notes: event.target.value })} /></label><button type="submit" className="button-primary" disabled={busy}>Salvar alterações <Check size={15} /></button><button type="button" className="button-outline" disabled={busy} onClick={() => setEditingGuest(null)}>Cancelar</button></form></section>}
       {share && <InvitationShare share={share} onClose={() => setShare(null)} notify={notify} />}
@@ -2224,8 +2289,8 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'godparents' && <>
       <section className="role-card godparent-welcome"><span className="eyebrow">QUEM CAMINHA COM VOCÊS</span><h2>Um espaço especial para padrinhos e madrinhas.</h2><p>Compartilhem orientações e tarefas com cada pessoa. O convite individual mostra apenas o que foi enviado a ela, sem expor a lista de convidados.</p><a href="#godparent-task-form">Preparar uma orientação <ArrowRight size={17} /></a></section>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>Atribuir tarefa a um padrinho</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">Enviar orientação <Heart size={15} /></button></form>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>{editingGodparentTask ? 'Editar orientação' : 'Atribuir tarefa a um padrinho'}</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite</option>{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">{editingGodparentTask ? 'Salvar alterações' : 'Atribuir orientação'} <Heart size={15} /></button>{editingGodparentTask && <button className="button-outline" type="button" disabled={busy} onClick={cancelGodparentTaskEdit}>Cancelar</button>}</form><p className="team-access-note">A orientação fica disponível no convite individual. Atualizações não enviam e-mail ou WhatsApp automaticamente.</p>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><div className="godparent-task-actions"><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span><button type="button" className="button-outline" disabled={busy} onClick={() => editGodparentTask(task)}>Editar</button><button type="button" className="button-outline guest-remove-button" disabled={busy} onClick={() => deleteGodparentTask(task)}>Excluir</button></div></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => loadWeddingData(weddingId)} />}

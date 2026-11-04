@@ -3325,11 +3325,38 @@ img { display: block; max-width: 100%; }
 }
 
 .couple-role-page .guest-group-tools li {
-  padding: 6px 10px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border: 1px solid #d9dfd5;
   color: #344b3c;
   background: #fffefa;
   font-size: 13px;
+}
+
+.couple-role-page .guest-group-list li > div,
+.couple-role-page .godparent-task-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.couple-role-page .guest-group-list .button-outline,
+.couple-role-page .godparent-task-actions .button-outline {
+  min-height: 34px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+.couple-role-page .godparent-admin-task-list article {
+  align-items: flex-start;
+}
+
+.couple-role-page .godparent-task-actions {
+  justify-content: flex-end;
 }
 
 .couple-role-page .guest-group-tools small {
