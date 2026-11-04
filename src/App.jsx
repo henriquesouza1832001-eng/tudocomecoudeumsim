@@ -2476,12 +2476,12 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaError, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
+function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaError, failedPhotoUpload, onRetryUpload, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
   return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
     <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{totalImages}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
     <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto</button></div>
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
-    {mediaError && <p className="admin-form-error" role="alert">{mediaError}</p>}
+    {mediaError && <p className="admin-form-error" role="alert">{mediaError}{failedPhotoUpload && <button type="button" className="button-outline" disabled={mediaBusy} onClick={onRetryUpload}>Tentar enviar esta foto novamente</button>}</p>}
     <label className="customizer-carousel-toggle"><input type="checkbox" checked={coverCarouselEnabled} disabled={coverGallery.length < 2} onChange={(event) => onCarouselToggle(event.target.checked)} /><span><strong>Ativar carrossel na capa</strong><small>{coverGallery.length < 2 ? 'Marquem pelo menos duas fotos como carrossel.' : 'As fotos escolhidas alternam na abertura do convite.'}</small></span></label>
     <label className="customizer-carousel-toggle"><input type="checkbox" checked={siteCarouselEnabled} disabled={siteCarouselPhotos.length === 0} onChange={(event) => onSiteCarouselToggle(event.target.checked)} /><span><strong>Exibir carrossel no convite</strong><small>{siteCarouselPhotos.length ? `${siteCarouselPhotos.length} foto(s) selecionada(s), em uma seção após a história e antes dos eventos.` : 'Escolham pelo menos uma foto abaixo para exibir o carrossel.'}</small></span></label>
     {siteCarouselEnabled && <label className="customizer-carousel-toggle customizer-carousel-autoplay"><input type="checkbox" checked={siteCarouselAutoplay} disabled={siteCarouselPhotos.length < 2} onChange={(event) => onSiteCarouselAutoplayToggle(event.target.checked)} /><span><strong>Reproduzir automaticamente</strong><small>{siteCarouselPhotos.length < 2 ? 'Selecionem duas ou mais fotos para ativar a reprodução.' : 'Avança suavemente a cada 5 segundos.'}</small></span></label>}
@@ -2502,6 +2502,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [mediaUrls, setMediaUrls] = useState({})
   const [mediaBusy, setMediaBusy] = useState(false)
   const [mediaError, setMediaError] = useState('')
+  const [failedPhotoUpload, setFailedPhotoUpload] = useState(null)
   const [mediaLoadErrors, setMediaLoadErrors] = useState([])
   const [photoAccentSuggestions, setPhotoAccentSuggestions] = useState([])
   const mediaUrlRegistry = useRef(new Set())
@@ -2703,11 +2704,13 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     const sections = current.enabledSections || []
     return { ...current, siteCarouselEnabled: active, enabledSections: active ? [...new Set([...sections, 'Galeria de fotos'])] : (current.siteGallery || []).length ? sections : sections.filter((section) => section !== 'Galeria de fotos') }
   })
-  const handlePhotoUpload = (event, usage) => {
+  const handlePhotoUpload = async (event, usage) => {
     const input = event.currentTarget
     const files = [...input.files].slice(0, remainingPhotoSlots)
-    files.reduce((queue, file) => queue.then(() => uploadSiteMedia(file, 'image', usage)), Promise.resolve()).finally(() => { input.value = '' })
+    input.value = ''
+    for (const file of files) await uploadSiteMedia(file, 'image', usage)
   }
+  const retryPhotoUpload = () => failedPhotoUpload && uploadSiteMedia(failedPhotoUpload.file, 'image', failedPhotoUpload.usage)
   const toggleCoverCarousel = (enabled) => update({ coverCarouselEnabled: enabled && (config.coverGallery || []).length > 1 })
   const style = {
     '--forest': selectedPalette[0],
@@ -2781,19 +2784,25 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         } catch {
           throw new Error('Não foi possível abrir esta imagem no navegador. Salve-a como JPG, PNG ou WebP e tente novamente.')
         }
-        const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height))
+        let scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height))
         const canvas = document.createElement('canvas')
-        canvas.width = Math.max(1, Math.round(bitmap.width * scale))
-        canvas.height = Math.max(1, Math.round(bitmap.height * scale))
         const canvasContext = canvas.getContext('2d')
         if (!canvasContext) {
           bitmap.close()
           throw new Error('Não foi possível preparar esta imagem. Tente outra vez.')
         }
-        canvasContext.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+        let imageBlob
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+          canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+          canvasContext.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+          imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', Math.max(0.45, 0.84 - attempt * 0.1)))
+          if (!imageBlob || imageBlob.size <= 8 * 1024 * 1024) break
+          scale *= 0.82
+        }
         bitmap.close()
-        const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.84))
         if (!imageBlob) throw new Error('Não foi possível preparar esta imagem. Tente outra vez.')
+        if (imageBlob.size > 8 * 1024 * 1024) throw new Error('Esta imagem continua acima de 8 MB depois da redução. Escolham outra foto ou reduzam o tamanho e tentem novamente.')
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(imageBlob.type)) throw new Error('O navegador não conseguiu converter esta imagem para um formato compatível.')
         const extension = imageBlob.type === 'image/png' ? 'png' : imageBlob.type === 'image/jpeg' ? 'jpg' : 'webp'
         uploadFile = new File([imageBlob], `foto.${extension}`, { type: imageBlob.type })
@@ -2805,6 +2814,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error === 'gallery_limit_reached' ? `A galeria aceita até ${SITE_MEDIA_LIMITS.photosPerWedding} fotos.` : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : result.error === 'invalid_media_size' ? 'O arquivo excede o limite permitido. Imagens até 8 MB e vídeos MP4 até 15 MB.' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? 'Formato não compatível. Use JPG, PNG ou WebP para fotos e MP4 para vídeo.' : result.error === 'media_storage_unavailable' || result.error === 'media_storage_write_failed' ? 'O armazenamento está indisponível agora. Tente novamente em alguns minutos.' : 'Não foi possível guardar este arquivo. Tente novamente.')
       setSiteMedia((current) => [...current, result])
+      setFailedPhotoUpload(null)
       const url = URL.createObjectURL(uploadFile)
       setMediaUrls((current) => ({ ...current, [result.id]: url }))
       mediaUrlRegistry.current.add(url)
@@ -2814,6 +2824,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       else setConfig((current) => ({ ...current, coverVideoId: result.id }))
     } catch (error) {
       setMediaError(error.message)
+      if (mediaType === 'image' && usage !== 'gift') setFailedPhotoUpload({ file, usage })
     } finally {
       setMediaBusy(false)
     }
@@ -2902,7 +2913,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       </div>
       {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
-        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
+        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} failedPhotoUpload={failedPhotoUpload} onRetryUpload={retryPhotoUpload} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
         <details className="customizer-extra-fields"><summary>Descrições acessíveis das fotos</summary><div><p>Descrevam cada imagem para que leitores de tela expliquem o que aparece nela. Para publicar uma foto usada no convite, preencham a descrição acessível. Fotos fora das seções ativas não bloqueiam a publicação.</p>{uploadedImages.map((item) => <label className="font-pair-label customizer-photo-alt-field" key={item.id}>{mediaUrls[item.id] && <img src={mediaUrls[item.id]} alt="" />}Descrição desta foto<input maxLength={250} value={config.imageAltTexts?.[item.id]?.['pt-BR'] || ''} placeholder="Ex.: O casal caminhando no jardim" onChange={(event) => update({ imageAltTexts: { ...config.imageAltTexts, [item.id]: { 'pt-BR': event.target.value } } })} />{!config.imageAltTexts?.[item.id]?.['pt-BR']?.trim() && <small>Necessária para publicar se esta foto aparecer no convite.</small>}</label>)}</div></details>
         <div className="wedding-profile-fields"><label>Noivo(a) 1<input maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} required /></label><label>Noivo(a) 2<input maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
