@@ -471,29 +471,6 @@ async function openGuestCredential(context, ciphertext, encodedIv) {
   }
 }
 
-async function allowCoupleSignup(context) {
-  const now = Math.floor(Date.now() / 1000)
-  const windowSeconds = 3600
-  const maximumRequests = 3
-  const remoteIp = context.req.header('CF-Connecting-IP') || 'unknown'
-  const identifierHash = await tokenHash(`couple-signup:${remoteIp}`)
-  const current = await context.env.DB.prepare(`
-    INSERT INTO auth_rate_limits (identifier_hash, failed_attempts, window_started_at, blocked_until)
-    VALUES (?, 1, ?, NULL)
-    ON CONFLICT(identifier_hash) DO UPDATE SET
-      failed_attempts = CASE WHEN auth_rate_limits.window_started_at <= ? THEN 1 ELSE auth_rate_limits.failed_attempts + 1 END,
-      window_started_at = CASE WHEN auth_rate_limits.window_started_at <= ? THEN excluded.window_started_at ELSE auth_rate_limits.window_started_at END,
-      blocked_until = CASE
-        WHEN auth_rate_limits.blocked_until > ? THEN auth_rate_limits.blocked_until
-        WHEN auth_rate_limits.window_started_at <= ? THEN NULL
-        WHEN auth_rate_limits.failed_attempts + 1 >= ? THEN ?
-        ELSE NULL
-      END
-    RETURNING blocked_until
-  `).bind(identifierHash, now, now - windowSeconds, now - windowSeconds, now, now - windowSeconds, maximumRequests, now + windowSeconds).first()
-  return !(current?.blocked_until > now)
-}
-
 async function allowPasswordReset(context, email) {
   const now = Math.floor(Date.now() / 1000)
   const windowSeconds = 3600
@@ -921,7 +898,6 @@ app.post('/api/auth/couple-signup', async (context) => {
   const challenge = await verifyTurnstile(context, body.turnstileToken)
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
   if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
-  if (!await allowCoupleSignup(context)) return context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '3600', 'Cache-Control': 'no-store' })
   const accountId = crypto.randomUUID()
   const weddingId = crypto.randomUUID()
   const membershipId = crypto.randomUUID()
