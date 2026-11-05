@@ -7,6 +7,7 @@ import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import { normalizeSectionLayouts } from '../../src/site-section-layouts.js'
 import { checkSitePublication } from '../../src/site-publication-check.js'
 import { isValidPixKey } from '../../src/pix-key.js'
+import { renderBrandedEmail } from '../../src/email-template.js'
 import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_BASE_URL, PRODUCT_NAME } from '../../src/product-config.js'
 import { checkMercadoPagoAccount, createMercadoPagoTestPreference, getMercadoPagoTestPayment, validateMercadoPagoWebhookSignature } from '../../src/server/mercado-pago.js'
 import {
@@ -46,7 +47,7 @@ const coverTextPositions = ['top', 'center', 'bottom']
 const coverImagePositions = ['center', 'top', 'bottom', 'left', 'right']
 const giftDisplayModes = ['inline', 'page', 'hidden']
 const pixDisplayModes = ['inline', 'page', 'hidden']
-const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const defaultSiteConfig = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 const guestPhotoConsentVersion = 'guest-camera-v1'
 function validPixSettings(pix, strict = false) {
   if (pix === undefined) return defaultSiteConfig.pix
@@ -273,7 +274,7 @@ function parseSiteConfig(value) {
     if (config.coverVideoId !== undefined && config.coverVideoId !== null && (typeof config.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(config.coverVideoId))) return null
     const coverImagePositionDesktop = config.coverImagePositionDesktop || config.coverImagePosition || 'center'
     const coverImagePositionMobile = config.coverImagePositionMobile || coverImagePositionDesktop
-    return { ...defaultSiteConfig, ...config, language: 'pt-BR', customAccent: config.customAccent || null, coverLayout: siteCoverLayouts.includes(config.coverLayout) ? config.coverLayout : 'full', coverComposition: config.coverComposition || null, coverTextAlign: config.coverTextAlign || 'left', coverTextPosition: config.coverTextPosition || 'center', coverOverlayOpacity: config.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(config), pixDisplayMode: normalizedPixDisplayMode(config), coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], siteCarouselEnabled: config.siteCarouselEnabled === true, siteCarouselPhotos: config.siteCarouselPhotos || [], siteCarouselAutoplay: config.siteCarouselAutoplay === true, coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, shareMessage, timeline, godparents, giftPresentation, sectionContent, sectionLayouts, weddingDetails, guestCamera, pix }
+    return { ...defaultSiteConfig, ...config, language: 'pt-BR', customAccent: config.customAccent || null, coverLayout: siteCoverLayouts.includes(config.coverLayout) ? config.coverLayout : 'full', coverComposition: config.coverComposition || null, coverTextAlign: config.coverTextAlign || 'left', coverTextPosition: config.coverTextPosition || 'center', coverOverlayOpacity: config.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(config), pixDisplayMode: normalizedPixDisplayMode(config), giftPreferences: ['pix', 'store', 'both', 'undecided'].includes(config.giftPreferences) ? config.giftPreferences : 'undecided', coverImage: 'none', coverPhotoId: config.coverPhotoId || null, coverCarouselEnabled: config.coverCarouselEnabled === true, coverGallery: config.coverGallery || [], siteGallery: config.siteGallery || [], siteCarouselEnabled: config.siteCarouselEnabled === true, siteCarouselPhotos: config.siteCarouselPhotos || [], siteCarouselAutoplay: config.siteCarouselAutoplay === true, coverVideoId: config.coverVideoId || null, enabledSections: [...new Set(config.enabledSections)], coverMessages, storyMessages, shareMessage, timeline, godparents, giftPresentation, sectionContent, sectionLayouts, weddingDetails, guestCamera, pix }
   } catch {
     return null
   }
@@ -322,14 +323,15 @@ function validateSiteConfig(body) {
     || (body.coverImagePositionDesktop !== undefined && !coverImagePositions.includes(body.coverImagePositionDesktop))
     || (body.coverImagePositionMobile !== undefined && !coverImagePositions.includes(body.coverImagePositionMobile))
     || (body.giftDisplayMode !== undefined && !giftDisplayModes.includes(body.giftDisplayMode))
-    || (body.pixDisplayMode !== undefined && !pixDisplayModes.includes(body.pixDisplayMode))) return null
+    || (body.pixDisplayMode !== undefined && !pixDisplayModes.includes(body.pixDisplayMode))
+    || (body.giftPreferences !== undefined && !['pix', 'store', 'both', 'undecided'].includes(body.giftPreferences))) return null
   if (body.coverGallery !== undefined && (!Array.isArray(body.coverGallery) || body.coverGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.coverGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.siteGallery !== undefined && (!Array.isArray(body.siteGallery) || body.siteGallery.length > SITE_MEDIA_LIMITS.photosPerWedding || body.siteGallery.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)))) return null
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && (typeof body.coverPhotoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverPhotoId))) return null
   if (body.coverVideoId !== undefined && body.coverVideoId !== null && (typeof body.coverVideoId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.coverVideoId))) return null
   const coverImagePositionDesktop = body.coverImagePositionDesktop || body.coverImagePosition || 'center'
   const coverImagePositionMobile = body.coverImagePositionMobile || coverImagePositionDesktop
-  return { theme: body.theme, paletteIndex: body.paletteIndex, customAccent: body.customAccent || null, coverLayout: body.coverLayout, coverComposition: body.coverComposition || null, coverTextAlign: body.coverTextAlign || 'left', coverTextPosition: body.coverTextPosition || 'center', coverOverlayOpacity: body.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(body), pixDisplayMode: normalizedPixDisplayMode(body), coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], siteCarouselEnabled: body.siteCarouselEnabled === true, siteCarouselPhotos: body.siteCarouselPhotos || [], siteCarouselAutoplay: body.siteCarouselAutoplay === true, coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: 'pt-BR', coverMessages, storyMessages, shareMessage, timeline, godparents, giftPresentation, sectionContent, sectionLayouts, weddingDetails, guestCamera, pix }
+  return { theme: body.theme, paletteIndex: body.paletteIndex, customAccent: body.customAccent || null, coverLayout: body.coverLayout, coverComposition: body.coverComposition || null, coverTextAlign: body.coverTextAlign || 'left', coverTextPosition: body.coverTextPosition || 'center', coverOverlayOpacity: body.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(body), pixDisplayMode: normalizedPixDisplayMode(body), giftPreferences: body.giftPreferences || 'undecided', coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], siteCarouselEnabled: body.siteCarouselEnabled === true, siteCarouselPhotos: body.siteCarouselPhotos || [], siteCarouselAutoplay: body.siteCarouselAutoplay === true, coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: 'pt-BR', coverMessages, storyMessages, shareMessage, timeline, godparents, giftPresentation, sectionContent, sectionLayouts, weddingDetails, guestCamera, pix }
 }
 
 function jsonError(context, status, error) {
@@ -538,7 +540,7 @@ async function sendTransactionalEmail(context, { to, subject, text, html }) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: brandedEmail(html) }),
+    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: brandedEmail(html, subject) }),
   })
   if (!response.ok) return false
   const result = await response.json().catch(() => null)
@@ -546,32 +548,44 @@ async function sendTransactionalEmail(context, { to, subject, text, html }) {
   return result?.success === true && !result.result?.permanent_bounces?.includes(to)
 }
 
-function brandedEmail(content) {
-  const formattedContent = content.replace(/<a href="([^"]+)">([^<]+)<\/a>/, '<a href="$1" style="display:inline-block;margin:8px 0;padding:13px 22px;background:#40574a;color:#fffdf9;font-weight:bold;text-decoration:none">$2</a>')
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"><title>${PRODUCT_NAME}</title></head><body style="margin:0;background:#f3f0e9;color:#35483e;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f0e9;padding:32px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fffdf9;border:1px solid #e5ded2"><tr><td style="padding:26px 32px 20px;border-bottom:1px solid #e5ded2"><span style="color:#31483c;font-family:Georgia,serif;font-size:19px">${PRODUCT_NAME}</span><div style="height:2px;margin-top:22px;background:#d7c4a8"></div></td></tr><tr><td style="padding:34px 32px 38px;font-size:16px;line-height:1.7">${formattedContent}</td></tr><tr><td style="padding:20px 32px;background:#f7f5ef;border-top:1px solid #e5ded2;color:#667166;font-size:12px;line-height:1.7">Uma plataforma para celebrar histórias e organizar cada detalhe.<br>Esta mensagem é automática e não recebe respostas. Dúvidas? <a href="mailto:henriquesouza1832001@gmail.com" style="color:#40574a">Fale com a gente</a> · <a href="https://henriquesouzas.com" style="color:#40574a">henriquesouzas.com</a></td></tr></table></td></tr></table></body></html>`
+function brandedEmail(content, subject) {
+  const actionMatch = content.match(/<a href="([^"]+)">([^<]+)<\/a>/)
+  const expiryMatch = content.match(/<p>([^<]*expira[^<]*)<\/p>/i)
+  const emailTitle = subject.split('|')[0].trim()
+  const bodyHtml = content
+    .replace(actionMatch?.[0] || '', '')
+    .replace(expiryMatch?.[0] || '', '')
+  const eyebrow = /senha/i.test(emailTitle) ? 'Segurança da conta' : /cadastro|e-mail/i.test(emailTitle) ? 'Acesso do casal' : 'Atualização do convite'
+  return renderBrandedEmail({
+    preheader: emailTitle,
+    eyebrow,
+    title: emailTitle,
+    bodyHtml,
+    actionLabel: actionMatch?.[2],
+    actionUrl: actionMatch?.[1],
+    notice: expiryMatch?.[1],
+  })
 }
 
 async function sendAccountVerification(context, email, token) {
   const verificationUrl = `${new URL(context.req.url).origin}/confirmar-email#confirmar-email/${token}`
   const contactText = '\n\nEsta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone (31) 98892-4409 ou pelo e-mail henriquesouza1832001@gmail.com.'
-  const contactHtml = '<hr><p>Esta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone <a href="tel:+5531988924409">(31) 98892-4409</a> ou pelo e-mail <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>.</p>'
   return sendTransactionalEmail(context, {
     to: email,
     subject: `Confirme seu cadastro | ${PRODUCT_NAME}`,
     text: `Confirme seu endere\u00e7o de e-mail acessando: ${verificationUrl}\n\nEste link expira em 24 horas.${contactText}`,
-    html: `<p>Confirme seu endere\u00e7o de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>${contactHtml}`,
+    html: `<p>Confirme seu endere\u00e7o de e-mail para ativar seu cadastro.</p><p><a href="${verificationUrl}">Confirmar meu e-mail</a></p><p>Este link expira em 24 horas.</p>`,
   })
 }
 
 async function sendPasswordReset(context, email, token) {
   const resetUrl = `${new URL(context.req.url).origin}/redefinir-senha#redefinir-senha/${token}`
   const contactText = '\n\nEsta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone (31) 98892-4409 ou pelo e-mail henriquesouza1832001@gmail.com.'
-  const contactHtml = '<hr><p>Esta mensagem \u00e9 autom\u00e1tica e n\u00e3o recebe respostas. Se precisar de ajuda, fale conosco pelo telefone <a href="tel:+5531988924409">(31) 98892-4409</a> ou pelo e-mail <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>.</p>'
   return sendTransactionalEmail(context, {
     to: email,
     subject: `Redefina sua senha | ${PRODUCT_NAME}`,
     text: `Use este link para redefinir sua senha. Ele expira em 30 minutos.\n\n${resetUrl}${contactText}`,
-    html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>${contactHtml}`,
+    html: `<p>Use o link abaixo para redefinir sua senha. Ele expira em 30 minutos.</p><p><a href="${resetUrl}">Redefinir senha</a></p>`,
   })
 }
 
@@ -909,6 +923,9 @@ app.post('/api/auth/couple-signup', async (context) => {
   const eventTime = body?.eventTime || null
   const partnerOneName = typeof body?.partnerOneName === 'string' ? body.partnerOneName.trim() : ''
   const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
+  const requestedSlug = body?.slug === undefined || body?.slug === null ? '' : typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : null
+  const reservedSlugs = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
+  const signupSlugIsValid = requestedSlug === '' || (typeof requestedSlug === 'string' && /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(requestedSlug) && !reservedSlugs.includes(requestedSlug))
   const siteConfig = body?.siteConfig === null || body?.siteConfig === undefined ? defaultSiteConfig : validateSiteConfig(body.siteConfig)
   const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
@@ -920,16 +937,21 @@ app.post('/api/auth/couple-signup', async (context) => {
   if (!dateIsValid) return jsonError(context, 400, 'invalid_signup_event_date')
   if (!timeIsValid) return jsonError(context, 400, 'invalid_signup_event_time')
   if (partnerOneName.length > 100 || partnerTwoName.length > 100) return jsonError(context, 400, 'invalid_signup_profile')
+  if (!signupSlugIsValid) return jsonError(context, 400, 'invalid_signup_slug')
   if (!siteConfig) return jsonError(context, 400, 'invalid_signup_site_config')
   if (!configuredEmailProvider(context.env)) return jsonError(context, 503, 'email_service_unconfigured')
   const challenge = await verifyTurnstile(context, body.turnstileToken)
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
   if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
+  if (requestedSlug) {
+    const existingSlug = await context.env.DB.prepare('SELECT id FROM weddings WHERE slug = ? COLLATE NOCASE').bind(requestedSlug).first()
+    if (existingSlug) return jsonError(context, 409, 'wedding_slug_unavailable')
+  }
   const accountId = crypto.randomUUID()
   const weddingId = crypto.randomUUID()
   const membershipId = crypto.randomUUID()
   const challengeId = crypto.randomUUID()
-  const slug = `rascunho-${weddingId.slice(0, 8)}`
+  const slug = requestedSlug || `rascunho-${weddingId.slice(0, 8)}`
   const token = encodeToken(crypto.getRandomValues(new Uint8Array(32)))
   const challengeHash = await tokenHash(token)
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -947,6 +969,7 @@ app.post('/api/auth/couple-signup', async (context) => {
     ])
   } catch (error) {
     if (String(error?.message || '').includes('UNIQUE constraint failed: accounts.email')) return jsonError(context, 409, 'email_unavailable')
+    if (String(error?.message || '').includes('UNIQUE constraint failed: weddings.slug')) return jsonError(context, 409, 'wedding_slug_unavailable')
     const diagnostic = signupPersistenceErrorDetails(error)
     console.error('couple_signup_persistence_failed', { errorName: error?.name || 'Error', ...diagnostic })
     try {
@@ -1361,7 +1384,7 @@ app.post('/api/superadmin/bootstrap', requireCloudflareAccess, async (context) =
 
 app.get('/api/couple/weddings', requireSession, async (context) => {
   const result = await context.env.DB.prepare(`
-    SELECT w.id, w.slug, w.partner_one_name, w.partner_two_name, w.event_date, w.event_time, w.status, m.role
+    SELECT w.id, w.slug, w.partner_one_name, w.partner_two_name, w.event_date, w.event_time, w.status, w.site_published_at, m.role
     FROM wedding_memberships m JOIN weddings w ON w.id = m.wedding_id
     WHERE m.account_id = ? AND m.status = 'active' AND m.role IN ('couple_admin', 'editor', 'reader') AND w.status != 'deleted'
     ORDER BY w.created_at DESC
@@ -1379,24 +1402,31 @@ app.patch('/api/couple/weddings/:weddingId/profile', requireSession, async (cont
   const partnerTwoName = typeof body?.partnerTwoName === 'string' ? body.partnerTwoName.trim() : ''
   const eventDate = body?.eventDate || null
   const eventTime = body?.eventTime || null
+  const requestedSlug = body?.slug === undefined ? undefined : typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : null
+  const reservedSlugs = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
   const parsedEventDate = typeof eventDate === 'string' ? new Date(`${eventDate}T00:00:00.000Z`) : null
   const dateIsValid = eventDate === null || (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(eventDate)
     && Number.isFinite(parsedEventDate?.getTime()) && parsedEventDate.toISOString().slice(0, 10) === eventDate)
   const timeIsValid = eventTime === null || (typeof eventTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime))
   if (!body || partnerOneName.length > 100 || partnerTwoName.length > 100 || !dateIsValid || !timeIsValid) return jsonError(context, 400, 'invalid_wedding_profile')
+  if (requestedSlug !== undefined && (typeof requestedSlug !== 'string' || !/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(requestedSlug) || reservedSlugs.includes(requestedSlug))) return jsonError(context, 400, 'invalid_wedding_slug')
+  if (requestedSlug !== undefined && membership.role !== 'couple_admin') return jsonError(context, 403, 'wedding_profile_forbidden')
   const wedding = await context.env.DB.prepare('SELECT slug, site_published_at FROM weddings WHERE id = ?').bind(weddingId).first()
   if (!wedding) return jsonError(context, 404, 'wedding_not_found')
-  let slug = wedding.slug
-  if (!wedding.site_published_at && partnerOneName && partnerTwoName) {
-    const base = `${partnerOneName}-${partnerTwoName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 21).replace(/-$/g, '')
-    const reserved = ['www', 'app', 'api', 'admin', 'painel', 'status', 'mail', 'superadmin', 'cadastro']
-    slug = base.length >= 3 && !reserved.includes(base) ? base : `casal-${weddingId.slice(0, 8)}`
-    const conflict = await context.env.DB.prepare('SELECT 1 AS found FROM weddings WHERE slug = ? COLLATE NOCASE AND id != ?').bind(slug, weddingId).first()
-    if (conflict) slug = `${slug.slice(0, 20)}-${weddingId.slice(0, 8)}`
+  const slug = requestedSlug === undefined ? wedding.slug : requestedSlug
+  if (wedding.site_published_at && slug !== wedding.slug) return jsonError(context, 409, 'wedding_slug_published')
+  if (slug !== wedding.slug) {
+    const conflict = await context.env.DB.prepare('SELECT id FROM weddings WHERE slug = ? COLLATE NOCASE AND id != ?').bind(slug, weddingId).first()
+    if (conflict) return jsonError(context, 409, 'wedding_slug_unavailable')
   }
-  await context.env.DB.prepare(`UPDATE weddings SET partner_one_name = ?, partner_two_name = ?, event_date = ?, event_time = ?, slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-    .bind(partnerOneName || null, partnerTwoName || null, eventDate, eventTime, slug, weddingId).run()
-  return context.json({ wedding: { id: weddingId, slug, partner_one_name: partnerOneName || null, partner_two_name: partnerTwoName || null, event_date: eventDate, event_time: eventTime } })
+  try {
+    await context.env.DB.prepare(`UPDATE weddings SET partner_one_name = ?, partner_two_name = ?, event_date = ?, event_time = ?, slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+      .bind(partnerOneName, partnerTwoName, eventDate, eventTime, slug, weddingId).run()
+  } catch (error) {
+    if (String(error?.message || '').includes('UNIQUE constraint failed: weddings.slug')) return jsonError(context, 409, 'wedding_slug_unavailable')
+    throw error
+  }
+  return context.json({ wedding: { id: weddingId, slug, partner_one_name: partnerOneName, partner_two_name: partnerTwoName, event_date: eventDate, event_time: eventTime } })
 })
 
 app.get('/api/couple/weddings/:weddingId/site-config', requireSession, async (context) => {

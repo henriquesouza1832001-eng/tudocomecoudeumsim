@@ -123,12 +123,12 @@ test('site draft profile autosave accepts missing names without replacing its te
   const result = await response.json()
   assert.equal(response.status, 200)
   assert.equal(result.wedding.partner_one_name, 'Ana')
-  assert.equal(result.wedding.partner_two_name, null)
+  assert.equal(result.wedding.partner_two_name, '')
   assert.equal(profileCapture.parameters[4], 'rascunho-12345678')
 })
 
 test('couple site config saves independent cover framing, image descriptions, display, and custom accent choices', async () => {
-  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } }, giftDisplayMode: 'page', pixDisplayMode: 'page', pix: { enabled: true, key: 'pix@example.com', holderName: 'Ana e Bia' } }
+  const config = { ...siteConfig, siteGallery: [], customAccent: '#be6f52', coverComposition: 'editorial', coverTextAlign: 'center', coverTextPosition: 'bottom', coverOverlayOpacity: 62, coverImagePosition: 'top', coverImagePositionDesktop: 'bottom', coverImagePositionMobile: 'left', imageAltTexts: { ['a'.repeat(36)]: { 'pt-BR': 'O casal caminhando no jardim.' } }, giftDisplayMode: 'page', pixDisplayMode: 'page', giftPreferences: 'both', pix: { enabled: true, key: 'pix@example.com', holderName: 'Ana e Bia' } }
   const response = await call('/api/couple/weddings/wedding-1/site-config', 'couple_admin', { method: 'PUT', body: config })
   const result = await response.json()
   assert.equal(response.status, 200)
@@ -143,6 +143,7 @@ test('couple site config saves independent cover framing, image descriptions, di
   assert.equal(result.draft.customAccent, '#be6f52')
   assert.equal(result.draft.giftDisplayMode, 'page')
   assert.equal(result.draft.pixDisplayMode, 'page')
+  assert.equal(result.draft.giftPreferences, 'both')
   assert.equal(result.draft.pix.key, 'pix@example.com')
 })
 

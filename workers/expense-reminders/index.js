@@ -1,8 +1,5 @@
-import { PRODUCT_NAME } from '../../src/product-config.js'
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
-}
+import { PRODUCT_BASE_URL, PRODUCT_NAME } from '../../src/product-config.js'
+import { escapeEmailHtml, renderBrandedEmail } from '../../src/email-template.js'
 
 function formatCurrency(cents) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100)
@@ -22,19 +19,27 @@ async function sendEmail(env, to, weddingName, expenses) {
   const provider = emailProvider(env)
   if (!provider) return false
   const rows = expenses.map((expense) => {
-    const supplier = escapeHtml(expense.supplier_name)
+    const supplier = escapeEmailHtml(expense.supplier_name)
     const dueDate = expense.due_date ? new Date(`${expense.due_date}T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Sem vencimento'
     const balance = Math.max(0, expense.total_amount_cents - expense.paid_amount_cents)
-    return `<tr><td style="padding:10px;border-bottom:1px solid #e5ded2">${supplier}<br><span style="color:#667166;font-size:13px">Vencimento: ${dueDate}</span></td><td align="right" style="padding:10px;border-bottom:1px solid #e5ded2">${formatCurrency(balance)}</td></tr>`
+    return `<tr><td style="padding:14px 10px;border-bottom:1px solid #e7e3da;word-break:break-word"><strong style="color:#35483e">${supplier}</strong><br><span style="color:#6d776e;font-size:12px">Vencimento: ${dueDate}</span></td><td align="right" style="padding:14px 10px;border-bottom:1px solid #e7e3da;color:#344b3e;font-weight:700;white-space:nowrap">${formatCurrency(balance)}</td></tr>`
   }).join('')
   const textRows = expenses.map((expense) => `${expense.supplier_name} — saldo ${formatCurrency(Math.max(0, expense.total_amount_cents - expense.paid_amount_cents))} — vencimento ${expense.due_date || 'não informado'}`).join('\n')
-  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:0;background:#f3f0e9;color:#35483e;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f0e9;padding:32px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fffdf9;border:1px solid #e5ded2"><tr><td style="padding:26px 32px 20px;border-bottom:1px solid #e5ded2"><span style="color:#be8052;font-family:Georgia,serif;font-size:18px">e&amp;t</span><span style="margin-left:12px;color:#31483c;font-family:Georgia,serif;font-size:19px">${escapeHtml(PRODUCT_NAME)}</span><div style="height:2px;margin-top:22px;background:#d7c4a8"></div></td></tr><tr><td style="padding:30px 32px;font-size:16px;line-height:1.7"><p>Este é o resumo mensal de despesas de <strong>${escapeHtml(weddingName)}</strong> que têm vencimento próximo ou estão em atraso.</p><table width="100%" cellspacing="0" cellpadding="0"><thead><tr><th align="left" style="padding:10px;border-bottom:1px solid #d7c4a8">Fornecedor</th><th align="right" style="padding:10px;border-bottom:1px solid #d7c4a8">Saldo</th></tr></thead><tbody>${rows}</tbody></table><p>Os valores são registros de organização do casal. Nenhum pagamento é feito pela plataforma.</p><p style="font-size:12px;color:#667166">Mensagem automática · <a href="https://henriquesouzas.com" style="color:#40574a">henriquesouzas.com</a></p></td></tr></table></td></tr></table></body></html>`
+  const html = renderBrandedEmail({
+    preheader: `${expenses.length} despesa(s) com saldo em aberto no casamento ${weddingName}.`,
+    eyebrow: 'Planejamento do casamento',
+    title: 'Resumo de despesas do mês',
+    bodyHtml: `<p style="margin:0 0 18px">Este é o resumo mensal de despesas de <strong>${escapeEmailHtml(weddingName)}</strong> com vencimento neste mês ou em atraso.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse"><thead><tr><th align="left" style="padding:10px;border-bottom:1px solid #d7cbb7;color:#58665a;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.7px;text-transform:uppercase">Fornecedor e vencimento</th><th align="right" style="padding:10px;border-bottom:1px solid #d7cbb7;color:#58665a;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.7px;text-transform:uppercase">Saldo em aberto</th></tr></thead><tbody>${rows}</tbody></table>`,
+    actionLabel: 'Abrir despesas',
+    actionUrl: `${PRODUCT_BASE_URL}/painel`,
+    notice: 'Os valores são registros de organização do casal. Nenhum pagamento é feito pela plataforma.',
+  })
   const isResend = provider === 'resend'
   const endpoint = isResend ? 'https://api.resend.com/emails' : `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/email/sending/send`
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${isResend ? env.RESEND_API_KEY : env.CLOUDFLARE_EMAIL_API_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: isResend ? [to] : to, from: env.EMAIL_FROM, subject: `Resumo mensal de despesas | ${PRODUCT_NAME}`, text: `Despesas de ${weddingName}:\n${textRows}\n\nNenhum pagamento é feito pela plataforma.`, html }),
+    body: JSON.stringify({ to: isResend ? [to] : to, from: env.EMAIL_FROM, subject: `Resumo mensal de despesas | ${PRODUCT_NAME}`, text: `Despesas de ${weddingName}:\n${textRows}\n\nAcesse o painel: ${PRODUCT_BASE_URL}/painel\n\nNenhum pagamento é feito pela plataforma.`, html }),
   })
   if (!response.ok) return false
   const result = await response.json().catch(() => null)

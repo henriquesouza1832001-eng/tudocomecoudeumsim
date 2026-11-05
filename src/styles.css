@@ -1322,6 +1322,46 @@ img { display: block; max-width: 100%; }
 .signup-login-link { margin: 4px 0 0; text-align: center; }
 .signup-login-link a, .admin-login-form > p a { color: var(--forest); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .admin-login-form .signup-submit { width: 100%; text-decoration: none; }
+.signup-progress { width: min(960px, 90%); margin: -14px auto 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.signup-progress button { min-height: 55px; padding: 8px 12px; display: flex; align-items: center; gap: 9px; border: 1px solid #ded8ce; color: #6b746b; background: #fbfaf6; font: inherit; font-size: 13px; text-align: left; }
+.signup-progress button:disabled { cursor: default; opacity: 1; }
+.signup-progress button.active { border-color: #405849; color: #344b3e; background: #edf1e9; font-weight: 700; }
+.signup-progress button.complete { border-color: #d5dbd2; color: #405849; }
+.signup-progress button span { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; }
+.signup-step-content { display: grid; gap: 18px; }
+.signup-step-content > .eyebrow { color: #997653; }
+.signup-step-content > small { color: #68736a; font-size: 13px; line-height: 1.6; }
+.signup-sections, .signup-gift-preference { margin: 0; padding: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; border: 1px solid #ded8ce; background: #fbfaf6; }
+.signup-sections legend, .signup-gift-preference legend { padding: 0 6px; color: #344b3e; font-size: 15px; font-weight: 700; }
+.signup-sections label, .signup-gift-preference label { min-height: 44px; padding: 8px 10px; display: flex; align-items: center; gap: 9px; border: 1px solid #e2dfd7; background: #fffefa; }
+.signup-sections label input, .signup-gift-preference label input { width: 17px; min-height: 17px; margin: 0; flex: 0 0 auto; accent-color: #405849; }
+.signup-sections label span, .signup-gift-preference label span { color: #46564b; font-size: 13px; }
+.signup-gift-preference > small { grid-column: 1 / -1; color: #68736a; font-size: 12px; line-height: 1.55; }
+.signup-review { padding: 20px; border: 1px solid #d8ded4; background: #f1f4ed; }
+.signup-review h2 { margin: 7px 0 16px; color: #344b3e; font: 400 25px/1.2 Georgia, 'Times New Roman', serif; }
+.signup-review dl { margin: 0; display: grid; gap: 10px; }
+.signup-review dl > div { padding-top: 9px; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; border-top: 1px solid #dbe1d6; }
+.signup-review dt { color: #697369; font-size: 13px; }
+.signup-review dd { margin: 0; color: #344b3e; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.signup-wizard-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.signup-wizard-actions .button-primary, .signup-wizard-actions .button-outline { min-height: 48px; }
+.wedding-profile-form { display: grid; gap: 17px; }
+.wedding-profile-form > label { display: grid; gap: 7px; color: #424d43; font-size: 14px; font-weight: 650; }
+.wedding-profile-form input { min-height: 48px; padding: 0 13px; border: 1px solid #d4d5cf; border-radius: 3px; color: #34453b; background: #fffefa; font: inherit; font-weight: 400; }
+.wedding-profile-form input:disabled { color: #68736a; background: #f4f3ee; }
+.wedding-profile-form small { color: #68736a; font-size: 12px; font-weight: 400; line-height: 1.55; overflow-wrap: anywhere; }
+.wedding-profile-form .customizer-name-fields, .wedding-profile-form .wedding-profile-date-grid { margin: 0; }
+.wedding-profile-form .form-success { margin: 0; color: #28573a; font-size: 13px; font-weight: 650; }
+.wedding-profile-form > .button-primary { width: fit-content; min-width: min(100%, 240px); min-height: 48px; }
+.wedding-gift-preference-note { padding: 15px 17px; display: grid; gap: 5px; border-left: 3px solid #879783; color: #33483a; background: #edf1e9; }
+.wedding-gift-preference-note strong { font: 400 19px/1.25 Georgia, 'Times New Roman', serif; }
+.wedding-gift-preference-note span { font-size: 14px; font-weight: 650; }
+.couple-tour-backdrop { position: fixed; inset: 0; z-index: 1200; padding: 20px; display: grid; place-items: center; background: rgba(25, 34, 28, .55); }
+.couple-tour-dialog { width: min(520px, 100%); padding: clamp(24px, 5vw, 38px); border: 1px solid #d8ded4; background: #fffefa; box-shadow: 0 24px 80px rgba(20, 31, 24, .25); }
+.couple-tour-dialog h2 { margin: 10px 0; color: #344b3e; font: 400 clamp(27px, 5vw, 36px)/1.18 Georgia, 'Times New Roman', serif; }
+.couple-tour-dialog > p { color: #58665a; font-size: 15px; line-height: 1.7; }
+.couple-tour-actions { margin-top: 25px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+.couple-tour-actions button { min-height: 44px; }
 .admin-form-error { margin: 0; padding: 11px 13px; color: #8a423b; background: #f7e9e5; font-size: 10px; line-height: 1.5; }
 .admin-mfa-instructions { margin: 0; color: #77796f; font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }
 .totp-setup-qr { display: grid; justify-items: center; gap: 12px; text-align: center; }
@@ -8191,4 +8231,19 @@ img { display: block; max-width: 100%; }
   .staff-print-list .staff-roster-search,
   .staff-print-list .checkin-toggle { display: none !important; }
   .staff-print-list .staff-list-card .role-card-heading .eyebrow { font-size: 8pt; }
+}
+
+@media (max-width: 640px) {
+  .signup-progress { width: min(960px, 90%); gap: 5px; }
+  .signup-progress button { min-height: 46px; padding: 6px; justify-content: center; font-size: 0; }
+  .signup-progress button span { width: 29px; height: 29px; font-size: 13px; }
+  .signup-sections, .signup-gift-preference { grid-template-columns: 1fr; padding: 15px; }
+  .signup-review { padding: 15px; }
+  .signup-review dl > div { grid-template-columns: 1fr; gap: 3px; }
+  .signup-wizard-actions { justify-content: stretch; }
+  .signup-wizard-actions > button { flex: 1 1 140px; }
+  .wedding-profile-form > .button-primary { width: 100%; }
+  .couple-tour-dialog { padding: 23px; }
+  .couple-tour-actions { justify-content: stretch; }
+  .couple-tour-actions button { flex: 1 1 120px; }
 }

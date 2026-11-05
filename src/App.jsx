@@ -101,7 +101,7 @@ function SiteAccentPicker({ value, appliedValue, onChange }) {
   const adjusted = Boolean(customAccent && customAccent.toLowerCase() !== appliedValue.toLowerCase())
   return <div className="site-accent-picker"><label>Cor de destaque personalizada<input type="color" value={customAccent || appliedValue} onChange={(event) => onChange(event.target.value)} /></label><small>Opcional. O sistema ajusta a cor quando necessário para manter contraste com o fundo.</small>{adjusted && <small role="status">A cor foi escurecida para manter o contraste mínimo.</small>}{customAccent && <button type="button" className="button-outline" onClick={() => onChange(null)}>Usar cor da paleta</button>}</div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 function imageAltText(config, id, fallback) {
   return config?.imageAltTexts?.[id]?.[config?.language || 'pt-BR']?.trim() || fallback
 }
@@ -985,7 +985,7 @@ function HelpCenter() {
   return <RoleFrame icon={CircleHelp} eyebrow="AJUDA" title="O que você precisa fazer?" description="Atalhos diretos para as etapas mais comuns." className="help-center-page" publicPage secureName="Ajuda" secureFooter="Suporte da plataforma" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
     <section className="role-card help-center-directory" aria-label="Ações da conta">
       <span className="eyebrow">ATALHOS DA CONTA</span>
-      <nav className="help-center-links"><a href="/cadastro"><span><strong>Criar acesso do casal</strong><small>Começar a montar o convite</small></span><ArrowRight size={17} /></a><a href="/painel"><span><strong>Entrar no painel</strong><small>Abrir o espaço do casamento</small></span><ArrowRight size={17} /></a><a href="/recuperar-senha"><span><strong>Recuperar senha</strong><small>Receber um link por e-mail</small></span><ArrowRight size={17} /></a></nav>
+    <nav className="help-center-links"><a href="/cadastro"><span><strong>Criar acesso do casal</strong><small>Começar a montar o convite</small></span><ArrowRight size={17} /></a><a href="/painel"><span><strong>Entrar no painel</strong><small>Abrir o espaço do casamento</small></span><ArrowRight size={17} /></a><a href="/painel#tour"><span><strong>Reabrir o tour do painel</strong><small>Rever cada área com avançar e voltar</small></span><ArrowRight size={17} /></a><a href="/recuperar-senha"><span><strong>Recuperar senha</strong><small>Receber um link por e-mail</small></span><ArrowRight size={17} /></a></nav>
     </section>
     <section className="role-card help-center-topics" id="tutorial-inicial"><span className="eyebrow">TUTORIAL INICIAL · PODE SER REABERTO</span><h2>Preparem o convite em etapas</h2><ol><li><strong>Comecem o rascunho.</strong> Escolham foto, tema e mensagem em <a href="/criar-site">Criar meu site</a>. Vocês podem continuar sem foto e voltar depois.</li><li><strong>Completem os dados do casal.</strong> No painel, abram Aparência para conferir os nomes e Eventos para completar datas e horários.</li><li><strong>Organizem a celebração.</strong> Cadastrem eventos, convidados e grupos; orientações de padrinhos ficam na área Padrinhos.</li><li><strong>Revisem antes de compartilhar.</strong> Salvem o rascunho, confiram a prévia e publiquem quando estiver pronta. Cada convidado usa o próprio link.</li><li><strong>Voltem à Ajuda quando precisarem.</strong> Este tutorial permanece disponível nesta página.</li></ol><a className="button-primary" href="/criar-site">Começar meu rascunho <ArrowRight size={15} /></a></section>
     <section className="role-card help-center-support"><span className="eyebrow">AINDA PRECISA DE AJUDA?</span><p>Envie o endereço da página e diga em que etapa parou.</p><div className="help-center-actions"><a className="button-outline" href="mailto:henriquesouza1832001@gmail.com"><Mail size={15} /> E-mail</a><a className="button-outline" href="https://wa.me/5531988924409" target="_blank" rel="noreferrer"><MessageCircle size={15} /> WhatsApp</a></div></section>
@@ -1176,20 +1176,77 @@ function PasswordInput(props) {
   </span>
 }
 
+const COUPLE_SIGNUP_DRAFT_KEY = 'couple-signup-draft'
+const SIGNUP_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados']
+const SIGNUP_GIFT_PREFERENCES = { pix: 'Pix direto aos noivos', store: 'Links para lojas', both: 'Pix e links para lojas', undecided: 'Vamos decidir depois' }
+
+function readCoupleSignupDraft() {
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(COUPLE_SIGNUP_DRAFT_KEY) || '{}')
+    return draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : {}
+  } catch {
+    return {}
+  }
+}
+
+function coupleSignupSlug(firstName, secondName) {
+  return `${firstName}-${secondName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30).replace(/-$/g, '')
+}
+
 function CoupleSignup() {
   const publicDraft = readPublicSiteDraft()
-  const [email, setEmail] = useState('')
-  const [partnerOneName, setPartnerOneName] = useState(publicDraft.partnerOneName || '')
-  const [partnerTwoName, setPartnerTwoName] = useState(publicDraft.partnerTwoName || '')
+  const savedDraft = readCoupleSignupDraft()
+  const initialConfig = { ...DEFAULT_SITE_CONFIG, ...publicDraft.siteConfig, ...savedDraft.siteConfig, coverMessages: { ...DEFAULT_SITE_CONFIG.coverMessages, ...publicDraft.siteConfig?.coverMessages, ...savedDraft.siteConfig?.coverMessages }, storyMessages: { ...DEFAULT_SITE_CONFIG.storyMessages, ...publicDraft.siteConfig?.storyMessages, ...savedDraft.siteConfig?.storyMessages }, weddingDetails: { ...DEFAULT_SITE_CONFIG.weddingDetails, ...publicDraft.siteConfig?.weddingDetails, ...savedDraft.siteConfig?.weddingDetails }, coverImage: 'none' }
+  const [step, setStep] = useState(() => Math.min(3, Math.max(1, Number(savedDraft.step) || 1)))
+  const [email, setEmail] = useState(savedDraft.email || '')
+  const [partnerOneName, setPartnerOneName] = useState(savedDraft.partnerOneName || publicDraft.partnerOneName || '')
+  const [partnerTwoName, setPartnerTwoName] = useState(savedDraft.partnerTwoName || publicDraft.partnerTwoName || '')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
-  const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
-  const [eventTime, setEventTime] = useState(publicDraft.eventTime || '')
+  const [eventDate, setEventDate] = useState(savedDraft.eventDate || publicDraft.eventDate || '')
+  const [eventTime, setEventTime] = useState(savedDraft.eventTime || publicDraft.eventTime || '')
+  const [slug, setSlug] = useState(savedDraft.slug || coupleSignupSlug(publicDraft.partnerOneName || '', publicDraft.partnerTwoName || ''))
+  const [slugEdited, setSlugEdited] = useState(savedDraft.slugEdited === true)
+  const [siteConfig, setSiteConfig] = useState(initialConfig)
+  const [giftPreference, setGiftPreference] = useState(savedDraft.giftPreference || initialConfig.giftPreferences || 'undecided')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COUPLE_SIGNUP_DRAFT_KEY, JSON.stringify({ step, email, partnerOneName, partnerTwoName, eventDate, eventTime, slug, slugEdited, siteConfig, giftPreference }))
+    } catch {
+      setError('Não foi possível salvar este rascunho neste navegador. Vocês ainda podem continuar o cadastro.')
+    }
+  }, [step, email, partnerOneName, partnerTwoName, eventDate, eventTime, slug, slugEdited, siteConfig, giftPreference])
+
+  function updatePartnerNames(first, second) {
+    setPartnerOneName(first)
+    setPartnerTwoName(second)
+    if (!slugEdited) setSlug(coupleSignupSlug(first, second))
+  }
+
+  function updateSignupSection(section, enabled) {
+    setSiteConfig((current) => {
+      const enabledSections = new Set(current.enabledSections || [])
+      if (enabled) enabledSections.add(section)
+      else enabledSections.delete(section)
+      return { ...current, enabledSections: [...enabledSections], ...(section === 'Lista de presentes' ? { giftDisplayMode: enabled ? 'inline' : 'hidden' } : {}) }
+    })
+  }
+
+  function continueTo(nextStep) {
+    setError('')
+    if (nextStep === 3 && slug && !/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(slug)) {
+      setStep(2)
+      setError('O endereço precisa ter de 3 a 30 caracteres: letras minúsculas, números e hífen, sem hífen no início ou no fim.')
+      return
+    }
+    setStep(nextStep)
+  }
 
   async function signup(event) {
     event.preventDefault()
@@ -1199,17 +1256,19 @@ function CoupleSignup() {
     }
     setBusy(true)
     setError('')
+    const config = { ...siteConfig, giftPreferences: giftPreference }
     try {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName, partnerTwoName, siteConfig: publicDraft.siteConfig || null, turnstileToken }),
+        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName, partnerTwoName, slug: slug || null, siteConfig: config, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) {
         const retryAfter = response.headers.get('Retry-After')
         throw new Error(result.error === 'too_many_attempts' ? `too_many_attempts:${retryAfter || 3600}` : result.error || 'signup_failed')
       }
+      window.localStorage.removeItem(COUPLE_SIGNUP_DRAFT_KEY)
       if (publicDraft.siteConfig) window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
       setSubmitted(true)
       setPassword('')
@@ -1217,18 +1276,20 @@ function CoupleSignup() {
     } catch (cause) {
       setError(cause.message === 'invalid_signup_email' ? 'Digite um e-mail válido.'
         : cause.message === 'invalid_signup_password' ? 'A senha precisa ter pelo menos 12 caracteres.'
-          : cause.message === 'invalid_signup_event_date' ? 'Confira a data do casamento ou deixe o campo vazio.'
-            : cause.message === 'invalid_signup_event_time' ? 'Confira o horário do casamento ou deixe o campo vazio.'
-              : cause.message === 'invalid_signup_profile' ? 'Confira os nomes informados no convite.'
-                : cause.message === 'invalid_signup_site_config' ? 'O rascunho do convite está inválido. Volte ao criador do site e salve novamente.'
-                  : cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tente novamente em breve.'
-        : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
-          : cause.message === 'turnstile_verification_failed' ? 'Conclua novamente a verificação de segurança.'
-            : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confira os dados e tente entrar.'
-              : cause.message.startsWith('too_many_attempts:') ? `O limite de segurança foi atingido nesta rede. Tente novamente em cerca de ${Math.max(1, Math.ceil(Number(cause.message.split(':')[1]) / 60))} minutos.`
-                : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confira os dados e tente novamente.'
-                  : cause.message === 'signup_unavailable' ? 'O cadastro não pôde ser salvo por um erro temporário. Tente novamente em instantes.'
-                  : 'Não foi possível criar o acesso. Confira os campos e tente novamente.')
+          : cause.message === 'invalid_signup_slug' ? 'Confira o endereço curto escolhido.'
+            : cause.message === 'wedding_slug_unavailable' ? 'Este endereço já está sendo usado. Escolham outro e tentem novamente.'
+              : cause.message === 'invalid_signup_event_date' ? 'Confira a data do casamento ou deixe o campo vazio.'
+                : cause.message === 'invalid_signup_event_time' ? 'Confira o horário do casamento ou deixe o campo vazio.'
+                  : cause.message === 'invalid_signup_profile' ? 'Confira os nomes informados no convite.'
+                    : cause.message === 'invalid_signup_site_config' ? 'O rascunho do convite está inválido. Voltem à personalização e salvem novamente.'
+                      : cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tentem novamente em breve.'
+                        : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
+                          : cause.message === 'turnstile_verification_failed' ? 'Concluam novamente a verificação de segurança.'
+                            : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confiram os dados e tentem entrar.'
+                              : cause.message.startsWith('too_many_attempts:') ? `O limite de segurança foi atingido nesta rede. Tentem novamente em cerca de ${Math.max(1, Math.ceil(Number(cause.message.split(':')[1]) / 60))} minutos.`
+                                : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confiram os dados e tentem novamente.'
+                                  : cause.message === 'signup_unavailable' ? 'O cadastro não pôde ser salvo por um erro temporário. Tentem novamente em instantes.'
+                                    : 'Não foi possível criar o acesso. Confiram os campos e tentem novamente.')
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -1236,19 +1297,20 @@ function CoupleSignup() {
     }
   }
 
-  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : publicDraft.siteConfig ? 'Criem o acesso para guardar no casamento o tema, a paleta e os textos que escolheram. A foto poderá ser enviada depois, no painel.' : 'Cadastrem o e-mail e a senha para abrir o painel e criar o convite com as próprias fotos.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel. O rascunho iniciado em “Criar site” já estará salvo no casamento; a foto pode ser enviada por lá.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
-      <label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-       <div className="customizer-name-fields signup-couple-names"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} /></label></div>
-      <div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
-      <label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
-      <label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
-      <TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />
-      {!TURNSTILE_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}
-      {error && <p className="admin-form-error" role="alert">{error}</p>}
-      <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando acesso…' : 'Criar acesso'} <ArrowRight size={15} /></button>
-      <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
-    </form>}
+  const displayDate = eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR') : 'A definir'
+  const stepTitles = ['O casal e a data', 'Convite e preferências', 'Acesso e revisão']
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : stepTitles[step - 1]} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : 'Avancem no seu ritmo. Os dados opcionais ficam salvos neste navegador para vocês continuarem depois.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
+    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel. O rascunho, as preferências e o endereço escolhidos já estarão salvos no casamento.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <>
+      <nav className="signup-progress" aria-label="Etapas do cadastro">{stepTitles.map((title, index) => <button type="button" key={title} className={step === index + 1 ? 'active' : step > index + 1 ? 'complete' : ''} aria-current={step === index + 1 ? 'step' : undefined} onClick={() => { if (index + 1 < step) continueTo(index + 1) }} disabled={index + 1 >= step}><span>{index + 1}</span>{title}</button>)}</nav>
+      <form className="role-card admin-login-form signup-form" onSubmit={signup}>
+        {step === 1 && <div className="signup-step-content"><span className="eyebrow">PRIMEIRO, O BÁSICO</span><p className="team-access-note">Preencham o que já sabem. Podem deixar qualquer campo em branco e completar depois nas configurações do casamento.</p><div className="customizer-name-fields signup-couple-names"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => updatePartnerNames(event.target.value, partnerTwoName)} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={partnerTwoName} onChange={(event) => updatePartnerNames(partnerOneName, event.target.value)} /></label></div><div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>}
+        {step === 2 && <div className="signup-step-content"><span className="eyebrow">MONTEM O RASCUNHO</span><label>Endereço curto, opcional<input autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="signup-slug-help" /></label><small id="signup-slug-help">O endereço completo será mostrado no painel. Deixem em branco para gerar um automaticamente.</small><fieldset className="signup-sections"><legend>Quais áreas querem no convite?</legend>{SIGNUP_SECTIONS.map((section) => <label key={section}><input type="checkbox" checked={(siteConfig.enabledSections || []).includes(section)} onChange={(event) => updateSignupSection(section, event.target.checked)} /><span>{section}</span></label>)}</fieldset><fieldset className="signup-gift-preference"><legend>Como preferem receber presentes?</legend>{Object.entries(SIGNUP_GIFT_PREFERENCES).map(([value, label]) => <label key={value}><input type="radio" name="gift-preference" checked={giftPreference === value} onChange={() => { setGiftPreference(value); setSiteConfig((current) => ({ ...current, giftPreferences: value, ...(value === 'store' || value === 'both' ? { giftDisplayMode: 'inline' } : {}), ...(value !== 'undecided' ? { enabledSections: [...new Set([...(current.enabledSections || []), 'Lista de presentes'])] } : {}) })) }} /><span>{label}</span></label>)}<small>A chave Pix e os itens de loja são configurados mais tarde, no painel. Nenhum pagamento passa pela plataforma.</small></fieldset></div>}
+        {step === 3 && <div className="signup-step-content"><span className="eyebrow">CRIEM O ACESSO</span><label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label><small>A senha e a verificação de segurança não ficam no rascunho. Se fecharem esta página, será preciso digitá-las de novo.</small><section className="signup-review" aria-labelledby="signup-review-title"><span className="eyebrow">CONFIRMEM ANTES DE CRIAR</span><h2 id="signup-review-title">Revisão do casamento</h2><dl><div><dt>Casal</dt><dd>{partnerOneName || 'Nome a definir'} &amp; {partnerTwoName || 'nome a definir'}</dd></div><div><dt>Data e horário</dt><dd>{displayDate}{eventTime ? ` · ${eventTime}` : ''}</dd></div><div><dt>Endereço curto</dt><dd>{slug || 'Gerado automaticamente'}</dd></div><div><dt>Áreas escolhidas</dt><dd>{siteConfig.enabledSections?.length ? siteConfig.enabledSections.join(', ') : 'Nenhuma selecionada'}</dd></div><div><dt>Presentes</dt><dd>{SIGNUP_GIFT_PREFERENCES[giftPreference]}</dd></div></dl></section><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{!TURNSTILE_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}</div>}
+        {error && <p className="admin-form-error" role="alert">{error}</p>}
+        <div className="signup-wizard-actions">{step > 1 && <button type="button" className="button-outline" onClick={() => { setError(''); setStep(step - 1) }} disabled={busy}><ArrowLeft size={15} /> Voltar</button>}{step === 1 && <button type="button" className="button-outline" onClick={() => continueTo(2)}>Pular por enquanto</button>}{step === 2 && <button type="button" className="button-outline" onClick={() => continueTo(3)}>Pular personalização</button>}{step < 3 ? <button type="button" className="button-primary" onClick={() => continueTo(step + 1)}>Continuar <ArrowRight size={15} /></button> : <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando acesso…' : 'Criar acesso'} <ArrowRight size={15} /></button>}</div>
+        <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
+      </form>
+    </>}
   </RoleFrame>
 }
 function CoupleEmailConfirmation() {
@@ -1413,8 +1475,10 @@ function CouplePanel({ notify, confirmAction }) {
   const [publishedSiteConfig, setPublishedSiteConfig] = useState(null)
   const [sitePublishedAt, setSitePublishedAt] = useState(null)
   const [siteConfigLoading, setSiteConfigLoading] = useState(false)
-  const [tab, setTab] = useState(() => window.location.hash === '#equipe' ? 'team' : 'site')
+  const [tab, setTab] = useState(() => window.location.hash === '#equipe' ? 'team' : window.location.hash === '#configuracoes' ? 'settings' : 'site')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(0)
   const mobileNavToggleRef = useRef(null)
   const mobileNavRef = useRef(null)
   const [guestName, setGuestName] = useState('')
@@ -2359,6 +2423,38 @@ function CouplePanel({ notify, confirmAction }) {
     }
   }, [mobileNavOpen])
 
+  const onboardingSteps = [
+    { tab: 'site', title: 'Personalizem o convite', description: 'Escolham tema, paleta e seções. A prévia acompanha as alterações e o rascunho pode ser salvo antes de publicar.' },
+    { tab: 'settings', title: 'Confiram os dados do casamento', description: 'Nomes, data, horário e endereço do convite ficam em Configurações do casamento.' },
+    { tab: 'events', title: 'Organizem os eventos', description: 'Cadastrem cerimônia, recepção e outros momentos, com data, horário e local.' },
+    { tab: 'guests', title: 'Preparem os convites', description: 'Importem a lista, organizem grupos e acompanhem as confirmações de presença.' },
+    { tab: 'site', title: 'Revisem antes de publicar', description: 'Confiram o convite e as informações para os convidados. A publicação libera a versão atual do site.' },
+  ]
+
+  useEffect(() => {
+    if (!dataReady || isEditor || isReader) return
+    const tourKey = `couple-panel-tour-complete:${account?.id || account?.email || 'account'}`
+    let shouldOpen = window.location.hash === '#tour'
+    try {
+      shouldOpen ||= window.localStorage.getItem(tourKey) !== 'true'
+    } catch {
+      shouldOpen = true
+    }
+    if (!shouldOpen) return
+    setOnboardingOpen(true)
+    setOnboardingStep(0)
+    if (window.location.hash === '#tour') window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+  }, [dataReady, weddingId, isEditor, isReader, account?.id, account?.email])
+
+  function finishOnboarding() {
+    try {
+      window.localStorage.setItem(`couple-panel-tour-complete:${account?.id || account?.email || 'account'}`, 'true')
+    } catch {
+      setError('Não foi possível salvar a conclusão do tutorial neste navegador.')
+    }
+    setOnboardingOpen(false)
+  }
+
   if (stage === 'checking') return <SuperAdminAccessFrame title="Retomando seu acesso." description="Vamos verificar sua sessão antes de pedir que você entre novamente." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos"><p role="status">Verificando sua sessão segura…</p></SuperAdminAccessFrame>
 
   if (stage !== 'ready') return <SuperAdminAccessFrame title="Painel dos noivos." description="Entre com o e-mail e a senha da conta vinculada ao seu casamento." eyebrow="ÁREA DOS NOIVOS" brand="Painel dos noivos">
@@ -2368,7 +2464,7 @@ function CouplePanel({ notify, confirmAction }) {
   if (isReader && !dataReady) return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Conteúdo publicado</strong></a><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><section className="role-card" role={dataLoadError ? 'alert' : 'status'}><p>{dataLoadError || 'Carregando os dados deste casamento…'}</p>{dataLoadError && <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button>}</section></main></div>
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
 
-  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a><button className="button-outline" onClick={() => setTab('site')}>{isEditor ? 'Editar site' : 'Meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
+  return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a>{!isEditor && <button className="button-outline" type="button" onClick={() => { setOnboardingStep(0); setOnboardingOpen(true); selectPanelTab('site') }}>Tour do painel</button>}<button className="button-outline" onClick={() => selectPanelTab('site')}>{isEditor ? 'Editar site' : 'Meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
      {dataLoadError && dataReady && <p className="admin-form-error" role="alert">{dataLoadError} <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button></p>}
@@ -2381,6 +2477,7 @@ function CouplePanel({ notify, confirmAction }) {
       <div className="couple-mobile-nav-heading"><strong>Áreas do casamento</strong><button type="button" aria-label="Fechar menu" onClick={closeMobileNav}><X size={20} /></button></div>
       <div className="couple-nav-guide"><strong>Organize por etapa</strong><span>Escolha uma área para continuar. Seus dados ficam salvos no casamento.</span></div>
       <button className={tab === 'site' ? 'selected' : ''} aria-current={tab === 'site' ? 'page' : undefined} onClick={() => selectPanelTab('site')}><Paintbrush size={18} /><span>Personalizar</span></button>
+      {!isEditor && <button className={tab === 'settings' ? 'selected' : ''} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => selectPanelTab('settings')}><Settings2 size={18} /><span>Configurações</span></button>}
 
       {(isEditor || !isReader) && <button className={tab === 'events' ? 'selected' : ''} aria-current={tab === 'events' ? 'page' : undefined} onClick={() => selectPanelTab('events')}><CalendarDays size={18} /><span>Eventos</span></button>}
       {!isEditor && <>
@@ -2436,9 +2533,35 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => refreshAfterConfirmedMutation(weddingId)} />}
+    {tab === 'settings' && !isEditor && <WeddingProfileSettings key={weddingId} wedding={wedding} onSave={saveWeddingProfile} giftPreference={siteConfig.giftPreferences || 'undecided'} saving={siteConfigLoading} />}
     {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
    </div>
-     </>}</main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+     </>}</main>{onboardingOpen && <div className="couple-tour-backdrop"><section className="couple-tour-dialog" role="dialog" aria-modal="true" aria-labelledby="couple-tour-title"><span className="eyebrow">PASSO {onboardingStep + 1} DE {onboardingSteps.length}</span><h2 id="couple-tour-title">{onboardingSteps[onboardingStep].title}</h2><p>{onboardingSteps[onboardingStep].description}</p><div className="couple-tour-actions">{onboardingStep > 0 && <button className="button-outline" type="button" onClick={() => { const previous = onboardingStep - 1; setOnboardingStep(previous); selectPanelTab(onboardingSteps[previous].tab) }}>Voltar</button>}<button className="button-outline" type="button" onClick={finishOnboarding}>Pular tour</button><button className="button-primary" type="button" onClick={() => { if (onboardingStep === onboardingSteps.length - 1) { finishOnboarding(); return } const next = onboardingStep + 1; setOnboardingStep(next); selectPanelTab(onboardingSteps[next].tab) }}>{onboardingStep === onboardingSteps.length - 1 ? 'Concluir' : 'Próximo'}</button></div></section></div>}<footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
+}
+
+function WeddingProfileSettings({ wedding, onSave, giftPreference, saving }) {
+  const [form, setForm] = useState(() => ({ partnerOneName: wedding?.partner_one_name || '', partnerTwoName: wedding?.partner_two_name || '', eventDate: wedding?.event_date || '', eventTime: wedding?.event_time || '', slug: wedding?.slug || '' }))
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const published = Boolean(wedding?.site_published_at)
+
+  async function submit(event) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    setSaved(false)
+    try {
+      await onSave({ ...form, eventDate: form.eventDate || null, eventTime: form.eventTime || null })
+      setSaved(true)
+    } catch (cause) {
+      setError(cause.message === 'wedding_slug_unavailable' ? 'Esse endereço curto já está em uso. Tentem outro.' : cause.message === 'wedding_slug_published' ? 'O endereço não pode ser alterado depois que o convite é publicado.' : cause.message === 'invalid_wedding_slug' ? 'Use de 3 a 30 letras minúsculas, números e hífens; endereços reservados não podem ser usados.' : 'Não foi possível salvar as configurações. Confiram os campos e tentem novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <section className="role-card wedding-profile-settings"><div className="role-card-heading"><div><span className="eyebrow">DADOS DO CASAMENTO</span><h2>Configurações do casamento</h2></div><Settings2 size={19} /></div><p className="team-access-note">Mantenham os dados principais e o endereço do convite em um só lugar. Vocês podem deixar a data em aberto e voltar depois.</p><form className="wedding-profile-form" onSubmit={submit}><div className="customizer-name-fields"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={form.partnerOneName} onChange={(event) => setForm((current) => ({ ...current, partnerOneName: event.target.value }))} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={form.partnerTwoName} onChange={(event) => setForm((current) => ({ ...current, partnerTwoName: event.target.value }))} /></label></div><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={form.eventDate} onChange={(event) => setForm((current) => ({ ...current, eventDate: event.target.value }))} /></label><label>Horário<input type="time" value={form.eventTime} onChange={(event) => setForm((current) => ({ ...current, eventTime: event.target.value }))} /></label></div><label>Endereço curto do convite<input autoComplete="off" inputMode="url" minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" value={form.slug} disabled={published} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30) }))} required /><small>{published ? 'O endereço fica fixo depois da publicação para preservar os links já compartilhados.' : `Use de 3 a 30 letras minúsculas, números e hífen. Endereço atual: ${window.location.origin}/casamento/${form.slug || wedding?.slug || ''}`}</small></label><div className="wedding-gift-preference-note"><strong>Preferência de presentes</strong><span>{SIGNUP_GIFT_PREFERENCES[giftPreference] || SIGNUP_GIFT_PREFERENCES.undecided}</span><small>Configure a lista e a chave Pix na área Presentes quando estiverem prontos.</small></div>{error && <p className="admin-form-error" role="alert">{error}</p>}{saved && <p className="form-success" role="status">Configurações salvas.</p>}<button className="button-primary" type="submit" disabled={busy || saving}>{busy || saving ? 'Salvando…' : 'Salvar configurações'} <Check size={15} /></button></form></section>
 }
 
 function WeddingExpenseManager({ weddingId, expenses, onReload }) {
@@ -2962,7 +3085,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     setPartnerTwoName(wedding?.partner_two_name || '')
     setEventDate(wedding?.event_date || '')
     setEventTime(wedding?.event_time || '')
-  }, [wedding?.id])
+  }, [wedding?.id, wedding?.partner_one_name, wedding?.partner_two_name, wedding?.event_date, wedding?.event_time])
 
   useEffect(() => {
     const gallery = config.coverGallery || []

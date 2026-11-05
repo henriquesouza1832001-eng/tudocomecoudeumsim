@@ -41,6 +41,10 @@ test('monthly expense reminders include the current month and mark successful de
     assert.equal(sentMessages[0].body.to[0], 'couple@example.com')
     assert.match(sentMessages[0].body.html, /&lt;Ana&gt;/)
     assert.match(sentMessages[0].body.html, /&lt;Flor&gt;/)
+    assert.match(sentMessages[0].body.html, /max-width:640px/)
+    assert.match(sentMessages[0].body.html, /Resumo de despesas do mês/)
+    assert.match(sentMessages[0].body.html, /Abrir despesas/)
+    assert.match(sentMessages[0].body.text, /tudocomecoudeumsim\.pages\.dev\/painel/)
     assert.ok(DB.statements.some(({ query }) => query.includes("SET status = 'sent'")))
     assert.deepEqual(DB.statements.find(({ query }) => query.includes('INSERT INTO wedding_expense_reminder_runs')).parameters.slice(1), ['wedding-1', 'account-1', '2027-02'])
   } finally {

@@ -110,12 +110,58 @@ test('couple signup accepts account details without invitation names or a slug',
   assert.deepEqual(await response.json(), { error: 'email_service_unconfigured' })
 })
 
+test('couple signup rejects invalid and reserved custom slugs', async () => {
+  for (const slug of ['ab', 'painel', 'Nome do Casal', 'casal-']) {
+    const { response } = await callApi('/api/auth/couple-signup', {
+      method: 'POST',
+      origin: base,
+      body: { email: 'casal@example.com', password: 'a-strong-password-123', slug },
+    })
+    assert.equal(response.status, 400)
+    assert.deepEqual(await response.json(), { error: 'invalid_signup_slug' })
+  }
+})
+
+test('couple profile updates preserve the saved slug and store optional names as empty strings', async () => {
+  const session = { id: 'session-1', account_id: 'couple-1', mfa_verified_at: null, expires_at: new Date(Date.now() + 60_000).toISOString(), email: 'couple@example.com', status: 'active', mfa_enabled_at: null, is_superadmin: 0 }
+  const updates = []
+  const env = {
+    DB: {
+      prepare(query) {
+        let values = []
+        return {
+          bind(...params) { values = params; return this },
+          async first() {
+            if (query.includes('FROM auth_sessions s')) return session
+            if (query.includes('FROM wedding_memberships')) return { id: 'membership-1', role: 'couple_admin', wedding_status: 'draft' }
+            if (query.includes('SELECT slug, site_published_at FROM weddings')) return { slug: 'custom-couple-name', site_published_at: null }
+            return null
+          },
+          async run() { updates.push({ query, values }); return { meta: { changes: 1 } } },
+        }
+      },
+    },
+  }
+  const request = new Request(`${base}/api/couple/weddings/wedding-1/profile`, {
+    method: 'PATCH',
+    headers: { Origin: base, 'Content-Type': 'application/json', Cookie: '__Host-wedding-session=session-token' },
+    body: JSON.stringify({ partnerOneName: '', partnerTwoName: '', eventDate: null, eventTime: null }),
+  })
+  const response = await apiRequest({ request, env })
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).wedding.slug, 'custom-couple-name')
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].values[0], '')
+  assert.equal(updates[0].values[1], '')
+  assert.equal(updates[0].values[4], 'custom-couple-name')
+})
+
 test('couple signup only reports an unavailable email when the account email is duplicated', async () => {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async () => new Response(JSON.stringify({ success: true, action: 'account', hostname: new URL(base).hostname }), { status: 200 })
   const errors = [
     { message: 'UNIQUE constraint failed: accounts.email', status: 409, code: 'email_unavailable' },
-    { message: 'UNIQUE constraint failed: weddings.slug', status: 500, code: 'signup_unavailable' },
+    { message: 'UNIQUE constraint failed: weddings.slug', status: 409, code: 'wedding_slug_unavailable' },
     { message: 'no such table: weddings', status: 500, code: 'signup_unavailable' },
   ]
   try {
@@ -138,7 +184,7 @@ test('couple signup only reports an unavailable email when the account email is 
       const response = await apiRequest({ request, env })
       assert.equal(response.status, expected.status)
       assert.deepEqual(await response.json(), { error: expected.code })
-      if (expected.code === 'email_unavailable') assert.equal(diagnosticWrites.length, 0)
+      if (['email_unavailable', 'wedding_slug_unavailable'].includes(expected.code)) assert.equal(diagnosticWrites.length, 0)
       else {
         assert.equal(diagnosticWrites.length, 1)
         assert.equal(diagnosticWrites[0].args[1], expected.message.includes('no such table') ? 'missing_table' : 'unique_constraint')
@@ -207,6 +253,7 @@ test('couple signup stores empty names when the optional names are omitted', asy
           sql,
           get args() { return args },
           bind(...values) { args = values; return this },
+          async first() { return null },
           async run() { return { success: true, meta: { changes: 1 } } },
         }
       },
@@ -217,13 +264,14 @@ test('couple signup stores empty names when the optional names are omitted', asy
   try {
     const request = new Request(`${base}/api/auth/couple-signup`, {
       method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'casal@example.test', password: 'a-strong-password-123', turnstileToken: 'test-token' }),
+      body: JSON.stringify({ email: 'casal@example.test', password: 'a-strong-password-123', slug: 'ana-e-joao', turnstileToken: 'test-token' }),
     })
     const response = await apiRequest({ request, env })
     assert.equal(response.status, 201)
     const weddingInsert = inserted.find(({ sql }) => sql.includes('INSERT INTO weddings'))
     assert.equal(weddingInsert.args[3], '')
     assert.equal(weddingInsert.args[4], '')
+    assert.equal(weddingInsert.args[1], 'ana-e-joao')
   } finally {
     globalThis.fetch = originalFetch
   }
