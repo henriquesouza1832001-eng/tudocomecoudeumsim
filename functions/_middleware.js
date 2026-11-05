@@ -65,8 +65,14 @@ export async function verifyAccessAssertion(assertion, env) {
 }
 
 export async function onRequest(context) {
-  let response
   const requestUrl = new URL(context.request.url)
+  if (requestUrl.pathname === '/documentos-legais/rascunho') {
+    return new Response('Página não encontrada', {
+      status: 404,
+      headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' },
+    })
+  }
+  let response
   const previewHost = requestUrl.hostname.endsWith('.tudocomecoudeumsim.pages.dev') && requestUrl.hostname !== 'tudocomecoudeumsim.pages.dev'
   const previewDemoPage = previewHost && requestUrl.searchParams.has('teste-local') && (requestUrl.pathname === '/superadmin' || requestUrl.pathname.startsWith('/superadmin/'))
   if (protectedPath(requestUrl.pathname) && !previewDemoPage) {
@@ -98,7 +104,7 @@ export async function onRequest(context) {
     headers.delete('Content-Encoding')
     headers.delete('ETag')
     response = new Response(html, { status: response.status, statusText: response.statusText, headers })
-  } else if (contentType.includes('text/html') && (url.pathname.startsWith('/casamento/') || url.pathname === '/documentos-legais/rascunho' || url.pathname.startsWith('/estudo-') || url.pathname === '/painel/demo' || url.pathname === '/criar-site' || url.pathname === '/cadastro')) {
+  } else if (contentType.includes('text/html') && (url.pathname.startsWith('/casamento/') || url.pathname.startsWith('/estudo-') || url.pathname === '/painel/demo' || url.pathname === '/criar-site' || url.pathname === '/cadastro')) {
     const headers = new Headers(response.headers)
     headers.set('X-Robots-Tag', 'noindex, nofollow')
     response = new Response(response.body, { status: response.status, statusText: response.statusText, headers })

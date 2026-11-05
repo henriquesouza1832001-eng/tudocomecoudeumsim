@@ -273,3 +273,17 @@ test('the QA preview can open only the superadmin screen while its API stays pro
     assert.equal(response.status, 403)
   }
 })
+
+test('the retired legal draft route returns a private 404', async () => {
+  let nextCalled = false
+  const response = await accessMiddleware({
+    request: new Request('https://tudocomecoudeumsim.pages.dev/documentos-legais/rascunho'),
+    env: {},
+    next: async () => { nextCalled = true; return new Response('draft') },
+  })
+  assert.equal(response.status, 404)
+  assert.equal(response.headers.get('Cache-Control'), 'no-store')
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow')
+  assert.equal(nextCalled, false)
+  assert.equal(await response.text(), 'Página não encontrada')
+})

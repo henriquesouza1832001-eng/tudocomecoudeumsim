@@ -1,5 +1,5 @@
 import './styles.css'
-import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_NAME } from './product-config.js'
+import { PRODUCT_NAME } from './product-config.js'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
@@ -877,7 +877,6 @@ function App() {
       {view === 'dashboard' && <CouplePanel notify={notify} confirmAction={confirmAction} />}
       {view === 'public-customizer' && <PublicSiteCustomizer />}
       {view === 'help-center' && <HelpCenter />}
-      {view === 'legal-draft' && <LegalDraft />}
       {view === 'couple-signup' && <CoupleSignup />}
       {view === 'email-confirmation' && <CoupleEmailConfirmation />}
       {view === 'password-reset-request' && <PasswordResetRequest />}
@@ -914,7 +913,6 @@ function resolveCurrentView() {
   if (path === '/cadastro') return 'couple-signup'
   if (path === '/criar-site') return 'public-customizer'
   if (path === '/ajuda') return 'help-center'
-  if (path === '/documentos-legais/rascunho') return 'legal-draft'
   if (path === '/painel/demo' || path === '/site-casal-demo') return 'not-found'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/confirmar-presenca') return 'attendance-request'
@@ -934,35 +932,13 @@ function resolveCurrentView() {
   return 'not-found'
 }
 
-function LegalDraft() {
-  return <RoleFrame icon={Shield} eyebrow="DOCUMENTOS DA PLATAFORMA" title="Privacidade e termos" description="Minuta de trabalho com identificação e prazos informados pelo responsável. Ainda depende da confirmação dos operadores e dos procedimentos de retenção antes de entrar em vigor." publicPage secureName="Documentos legais" secureFooter="Minuta para revisão" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
-    <section className="role-card help-center-start"><span className="eyebrow">MINUTA · NÃO PUBLICAR COMO VERSÃO FINAL</span><p>Responsável informado: Henrique Souza Soares, CPF 153.266.366-89. Contato para privacidade e suporte: <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>. A natureza jurídica da operação, os canais finais e os operadores de dados ainda precisam ser confirmados antes da vigência.</p></section>
-    <section className="role-card help-center-topics"><h2>Política de privacidade</h2>
-      <details open><summary>1. Dados e finalidades</summary><p>A plataforma trata dados de cadastro e autenticação para criar e proteger contas; dados do casamento, conteúdo, fotos e preferências para montar o site; e dados de convidados, contatos, grupos, eventos e respostas para entregar convites, RSVP e controle de entrada. Registros técnicos e de auditoria apoiam segurança, prevenção de abuso e funcionamento do serviço.</p></details>
-      <details open><summary>2. Papéis e compartilhamento</summary><p>Os noivos controlam os dados que cadastram sobre o casamento e os convidados. A plataforma trata esses dados para prestar os recursos solicitados. A plataforma também usa dados mínimos de conta, segurança e suporte para administrar o serviço. A infraestrutura pode envolver Cloudflare e, quando configurado, um provedor de envio de e-mail. A lista final de operadores, localidades e contratos deve ser confirmada pelo responsável.</p></details>
-      <details open><summary>3. Presentes e informações públicas</summary><p>Chaves Pix e links de lojas só são exibidos quando os noivos os habilitam. O Pix é pago diretamente aos noivos no aplicativo bancário do convidado; a plataforma não recebe nem confirma o pagamento. Links de loja abrem serviços externos, sujeitos às políticas deles. Endereços residenciais e dados privados de entrega não devem ser publicados.</p></details>
-      <details open><summary>4. Acesso, segurança e retenção</summary><p>O acesso é limitado por conta, papel e casamento. A plataforma aplica controles técnicos como sessão protegida, limitação de tentativas, verificação antiabuso e permissões no servidor. Conforme prazo definido pelo responsável, dados identificáveis de convidados e respostas serão eliminados ou anonimizados até três meses após a data do casamento. Fotos e demais dados do casamento serão eliminados ou anonimizados até seis meses após essa data. O encerramento do subdomínio, por si só, não apaga os dados. A execução desses prazos, inclusive nas cópias de segurança, ainda precisa ser implementada e validada antes de esta política entrar em vigor.</p></details>
-      <details open><summary>5. Direitos e solicitações</summary><p>A pessoa titular pode solicitar confirmação e acesso, correção, informação sobre compartilhamento, oposição ou revisão quando aplicável e eliminação nos limites legais. Para solicitar atendimento, escreva para <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>. A plataforma pode pedir informações proporcionais para confirmar a identidade e encaminhar pedidos sobre dados de convidados aos noivos responsáveis.</p></details>
-      <details open><summary>6. Cookies, menores e mudanças</summary><p>Cookies estritamente necessários podem manter a sessão e a segurança. [CONFIRMAR ANALÍTICA, COOKIES OPCIONAIS E FERRAMENTAS DE TERCEIROS.] O serviço é voltado à organização de casamentos por adultos; eventual tratamento de dados de crianças ou adolescentes precisa de fluxo e salvaguardas próprios. Mudanças materiais serão comunicadas nesta página com a data de atualização.</p></details>
-    </section>
-    <section className="role-card help-center-topics"><h2>Termos de uso</h2>
-      <details open><summary>1. Uso da plataforma</summary><p>A plataforma oferece ferramentas para criar páginas de casamento, organizar convidados, convites, RSVP, tarefas e controle de entrada. O acesso é cobrado em pagamento único no valor informado na oferta antes da contratação ({new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(PLATFORM_ACCESS_PRICE_CENTS / 100)}). Não há taxa sobre presentes. O usuário deve manter os dados da conta corretos, proteger a senha e ter autorização para enviar conteúdo e dados de convidados.</p></details>
-      <details open><summary>2. Conteúdo e permissões</summary><p>O casal responde pelas informações, fotos, textos, convites, permissões de acesso, lista de convidados e dados que publica. Só deve enviar imagens e dados que tenha autorização para usar. Conteúdo público deve respeitar direitos de terceiros, privacidade e a lei.</p></details>
-      <details open><summary>3. Pix e lojas externas</summary><p>Pix é uma transferência entre convidado e casal, fora da plataforma. A plataforma não atua como instituição de pagamento, não recebe, guarda, divide ou repassa valores e não confirma transferências. Links de lojas apenas encaminham para outro site; compra, preço, disponibilidade, entrega e atendimento são responsabilidade da loja, do comprador e do casal.</p></details>
-      <details open><summary>4. Disponibilidade e encerramento</summary><p>O serviço pode receber manutenção e apresentar indisponibilidade. O encerramento de um site ou subdomínio não apaga imediatamente os dados. Os prazos previstos são de até três meses após o casamento para dados identificáveis de convidados e respostas, e até seis meses para fotos e demais dados do casamento. A execução desses prazos ainda precisa ser implementada e validada antes de os termos entrarem em vigor.</p></details>
-      <details open><summary>5. Contato, alterações e foro</summary><p>Suporte e contato de privacidade: <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a>. Natureza jurídica da operação, data de vigência, regras completas de cancelamento, responsabilidade, foro e solução de conflitos ainda precisam ser preenchidos e validados. A versão final deve indicar quando os termos mudaram e como o usuário será informado.</p></details>
-    </section>
-    <p className="study-footer">Base legal a revisar: Lei nº 13.709/2018 (LGPD), direitos dos titulares e orientação da ANPD sobre controlador e operador. Documento em preparação; não substitui revisão jurídica.</p>
-  </RoleFrame>
-}
-
 function HelpCenter() {
   return <RoleFrame icon={CircleHelp} eyebrow="AJUDA" title="O que você precisa fazer?" description="Atalhos diretos para as etapas mais comuns." className="help-center-page" publicPage secureName="Ajuda" secureFooter="Suporte da plataforma" headerAction={<a className="button-outline" href="/">Voltar ao início</a>}>
     <section className="role-card help-center-directory" aria-label="Ações da conta">
       <span className="eyebrow">ATALHOS DA CONTA</span>
       <nav className="help-center-links"><a href="/cadastro"><span><strong>Criar acesso do casal</strong><small>Começar a montar o convite</small></span><ArrowRight size={17} /></a><a href="/painel"><span><strong>Entrar no painel</strong><small>Abrir o espaço do casamento</small></span><ArrowRight size={17} /></a><a href="/recuperar-senha"><span><strong>Recuperar senha</strong><small>Receber um link por e-mail</small></span><ArrowRight size={17} /></a></nav>
     </section>
-    <section className="role-card help-center-topics" id="tutorial-inicial"><span className="eyebrow">TUTORIAL INICIAL · PODE SER REABERTO</span><h2>Preparem o convite em etapas</h2><ol><li><strong>Comecem o rascunho.</strong> Escolham foto, tema e mensagem em <a href="/criar-site">Criar meu site</a>. Vocês podem continuar sem foto e voltar depois.</li><li><strong>Completem os dados do casal.</strong> No painel, abram Configurações para atualizar nomes e data.</li><li><strong>Organizem a celebração.</strong> Cadastrem eventos, convidados e grupos; orientações de padrinhos ficam na área Padrinhos.</li><li><strong>Revisem antes de compartilhar.</strong> Salvem o rascunho, confiram a prévia e publiquem quando estiver pronta. Cada convidado usa o próprio link.</li><li><strong>Voltem à Ajuda quando precisarem.</strong> Este tutorial permanece disponível nesta página.</li></ol><a className="button-primary" href="/criar-site">Começar meu rascunho <ArrowRight size={15} /></a></section>
+    <section className="role-card help-center-topics" id="tutorial-inicial"><span className="eyebrow">TUTORIAL INICIAL · PODE SER REABERTO</span><h2>Preparem o convite em etapas</h2><ol><li><strong>Comecem o rascunho.</strong> Escolham foto, tema e mensagem em <a href="/criar-site">Criar meu site</a>. Vocês podem continuar sem foto e voltar depois.</li><li><strong>Completem os dados do casal.</strong> No painel, abram Aparência para conferir os nomes e Eventos para completar datas e horários.</li><li><strong>Organizem a celebração.</strong> Cadastrem eventos, convidados e grupos; orientações de padrinhos ficam na área Padrinhos.</li><li><strong>Revisem antes de compartilhar.</strong> Salvem o rascunho, confiram a prévia e publiquem quando estiver pronta. Cada convidado usa o próprio link.</li><li><strong>Voltem à Ajuda quando precisarem.</strong> Este tutorial permanece disponível nesta página.</li></ol><a className="button-primary" href="/criar-site">Começar meu rascunho <ArrowRight size={15} /></a></section>
     <section className="role-card help-center-support"><span className="eyebrow">AINDA PRECISA DE AJUDA?</span><p>Envie o endereço da página e diga em que etapa parou.</p><div className="help-center-actions"><a className="button-outline" href="mailto:henriquesouza1832001@gmail.com"><Mail size={15} /> E-mail</a><a className="button-outline" href="https://wa.me/5531988924409" target="_blank" rel="noreferrer"><MessageCircle size={15} /> WhatsApp</a></div></section>
   </RoleFrame>
 }
@@ -1154,10 +1130,12 @@ function PasswordInput(props) {
 function CoupleSignup() {
   const publicDraft = readPublicSiteDraft()
   const [email, setEmail] = useState('')
+  const [partnerOneName, setPartnerOneName] = useState(publicDraft.partnerOneName || '')
+  const [partnerTwoName, setPartnerTwoName] = useState(publicDraft.partnerTwoName || '')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [eventDate, setEventDate] = useState(publicDraft.eventDate || '')
-  const [eventTime, setEventTime] = useState('')
+  const [eventTime, setEventTime] = useState(publicDraft.eventTime || '')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [error, setError] = useState('')
@@ -1176,7 +1154,7 @@ function CoupleSignup() {
       const response = await fetch('/api/auth/couple-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName: publicDraft.partnerOneName || '', partnerTwoName: publicDraft.partnerTwoName || '', siteConfig: publicDraft.siteConfig || null, turnstileToken }),
+        body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName, partnerTwoName, siteConfig: publicDraft.siteConfig || null, turnstileToken }),
       })
       const result = await response.json()
       if (!response.ok) {
@@ -1212,6 +1190,7 @@ function CoupleSignup() {
   return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : 'Crie o acesso do casal.'} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : publicDraft.siteConfig ? 'Criem o acesso para guardar no casamento o tema, a paleta e os textos que escolheram. A foto poderá ser enviada depois, no painel.' : 'Cadastrem o e-mail e a senha para abrir o painel e criar o convite com as próprias fotos.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
     {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel. O rascunho iniciado em “Criar site” já estará salvo no casamento; a foto pode ser enviada por lá.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <form className="role-card admin-login-form signup-form" onSubmit={signup}>
       <label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+       <div className="customizer-name-fields signup-couple-names"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} /></label></div>
       <div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
       <label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       <label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label>
@@ -1338,6 +1317,8 @@ function CouplePanel({ notify, confirmAction }) {
   const [sessionRestoreFailed, setSessionRestoreFailed] = useState(false)
   const [weddings, setWeddings] = useState([])
   const [weddingId, setWeddingId] = useState('')
+  const [loadedWeddingId, setLoadedWeddingId] = useState('')
+  const [dataLoadError, setDataLoadError] = useState('')
   const [guests, setGuests] = useState([])
   const [guestPolicy, setGuestPolicy] = useState({ companionsAllowed: false, maxCompanions: 0 })
   const [attendanceRequests, setAttendanceRequests] = useState([])
@@ -1413,6 +1394,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const wedding = weddings.find((item) => item.id === weddingId)
+  const dataReady = loadedWeddingId === weddingId && Boolean(weddingId)
   const isReader = wedding?.role === 'reader'
   const isEditor = wedding?.role === 'editor'
   const selectedManualEvent = events.find((item) => item.id === manualEventId)
@@ -1460,6 +1442,26 @@ function CouplePanel({ notify, confirmAction }) {
   }
 
   async function loadWeddingData(id) {
+    if (!id) return
+    setDataLoadError('')
+    try {
+      await fetchWeddingData(id)
+      setLoadedWeddingId(id)
+    } catch (cause) {
+      setDataLoadError('Não foi possível carregar os dados deste casamento. Os registros não foram removidos. Tente carregar novamente.')
+      throw cause
+    }
+  }
+
+  async function refreshAfterConfirmedMutation(id = weddingId) {
+    try {
+      await loadWeddingData(id)
+    } catch {
+      setDataLoadError('A gravação foi confirmada, mas a lista não atualizou. Os dados anteriores continuam na tela; tente carregar novamente antes de repetir a ação.')
+    }
+  }
+
+  async function fetchWeddingData(id) {
     if (!id) return
     const base = `/api/couple/weddings/${id}`
     const selectedWedding = weddings.find((item) => item.id === id)
@@ -1642,7 +1644,7 @@ function CouplePanel({ notify, confirmAction }) {
   }, [])
 
   useEffect(() => {
-    if (stage === 'ready' && weddingId) loadWeddingData(weddingId).catch(() => setError('Não foi possível carregar os dados deste casamento.'))
+    if (stage === 'ready' && weddingId) loadWeddingData(weddingId).catch(() => {})
   }, [stage, weddingId])
 
   async function login(event) {
@@ -1681,7 +1683,7 @@ function CouplePanel({ notify, confirmAction }) {
       setGuestPhone('')
       setGuestPartySize('1')
       setGuestDietaryNotes('')
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Convidado salvo no D1. O link individual foi gerado.')
     } catch {
       setError('Não foi possível salvar o convidado. Confira os campos e tente novamente.')
@@ -1702,7 +1704,7 @@ function CouplePanel({ notify, confirmAction }) {
       setGroupName('')
       setGroupType('family')
       setEditingGuestGroup(null)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(editingGuestGroup ? 'Grupo atualizado.' : 'Grupo criado para organizar os convites.')
     } catch (cause) {
       setError(cause.message === 'guest_group_already_exists' ? 'Já existe um grupo com esse nome.' : 'Não foi possível criar o grupo. Confira o nome e tente novamente.')
@@ -1729,7 +1731,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/groups/${group.id}`, { method: 'DELETE' })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Grupo excluído.')
     } catch (cause) {
       setError(cause.message === 'guest_group_has_guests' ? 'Transfiram os convidados deste grupo para outro antes de excluí-lo.' : 'Não foi possível excluir este grupo.')
@@ -1760,7 +1762,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/attendance-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision }) })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(decision === 'approved' ? 'Registro antigo aprovado. A credencial individual está disponível na lista de convidados.' : 'Registro antigo recusado; a resposta foi mantida.')
     } catch (cause) {
       setError(cause.message === 'matching_guest_requires_individual_invitation' ? 'Este contato já está em um convite. Para evitar duplicidade, envie o link individual já criado para essa pessoa.' : 'Não foi possível analisar esta solicitação.')
@@ -1782,7 +1784,7 @@ function CouplePanel({ notify, confirmAction }) {
     try {
       const result = await request(`/api/couple/weddings/${weddingId}/companion-requests/${item.id}`, { method: 'PATCH', body: JSON.stringify({ decision, name }) })
       setCompanionNameDrafts((current) => { const next = { ...current }; delete next[item.id]; return next })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(decision === 'approved' ? result.emailSent ? 'Acompanhante aprovado. O link individual foi enviado por e-mail.' : 'Acompanhante aprovado. Gere o link individual na lista de convidados para compartilhá-lo.' : 'Acompanhante recusado; a solicitação foi mantida.')
     } catch (cause) {
       const messages = { companion_limit_reached: 'O limite de acompanhantes definido para este convite foi atingido.', attendance_request_not_approved: 'Aprove primeiro a solicitação principal.', companion_not_ready: 'Confirme a solicitação principal e identifique o acompanhante antes de aprovar.', host_not_confirmed: 'O convidado responsável precisa confirmar presença neste evento.' }
@@ -1818,7 +1820,7 @@ function CouplePanel({ notify, confirmAction }) {
         throw new Error(result.error === 'guest_import_validation_failed' ? 'Revise as linhas indicadas. Nenhum convidado foi importado.' : 'Não foi possível importar o arquivo CSV.')
       }
       setGuestImportResults(result.guests)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(`${result.guests.length} convidados importados. Baixe os links para compartilhar os convites.`)
     } catch (cause) {
       setError(cause.message === 'O CSV precisa ter um cabeçalho e ao menos um convidado.' || cause.message === 'Inclua uma coluna nome ou name no cabeçalho.' || cause.message === 'O CSV contém aspas sem fechamento.' ? cause.message : 'Não foi possível ler o arquivo. Use um CSV ou uma planilha Excel .xlsx válida.')
@@ -1864,7 +1866,7 @@ function CouplePanel({ notify, confirmAction }) {
         dietaryNotes: editingGuest.dietary_notes,
       }) })
       setEditingGuest(null)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Dados do convidado atualizados')
     } catch {
       setError('Não foi possível atualizar este convidado. Confira os campos e tente novamente.')
@@ -1895,7 +1897,7 @@ function CouplePanel({ notify, confirmAction }) {
       await request(`/api/couple/weddings/${weddingId}/guests/${guest.id}`, { method: 'DELETE' })
       setEditingGuest(null)
       setShare(null)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Dados pessoais removidos; histórico de RSVP e entrada preservado')
     } catch (cause) {
       setError(cause.message === 'invalid_mfa_code' ? 'O c\u00f3digo do autenticador n\u00e3o foi aceito.' : cause.message === 'mfa_reauthentication_cancelled' ? 'A confirmação do autenticador foi cancelada.' : cause.message === 'recent_mfa_required' ? 'Confirme novamente o segundo fator antes de remover os dados.' : 'N\u00e3o foi poss\u00edvel remover este convidado.')
@@ -1946,7 +1948,7 @@ function CouplePanel({ notify, confirmAction }) {
         body: JSON.stringify(body),
       })
       resetGiftForm()
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(editingGift ? 'Presente atualizado.' : 'Presente adicionado à lista.')
     } catch (cause) {
       setError(cause.message === 'gift_limit_reached' ? 'O limite atual é de 60 presentes ativos por casamento.' : cause.message === 'invalid_store_url' ? 'Use o endereço HTTPS da página do produto na loja.' : 'Não foi possível salvar o presente. Confira o título e os valores em reais.')
@@ -1961,7 +1963,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/gifts/${gift.id}`, { method: 'DELETE' })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Presente arquivado; o registro foi preservado.')
     } catch {
       setError('Não foi possível arquivar este presente.')
@@ -1978,7 +1980,7 @@ function CouplePanel({ notify, confirmAction }) {
         method: 'PATCH',
         body: JSON.stringify({ giftType: gift.gift_type, fulfillmentType: gift.fulfillment_type, storeUrl: gift.store_url || '', title: gift.title, description: gift.description || '', amountCents: gift.amount_cents, goalCents: gift.goal_cents, status: 'active' }),
       })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Presente restaurado à lista.')
     } catch {
       setError('Não foi possível restaurar este presente.')
@@ -2010,7 +2012,7 @@ function CouplePanel({ notify, confirmAction }) {
       setManualRsvpStatus('confirmed')
       setManualRsvpPartySize('1')
       setManualRsvpDietaryNotes('')
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(isEditing ? 'Confirmação atualizada manualmente.' : 'Confirmação registrada manualmente.')
     } catch (cause) {
       setError(cause.message === 'party_size_exceeds_invitation' ? 'O número de pessoas excede o limite deste convite.' : 'Não foi possível salvar a confirmação para este convidado e evento.')
@@ -2079,7 +2081,7 @@ function CouplePanel({ notify, confirmAction }) {
       }
       await request(`/api/couple/weddings/${weddingId}/events${editingEventId ? `/${editingEventId}` : ''}`, { method: editingEventId ? 'PATCH' : 'POST', body: JSON.stringify(eventData) })
       resetWeddingEventForm()
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(wasEditing ? 'Evento atualizado.' : 'Evento criado. Agora você pode atribuir pessoas da equipe a ele.')
     } catch (cause) {
       setError(cause.message === 'event_limit_reached' ? 'Cada casamento pode ter até seis eventos.' : 'Não foi possível criar o evento. Confira os campos e tente novamente.')
@@ -2107,7 +2109,7 @@ function CouplePanel({ notify, confirmAction }) {
       if (editingEventId === item.id) resetWeddingEventForm()
       setManualEventId((current) => current === item.id ? '' : current)
       setRsvpExportEventId((current) => current === item.id ? '' : current)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Evento excluído.')
     } catch {
       setError('Não foi possível excluir este evento. Atualize a página e tente novamente.')
@@ -2123,7 +2125,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/events/${item.id}/status`, { method: 'POST', body: JSON.stringify({ status }) })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(status === 'archived' ? 'Evento arquivado; confirmações e entradas foram preservadas.' : 'Evento restaurado. Publique o site para mostrá-lo novamente aos convidados.')
     } catch (cause) {
       setError(cause.message === 'event_limit_reached' ? 'Restaure ou exclua um evento ativo antes. O limite é de seis eventos ativos.' : 'Não foi possível atualizar o estado deste evento.')
@@ -2137,7 +2139,8 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/members/${membership.id}`, { method: 'PATCH', body: JSON.stringify(changes) })
-      await loadWeddingData(weddingId)
+      if (changes.status === 'revoked' && teamInvitation?.email === membership.email) setTeamInvitation(null)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Permissão da equipe atualizada')
     } catch (cause) {
       setError(cause.message === 'cannot_remove_last_couple_admin' ? 'Não é possível remover o último administrador deste casamento.' : 'Não foi possível alterar este acesso.')
@@ -2160,7 +2163,7 @@ function CouplePanel({ notify, confirmAction }) {
       setTeamName('')
       setTeamEmail('')
       setTeamEventIds([])
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Acesso individual criado. Compartilhe o link com o profissional.')
     } catch (cause) {
       const messages = {
@@ -2181,7 +2184,7 @@ function CouplePanel({ notify, confirmAction }) {
     try {
       await request(`/api/couple/weddings/${weddingId}/members/${member.id}`, { method: 'DELETE' })
       if (teamInvitation?.email === member.email) setTeamInvitation(null)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify('Acesso da equipe excluído')
     } catch {
       setError('Não foi possível excluir este acesso.')
@@ -2205,7 +2208,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/events/${eventId}/members/${membership.id}`, { method: 'PUT', body: JSON.stringify({ assigned }) })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(assigned ? 'Membro atribuído ao evento' : 'Acesso ao evento removido')
     } catch {
       setError('Não foi possível atualizar a atribuição deste evento.')
@@ -2229,7 +2232,7 @@ function CouplePanel({ notify, confirmAction }) {
       setTaskDetails('')
       setTaskDueAt('')
       setEditingGodparentTask(null)
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       notify(editingGodparentTask ? 'Orientação atualizada no convite individual.' : groupId ? 'Orientação adicionada aos convites dos padrinhos deste grupo.' : 'Tarefa individual atribuída ao padrinho')
     } catch {
       setError('Não foi possível salvar a tarefa para este padrinho.')
@@ -2260,7 +2263,7 @@ function CouplePanel({ notify, confirmAction }) {
     setError('')
     try {
       await request(`/api/couple/weddings/${weddingId}/godparent-tasks/${task.id}`, { method: 'DELETE' })
-      await loadWeddingData(weddingId)
+      await refreshAfterConfirmedMutation(weddingId)
       if (editingGodparentTask?.id === task.id) cancelGodparentTaskEdit()
       notify('Orientação excluída do convite individual.')
     } catch {
@@ -2301,19 +2304,23 @@ function CouplePanel({ notify, confirmAction }) {
     <form className="role-card admin-login-form" onSubmit={login}><label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); rememberAccountEmail(event.target.value) }} required /></label><label>Senha<PasswordInput autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{error && <p className="admin-form-error" role="alert">{error}</p>}{sessionRestoreFailed && <button type="button" className="button-outline" disabled={busy} onClick={restoreCoupleSession}>Tentar retomar a sessão</button>}<button className="button-primary" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>Entrar <LockKeyhole size={15} /></button><a className="text-link reset-admin-link" href="/recuperar-senha">Esqueci minha senha</a><p className="signup-login-link">Ainda não têm uma conta? <a href="/cadastro">Criar acesso</a></p></form>
   </SuperAdminAccessFrame>
 
+  if (isReader && !dataReady) return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Conteúdo publicado</strong></a><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></header><main className="role-main"><section className="role-card" role={dataLoadError ? 'alert' : 'status'}><p>{dataLoadError || 'Carregando os dados deste casamento…'}</p>{dataLoadError && <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button>}</section></main></div>
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={events} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
 
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a><button className="button-outline" onClick={() => setTab('site')}>{isEditor ? 'Editar site' : 'Meu site'}</button><button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && <p className="admin-form-error" role="alert">{error}</p>}
-    {!isEditor && <div className="role-stat-grid couple-dashboard-shortcuts"><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('guests')} aria-label={`Abrir convidados: ${guests.length} pessoas`}><span>Convidados</span><strong>{guests.length}</strong><small>Lista, convites e confirmações</small><ArrowRight size={18} aria-hidden="true" /></button><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('events')} aria-label={`Abrir eventos: ${events.length} cadastrados`}><span>Eventos</span><strong>{events.length}</strong><small>Datas, locais e programação</small><ArrowRight size={18} aria-hidden="true" /></button></div>}
+     {dataLoadError && dataReady && <p className="admin-form-error" role="alert">{dataLoadError} <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button></p>}
+     {!dataReady && <section className="role-card" role={dataLoadError ? 'alert' : 'status'}><p>{dataLoadError || 'Carregando os dados deste casamento…'}</p>{dataLoadError && <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar novamente</button>}</section>}
+    {dataReady && <>
+     {!isEditor && <div className="role-stat-grid couple-dashboard-shortcuts"><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('guests')} aria-label={`Abrir convidados: ${guests.length} pessoas`}><span>Convidados</span><strong>{guests.length}</strong><small>Lista, convites e confirmações</small><ArrowRight size={18} aria-hidden="true" /></button><button type="button" className="role-stat role-stat-action" onClick={() => selectPanelTab('events')} aria-label={`Abrir eventos: ${events.length} cadastrados`}><span>Eventos</span><strong>{events.length}</strong><small>Datas, locais e programação</small><ArrowRight size={18} aria-hidden="true" /></button></div>}
     <button ref={mobileNavToggleRef} type="button" className="couple-mobile-menu-toggle" aria-expanded={mobileNavOpen} aria-controls="couple-panel-tabs" onClick={() => setMobileNavOpen(true)}><Menu size={19} />Navegação do casamento</button>
     {mobileNavOpen && <button type="button" className="couple-mobile-nav-backdrop" aria-label="Fechar navegação" onClick={closeMobileNav} />}
     <nav id="couple-panel-tabs" ref={mobileNavRef} className={`couple-panel-tabs${mobileNavOpen ? ' mobile-open' : ''}`} aria-label="Áreas do casamento">
       <div className="couple-mobile-nav-heading"><strong>Áreas do casamento</strong><button type="button" aria-label="Fechar menu" onClick={closeMobileNav}><X size={20} /></button></div>
       <div className="couple-nav-guide"><strong>Organize por etapa</strong><span>Escolha uma área para continuar. Seus dados ficam salvos no casamento.</span></div>
       <button className={tab === 'site' ? 'selected' : ''} aria-current={tab === 'site' ? 'page' : undefined} onClick={() => selectPanelTab('site')}><Paintbrush size={18} /><span>Personalizar</span></button>
-      {!isEditor && !isReader && <button className={tab === 'settings' ? 'selected' : ''} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => selectPanelTab('settings')}><Settings2 size={18} /><span>Configurações</span></button>}
+
       {(isEditor || !isReader) && <button className={tab === 'events' ? 'selected' : ''} aria-current={tab === 'events' ? 'page' : undefined} onClick={() => selectPanelTab('events')}><CalendarDays size={18} /><span>Eventos</span></button>}
       {!isEditor && <>
         <button className={tab === 'guests' ? 'selected' : ''} aria-current={tab === 'guests' ? 'page' : undefined} onClick={() => selectPanelTab('guests')}><Users size={18} /><span>Convidados</span></button>
@@ -2332,7 +2339,7 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'guests' && <details className="role-card couple-inline-rsvps"><summary>Respostas, acompanhantes e acessos</summary><div>
       <AttendanceRequestManager policy={guestPolicy} setPolicy={setGuestPolicy} requests={attendanceRequests} companions={companionRequests} companionNameDrafts={companionNameDrafts} setCompanionNameDrafts={setCompanionNameDrafts} onSavePolicy={saveGuestPolicy} onReviewRequest={reviewAttendanceRequest} onReviewCompanion={reviewCompanionRequest} busy={busy} />
-      <GuestAuthorizationManager weddingId={weddingId} guests={guests} events={events} authorizations={guestAuthorizations} onReload={() => loadWeddingData(weddingId)} confirmAction={confirmAction} notify={notify} busy={busy} />
+      <GuestAuthorizationManager weddingId={weddingId} guests={guests} events={events} authorizations={guestAuthorizations} onReload={() => refreshAfterConfirmedMutation(weddingId)} confirmAction={confirmAction} notify={notify} busy={busy} />
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">REGISTRO MANUAL</span><h2>{editingRsvp ? 'Corrigir confirmação' : 'Registrar resposta recebida'}</h2></div><ListChecks size={18} /></div><p className="team-access-note">Use quando o convidado responder por telefone ou mensagem. A alteração fica registrada na auditoria do casamento.</p><form className="couple-guest-form" onSubmit={saveManualRsvp}>
         {!editingRsvp && <><label>Evento<select value={manualEventId} onChange={(event) => { setManualEventId(event.target.value); setManualGuestId('') }} required><option value="">Selecione um evento</option>{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="couple-guest-wide">Convidado sem resposta neste evento<select value={manualGuestId} onChange={(event) => { const guest = guests.find((item) => item.id === event.target.value); setManualGuestId(event.target.value); setManualRsvpPartySize(String(guest?.party_size || 1)) }} required disabled={!manualEventId}><option value="">Selecione um convidado</option>{availableManualGuests.map((guest) => <option key={guest.id} value={guest.id}>{guest.name} · até {guest.party_size} pessoa(s)</option>)}</select></label></>}
         {editingRsvp && <><label>Convidado<input value={editingRsvp.guest_name} readOnly /></label><label>Evento<input value={editingRsvp.event_name} readOnly /></label></>}
@@ -2367,38 +2374,10 @@ function CouplePanel({ notify, confirmAction }) {
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><div className="godparent-task-actions"><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span><button type="button" className="button-outline" disabled={busy} onClick={() => editGodparentTask(task)}>Editar</button><button type="button" className="button-outline guest-remove-button" disabled={busy} onClick={() => deleteGodparentTask(task)}>Excluir</button></div></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
-    {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => loadWeddingData(weddingId)} />}
-    {tab === 'settings' && !isReader && !isEditor && <WeddingProfileSettings key={weddingId} wedding={wedding} onSave={saveWeddingProfile} />}
+    {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => refreshAfterConfirmedMutation(weddingId)} />}
     {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
-   </div></main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
-}
-
-function WeddingProfileSettings({ wedding, onSave }) {
-  const [profile, setProfile] = useState({ partnerOneName: wedding?.partner_one_name || '', partnerTwoName: wedding?.partner_two_name || '', eventDate: wedding?.event_date || '', eventTime: wedding?.event_time || '' })
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    setProfile({ partnerOneName: wedding?.partner_one_name || '', partnerTwoName: wedding?.partner_two_name || '', eventDate: wedding?.event_date || '', eventTime: wedding?.event_time || '' })
-  }, [wedding?.id, wedding?.partner_one_name, wedding?.partner_two_name, wedding?.event_date, wedding?.event_time])
-
-  async function submit(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    setSaved(false)
-    try {
-      await onSave({ ...profile, eventDate: profile.eventDate || null, eventTime: profile.eventTime || null })
-      setSaved(true)
-    } catch {
-      setError('Não foi possível salvar os dados do casamento. Tente novamente.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return <section className="role-card wedding-profile-settings"><div className="role-card-heading"><div><span className="eyebrow">DADOS DO CASAMENTO</span><h2>Configurações do casal</h2></div><Settings2 size={19} /></div><p className="team-access-note">Os nomes e a data aparecem no convite. Salvar aqui atualiza o rascunho; para mostrar mudanças aos convidados, publiquem as alterações do convite.</p><form className="wedding-profile-fields" onSubmit={submit}><label>Noivo(a) 1<input maxLength="100" value={profile.partnerOneName} onChange={(event) => setProfile((current) => ({ ...current, partnerOneName: event.target.value }))} required /></label><label>Noivo(a) 2<input maxLength="100" value={profile.partnerTwoName} onChange={(event) => setProfile((current) => ({ ...current, partnerTwoName: event.target.value }))} required /></label><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={profile.eventDate} onChange={(event) => setProfile((current) => ({ ...current, eventDate: event.target.value }))} /></label><label>Horário<input type="time" value={profile.eventTime} onChange={(event) => setProfile((current) => ({ ...current, eventTime: event.target.value }))} /></label></div><button type="submit" className="button-primary" disabled={busy}>{busy ? 'Salvando…' : 'Salvar dados do casamento'} <Check size={15} /></button>{saved && <p className="form-success" role="status">Dados salvos no rascunho.</p>}{error && <p className="admin-form-error" role="alert">{error}</p>}</form></section>
+   </div>
+     </>}</main><footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
 function WeddingExpenseManager({ weddingId, expenses, onReload }) {
@@ -2668,10 +2647,11 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
   return <div className="role-page couple-role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><span aria-hidden="true">T</span><strong>{PRODUCT_NAME} | Conteúdo publicado</strong></a><span className="role-preview">Acesso: {account?.email}</span><button className="button-outline" onClick={onLogout}>Sair</button></header><main className="role-main"><div className="role-intro"><span className="role-icon"><Eye size={19} /></span><span className="eyebrow">ACESSO DE LEITURA</span><h1>{wedding.partner_one_name} & {wedding.partner_two_name}</h1><p>Esta área mostra apenas a última versão publicada do site e dos eventos.</p></div><section className="role-card published-reader-card"><div className="role-card-heading"><div><span className="eyebrow">SITE DOS NOIVOS</span><h2>{config?.coverMessages?.['pt-BR'] || 'Convite do casamento'}</h2></div><span className="admin-state admin-state-active">Publicado</span></div><p>Endereço curto: {wedding.slug}</p><p>Estilo: {config?.theme || 'garden'} · Capa: {config?.coverLayout || 'full'} · Idioma: {config?.language || 'pt-BR'}</p><div className="browser-below published-reader-sections">{(config?.enabledSections || []).map((section) => <span key={section}>{section}</span>)}</div><small>Última publicação: {published}</small></section><section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">PROGRAMAÇÃO PUBLICADA</span><h2>Eventos</h2></div><span className="task-count">{events.length} eventos</span></div>{events.length ? <div className="wedding-event-list">{events.map((event) => <article key={event.id}><div><strong>{event.name}</strong><small>{event.starts_at ? new Date(event.starts_at).toLocaleString('pt-BR') : 'Data a definir'} · {event.venue_name || 'Local a definir'}</small>{event.address && <small>{event.address}</small>}</div><span className="admin-state admin-state-active">{event.event_type}</span></article>)}</div> : <p className="buffet-empty">Nenhum evento está publicado.</p>}</section></main><footer className="role-footer"><span>Leitura do site publicado</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
 }
 
-function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaError, failedPhotoUpload, onRetryUpload, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
+function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaUploadProgress, mediaError, failedPhotoUpload, onRetryUpload, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
   return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
     <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{totalImages}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
     <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto</button></div>
+    {mediaBusy && <div className="customizer-photo-upload-progress" role="status"><span>{mediaUploadProgress === null ? 'Preparando foto…' : `Enviando arquivo… ${mediaUploadProgress}%`}</span>{mediaUploadProgress !== null && <progress max="100" value={mediaUploadProgress} aria-label="Progresso do envio da foto" />}</div>}
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
     {mediaError && <p className="admin-form-error" role="alert">{mediaError}{failedPhotoUpload && <button type="button" className="button-outline" disabled={mediaBusy} onClick={onRetryUpload}>Tentar enviar esta foto novamente</button>}</p>}
     <label className="customizer-carousel-toggle"><input type="checkbox" checked={coverCarouselEnabled} disabled={coverGallery.length < 2} onChange={(event) => onCarouselToggle(event.target.checked)} /><span><strong>Ativar carrossel na capa</strong><small>{coverGallery.length < 2 ? 'Marquem pelo menos duas fotos como carrossel.' : 'As fotos escolhidas alternam na abertura do convite.'}</small></span></label>
@@ -2693,6 +2673,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [siteMedia, setSiteMedia] = useState([])
   const [mediaUrls, setMediaUrls] = useState({})
   const [mediaBusy, setMediaBusy] = useState(false)
+  const [mediaUploadProgress, setMediaUploadProgress] = useState(null)
   const [mediaError, setMediaError] = useState('')
   const [failedPhotoUpload, setFailedPhotoUpload] = useState(null)
   const [mediaLoadErrors, setMediaLoadErrors] = useState([])
@@ -3002,9 +2983,19 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       const body = new FormData()
       body.set('file', uploadFile)
       body.set('mediaType', mediaType)
-      const response = await fetch(`/api/couple/weddings/${wedding.id}/site-media`, { method: 'POST', body })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error === 'gallery_limit_reached' ? `A galeria aceita até ${SITE_MEDIA_LIMITS.photosPerWedding} fotos.` : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : result.error === 'invalid_media_size' ? 'O arquivo excede o limite permitido. Imagens até 8 MB e vídeos MP4 até 15 MB.' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? 'Formato não compatível. Use JPG, PNG ou WebP para fotos e MP4 para vídeo.' : result.error === 'media_storage_unavailable' || result.error === 'media_storage_write_failed' ? 'O armazenamento está indisponível agora. Tente novamente em alguns minutos.' : 'Não foi possível guardar este arquivo. Tente novamente.')
+      setMediaUploadProgress(0)
+      const { ok, responseText } = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', `/api/couple/weddings/${wedding.id}/site-media`)
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) setMediaUploadProgress(Math.round((event.loaded / event.total) * 100))
+        })
+        xhr.addEventListener('load', () => resolve({ ok: xhr.status >= 200 && xhr.status < 300, responseText: xhr.responseText }))
+        xhr.addEventListener('error', () => reject(new TypeError('A conexão foi interrompida durante o envio.')))
+        xhr.send(body)
+      })
+      const result = (() => { try { return JSON.parse(responseText) } catch { return {} } })()
+      if (!ok) throw new Error(result.error === 'gallery_limit_reached' ? `A galeria aceita até ${SITE_MEDIA_LIMITS.photosPerWedding} fotos.` : result.error === 'video_limit_reached' ? 'A abertura aceita um vídeo.' : result.error === 'invalid_media_size' ? 'O arquivo excede o limite permitido. Imagens até 8 MB e vídeos MP4 até 15 MB.' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? 'Formato não compatível. Use JPG, PNG ou WebP para fotos e MP4 para vídeo.' : result.error === 'media_storage_unavailable' || result.error === 'media_storage_write_failed' ? 'O armazenamento está indisponível agora. Tente novamente em alguns minutos.' : 'Não foi possível guardar este arquivo. Tente novamente.')
       setSiteMedia((current) => [...current, result])
       setFailedPhotoUpload(null)
       const url = URL.createObjectURL(uploadFile)
@@ -3018,6 +3009,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       setMediaError(error.message)
       if (mediaType === 'image' && usage !== 'gift') setFailedPhotoUpload({ file, usage })
     } finally {
+      setMediaUploadProgress(null)
       setMediaBusy(false)
     }
   }
@@ -3105,7 +3097,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       </div>
       {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
-        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaError={mediaError} failedPhotoUpload={failedPhotoUpload} onRetryUpload={retryPhotoUpload} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
+        <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaUploadProgress={mediaUploadProgress} mediaError={mediaError} failedPhotoUpload={failedPhotoUpload} onRetryUpload={retryPhotoUpload} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
         <details className="customizer-extra-fields"><summary>Descrições acessíveis das fotos</summary><div><p>Descrevam cada imagem para que leitores de tela expliquem o que aparece nela. Para publicar uma foto usada no convite, preencham a descrição acessível. Fotos fora das seções ativas não bloqueiam a publicação.</p>{uploadedImages.map((item) => <label className="font-pair-label customizer-photo-alt-field" key={item.id}>{mediaUrls[item.id] && <img src={mediaUrls[item.id]} alt="" />}Descrição desta foto<input maxLength={250} value={config.imageAltTexts?.[item.id]?.['pt-BR'] || ''} placeholder="Ex.: O casal caminhando no jardim" onChange={(event) => update({ imageAltTexts: { ...config.imageAltTexts, [item.id]: { 'pt-BR': event.target.value } } })} />{!config.imageAltTexts?.[item.id]?.['pt-BR']?.trim() && <small>Necessária para publicar se esta foto aparecer no convite.</small>}</label>)}</div></details>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
@@ -3479,7 +3471,7 @@ function GeneralWeddingSite({ notify }) {
   if (requestedPage === 'presentes' || requestedPage === 'pix') {
     const kind = requestedPage === 'presentes' ? 'gifts' : 'pix'
     const pageAvailable = kind === 'gifts' ? showGifts : showPix
-    return <main className={`public-wedding-page theme-${config?.theme || 'garden'}`} style={siteStyle}><header className="public-wedding-header"><a href={weddingUrl}>{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><a className="public-wedding-back-link" href={weddingUrl}><ArrowLeft size={15} /> Voltar ao convite</a><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>{pageAvailable ? <WeddingDisplayPage kind={kind} href={weddingUrl} weddingName={`${data.wedding.partnerOneName} & ${data.wedding.partnerTwoName}`} gifts={publicGiftList} presentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} imageAltTexts={config.imageAltTexts} pix={config.pix} onCopy={copyPixKey} /> : <section className="public-wedding-display-page"><span className="eyebrow">CONVITE</span><h1>Esta opção não está disponível.</h1><a className="button-outline" href={weddingUrl}>Voltar ao convite</a></section>}<footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></main>
+    return <main className={`public-wedding-page theme-${config?.theme || 'garden'}`} style={siteStyle}><header className="public-wedding-header"><a href={weddingUrl}>{data.wedding.partnerOneName} <i>&amp;</i> {data.wedding.partnerTwoName}</a><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></header>{pageAvailable ? <WeddingDisplayPage kind={kind} href={weddingUrl} weddingName={`${data.wedding.partnerOneName} & ${data.wedding.partnerTwoName}`} gifts={publicGiftList} presentation={config.giftPresentation || {}} mediaUrl={(id) => `/api/public/weddings/${encodeURIComponent(slug)}/media/${id}`} imageAltTexts={config.imageAltTexts} pix={config.pix} onCopy={copyPixKey} /> : <section className="public-wedding-display-page"><span className="eyebrow">CONVITE</span><h1>Esta opção não está disponível.</h1><a className="button-outline" href={weddingUrl}>Voltar ao convite</a></section>}<footer className="public-wedding-footer"><span>Com carinho, {data.wedding.partnerOneName} &amp; {data.wedding.partnerTwoName}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></main>
   }
 
   return <WeddingInvitationDocument theme={config?.theme} animationPreset={config?.animationPreset} style={siteStyle} partnerOneName={data.wedding.partnerOneName} partnerTwoName={data.wedding.partnerTwoName} navigation={<WeddingNavigation items={publicNavigationItems} givingOptions={publicGivingOptions} />}>
@@ -3741,7 +3733,7 @@ function GuestPortal({ notify, setView }) {
     {loading && <section className="role-card"><p>Carregando os detalhes do seu convite…</p></section>}
     {error && !loading && <section className="role-card"><p>{error}</p></section>}
     {invitation && <>
-      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${coverComposition ? ` public-wedding-cover-composition-${coverComposition}` : ''}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`} style={guestCoverStyle}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} poster={activeCoverUrl || undefined} autoPlay={autoplayCoverVideo} controls={!autoplayCoverVideo} muted loop playsInline aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt={imageAltText(invitation.siteConfig, activeCoverId, "Foto do casal no convite")} /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Até {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}</span></div>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions">{showRsvp && <button type="button" className="button-primary guest-action-main" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}><span>Confirmar presença</span><Check size={16} /></button>}<button type="button" className="button-outline guest-action-secondary guest-action-details" onClick={() => setSiteOpen(true)}><span>Ver detalhes do casamento</span><ArrowRight size={16} /></button>{showGifts && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusGifts(giftDisplayMode === 'inline'); setGuestPage(giftDisplayMode === 'page' ? 'gifts' : ''); setSiteOpen(true) }}><span>{giftDisplayMode === 'page' ? 'Ver lista de presentes' : 'Lista de presentes'}</span> <Gift size={15} /></button>}{showPix && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusPix(pixDisplayMode === 'inline'); setGuestPage(pixDisplayMode === 'page' ? 'pix' : ''); setSiteOpen(true) }}><span>{pixDisplayMode === 'page' ? 'Presentear via Pix' : 'Contribuir via Pix'}</span> <Wallet size={15} /></button>}</div></section>
+      <section className={`role-card guest-pass-card${activeCoverUrl ? '' : ' guest-cover-no-photo'}`}><div className={`guest-invitation-cover guest-cover-${coverLayout}${coverComposition ? ` public-wedding-cover-composition-${coverComposition}` : ''}${activeCoverUrl ? '' : ' guest-cover-no-photo'}`} style={guestCoverStyle}>{invitation?.siteConfig?.coverVideoId && invitationMedia[invitation.siteConfig.coverVideoId] ? <video className="guest-cover-video" src={invitationMedia[invitation.siteConfig.coverVideoId]} poster={activeCoverUrl || undefined} autoPlay={autoplayCoverVideo} controls={!autoplayCoverVideo} muted loop playsInline aria-label="Vídeo de abertura dos noivos" /> : activeCoverUrl ? <img src={activeCoverUrl} alt={imageAltText(invitation.siteConfig, activeCoverId, "Foto do casal no convite")} /> : <div className="guest-cover-placeholder"><Camera size={38} /><span>Escolham uma foto do casal no painel</span></div>}{invitation.siteConfig?.coverCarouselEnabled && coverGallery.length > 1 && <span className="guest-cover-count">Foto {coverIndex + 1} de {coverGallery.length}</span>}<div><span>CONVITE</span><h2>{invitation.wedding.partnerOneName} <i>&amp;</i> {invitation.wedding.partnerTwoName}</h2><p>{invitation.wedding.eventDate ? new Date(`${invitation.wedding.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'}{invitation.wedding.eventTime ? ` · ${invitation.wedding.eventTime}` : ''}</p></div></div><div className="role-card-heading"><span className="eyebrow">Convite de {invitation.guest.name}</span></div><div className="guest-pass-details"><span><Users size={16} /> Limite total do convite: {invitation.guest.partySize} {invitation.guest.partySize === 1 ? 'pessoa' : 'pessoas'}, incluindo você</span></div><p className="team-access-note">Acompanhantes solicitados só ficam confirmados depois da aprovação dos noivos. Cada acompanhante aprovado recebe seu próprio QR code.</p>{invitation.siteConfig && <p className="guest-cover-message">{invitation.siteConfig.coverMessages?.[invitation.siteConfig.language] || invitation.siteConfig.coverMessages?.['pt-BR']}</p>}<div className="guest-invitation-actions">{showRsvp && <button type="button" className="button-primary guest-action-main" onClick={() => { setFocusRsvp(true); setSiteOpen(true) }}><span>Confirmar presença</span><Check size={16} /></button>}<button type="button" className="button-outline guest-action-secondary guest-action-details" onClick={() => setSiteOpen(true)}><span>Ver detalhes do casamento</span><ArrowRight size={16} /></button>{showGifts && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusGifts(giftDisplayMode === 'inline'); setGuestPage(giftDisplayMode === 'page' ? 'gifts' : ''); setSiteOpen(true) }}><span>{giftDisplayMode === 'page' ? 'Ver lista de presentes' : 'Lista de presentes'}</span> <Gift size={15} /></button>}{showPix && <button type="button" className="button-outline guest-action-secondary" onClick={() => { setFocusPix(pixDisplayMode === 'inline'); setGuestPage(pixDisplayMode === 'page' ? 'pix' : ''); setSiteOpen(true) }}><span>{pixDisplayMode === 'page' ? 'Presentear via Pix' : 'Contribuir via Pix'}</span> <Wallet size={15} /></button>}</div></section>
       <InvitationWallet token={token} wallets={invitation.wallets} guestName={invitation.guest.name} />
       {siteOpen && <div className="guest-full-site-heading"><div><span className="eyebrow">SITE DO CASAMENTO</span><h2>{guestPage === 'gifts' ? 'Lista de presentes' : guestPage === 'pix' ? 'Presentear via Pix' : 'Informações para celebrar com vocês'}</h2></div><button type="button" className="button-outline" onClick={() => { if (guestPage) { setGuestPage(''); return } setSiteOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{guestPage ? 'Voltar ao site' : 'Voltar ao convite'}</button></div>}
       {siteOpen && guestPage && <section className="guest-invitation-content guest-invitation-subpage">{guestPage === 'gifts' ? <WeddingGiftsSection gifts={publicGifts} presentation={invitation.siteConfig.giftPresentation || {}} mediaUrl={(id) => invitationMedia[id] || ''} imageAltTexts={invitation.siteConfig.imageAltTexts} /> : <WeddingPixSection pix={invitation.siteConfig.pix} onCopy={copyPixKey} />}</section>}

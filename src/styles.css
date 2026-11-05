@@ -2746,6 +2746,8 @@ img { display: block; max-width: 100%; }
 .customizer-photo-library-heading p { max-width: 600px; margin: 7px 0 0; color: #526256; font-size: 15px; line-height: 1.5; }
 .customizer-photo-count { flex: 0 0 auto; padding: 7px 10px; border: 1px solid #cbd5c6; color: #405849; background: #fbfaf5; font-size: 13px; font-weight: 700; }
 .customizer-photo-upload-actions { margin: 14px 0; display: flex; flex-wrap: wrap; gap: 9px; }
+.customizer-photo-upload-progress { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px 14px; margin: 0 0 14px; color: #405849; font-size: 13px; }
+.customizer-photo-upload-progress progress { grid-column: 1 / -1; width: 100%; height: 8px; accent-color: #405849; }
 .couple-role-page .customizer-photo-upload-actions .button-outline { min-height: 48px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-color: #9eae9a; color: #314a3b; background: #fffdf8; font-size: 14px; font-weight: 700; }
 .couple-role-page .customizer-photo-upload-actions .button-outline:disabled { border-color: #c7cdc1; color: #657064; background: #e5e8df; cursor: not-allowed; opacity: 1; }
 .customizer-carousel-toggle { min-height: 58px; margin-bottom: 13px; padding: 9px 11px; display: flex; align-items: center; gap: 11px; border: 1px solid #d7ddcf; background: #fbfaf5; cursor: pointer; }
