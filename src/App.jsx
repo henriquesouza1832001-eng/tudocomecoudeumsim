@@ -901,9 +901,58 @@ function CustomizationStudy() {
   const [device, setDevice] = useState('desktop')
   const isAtelier = option === 'atelier'
   const steps = ['Foto e vídeo', 'Identidade visual', 'Texto do convite', 'Detalhes do site']
-  const preview = <div className={`study-preview-device study-device-${device}`}><div className="study-browser-bar"><i /><i /><i /><span>henrique-laryssa.convite</span></div><div className="study-cover"><img src="/images/wedding-moments.webp" alt="Noivos caminham juntos por um jardim" /><div><small>15 de outubro de 2028</small><h3>Henrique <i>&</i><br />Laryssa</h3><p>Com alegria, convidamos você.</p><button type="button">Ver convite <ArrowRight size={14} /></button></div></div><div className="study-preview-links"><span>Evento</span><i>·</i><span>Nossa história</span><i>·</i><span>Presença</span></div></div>
-  const sectionCards = <><section className="study-paper-card study-photo-card"><div className="study-card-heading"><span className="study-number">01</span><div><small>PRIMEIRO PASSO</small><h3>A foto de vocês</h3></div><Camera size={19} /></div><p>A foto principal dá o tom do convite. Adicionem outras imagens ou um vídeo quando quiserem.</p><button type="button" className="study-upload"><Camera size={17} /> Escolher foto do casal</button><div className="study-mini-gallery"><img src="/images/wedding-moments.webp" alt="Prévia de uma foto do casal" /><img src="/images/wedding-pexels.webp" alt="Prévia de outra foto do casal" /><span>+ adicionar</span></div></section><section className="study-paper-card"><div className="study-card-heading"><span className="study-number">02</span><div><small>IDENTIDADE</small><h3>Escolham o clima</h3></div><Flower2 size={19} /></div><div className="study-theme-row"><button className="study-theme selected" type="button"><span className="study-theme-art study-theme-garden">H <i>&</i> L</span><strong>Jardim editorial</strong><Check size={16} /></button><button className="study-theme" type="button"><span className="study-theme-art study-theme-sunset">H <i>&</i> L</span><strong>Romance ao entardecer</strong></button></div><span className="study-field-label">Paleta do jardim</span><div className="study-swatches"><i /><i /><i /><i /><i /><span>Oliva e areia</span></div></section><section className="study-paper-card study-copy-card"><div className="study-card-heading"><span className="study-number">03</span><div><small>RECADO DE ABERTURA</small><h3>Uma frase de vocês</h3></div><Pencil size={18} /></div><p>Uma mensagem breve aparece na capa do convite. As informações do evento ficam organizadas no site.</p><div className="study-input-preview">Com alegria, convidamos você.</div><span className="study-inline-hint"><Check size={14} /> Prévia atualizada ao editar</span></section><section className="study-paper-card study-details-card"><div className="study-card-heading"><span className="study-number">04</span><div><small>O SITE DO CASAL</small><h3>Contem a história toda</h3></div><Heart size={18} /></div><p>Ativem só as partes que fazem sentido para vocês. Datas e locais vêm da aba Eventos.</p><div className="study-content-chips"><span>✓ Nossa história</span><span>✓ Fotos do casal</span><span>＋ Padrinhos</span><span>＋ Hospedagem</span></div></section></>
-  return <div className="customization-study"><header className="study-header"><a className="study-brand" href="/"><span>e<span>&</span>t</span><strong>Estudo do editor</strong></a><span>PRÉVIAS DE DIREÇÃO VISUAL</span><a href="/painel">Voltar ao painel <ArrowRight size={15} /></a></header><main className="study-main"><div className="study-intro"><span className="study-kicker"><Flower2 size={15} /> JARDIM EDITORIAL · PERSONALIZAÇÃO</span><h1>Um editor com cara de celebração.</h1><p>Comparamos duas formas de organizar as escolhas do casal. As cores, os detalhes botânicos e a foto seguem a identidade aprovada.</p></div><div className="study-option-tabs" role="tablist" aria-label="Opções de organização do editor"><button type="button" role="tab" aria-selected={isAtelier} className={isAtelier ? 'selected' : ''} onClick={() => setOption('atelier')}><span>01</span><strong>Ateliê do convite</strong><small>Etapas claras e prévia sempre ao lado</small></button><button type="button" role="tab" aria-selected={!isAtelier} className={!isAtelier ? 'selected' : ''} onClick={() => setOption('caderno')}><span>02</span><strong>Caderno do casal</strong><small>Blocos organizados como uma coleção</small></button></div>{isAtelier ? <section className="study-editor study-editor-atelier" aria-label="Prévia Ateliê do convite"><aside className="study-steps"><span className="study-kicker">MONTEM A CELEBRAÇÃO</span><h2>Seu convite,<br />do seu jeito.</h2><nav>{steps.map((step, index) => <div className={index === 0 ? 'current' : ''} key={step}><span>{index + 1}</span>{step}{index === 0 && <i>Em edição</i>}</div>)}</nav><div className="study-steps-note"><Flower2 size={18} /><span>As mudanças aparecem na prévia antes de publicar.</span></div></aside><div className="study-controls"><div className="study-controls-heading"><div><span className="study-kicker">ETAPA 1 DE 4</span><h2>Comecem pela foto</h2></div><span>Salvo neste rascunho</span></div><div className="study-control-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> A foto pode ser adicionada depois</span><button type="button">Continuar <ArrowRight size={15} /></button></div></div><aside className="study-live-preview"><div className="study-live-heading"><span><i /> PRÉVIA AO VIVO</span><div>{[['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]].map(([size, Icon]) => <button key={size} className={device === size ? 'selected' : ''} type="button" aria-label={`Prévia ${size}`} onClick={() => setDevice(size)}><Icon size={16} /></button>)}</div></div>{preview}<p>A prévia acompanha o tema, as fotos e os textos escolhidos.</p></aside></section> : <section className="study-editor study-editor-notebook" aria-label="Prévia Caderno do casal"><div className="study-notebook-top"><div><span className="study-kicker"><Flower2 size={14} /> O PROJETO DE HENRIQUE & LARYSSA</span><h2>Uma história que começa<br />pelo convite.</h2><p>Organizem as ideias no ritmo de vocês. Cada bloco abre só quando quiserem editar.</p></div><div className="study-notebook-cover">{preview}</div></div><div className="study-notebook-progress"><span>O convite está tomando forma</span><div><i /></div><small>1 de 4 partes</small></div><div className="study-notebook-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> Rascunho salvo automaticamente</span><button type="button">Abrir prévia completa <ArrowRight size={15} /></button></div></section>}<p className="study-footer"><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a> · Estudo de organização do editor</p></main></div>
+  const preview = <div className={'study-preview-device study-device-' + device}>
+    <div className="study-browser-bar"><i /><i /><i /><span>convite-do-casal</span></div>
+    <div className="study-cover">
+      <div className="study-cover-image-placeholder"><Flower2 size={25} /><span>Área da foto escolhida pelo casal</span></div>
+      <div><small>Data e horário do casamento</small><h3>Nome do casal</h3><p>Uma mensagem escrita por vocês.</p><span className="study-preview-action">Ver detalhes do convite <ArrowRight size={14} /></span></div>
+    </div>
+    <div className="study-preview-links"><span>Evento</span><i>·</i><span>Nossa história</span><i>·</i><span>Presença</span></div>
+  </div>
+  const sectionCards = <>
+    <section className="study-paper-card study-photo-card">
+      <div className="study-card-heading"><span className="study-number">01</span><div><small>PRIMEIRO PASSO</small><h3>Foto e mídia</h3></div><Camera size={19} /></div>
+      <p>Escolham as imagens e definam onde cada foto aparece no convite.</p>
+      <a className="study-upload" href="/criar-site"><Camera size={17} /> Abrir o personalizador real <ArrowRight size={14} /></a>
+      <div className="study-mini-gallery" aria-label="Destinos de fotos no convite"><span>Capa</span><span>Carrossel da capa</span><span>Carrossel interno</span><span>Galeria</span></div>
+    </section>
+    <section className="study-paper-card">
+      <div className="study-card-heading"><span className="study-number">02</span><div><small>IDENTIDADE</small><h3>Jardim editorial</h3></div><Flower2 size={19} /></div>
+      <p>Direção visual aprovada para o piloto, com tons suaves e leitura confortável.</p>
+      <div className="study-theme-row" aria-label="Tema visual aprovado"><div className="study-theme selected"><span className="study-theme-art study-theme-garden">A <i>&</i> B</span><strong>Jardim editorial</strong><Check size={16} /></div></div>
+      <span className="study-field-label">Paleta do jardim</span><div className="study-swatches"><i /><i /><i /><i /><i /><span>Oliva e areia</span></div>
+    </section>
+    <section className="study-paper-card study-copy-card">
+      <div className="study-card-heading"><span className="study-number">03</span><div><small>RECADO DE ABERTURA</small><h3>Mensagem do casal</h3></div><Pencil size={18} /></div>
+      <p>O personalizador real permite escrever o texto que aparece no convite.</p>
+      <div className="study-input-preview">Exemplo de mensagem escolhida pelo casal.</div>
+      <span className="study-inline-hint"><Check size={14} /> Texto ilustrativo; esta página não salva alterações</span>
+    </section>
+    <section className="study-paper-card study-details-card">
+      <div className="study-card-heading"><span className="study-number">04</span><div><small>SEÇÕES DO SITE</small><h3>Escolham o que mostrar</h3></div><Heart size={18} /></div>
+      <p>Ativem as partes que fazem sentido para vocês. Data e horário vêm dos eventos cadastrados.</p>
+      <div className="study-content-chips" aria-label="Exemplos de seções"><span>Nossa história</span><span>Eventos</span><span>Fotos</span><span>Presença</span></div>
+    </section>
+  </>
+  const previewControls = <div>{[['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]].map(([size, Icon]) => <button key={size} className={device === size ? 'selected' : ''} type="button" aria-label={'Prévia ' + size} aria-pressed={device === size} onClick={() => setDevice(size)}><Icon size={16} /></button>)}</div>
+  return <div className="customization-study">
+    <header className="study-header"><a className="study-brand" href="/"><span>e<span>&</span>t</span><strong>Estudo do editor</strong></a><span>DEMONSTRAÇÃO ILUSTRATIVA</span><a href="/painel">Voltar ao painel <ArrowRight size={15} /></a></header>
+    <main className="study-main">
+      <div className="study-intro"><span className="study-kicker"><Flower2 size={15} /> JARDIM EDITORIAL · PERSONALIZAÇÃO</span><h1>Um editor com cara de celebração.</h1><p>Esta demonstração mostra a organização do personalizador, sem enviar fotos nem salvar alterações. A direção visual segue a identidade aprovada.</p></div>
+      <div className="study-option-tabs" role="group" aria-label="Alternativas de organização do editor"><button type="button" aria-pressed={isAtelier} className={isAtelier ? 'selected' : ''} onClick={() => setOption('atelier')}><span>01</span><strong>Ateliê do convite</strong><small>Etapas e prévia ao lado</small></button><button type="button" aria-pressed={!isAtelier} className={!isAtelier ? 'selected' : ''} onClick={() => setOption('caderno')}><span>02</span><strong>Caderno do casal</strong><small>Blocos agrupados por tema</small></button></div>
+      {isAtelier ? <section className="study-editor study-editor-atelier" aria-label="Demonstração Ateliê do convite">
+        <aside className="study-steps"><span className="study-kicker">MONTEM A CELEBRAÇÃO</span><h2>Seu convite,<br />do seu jeito.</h2><nav>{steps.map((step, index) => <div className={index === 0 ? 'current' : ''} key={step}><span>{index + 1}</span>{step}{index === 0 && <i>Exemplo</i>}</div>)}</nav><div className="study-steps-note"><Flower2 size={18} /><span>No personalizador real, revisem a prévia antes de publicar.</span></div></aside>
+        <div className="study-controls"><div className="study-controls-heading"><div><span className="study-kicker">ETAPA 1 DE 4</span><h2>Comecem pelas fotos</h2></div><span>Prévia sem salvar</span></div><div className="study-control-grid">{sectionCards}</div><div className="study-next-row"><span><Check size={15} /> A foto pode ser adicionada depois</span><a href="/criar-site">Abrir personalizador <ArrowRight size={15} /></a></div></div>
+        <aside className="study-live-preview"><div className="study-live-heading"><span><i /> PRÉVIA DEMONSTRATIVA</span>{previewControls}</div>{preview}<p>A tela do convite é ilustrativa. Use o personalizador para ver os dados reais do casal.</p></aside>
+      </section> : <section className="study-editor study-editor-notebook" aria-label="Demonstração Caderno do casal">
+        <div className="study-notebook-top"><div><span className="study-kicker"><Flower2 size={14} /> ORGANIZAÇÃO DO CONVITE</span><h2>Uma história que começa<br />pelo convite.</h2><p>Os dados reais do casamento são configurados no personalizador, não nesta demonstração.</p></div><div className="study-notebook-cover">{preview}</div></div>
+        <div className="study-notebook-progress"><span>Etapas do personalizador</span><div><i /></div><small>Exemplo · etapa 1 de 4</small></div>
+        <div className="study-notebook-grid">{sectionCards}</div>
+        <div className="study-next-row"><span><Check size={15} /> Esta demonstração não salva alterações</span><a href="/criar-site">Abrir personalizador <ArrowRight size={15} /></a></div>
+      </section>}
+      <p className="study-footer"><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a> · Demonstração ilustrativa do editor</p>
+    </main>
+  </div>
 }
 
 function resolveCurrentView() {
@@ -2290,6 +2339,18 @@ function CouplePanel({ notify, confirmAction }) {
     mobileNavRef.current?.querySelector('button.selected')?.focus()
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') closeMobileNav()
+      if (event.key !== 'Tab' || !window.matchMedia('(max-width: 760px)').matches) return
+      const focusable = [...(mobileNavRef.current?.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])') || [])].filter((element) => element.getClientRects().length)
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !mobileNavRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !mobileNavRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => {
@@ -2650,7 +2711,7 @@ function PublishedOnlyDashboard({ account, wedding, config, events, publishedAt,
 function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, mediaLoadErrors, coverPhotoId, coverGallery, siteGallery, siteCarouselPhotos, siteCarouselEnabled, siteCarouselAutoplay, coverCarouselEnabled, mediaBusy, mediaUploadProgress, mediaError, failedPhotoUpload, onRetryUpload, remaining, coverInput, onUpload, onCoverSelect, onCarouselToggle, onCarouselPhotoToggle, onSitePhotoToggle, onSiteCarouselToggle, onSiteCarouselPhotoToggle, onReorderSiteCarousel, onSiteCarouselAutoplayToggle, onImageError, onDelete }) {
   return <section className="customizer-photo-library" aria-labelledby="customizer-photo-library-title">
     <div className="customizer-photo-library-heading"><div><span className="eyebrow">FOTOS DO CASAL</span><h4 id="customizer-photo-library-title">Capa, carrossel e galeria do site</h4><p>Enviem cada foto uma vez e escolham onde ela aparece. Até {SITE_MEDIA_LIMITS.photosPerWedding} imagens no total.</p></div><span className="customizer-photo-count">{totalImages}/{SITE_MEDIA_LIMITS.photosPerWedding} fotos</span></div>
-    <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar foto</button></div>
+    <div className="customizer-photo-upload-actions"><input ref={coverInput} type="file" accept="image/*" multiple hidden onChange={(event) => onUpload(event, 'cover')} /><button type="button" className="button-outline" disabled={mediaBusy || remaining < 1} onClick={() => coverInput.current?.click()}><Camera size={17} /> Adicionar fotos</button></div>
     {mediaBusy && <div className="customizer-photo-upload-progress" role="status"><span>{mediaUploadProgress === null ? 'Preparando foto…' : `Enviando arquivo… ${mediaUploadProgress}%`}</span>{mediaUploadProgress !== null && <progress max="100" value={mediaUploadProgress} aria-label="Progresso do envio da foto" />}</div>}
     <small>As fotos são reduzidas para facilitar o envio pelo celular. MP4 até 15 MB; imagens até 8 MB após a redução.</small>
     {mediaError && <p className="admin-form-error" role="alert">{mediaError}{failedPhotoUpload && <button type="button" className="button-outline" disabled={mediaBusy} onClick={onRetryUpload}>Tentar enviar esta foto novamente</button>}</p>}
@@ -3209,8 +3270,6 @@ function GuestAuthorizationManager({ weddingId, guests, events, authorizations, 
 }
 
 function InvitationShare({ share, onClose, notify }) {
-  const [qr, setQr] = useState('')
-  useEffect(() => { QRCode.toDataURL(share.url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => setQr('')) }, [share.url])
   async function copyLink() {
     if (share.published === false) return notify('Publique o convite antes de compartilhar este link.')
     try {
@@ -3222,7 +3281,7 @@ function InvitationShare({ share, onClose, notify }) {
   }
   const individualMessage = `Com carinho, convidamos você para celebrar conosco! 💍\n\n💕 ${share.name}\n\nAcesse seu convite individual e confirme sua presença:\n${share.url}`
   const individualWhatsAppUrl = `https://wa.me/?text=${encodeURIComponent(individualMessage)}`
-  return <section className="role-card invitation-share-card"><div><span className="eyebrow">{share.published === false ? 'LINK AGUARDANDO PUBLICAÇÃO' : 'LINK INDIVIDUAL GERADO'}</span><h2>{share.name}</h2><p>{share.published === false ? 'Este link só abrirá depois que o convite for publicado. Feche esta janela e volte para compartilhar após a publicação.' : 'Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela.'}</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions">{share.published !== false && <><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><a className="button-outline" href={individualWhatsAppUrl} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enviar pelo WhatsApp</a></>}<button className="button-outline" onClick={onClose}>Fechar</button></div></div>{share.published !== false && qr && <img src={qr} alt={`QR code do convite individual de ${share.name}`} />}</section>
+  return <section className="role-card invitation-share-card"><div><span className="eyebrow">{share.published === false ? 'LINK AGUARDANDO PUBLICAÇÃO' : 'LINK INDIVIDUAL GERADO'}</span><h2>{share.name}</h2><p>{share.published === false ? 'Este link só abrirá depois que o convite for publicado. Feche esta janela e volte para compartilhar após a publicação.' : 'Este link dá acesso somente ao convite desta pessoa. Guarde-o para compartilhar; ele não volta a ser exibido depois que você fechar esta janela. O QR individual de entrada aparece após a confirmação aprovada.'}</p><input aria-label="Link individual" readOnly value={share.url} onFocus={(event) => event.target.select()} /><div className="role-actions">{share.published !== false && <><button className="button-primary" onClick={copyLink}>Copiar link <Copy size={15} /></button><a className="button-outline" href={individualWhatsAppUrl} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enviar pelo WhatsApp</a></>}<button className="button-outline" onClick={onClose}>Fechar</button></div></div></section>
 }
 
 function RoleFrame({ icon: Icon, eyebrow, title, description, children, className = '', secure = false, publicPage = false, secureName = 'Área do evento', secureFooter = 'Equipe do evento', headerAction = null, compactIntro = false, style }) {

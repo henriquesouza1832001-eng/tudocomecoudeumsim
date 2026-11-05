@@ -13,8 +13,6 @@ body { min-width: 320px; margin: 0; color: var(--marketing-ink); background: var
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 .marketing-page { min-height: 100vh; overflow: clip; color: var(--marketing-ink); background: var(--marketing-paper); }
-.marketing-page { background-image: var(--watercolor-floral-background); background-position: center top; background-size: 100% 100vh; background-repeat: no-repeat; background-attachment: fixed; }
-.marketing-page::before { position: fixed; z-index: 3; inset: 0; background-image: url('/images/floral-watercolor-overlay.png'); background-position: center top; background-size: 100vw 100vh; background-repeat: no-repeat; content: ''; opacity: .16; pointer-events: none; }
 .marketing-page a:focus-visible, .marketing-page button:focus-visible { outline: 3px solid #72513b; outline-offset: 4px; }
 .marketing-header { min-height: 86px; padding: 12px max(5.5vw, calc((100vw - 1240px) / 2)); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; background: #fffefa; border-bottom: 1px solid rgba(39,56,46,.1); }
 .marketing-header { transition: transform .22s ease, visibility 0s linear; }
@@ -29,6 +27,7 @@ button { font: inherit; }
 .marketing-header-cta:hover, .marketing-primary:hover { background: #2e4435; }
 .marketing-hero { width: 100%; min-height: 0; padding: clamp(52px, 7vw, 88px) max(7.8vw, calc((100vw - 1240px) / 2)); display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr); align-items: center; gap: clamp(42px, 7vw, 100px); color: var(--marketing-ink); background: #f3efea; }
 .marketing-hero-photo { min-width: 0; }
+.marketing-hero-photo { min-height: 460px; display: grid; align-items: stretch; }
 .marketing-photo-frame { position: relative; overflow: hidden; aspect-ratio: 1.16; background: #e2e2d9; box-shadow: 0 12px 34px rgba(41,48,40,.1); }
 .marketing-photo-button { width: 100%; height: 100%; position: absolute; inset: 0; padding: 0; overflow: hidden; border: 0; text-align: left; cursor: zoom-in; background: transparent; }
 .marketing-photo-button picture { position: absolute; inset: 0; }
@@ -67,6 +66,7 @@ button { font: inherit; }
 .marketing-steps p { max-width: 330px; margin: 0; color: #414a43; font-size: 16px; line-height: 1.6; }
 .marketing-showcase { padding: 76px max(8vw, calc((100vw - 1160px) / 2)); display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 9%; background: #e9eee7; }
 .marketing-showcase-photo { min-width: 0; min-height: 0; position: relative; }
+.marketing-showcase-photo { min-height: 450px; display: grid; align-items: stretch; }
 .marketing-showcase-photo img { width: 100%; height: auto; aspect-ratio: 1.25; display: block; object-fit: cover; object-position: center 43%; }
 .marketing-showcase-photo > span { position: absolute; left: 14px; bottom: 14px; padding: 7px 10px; color: white; background: rgba(20,29,25,.65); font-size: 12px; line-height: 1.4; }
 .marketing-showcase-copy h2 { margin: 13px 0 24px; font-size: clamp(34px, 4vw, 47px); }
@@ -420,6 +420,56 @@ button { font: inherit; }
 .marketing-pwa-points { margin: 23px 0; display: grid; gap: 12px; }
 .marketing-pwa-points > span { display: inline-flex; align-items: center; gap: 10px; color: #405849; font-size: 16px; }
 .marketing-pwa-copy .marketing-text-link { margin-top: 10px; }
+.marketing-product-preview { width: 100%; min-height: 100%; overflow: hidden; border: 1px solid #d5dcd1; color: #27382e; background: #fffefa; box-shadow: 0 18px 52px rgba(39,56,46,.12); }
+.marketing-preview-topbar { min-height: 42px; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid #e4e7df; color: #405849; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.marketing-preview-topbar > span:last-child { color: #8b6650; font-size: 9px; letter-spacing: .12em; }
+.marketing-preview-invitation { min-height: 410px; padding: 24px; display: grid; align-content: start; gap: 13px; background: #f4f2eb; }
+.marketing-preview-cover { min-height: 250px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border: 1px solid #d8d8ca; text-align: center; background: radial-gradient(ellipse at 90% 10%, rgba(183,197,174,.45), transparent 35%), radial-gradient(ellipse at 5% 88%, rgba(231,211,194,.45), transparent 38%), #f7f5ee; }
+.marketing-preview-cover small { color: #72513b; font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.marketing-preview-cover strong { color: #304337; font: 400 clamp(27px,4vw,42px)/1.05 var(--serif); }
+.marketing-preview-cover > span { color: #5b655b; font: italic 15px/1.4 var(--serif); }
+.marketing-preview-cover .marketing-preview-cover-note { margin-top: 6px; padding: 6px 9px; border: 1px dashed #b5b9ab; color: #667063; font: 11px/1.4 Arial,sans-serif; }
+.marketing-preview-event { padding: 14px 16px; display: grid; gap: 5px; border-left: 3px solid #82967e; background: #fffefa; }
+.marketing-preview-event > span, .marketing-preview-editor-screen > span, .marketing-preview-album > div:first-child > span, .marketing-preview-access > span { color: #72513b; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+.marketing-preview-event strong { color: #304337; font: 400 18px/1.2 var(--serif); }
+.marketing-preview-event small { color: #626b62; font-size: 11px; }
+.marketing-preview-rsvp { min-height: 39px; padding: 9px 12px; display: flex; align-items: center; gap: 8px; color: #365644; background: #e9f2e8; font-size: 11px; font-weight: 600; }
+.marketing-preview-editor { min-height: 410px; display: grid; grid-template-columns: minmax(105px,.36fr) minmax(0,1fr); background: #f6f5f0; }
+.marketing-preview-editor > aside { padding: 18px 12px; display: grid; align-content: start; gap: 9px; border-right: 1px solid #e2e4dc; background: #fffefa; }
+.marketing-preview-editor > aside > span { margin: 4px 0; color: #8b6650; font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+.marketing-preview-editor > aside > strong { font: 400 17px var(--serif); }
+.marketing-preview-editor > aside > i { height: 8px; border-radius: 10px; background: #e7eae3; }
+.marketing-preview-editor > aside > i:nth-of-type(2) { width: 76%; }
+.marketing-preview-editor-screen { padding: 18px; display: grid; align-content: start; gap: 11px; }
+.marketing-preview-editor-screen > span { text-align: center; }
+.marketing-preview-editor-screen .marketing-preview-cover { min-height: 235px; }
+.marketing-preview-editor-screen .marketing-preview-cover strong { font-size: 31px; }
+.marketing-preview-editor-screen .marketing-preview-event { padding: 10px 12px; }
+.marketing-preview-album { min-height: 355px; padding: 25px; display: grid; align-content: center; gap: 20px; background: #f4f2eb; }
+.marketing-preview-album > div:first-child { display: grid; gap: 7px; }
+.marketing-preview-album > div:first-child > strong { font: 400 25px/1.1 var(--serif); }
+.marketing-preview-album > div:first-child > small { color: #626b62; font-size: 12px; }
+.marketing-preview-album-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.marketing-preview-album-grid article { min-height: 142px; padding: 12px 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; border: 1px solid #dfe2d7; text-align: center; color: #566b58; background: linear-gradient(145deg,#f0f1e9,#e4e9df); }
+.marketing-preview-album-grid article span { color: #304337; font-size: 11px; font-weight: 700; }
+.marketing-preview-album-grid article small { color: #687168; font-size: 9px; }
+.marketing-preview-access { min-height: 410px; padding: 28px; display: flex; flex-direction: column; justify-content: center; gap: 15px; background: radial-gradient(ellipse at 80% 0, rgba(192,204,187,.46), transparent 37%),#f4f2eb; }
+.marketing-preview-access > strong { font: 400 28px/1.1 var(--serif); }
+.marketing-preview-access > div { min-height: 54px; padding: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid #d8ded4; background: #fffefa; color: #405849; font-size: 12px; }
+.marketing-preview-access p { margin: 0; color: #586257; font-size: 12px; line-height: 1.55; }
+.marketing-hero-photo .marketing-product-preview { aspect-ratio: 1.08; }
+.marketing-showcase-photo .marketing-product-preview { min-height: 410px; }
+.marketing-photo-story-art .marketing-product-preview { min-height: 360px; }
+.marketing-print-photo { min-height: 410px; }
+.marketing-print-photo .marketing-product-preview { min-height: 410px; }
+.marketing-pwa-phone > .marketing-product-preview { width: 100%; min-height: 330px; border: 0; box-shadow: none; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-topbar { display: none; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-invitation { min-height: 330px; padding: 6px; gap: 7px; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-cover { min-height: 205px; padding: 15px 8px; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-cover strong { font-size: 26px; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-event { padding: 9px; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-event strong { font-size: 16px; }
+.marketing-pwa-phone > .marketing-product-preview .marketing-preview-rsvp { padding: 7px; font-size: 9px; }
 .marketing-final { min-height: 410px; padding-top: 100px; padding-bottom: 100px; background-color: #efe5dc; background-image: radial-gradient(ellipse at 0 100%, rgba(166,183,160,.22), transparent 42%), radial-gradient(ellipse at 100% 0, rgba(210,163,150,.2), transparent 40%); }
 .marketing-final .marketing-primary { width: auto; min-width: 245px; }
 .marketing-footer { padding-top: 70px; }

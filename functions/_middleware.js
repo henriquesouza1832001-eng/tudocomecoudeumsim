@@ -66,7 +66,7 @@ export async function verifyAccessAssertion(assertion, env) {
 
 export async function onRequest(context) {
   const requestUrl = new URL(context.request.url)
-  if (requestUrl.pathname === '/documentos-legais/rascunho') {
+  if (requestUrl.pathname.replace(/\/+$/, '').toLowerCase() === '/documentos-legais/rascunho') {
     return new Response('Página não encontrada', {
       status: 404,
       headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' },
