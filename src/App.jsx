@@ -1475,7 +1475,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [publishedSiteConfig, setPublishedSiteConfig] = useState(null)
   const [sitePublishedAt, setSitePublishedAt] = useState(null)
   const [siteConfigLoading, setSiteConfigLoading] = useState(false)
-  const [tab, setTab] = useState(() => window.location.hash === '#equipe' ? 'team' : window.location.hash === '#configuracoes' ? 'settings' : 'site')
+  const [tab, setTab] = useState(() => window.location.hash === '#equipe' ? 'team' : 'site')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const [onboardingStep, setOnboardingStep] = useState(0)
@@ -2425,7 +2425,6 @@ function CouplePanel({ notify, confirmAction }) {
 
   const onboardingSteps = [
     { tab: 'site', title: 'Personalizem o convite', description: 'Escolham tema, paleta e seções. A prévia acompanha as alterações e o rascunho pode ser salvo antes de publicar.' },
-    { tab: 'settings', title: 'Confiram os dados do casamento', description: 'Nomes, data, horário e endereço do convite ficam em Configurações do casamento.' },
     { tab: 'events', title: 'Organizem os eventos', description: 'Cadastrem cerimônia, recepção e outros momentos, com data, horário e local.' },
     { tab: 'guests', title: 'Preparem os convites', description: 'Importem a lista, organizem grupos e acompanhem as confirmações de presença.' },
     { tab: 'site', title: 'Revisem antes de publicar', description: 'Confiram o convite e as informações para os convidados. A publicação libera a versão atual do site.' },
@@ -2477,7 +2476,6 @@ function CouplePanel({ notify, confirmAction }) {
       <div className="couple-mobile-nav-heading"><strong>Áreas do casamento</strong><button type="button" aria-label="Fechar menu" onClick={closeMobileNav}><X size={20} /></button></div>
       <div className="couple-nav-guide"><strong>Organize por etapa</strong><span>Escolha uma área para continuar. Seus dados ficam salvos no casamento.</span></div>
       <button className={tab === 'site' ? 'selected' : ''} aria-current={tab === 'site' ? 'page' : undefined} onClick={() => selectPanelTab('site')}><Paintbrush size={18} /><span>Personalizar</span></button>
-      {!isEditor && <button className={tab === 'settings' ? 'selected' : ''} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => selectPanelTab('settings')}><Settings2 size={18} /><span>Configurações</span></button>}
 
       {(isEditor || !isReader) && <button className={tab === 'events' ? 'selected' : ''} aria-current={tab === 'events' ? 'page' : undefined} onClick={() => selectPanelTab('events')}><CalendarDays size={18} /><span>Eventos</span></button>}
       {!isEditor && <>
@@ -2533,35 +2531,9 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => refreshAfterConfirmedMutation(weddingId)} />}
-    {tab === 'settings' && !isEditor && <WeddingProfileSettings key={weddingId} wedding={wedding} onSave={saveWeddingProfile} giftPreference={siteConfig.giftPreferences || 'undecided'} saving={siteConfigLoading} />}
     {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={events} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
    </div>
      </>}</main>{onboardingOpen && <div className="couple-tour-backdrop"><section className="couple-tour-dialog" role="dialog" aria-modal="true" aria-labelledby="couple-tour-title"><span className="eyebrow">PASSO {onboardingStep + 1} DE {onboardingSteps.length}</span><h2 id="couple-tour-title">{onboardingSteps[onboardingStep].title}</h2><p>{onboardingSteps[onboardingStep].description}</p><div className="couple-tour-actions">{onboardingStep > 0 && <button className="button-outline" type="button" onClick={() => { const previous = onboardingStep - 1; setOnboardingStep(previous); selectPanelTab(onboardingSteps[previous].tab) }}>Voltar</button>}<button className="button-outline" type="button" onClick={finishOnboarding}>Pular tour</button><button className="button-primary" type="button" onClick={() => { if (onboardingStep === onboardingSteps.length - 1) { finishOnboarding(); return } const next = onboardingStep + 1; setOnboardingStep(next); selectPanelTab(onboardingSteps[next].tab) }}>{onboardingStep === onboardingSteps.length - 1 ? 'Concluir' : 'Próximo'}</button></div></section></div>}<footer className="role-footer"><span>Área dos noivos</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer></div>
-}
-
-function WeddingProfileSettings({ wedding, onSave, giftPreference, saving }) {
-  const [form, setForm] = useState(() => ({ partnerOneName: wedding?.partner_one_name || '', partnerTwoName: wedding?.partner_two_name || '', eventDate: wedding?.event_date || '', eventTime: wedding?.event_time || '', slug: wedding?.slug || '' }))
-  const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const published = Boolean(wedding?.site_published_at)
-
-  async function submit(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    setSaved(false)
-    try {
-      await onSave({ ...form, eventDate: form.eventDate || null, eventTime: form.eventTime || null })
-      setSaved(true)
-    } catch (cause) {
-      setError(cause.message === 'wedding_slug_unavailable' ? 'Esse endereço curto já está em uso. Tentem outro.' : cause.message === 'wedding_slug_published' ? 'O endereço não pode ser alterado depois que o convite é publicado.' : cause.message === 'invalid_wedding_slug' ? 'Use de 3 a 30 letras minúsculas, números e hífens; endereços reservados não podem ser usados.' : 'Não foi possível salvar as configurações. Confiram os campos e tentem novamente.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return <section className="role-card wedding-profile-settings"><div className="role-card-heading"><div><span className="eyebrow">DADOS DO CASAMENTO</span><h2>Configurações do casamento</h2></div><Settings2 size={19} /></div><p className="team-access-note">Mantenham os dados principais e o endereço do convite em um só lugar. Vocês podem deixar a data em aberto e voltar depois.</p><form className="wedding-profile-form" onSubmit={submit}><div className="customizer-name-fields"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={form.partnerOneName} onChange={(event) => setForm((current) => ({ ...current, partnerOneName: event.target.value }))} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={form.partnerTwoName} onChange={(event) => setForm((current) => ({ ...current, partnerTwoName: event.target.value }))} /></label></div><div className="wedding-profile-date-grid"><label>Data do casamento<input type="date" value={form.eventDate} onChange={(event) => setForm((current) => ({ ...current, eventDate: event.target.value }))} /></label><label>Horário<input type="time" value={form.eventTime} onChange={(event) => setForm((current) => ({ ...current, eventTime: event.target.value }))} /></label></div><label>Endereço curto do convite<input autoComplete="off" inputMode="url" minLength="3" maxLength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" value={form.slug} disabled={published} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30) }))} required /><small>{published ? 'O endereço fica fixo depois da publicação para preservar os links já compartilhados.' : `Use de 3 a 30 letras minúsculas, números e hífen. Endereço atual: ${window.location.origin}/casamento/${form.slug || wedding?.slug || ''}`}</small></label><div className="wedding-gift-preference-note"><strong>Preferência de presentes</strong><span>{SIGNUP_GIFT_PREFERENCES[giftPreference] || SIGNUP_GIFT_PREFERENCES.undecided}</span><small>Configure a lista e a chave Pix na área Presentes quando estiverem prontos.</small></div>{error && <p className="admin-form-error" role="alert">{error}</p>}{saved && <p className="form-success" role="status">Configurações salvas.</p>}<button className="button-primary" type="submit" disabled={busy || saving}>{busy || saving ? 'Salvando…' : 'Salvar configurações'} <Check size={15} /></button></form></section>
 }
 
 function WeddingExpenseManager({ weddingId, expenses, onReload }) {
