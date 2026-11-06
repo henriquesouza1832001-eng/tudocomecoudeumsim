@@ -8262,3 +8262,5 @@ a[href="https://henriquesouzas.com"] { display: inline-flex; align-items: center
 .role-card, .role-stat, .couple-tour-dialog { border-radius: 2px; box-shadow: none; border-color: #ddd3c4; background: #fffdf8; }
 .role-brand, .role-header h1, .role-card h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; letter-spacing: -.02em; }
 .role-card .eyebrow, .customizer-step > span { color: #9b4a32; font-family: Georgia, serif; font-style: italic; font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 400; }
+
+.role-brand > .brand-mark { width: 44px; height: 44px; flex: 0 0 auto; border: 0; border-radius: 10px; }

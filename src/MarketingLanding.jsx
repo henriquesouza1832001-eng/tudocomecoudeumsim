@@ -45,7 +45,7 @@ export default function MarketingLanding() {
 
   return <div className="marketing-page">
     <header className={`marketing-header${headerVisible ? '' : ' marketing-header-hidden'}`} id="marketing-header" ref={headerRef} aria-hidden={!headerVisible} inert={headerVisible ? undefined : ''}>
-      <a className="marketing-brand" href="/" aria-label={PRODUCT_NAME}><span>{PRODUCT_NAME}</span></a>
+      <a className="marketing-brand" href="/" aria-label={PRODUCT_NAME}><svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#2f3a30" /><circle cx="25" cy="34" r="14" fill="none" stroke="#f3ebdd" strokeWidth="4" /><circle cx="39" cy="34" r="14" fill="none" stroke="#d98466" strokeWidth="4" /></svg><span>{PRODUCT_NAME}</span></a>
       <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#convite">O convite</a><a href="#presentes">Presentes</a><a href="#planejamento">Planejamento</a><a href="#entrada">Entrada</a><a className="marketing-login" href="/painel">Entrar</a></nav>
       <a className="marketing-header-cta" href="/cadastro">Criar acesso <ArrowRight size={17} /></a>
     </header>
