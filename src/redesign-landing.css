@@ -108,3 +108,7 @@ body { background: #f3eee4; }
 @media (prefers-reduced-motion: reduce) {
   .marketing-page a, .marketing-page button { transition: none; }
 }
+
+.marketing-page .marketing-checkin-device,
+.marketing-page .marketing-budget-card,
+.marketing-page .marketing-gifts-card { background: #fffdf8 !important; border: 1px solid var(--r-rule) !important; border-radius: 0; box-shadow: none !important; padding: 24px; }
