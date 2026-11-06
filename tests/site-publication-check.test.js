@@ -99,3 +99,18 @@ test('site publication blocks an invalid enabled Pix key', () => {
   assert.deepEqual(result.blockers, ['Corrija a chave Pix antes de publicar o convite.'])
   assert.deepEqual(result.warnings, ['O Pix está ativado, mas falta informar uma chave Pix válida.'])
 })
+
+test('publication warns about repeated cover text and timeline dates out of order', async () => {
+  const { checkSitePublication } = await import('../src/site-publication-check.js')
+  const config = {
+    enabledSections: ['Nossa história', 'Linha do tempo'],
+    coverMessages: { 'pt-BR': 'Vamos casar' },
+    storyMessages: { 'pt-BR': 'Vamos casar' },
+    timeline: [{ title: 'Eu te amo', date: '2025-06-17' }, { title: 'Nos conhecemos', date: '2025-10-14' }, { title: 'Antes de tudo', date: '2024-01-01' }],
+  }
+  const { warnings } = checkSitePublication(config, [])
+  assert.ok(warnings.some((text) => text.includes('são iguais')))
+  assert.ok(warnings.some((text) => text.includes('ordem cronológica')))
+  const ordered = checkSitePublication({ ...config, storyMessages: { 'pt-BR': 'Nossa história' }, timeline: config.timeline.slice(0, 2) }, [])
+  assert.ok(!ordered.warnings.some((text) => text.includes('são iguais') || text.includes('ordem cronológica')))
+})

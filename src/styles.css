@@ -8306,3 +8306,20 @@ img { display: block; max-width: 100%; }
 .focal-picker-grid button { min-height: 44px; padding: 0; justify-content: center; }
 .focal-picker-grid button i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: .55; }
 .focal-picker-grid button.selected i { opacity: 1; background: #fff; }
+
+.gift-catalog-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-top: 1px solid #ddd3c4; }
+.gift-catalog-card:first-child { border-top: 0; }
+.gift-catalog-thumb { width: 112px; height: 112px; overflow: hidden; display: grid; place-items: center; border-radius: 2px; background: #efe8da; color: #68736a; font-size: 13px; }
+.gift-catalog-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gift-catalog-body { display: grid; gap: 10px; min-width: 0; }
+.gift-catalog-body > strong { font-size: 17px; overflow-wrap: anywhere; }
+.gift-catalog-body > small { color: #68736a; }
+.gift-photo-choice-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice-buttons .gift-photo-thumb { width: 56px; height: 56px; min-height: 56px; padding: 0; overflow: hidden; justify-content: center; }
+.gift-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gift-photo-thumb.selected { outline: 3px solid #2f3a30; outline-offset: 1px; background: #fffdf8; }
+.customizer-gift-presentation-editor { display: grid; }
+@media (max-width: 560px) { .gift-catalog-card { grid-template-columns: 1fr; } .gift-catalog-thumb { width: 100%; height: 160px; } }
+:is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *) { min-height: 44px; padding: 0 36px 0 12px; border: 1px solid #ddd3c4; border-radius: 2px; background-color: #fffdf8; color: #2a2620; font: inherit; font-size: 15px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #2f3a30 50%), linear-gradient(135deg, #2f3a30 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+:is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *):focus-visible { outline: 3px solid #9b4a32; outline-offset: 2px; }
+:is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *):disabled { opacity: .55; }

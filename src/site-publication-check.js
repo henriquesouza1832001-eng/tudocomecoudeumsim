@@ -22,6 +22,11 @@ export function checkSitePublication(config = {}, events = []) {
   const warnings = []
   const enabled = new Set(config.enabledSections || [])
   if (enabled.has('Nossa história') && !config.storyMessages?.['pt-BR']?.trim()) warnings.push('A seção Nossa história está ativa, mas ainda não tem texto.')
+  const coverMessage = config.coverMessages?.['pt-BR']?.trim()
+  const storyMessage = config.storyMessages?.['pt-BR']?.trim()
+  if (enabled.has('Nossa história') && coverMessage && storyMessage && coverMessage === storyMessage) warnings.push('A mensagem da capa e o texto de Nossa história são iguais. Use um recado curto na capa e o relato de vocês na história.')
+  const timelineDates = (config.timeline || []).map((item) => Date.parse(item.date)).filter((value) => !Number.isNaN(value))
+  if (enabled.has('Linha do tempo') && timelineDates.some((value, index) => index > 0 && value < timelineDates[index - 1])) warnings.push('Os marcos da linha do tempo não estão em ordem cronológica. Confira as datas.')
   if (enabled.has('Linha do tempo') && !(config.timeline || []).some((item) => item.title?.trim())) warnings.push('A seção Linha do tempo está ativa, mas ainda não tem marcos preenchidos.')
   if (enabled.has('Padrinhos e madrinhas') && !(config.godparents || []).some((person) => person.name?.trim() && person.photoId)) warnings.push('A seção Padrinhos e madrinhas está ativa, mas precisa de uma pessoa com nome e foto.')
   if (enabled.has('Dress code') && !config.weddingDetails?.dressCode?.trim()) warnings.push('A seção Dress code está ativa, mas ainda não tem orientação de traje.')
