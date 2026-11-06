@@ -619,3 +619,7 @@ button { font: inherit; }
   .marketing-steps h3 { font-size: 21px; }
   .marketing-steps p { font-size: 15px; }
 }
+
+.marketing-header nav a, .marketing-header nav .marketing-login, .marketing-brand { display: inline-flex; align-items: center; min-height: 44px; }
+
+.marketing-footer .marketing-footer-links a, .marketing-footer .marketing-footer-contact a, .marketing-footer .marketing-footer-bottom a, .marketing-section a.marketing-text-link, a.marketing-text-link { display: inline-flex; align-items: center; min-height: 44px; }
