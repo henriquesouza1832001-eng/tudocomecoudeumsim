@@ -641,3 +641,16 @@ body, .marketing-page { background: var(--marketing-paper); }
 .marketing-page article svg, .marketing-page .marketing-check svg { color: var(--marketing-accent); }
 
 .marketing-page article, .marketing-page article:nth-child(n), .marketing-guest-journey article, .marketing-print-options article, .marketing-checkin-details article { background: #fffdf8 !important; border-color: var(--marketing-line) !important; }
+
+.marketing-page a, .marketing-page button, .marketing-page article { transition: transform .18s ease, opacity .18s ease, background-color .18s ease, color .18s ease; }
+.marketing-page a[class*="button"]:hover, .marketing-page .button-primary:hover, .marketing-header nav .marketing-cta:hover { transform: translateY(-1px); background: #3d4b3e; }
+.marketing-page a[class*="button"]:active, .marketing-page .button-primary:active { transform: translateY(1px); }
+.marketing-page article:hover { transform: translateY(-2px); }
+.marketing-text-link { text-decoration: none; background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat; transition: background-size .22s ease; padding-bottom: 2px; }
+.marketing-text-link:hover { background-size: 100% 1px; }
+.marketing-header nav a:not(.marketing-cta) { text-decoration: none; background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat; transition: background-size .22s ease; }
+.marketing-header nav a:not(.marketing-cta):hover { background-size: 100% 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .marketing-page a, .marketing-page button, .marketing-page article { transition: none; }
+  .marketing-page article:hover, .marketing-page a[class*="button"]:hover { transform: none; }
+}
