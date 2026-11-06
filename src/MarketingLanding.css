@@ -666,3 +666,7 @@ button { font: inherit; }
 }
 
 .marketing-brand > svg { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; }
+
+.marketing-page::before { position: fixed; z-index: 3; inset: 0; background-image: url('/images/floral-watercolor-overlay.png'); background-position: center top; background-size: 100vw 100vh; background-repeat: no-repeat; content: ''; opacity: .16; pointer-events: none; }
+
+@media (max-width: 560px) { .marketing-brand > svg { display: none; } }
