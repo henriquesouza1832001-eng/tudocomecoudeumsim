@@ -651,7 +651,7 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 ## 24. Redesenho aprovado: papelaria na vitrine, organização no painel — 06/11/2026
 
 - O dono aprovou o estudo de redesenho: direção A (papelaria: papel quente, tinta, vinho como único acento, Cormorant Garamond nos títulos e DM Sans na interface) na landing e no convite, e direção C (abas no topo, tabela, uma ação principal por tela) no painel, com a paleta de A.
-- Implementado em `src/redesign-landing.css` e `src/redesign-panel.css`, ambos apenas para telas a partir de 901 px. Celular e tablet mantêm o desenho anterior até aprovação expressa do dono.
+- Implementado em `src/redesign-landing.css` e `src/redesign-panel.css`. A aparência (papel, fontes, rótulos, botões, cartões planos) vale em todas as larguras e em landing, painel, cadastro, convidado, equipe, superadmin e ajuda; a composição (hero em duas colunas, abas no topo, linhas de convidados) vale só a partir de 901 px. O layout do celular e do tablet não foi alterado. O convite temático do casal e a tela de entrada da equipe (escura) ficam fora.
 - Regras do novo visual: sem cartões coloridos como estrutura, sem rótulos acima de títulos, sem ícones decorativos em círculo, sem barra colorida lateral em item ativo, sem sombras decorativas, fundo de papel liso no desktop.
-- O fundo de folhas permanece no celular, no tablet e no tema Floral do convite. Sua retirada da interface do desktop segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
-- Pendentes: aplicar o mesmo sistema às demais telas (cadastro, convidado, equipe, superadmin, ajuda), revisar a capa e os temas do convite e decidir sobre fotografias reais.
+- O fundo de folhas saiu da interface do produto em todas as larguras e permanece no tema Floral do convite; a retirada segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
+- Pendentes: revisar a capa e os temas do convite com a mesma disciplina e decidir sobre fotografias reais.
