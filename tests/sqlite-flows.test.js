@@ -152,3 +152,59 @@ test('migrated SQLite persists couple, invitation, expense and event staff opera
   assert.equal((await call(`${base}/published`, { account: 'reader' })).status, 200)
   assert.equal(sqlite.prepare('PRAGMA foreign_key_check').all().length, 0)
 })
+
+test('couple can approve, reject and look up RSVP requests received from the public invitation', async t => {
+  const { DB, sqlite } = database()
+  t.after(() => sqlite.close())
+  const origin = 'https://wedding.example'
+  async function call(path, { method = 'GET', body } = {}) {
+    const response = await onRequest({ request: new Request(`${origin}${path}`, { method, headers: { Origin: origin, Cookie: '__Host-wedding-session=couple-session', ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined }), env: { DB, GUEST_CREDENTIALS_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64') } })
+    const result = await response.json()
+    assert.notEqual(response.status, 500, `${method} ${path}: ${JSON.stringify(result)}`)
+    return { status: response.status, result }
+  }
+  const base = '/api/couple/weddings/wedding-1'
+  const event = await call(`${base}/events`, { method: 'POST', body: { name: 'Cerimônia', eventType: 'ceremony', startsAt: '2027-10-15T16:00', venueName: 'Jardim', address: 'Rua do Jardim, 20', groupIds: [] } })
+  assert.equal(event.status, 201)
+  sqlite.prepare("INSERT INTO guest_rsvp_requests (id,wedding_id,event_id,name,email,attendance_status,review_status,request_token_hash,idempotency_hash) VALUES ('request-1','wedding-1',?,'Convidado Público','publico@example.test','confirmed','pending','token-1','idem-1')").run(event.result.id)
+  sqlite.prepare("INSERT INTO guest_rsvp_requests (id,wedding_id,event_id,name,email,attendance_status,review_status,request_token_hash,idempotency_hash) VALUES ('request-2','wedding-1',?,'Outra Pessoa','outra@example.test','declined','pending','token-2','idem-2')").run(event.result.id)
+  sqlite.prepare("INSERT INTO guest_companion_requests (id,wedding_id,event_id,rsvp_request_id,name,status,idempotency_hash) VALUES ('companion-1','wedding-1',?,'request-1','Acompanhante Um','pending','idem-c1')").run(event.result.id)
+  const pending = await call(`${base}/attendance-requests`)
+  assert.equal(pending.result.requests.length, 2)
+  const approved = await call(`${base}/attendance-requests/request-1`, { method: 'PATCH', body: { decision: 'approved' } })
+  assert.equal(approved.status, 200, JSON.stringify(approved.result))
+  assert.ok(sqlite.prepare("SELECT id FROM guests WHERE name = 'Convidado Público' AND wedding_id = 'wedding-1'").get())
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS total FROM guest_rsvps WHERE event_id = ? AND status = 'confirmed'").get(event.result.id).total, 1)
+  assert.equal((await call(`${base}/attendance-requests/request-1`, { method: 'PATCH', body: { decision: 'approved' } })).status, 409)
+  assert.equal((await call(`${base}/attendance-requests/request-2`, { method: 'PATCH', body: { decision: 'rejected' } })).status, 200)
+  assert.equal((await call(`${base}/attendance-requests/missing-request`, { method: 'PATCH', body: { decision: 'approved' } })).status, 404)
+  assert.equal((await call(`${base}/attendance-requests/request-1`, { method: 'PATCH', body: { decision: 'maybe' } })).status, 400)
+})
+
+test('archived events cannot receive new team access or guest authorizations but can still be revoked', async t => {
+  const { DB, sqlite } = database()
+  t.after(() => sqlite.close())
+  const origin = 'https://wedding.example'
+  async function call(path, { method = 'GET', body } = {}) {
+    const response = await onRequest({ request: new Request(`${origin}${path}`, { method, headers: { Origin: origin, Cookie: '__Host-wedding-session=couple-session', ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined }), env: { DB, GUEST_CREDENTIALS_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64') } })
+    const result = await response.json()
+    assert.notEqual(response.status, 500, `${method} ${path}: ${JSON.stringify(result)}`)
+    return { status: response.status, result }
+  }
+  const base = '/api/couple/weddings/wedding-1'
+  const active = await call(`${base}/events`, { method: 'POST', body: { name: 'Cerimônia', eventType: 'ceremony', startsAt: '2027-10-15T16:00', venueName: 'Jardim', address: 'Rua do Jardim, 20', groupIds: [] } })
+  const archived = await call(`${base}/events`, { method: 'POST', body: { name: 'Brunch', eventType: 'brunch', startsAt: '2027-10-16T11:00', venueName: 'Café', address: 'Rua do Café, 3', groupIds: [] } })
+  assert.equal((await call(`${base}/events/${archived.result.id}/status`, { method: 'POST', body: { status: 'archived' } })).status, 200)
+  const guest = await call(`${base}/guests`, { method: 'POST', body: { name: 'Marina', partySize: 1, guestType: 'guest', groupId: null } })
+  const guestId = guest.result.guest.id
+  const teamInvite = (eventId) => call(`${base}/members/team-invitations`, { method: 'POST', body: { name: 'Equipe Teste', email: `equipe-${eventId.slice(0, 4)}@example.test`, profession: 'seguranca', eventIds: [eventId] } })
+  const rejectedTeam = await teamInvite(archived.result.id)
+  assert.equal(rejectedTeam.status, 400)
+  assert.equal(rejectedTeam.result.error, 'invalid_team_events')
+  assert.equal((await teamInvite(active.result.id)).status, 201)
+  const blocked = await call(`${base}/guest-authorizations`, { method: 'PUT', body: { guestId, eventId: archived.result.id, status: 'authorized' } })
+  assert.equal(blocked.status, 409)
+  assert.equal(blocked.result.error, 'event_archived')
+  assert.equal((await call(`${base}/guest-authorizations`, { method: 'PUT', body: { guestId, eventId: archived.result.id, status: 'revoked' } })).status, 200)
+  assert.equal((await call(`${base}/guest-authorizations`, { method: 'PUT', body: { guestId, eventId: active.result.id, status: 'authorized' } })).status, 200)
+})

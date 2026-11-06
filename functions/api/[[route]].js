@@ -1849,7 +1849,7 @@ app.post('/api/couple/weddings/:weddingId/members/team-invitations', requireSess
   if (!body || name.length < 2 || name.length > 160 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254
     || !['seguranca', 'cerimonialista'].includes(profession) || !eventIds.length || eventIds.length > 6
     || eventIds.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) return jsonError(context, 400, 'invalid_team_invitation')
-  const events = await context.env.DB.prepare(`SELECT id FROM events WHERE wedding_id = ? AND id IN (${eventIds.map(() => '?').join(', ')})`).bind(weddingId, ...eventIds).all()
+  const events = await context.env.DB.prepare(`SELECT id FROM events WHERE wedding_id = ? AND status = 'active' AND id IN (${eventIds.map(() => '?').join(', ')})`).bind(weddingId, ...eventIds).all()
   if (events.results.length !== eventIds.length) return jsonError(context, 400, 'invalid_team_events')
   const existingAccount = await context.env.DB.prepare('SELECT id, status FROM accounts WHERE email = ? COLLATE NOCASE').bind(email).first()
   if (existingAccount && existingAccount.status !== 'active') return jsonError(context, 409, 'account_not_ready')
@@ -1976,7 +1976,8 @@ app.put('/api/couple/weddings/:weddingId/events/:eventId/members/:membershipId',
   if (typeof body?.assigned !== 'boolean') return jsonError(context, 400, 'invalid_assignment')
   const eventId = context.req.param('eventId')
   const membershipId = context.req.param('membershipId')
-  const event = await context.env.DB.prepare('SELECT id FROM events WHERE id = ? AND wedding_id = ?').bind(eventId, weddingId).first()
+  const event = await context.env.DB.prepare('SELECT id, status FROM events WHERE id = ? AND wedding_id = ?').bind(eventId, weddingId).first()
+  if (event && body.assigned && event.status !== 'active') return jsonError(context, 409, 'event_archived')
   const staffMembership = await context.env.DB.prepare(`
     SELECT id, role, status FROM wedding_memberships
     WHERE id = ? AND wedding_id = ? AND role IN ('event_staff', 'checkin_staff')
@@ -2172,9 +2173,10 @@ app.put('/api/couple/weddings/:weddingId/guest-authorizations', requireSession, 
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.guestId || '') || !/^[0-9a-f-]{36}$/i.test(body.eventId || '') || !['authorized', 'revoked'].includes(body.status)) return jsonError(context, 400, 'invalid_guest_authorization')
   const [guest, event] = await Promise.all([
     context.env.DB.prepare('SELECT id FROM guests WHERE id = ? AND wedding_id = ? AND deleted_at IS NULL').bind(body.guestId, weddingId).first(),
-    context.env.DB.prepare('SELECT id FROM events WHERE id = ? AND wedding_id = ?').bind(body.eventId, weddingId).first(),
+    context.env.DB.prepare('SELECT id, status FROM events WHERE id = ? AND wedding_id = ?').bind(body.eventId, weddingId).first(),
   ])
   if (!guest || !event) return jsonError(context, 404, 'guest_or_event_not_found')
+  if (body.status === 'authorized' && event.status !== 'active') return jsonError(context, 409, 'event_archived')
   const actorId = context.get('session').account_id
   await context.env.DB.batch([
     context.env.DB.prepare(`INSERT INTO guest_event_authorizations (wedding_id, event_id, guest_id, status, decided_by)
@@ -2195,7 +2197,7 @@ app.patch('/api/couple/weddings/:weddingId/attendance-requests/:requestId', requ
   if (membership.wedding_status === 'suspended') return jsonError(context, 409, 'wedding_suspended')
   const body = await context.req.json().catch(() => null)
   if (!['approved', 'rejected'].includes(body?.decision)) return jsonError(context, 400, 'invalid_attendance_decision')
-  const request = await context.env.DB.prepare(`SELECT r.*, e.group_ids_json FROM guest_rsvp_requests r
+  const request = await context.env.DB.prepare(`SELECT r.* FROM guest_rsvp_requests r
     JOIN events e ON e.id = r.event_id AND e.wedding_id = r.wedding_id
     WHERE r.id = ? AND r.wedding_id = ?`).bind(requestId, weddingId).first()
   if (!request) return jsonError(context, 404, 'attendance_request_not_found')
@@ -2211,14 +2213,15 @@ app.patch('/api/couple/weddings/:weddingId/attendance-requests/:requestId', requ
   const guestId = body.decision === 'approved' ? crypto.randomUUID() : null
   const accessToken = guestId && request.attendance_status === 'confirmed' ? encodeToken(crypto.getRandomValues(new Uint8Array(32))) : null
   const credential = accessToken ? await guestCredentialCipher(context, accessToken) : null
-  const statements = [context.env.DB.prepare(`UPDATE guest_rsvp_requests SET review_status = ?, guest_id = ?, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ? AND wedding_id = ? AND review_status = 'pending'`).bind(body.decision, guestId, context.get('session').account_id, requestId, weddingId)]
+  const statements = [context.env.DB.prepare(`UPDATE guest_rsvp_requests SET review_status = ?, guest_id = NULL, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND wedding_id = ? AND review_status = 'pending'`).bind(body.decision, context.get('session').account_id, requestId, weddingId)]
   if (guestId) {
     const partySize = await context.env.DB.prepare('SELECT COUNT(*) AS total FROM guest_companion_requests WHERE rsvp_request_id = ?').bind(requestId).first()
     statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, rsvp_status, guest_type, source)
       SELECT ?, ?, ?, name, email, phone, ?, ?, ?, ?, attendance_status, 'guest', 'public_request'
-      FROM guest_rsvp_requests WHERE id = ? AND review_status = 'approved' AND guest_id = ?`)
-      .bind(guestId, weddingId, context.get('session').account_id, accessToken ? await tokenHash(accessToken) : null, credential?.ciphertext || null, credential?.iv || null, (partySize?.total || 0) + 1, requestId, guestId))
+      FROM guest_rsvp_requests WHERE id = ? AND review_status = 'approved' AND guest_id IS NULL`)
+      .bind(guestId, weddingId, context.get('session').account_id, accessToken ? await tokenHash(accessToken) : null, credential?.ciphertext || null, credential?.iv || null, (partySize?.total || 0) + 1, requestId))
+    statements.push(context.env.DB.prepare(`UPDATE guest_rsvp_requests SET guest_id = ? WHERE id = ? AND review_status = 'approved' AND guest_id IS NULL AND EXISTS (SELECT 1 FROM guests WHERE id = ?)`).bind(guestId, requestId, guestId))
     statements.push(context.env.DB.prepare(`INSERT INTO guest_rsvps (id, wedding_id, event_id, guest_id, status, party_size)
       SELECT ?, wedding_id, event_id, ?, attendance_status, 1 FROM guest_rsvp_requests WHERE id = ? AND review_status = 'approved' AND guest_id = ?
       ON CONFLICT(event_id, guest_id) DO NOTHING`).bind(crypto.randomUUID(), guestId, requestId, guestId))
@@ -2276,16 +2279,17 @@ app.patch('/api/couple/weddings/:weddingId/companion-requests/:companionId', req
   const guestId = body.decision === 'approved' ? crypto.randomUUID() : null
   const accessToken = guestId ? encodeToken(crypto.getRandomValues(new Uint8Array(32))) : null
   const credential = accessToken ? await guestCredentialCipher(context, accessToken) : null
-  const statements = [context.env.DB.prepare(`UPDATE guest_companion_requests SET name = ?, status = ?, guest_id = ?, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+  const statements = [context.env.DB.prepare(`UPDATE guest_companion_requests SET name = ?, status = ?, guest_id = NULL, decided_by = ?, decided_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND wedding_id = ? AND status = 'pending' AND (? != 'approved' OR (
       SELECT COUNT(*) FROM guest_companion_requests c WHERE c.wedding_id = ? AND c.status = 'approved'
         AND ((c.host_guest_id = ? AND ? IS NOT NULL) OR (c.rsvp_request_id = ? AND ? IS NOT NULL))
-    ) < ?)`).bind(name, body.decision, guestId, context.get('session').account_id, companionId, weddingId, body.decision, weddingId, companion.host_guest_id, companion.host_guest_id, companion.rsvp_request_id, companion.rsvp_request_id, approvalLimit)]
+    ) < ?)`).bind(name, body.decision, context.get('session').account_id, companionId, weddingId, body.decision, weddingId, companion.host_guest_id, companion.host_guest_id, companion.rsvp_request_id, companion.rsvp_request_id, approvalLimit)]
   if (guestId) {
     statements.push(context.env.DB.prepare(`INSERT INTO guests (id, wedding_id, group_id, invited_by, name, email, phone, access_token_hash, access_token_ciphertext, access_token_iv, party_size, rsvp_status, guest_type, source)
       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'confirmed', 'guest', 'companion'
-      WHERE EXISTS (SELECT 1 FROM guest_companion_requests WHERE id = ? AND status = 'approved' AND guest_id = ?)`)
-      .bind(guestId, weddingId, companion.host_group_id || null, context.get('session').account_id, name, companion.email, companion.phone, await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, companionId, guestId))
+      WHERE EXISTS (SELECT 1 FROM guest_companion_requests WHERE id = ? AND status = 'approved' AND guest_id IS NULL)`)
+      .bind(guestId, weddingId, companion.host_group_id || null, context.get('session').account_id, name, companion.email, companion.phone, await tokenHash(accessToken), credential?.ciphertext || null, credential?.iv || null, companionId))
+    statements.push(context.env.DB.prepare(`UPDATE guest_companion_requests SET guest_id = ? WHERE id = ? AND status = 'approved' AND guest_id IS NULL AND EXISTS (SELECT 1 FROM guests WHERE id = ?)`).bind(guestId, companionId, guestId))
     statements.push(context.env.DB.prepare(`INSERT INTO guest_rsvps (id, wedding_id, event_id, guest_id, status, party_size)
       SELECT ?, wedding_id, event_id, ?, 'confirmed', 1 FROM guest_companion_requests WHERE id = ? AND status = 'approved' AND guest_id = ?
       ON CONFLICT(event_id, guest_id) DO NOTHING`).bind(crypto.randomUUID(), guestId, companionId, guestId))

@@ -8338,3 +8338,6 @@ img { display: block; max-width: 100%; }
 .couple-gift-list strong { font-size: 16px; }
 .couple-gift-list small, .couple-gift-list p { font-size: 14px; }
 @media (max-width: 560px) { .couple-gift-list article { grid-template-columns: 72px minmax(0, 1fr); } .couple-gift-list article > .admin-state, .couple-gift-list article > .guest-admin-actions { grid-column: 2; } }
+
+.couple-events-tab .wedding-event-list article { flex-wrap: wrap; }
+.couple-events-tab .wedding-event-list article > .wedding-event-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; }

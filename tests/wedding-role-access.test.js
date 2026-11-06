@@ -47,7 +47,7 @@ function database(role, options = {}) {
         async all() {
           if (query.includes('FROM guest_rsvps r JOIN events e')) return { results: options.rsvpRows || [] }
           if (query.includes('SELECT w.id FROM weddings w JOIN wedding_memberships')) return { results: ['couple_admin', 'editor', 'reader'].includes(role) ? [{ id: 'wedding-1' }] : [] }
-          if (query.includes('SELECT id FROM events WHERE wedding_id = ? AND id IN')) return { results: parameters.slice(1).map((id) => ({ id })) }
+          if (query.includes("SELECT id FROM events WHERE wedding_id = ? AND status = 'active' AND id IN")) return { results: parameters.slice(1).map((id) => ({ id })) }
           if (query.includes('SELECT g.id, g.name') && !query.includes('LEFT JOIN')) return { results: [{ id: 'guest-1', name: 'Convidada' }] }
           if (query.includes('FROM godparent_tasks')) return { results: [{ id: 'task-1', title: 'Levar as alianças', details: '', due_at: null, status: 'open' }] }
           if (query.includes('FROM guests g') && query.includes('LEFT JOIN guest_rsvps')) return { results: [{ id: 'guest-1', name: 'Convidada', party_size: 1, rsvp_status: 'confirmed', checked_in_at: null }] }
