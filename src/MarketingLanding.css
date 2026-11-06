@@ -654,3 +654,11 @@ body, .marketing-page { background: var(--marketing-paper); }
   .marketing-page a, .marketing-page button, .marketing-page article { transition: none; }
   .marketing-page article:hover, .marketing-page a[class*="button"]:hover { transform: none; }
 }
+
+body, .marketing-page, .marketing-page * { font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif !important; font-style: normal !important; }
+.marketing-page h1, .marketing-page h2 { font-weight: 600; letter-spacing: -.035em; line-height: 1.06; }
+.marketing-page h3 { font-weight: 600; }
+.marketing-kicker { font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.marketing-hero::before, .marketing-hero-detail svg { display: none; }
+.marketing-hero-detail { padding-left: 0; }
+.marketing-hero-detail span, .marketing-caption { font-size: 14px; line-height: 1.6; color: #5a5147; }
