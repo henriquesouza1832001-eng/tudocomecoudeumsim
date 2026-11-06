@@ -8261,9 +8261,6 @@ img { display: block; max-width: 100%; }
 
   .role-card .button-primary, .role-card .button-outline { min-height: 44px; }
 
-  :root { --watercolor-floral-background: none; }
-  .app-shell, .guest-page, .role-page { background-image: none; background-color: #f6f1e8; }
-  .checkin-page { --watercolor-floral-background: none; background-image: none; }
   .role-card, .role-stat, .couple-tour-dialog { border-radius: 2px; box-shadow: none; border-color: #ddd3c4; background: #fffdf8; }
   .role-brand, .role-header h1, .role-card h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; letter-spacing: -.02em; }
   .role-card .eyebrow, .customizer-step > span { color: #9b4a32; font-family: Georgia, serif; font-style: italic; font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 400; }
