@@ -7,7 +7,7 @@ import { SITE_MEDIA_LIMITS } from '../../src/site-media-config.js'
 import { normalizeSectionLayouts } from '../../src/site-section-layouts.js'
 import { checkSitePublication } from '../../src/site-publication-check.js'
 import { isValidPixKey } from '../../src/pix-key.js'
-import { renderBrandedEmail } from '../../src/email-template.js'
+import { escapeEmailHtml, renderBrandedEmail, styleEmailLinks } from '../../src/email-template.js'
 import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_BASE_URL, PRODUCT_NAME } from '../../src/product-config.js'
 import { checkMercadoPagoAccount, createMercadoPagoTestPreference, getMercadoPagoTestPayment, validateMercadoPagoWebhookSignature } from '../../src/server/mercado-pago.js'
 import {
@@ -529,7 +529,7 @@ function configuredEmailProvider(env) {
   return null
 }
 
-async function sendTransactionalEmail(context, { to, subject, text, html }) {
+async function sendTransactionalEmail(context, { to, subject, text, html, layout }) {
   const provider = configuredEmailProvider(context.env)
   if (!provider) return false
   const isResend = provider === 'resend'
@@ -540,12 +540,21 @@ async function sendTransactionalEmail(context, { to, subject, text, html }) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: brandedEmail(html, subject) }),
+    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: layout ? renderBrandedEmail({ preheader: subject, ...layout }) : brandedEmail(html, subject) }),
   })
   if (!response.ok) return false
   const result = await response.json().catch(() => null)
   if (isResend) return typeof result?.id === 'string' && result.id.length > 0
   return result?.success === true && !result.result?.permanent_bounces?.includes(to)
+}
+
+function emailEventDetails(couple, event, timezone) {
+  const when = event?.starts_at ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short', timeZone: timezone || 'America/Sao_Paulo' }).format(new Date(event.starts_at)) : ''
+  return [['Casal', couple], ['Evento', event?.name || ''], ['Quando', when], ['Onde', [event?.venue_name, event?.address].filter(Boolean).join(', ')]]
+}
+
+function emailEventText(details) {
+  return details.filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`).join('\n')
 }
 
 function brandedEmail(content, subject) {
@@ -555,12 +564,10 @@ function brandedEmail(content, subject) {
   const bodyHtml = content
     .replace(actionMatch?.[0] || '', '')
     .replace(expiryMatch?.[0] || '', '')
-  const eyebrow = /senha/i.test(emailTitle) ? 'Segurança da conta' : /cadastro|e-mail/i.test(emailTitle) ? 'Acesso do casal' : 'Atualização do convite'
   return renderBrandedEmail({
     preheader: emailTitle,
-    eyebrow,
     title: emailTitle,
-    bodyHtml,
+    bodyHtml: styleEmailLinks(bodyHtml),
     actionLabel: actionMatch?.[2],
     actionUrl: actionMatch?.[1],
     notice: expiryMatch?.[1],
@@ -2310,12 +2317,19 @@ app.patch('/api/couple/weddings/:weddingId/companion-requests/:companionId', req
   let emailSent = false
   if (body.decision === 'approved' && companion.email && accessToken) {
     const accessUrl = `${new URL(context.req.url).origin}/convidado#convite/${accessToken}`
+    const emailContext = await context.env.DB.prepare('SELECT e.name, e.starts_at, e.venue_name, e.address, w.partner_one_name, w.partner_two_name, w.timezone FROM events e JOIN weddings w ON w.id = e.wedding_id WHERE e.id = ? AND e.wedding_id = ?').bind(companion.event_id, weddingId).first().catch(() => null)
     try {
       emailSent = await sendTransactionalEmail(context, {
         to: companion.email,
-        subject: 'Seu acesso individual ao casamento',
-        text: `Seu pedido de presença foi aprovado. Apresente seu QR individual na entrada: ${accessUrl}`,
-        html: `<p>Seu pedido de presença foi aprovado.</p><p><a href="${accessUrl}">Abrir meu convite individual e QR code</a></p>`,
+        subject: `Presença aprovada no casamento de ${emailContext?.partner_one_name || ''} e ${emailContext?.partner_two_name || ''}`.replace(' de  e ', ' '),
+        text: `Olá, ${name}. O casal aprovou a sua presença.\n\n${emailEventText(emailEventDetails(`${emailContext?.partner_one_name || ''} e ${emailContext?.partner_two_name || ''}`, emailContext, emailContext?.timezone))}\n\nApresente seu QR individual na entrada: ${accessUrl}`,
+        layout: {
+          title: 'Sua presença foi aprovada',
+          bodyHtml: `<p style="margin:0">Olá, ${escapeEmailHtml(name)}. O casal aprovou a sua presença. O QR individual no seu convite é a sua entrada.</p>`,
+          details: emailEventDetails(`${emailContext?.partner_one_name || ''} e ${emailContext?.partner_two_name || ''}`, emailContext, emailContext?.timezone),
+          actionLabel: 'Abrir meu convite e QR code',
+          actionUrl: accessUrl,
+        },
       })
     } catch {
       emailSent = false
@@ -2885,9 +2899,16 @@ app.post('/api/public/weddings/:slug/rsvp', async (context) => {
     try {
       emailSent = await sendTransactionalEmail(context, {
         to: email,
-        subject: 'Sua confirmação de presença',
-        text: `Sua presença foi confirmada. Guarde seu QR individual para a entrada: ${accessUrl}\n\nVocê também pode consultar sua confirmação por este link: ${requestUrl}`,
-        html: `<p>Sua presença foi confirmada.</p><p><a href="${accessUrl}">Abrir meu convite individual e QR code</a></p><p><a href="${requestUrl}">Consultar confirmação</a></p>`,
+        subject: `Presença confirmada no casamento de ${wedding.partner_one_name} e ${wedding.partner_two_name}`,
+        text: `Olá, ${name}. Sua presença está confirmada.\n\n${emailEventText(emailEventDetails(`${wedding.partner_one_name} e ${wedding.partner_two_name}`, event, wedding.timezone))}\n\nGuarde seu QR individual para a entrada: ${accessUrl}\n\nVocê também pode consultar sua confirmação por este link: ${requestUrl}`,
+        layout: {
+          title: 'Presença confirmada',
+          bodyHtml: `<p style="margin:0">Olá, ${escapeEmailHtml(name)}. Sua presença está confirmada. Guarde este e-mail: o QR individual no seu convite é a sua entrada.</p>`,
+          details: emailEventDetails(`${wedding.partner_one_name} e ${wedding.partner_two_name}`, event, wedding.timezone),
+          actionLabel: 'Abrir meu convite e QR code',
+          actionUrl: accessUrl,
+          secondaryLinks: [{ label: 'Consultar esta confirmação', url: requestUrl }],
+        },
       })
     } catch {
       emailSent = false
@@ -3749,7 +3770,10 @@ app.post('/api/superadmin/email-test', requireSession, requireSuperadmin, async 
     to: recipient,
     subject: `Teste de envio | ${PRODUCT_NAME}`,
     text: 'Este é um teste do envio de e-mails da plataforma. O endereço remetente não recebe respostas. Para suporte, use henriquesouza1832001@gmail.com ou (31) 98892-4409.',
-    html: '<p>Este é um teste do envio de e-mails da plataforma.</p><p>O endereço remetente não recebe respostas. Para suporte, use <a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a> ou <a href="tel:+5531988924409">(31) 98892-4409</a>.</p>',
+    layout: {
+      title: 'Teste de envio',
+      bodyHtml: '<p style="margin:0 0 12px">Este é um teste do envio de e-mails da plataforma.</p><p style="margin:0">O endereço remetente não recebe respostas. Para suporte, use o contato no rodapé desta mensagem.</p>',
+    },
   }).catch(() => false)
   if (!sent) return jsonError(context, 502, 'email_test_failed')
   await context.env.DB.prepare(`INSERT INTO audit_logs (id, actor_account_id, action, target_type, target_id, details_json)

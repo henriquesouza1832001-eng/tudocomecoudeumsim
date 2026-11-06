@@ -12,7 +12,6 @@
   font-family: var(--r-text);
 }
 body { background: #f3eee4; }
-.marketing-page::before { display: none; }
 .marketing-page * { font-style: normal; }
 
 .marketing-header { background: var(--r-paper); border-bottom: 1px solid var(--r-rule); }

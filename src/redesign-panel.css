@@ -7,9 +7,7 @@
   --r-rule: #cfc6b6;
   --r-accent: #8a2f35;
   --r-display: 'Cormorant Garamond', Georgia, serif;
-  --watercolor-floral-background: none;
   background-color: var(--r-paper);
-  background-image: none;
   color: var(--r-ink);
 }
 
