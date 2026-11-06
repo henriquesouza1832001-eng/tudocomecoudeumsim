@@ -647,3 +647,11 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Teste ponta a ponta executado em ambiente local (Worker real, D1 e R2 locais com todas as migrations, sessão semeada) cobrindo perfil, eventos, grupos, convidados, importação, RSVP manual, despesas, pagamentos, presentes, validação de Pix e links, upload, publicação, convite público, aprovação de confirmações e acompanhantes, padrinhos, equipe, isolamento entre casamentos e cabeçalhos de segurança. Teste de interface cobriu painel, prévia ampliada, dados do casamento, Pix e responsividade em 360, 390 e 768 px.
 - Defeitos encontrados e corrigidos nesse teste: a aprovação ou recusa de confirmações de presença e de acompanhantes falhava (coluna inexistente em consulta e gravação do `guest_id` antes do convidado existir); evento arquivado era aceito em acesso de equipe e em autorização de convidado; lista de eventos estourava a largura a 768 px.
 - Limites do teste local: login, cadastro e formulários públicos dependem de Turnstile real e de provedor de e-mail e não foram exercitados de ponta a ponta; o upload de vídeo, a importação de planilha pelo navegador e o envio de fotos por convidados não foram executados.
+
+## 24. Redesenho aprovado: papelaria na vitrine, organização no painel — 06/11/2026
+
+- O dono aprovou o estudo de redesenho: direção A (papelaria: papel quente, tinta, vinho como único acento, Cormorant Garamond nos títulos e DM Sans na interface) na landing e no convite, e direção C (abas no topo, tabela, uma ação principal por tela) no painel, com a paleta de A.
+- Implementado em `src/redesign-landing.css` e `src/redesign-panel.css`, ambos apenas para telas a partir de 901 px. Celular e tablet mantêm o desenho anterior até aprovação expressa do dono.
+- Regras do novo visual: sem cartões coloridos como estrutura, sem rótulos acima de títulos, sem ícones decorativos em círculo, sem barra colorida lateral em item ativo, sem sombras decorativas, fundo de papel liso no desktop.
+- O fundo de folhas permanece no celular, no tablet e no tema Floral do convite. Sua retirada da interface do desktop segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
+- Pendentes: aplicar o mesmo sistema às demais telas (cadastro, convidado, equipe, superadmin, ajuda), revisar a capa e os temas do convite e decidir sobre fotografias reais.

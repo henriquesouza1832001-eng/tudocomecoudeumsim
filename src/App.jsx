@@ -1,4 +1,5 @@
 import './styles.css'
+import './redesign-panel.css'
 import { PRODUCT_NAME } from './product-config.js'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
