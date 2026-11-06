@@ -310,6 +310,18 @@ test('the Pages Access middleware does not block public routes', async () => {
   assert.equal(response.headers.get('X-Frame-Options'), 'DENY')
 })
 
+test('every response carries a restrictive content security policy and strict transport security', async () => {
+  const response = await accessMiddleware({ request: new Request(`${base}/painel`), env: {}, next: async () => new Response('ok') })
+  const policy = response.headers.get('Content-Security-Policy')
+  assert.match(policy, /default-src 'self'/)
+  assert.match(policy, /object-src 'none'/)
+  assert.match(policy, /frame-ancestors 'none'/)
+  assert.doesNotMatch(policy, /unsafe-eval/)
+  assert.doesNotMatch(policy, /script-src[^;]*unsafe-inline/)
+  assert.match(response.headers.get('Strict-Transport-Security'), /max-age=31536000/)
+  assert.equal(response.headers.get('Cross-Origin-Opener-Policy'), 'same-origin')
+})
+
 test('the QA preview can open only the superadmin screen while its API stays protected', async () => {
   const preview = 'https://abc123.tudocomecoudeumsim.pages.dev'
   let nextCalled = false

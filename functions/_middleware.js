@@ -64,6 +64,8 @@ export async function verifyAccessAssertion(assertion, env) {
   }
 }
 
+const CONTENT_SECURITY_POLICY = ["default-src 'self'", "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob:", "font-src 'self' data:", "connect-src 'self' https://cloudflareinsights.com", "frame-src https://challenges.cloudflare.com", "worker-src 'self'", "manifest-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", 'upgrade-insecure-requests'].join('; ')
+
 export async function onRequest(context) {
   const requestUrl = new URL(context.request.url)
   if (requestUrl.pathname.replace(/\/+$/, '').toLowerCase() === '/documentos-legais/rascunho') {
@@ -114,6 +116,9 @@ export async function onRequest(context) {
   headers.set('X-Frame-Options', 'DENY')
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
-  headers.set('Strict-Transport-Security', 'max-age=15552000')
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  headers.set('Content-Security-Policy', CONTENT_SECURITY_POLICY)
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+  headers.set('X-Permitted-Cross-Domain-Policies', 'none')
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
