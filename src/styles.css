@@ -8328,3 +8328,13 @@ img { display: block; max-width: 100%; }
 .role-card .customizer-content-group, .role-card fieldset { padding: 18px 0; }
 .role-card .customizer-extra-fields > summary { padding: 14px 0; font-weight: 600; cursor: pointer; }
 .role-card .customizer-section-toggles label, .role-card .customizer-carousel-toggle { border: 0; border-bottom: 1px solid #efe8da; border-radius: 0; background: transparent; }
+
+.couple-gift-list > article { align-items: center; }
+.gift-list-thumb { width: 72px; height: 72px; flex: 0 0 72px; overflow: hidden; display: grid; place-items: center; border-radius: 2px; background: #efe8da; color: #68736a; font-size: 12px; text-align: center; }
+.gift-list-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.couple-gift-list article { grid-template-columns: 72px minmax(0, 1fr) auto auto; }
+.couple-gift-list article > div:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+.couple-gift-list strong { font-size: 16px; }
+.couple-gift-list small, .couple-gift-list p { font-size: 14px; }
+@media (max-width: 560px) { .couple-gift-list article { grid-template-columns: 72px minmax(0, 1fr); } .couple-gift-list article > .admin-state, .couple-gift-list article > .guest-admin-actions { grid-column: 2; } }
