@@ -8292,3 +8292,17 @@ img { display: block; max-width: 100%; }
 .preview-expanded .invitation-preview-viewport { flex: 1; height: auto; min-height: 0; }
 .preview-expanded, .preview-expanded button { font-family: 'DM Sans', system-ui, sans-serif; }
 .preview-expanded-bar > .button-primary { min-height: 44px; padding: 0 20px; font-size: 15px; }
+
+.choice-buttons { display: grid; gap: 8px; }
+.choice-buttons-label { font-size: 14px; font-weight: 600; }
+.choice-buttons > div:not(.focal-picker-grid) { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice-buttons button { min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #ddd3c4; border-radius: 2px; color: #2a2620; background: #fffdf8; font: inherit; font-size: 14px; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.choice-buttons button:hover { border-color: #2f3a30; }
+.choice-buttons button.selected { color: #fff; background: #2f3a30; border-color: #2f3a30; }
+.choice-buttons button:focus-visible { outline: 3px solid #9b4a32; outline-offset: 2px; }
+.choice-buttons small { color: #68736a; font-size: 13px; line-height: 1.4; }
+.focal-picker-grid { width: 132px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px; border: 1px solid #ddd3c4; border-radius: 2px; background: #f6f1e8; }
+.focal-picker-grid > span { min-height: 38px; }
+.focal-picker-grid button { min-height: 44px; padding: 0; justify-content: center; }
+.focal-picker-grid button i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: .55; }
+.focal-picker-grid button.selected i { opacity: 1; background: #fff; }
