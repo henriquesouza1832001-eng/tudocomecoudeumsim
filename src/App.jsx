@@ -440,7 +440,7 @@ function WeddingDisplayPage({ kind, href, weddingName, gifts, presentation, medi
   return <section className="public-wedding-display-page"><a className="public-wedding-back-link" href={preview ? undefined : href} onClick={preview ? onBack : undefined}><ArrowLeft size={15} /> Voltar ao convite</a><span className="eyebrow">{kind === 'gifts' ? 'LISTA DO CASAMENTO' : 'UM PRESENTE DIRETO AOS NOIVOS'}</span><h1>{kind === 'gifts' ? 'Um carinho para ' : 'Um gesto de carinho para '}{weddingName}</h1>{kind === 'gifts' ? <WeddingGiftsSection gifts={gifts} presentation={presentation} mediaUrl={mediaUrl} imageAltTexts={imageAltTexts} preview={preview} /> : <WeddingPixSection pix={pix} preview={preview} onCopy={onCopy} />}</section>
 }
 
-function InvitationPreviewWindow({ device, animationPreset, children }) {
+function InvitationPreviewWindow({ device, animationPreset, expanded = false, children }) {
   const frameRef = useRef(null)
   const viewportRef = useRef(null)
   const [frameDocument, setFrameDocument] = useState(null)
@@ -452,13 +452,13 @@ function InvitationPreviewWindow({ device, animationPreset, children }) {
     if (!viewport) return undefined
     const updateScale = () => {
       const bounds = viewport.getBoundingClientRect()
-      setScale(Math.min(bounds.width / dimensions[0], bounds.height / dimensions[1], 1))
+      setScale(expanded ? Math.min(bounds.width / dimensions[0], bounds.height / dimensions[1], 1) : Math.min(bounds.width / dimensions[0], Math.min(window.innerHeight * 0.76, 760) / dimensions[1], 1))
     }
     const observer = new ResizeObserver(updateScale)
     observer.observe(viewport)
     updateScale()
     return () => observer.disconnect()
-  }, [dimensions[0], dimensions[1]])
+  }, [dimensions[0], dimensions[1], expanded])
 
   useEffect(() => {
     if (!frameDocument || animationPreset === 'Nenhum' || frameDocument.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in frameDocument.defaultView)) return undefined
@@ -492,7 +492,7 @@ function InvitationPreviewWindow({ device, animationPreset, children }) {
   const frameStyle = { width: `${dimensions[0]}px`, height: `${dimensions[1]}px`, transform: `scale(${scale})`, transformOrigin: 'top left' }
   const srcDoc = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${window.location.origin}/"></head><body style="margin:0;overflow-x:hidden"><div id="invitation-preview-root"></div></body></html>`
 
-  return <div ref={viewportRef} className="invitation-preview-viewport" aria-label={`Prévia do convite em ${device === 'mobile' ? 'celular' : device === 'tablet' ? 'tablet' : 'desktop'}`}><div className="invitation-preview-scaled-frame" style={{ width: `${width}px`, height: `${height}px` }}><iframe ref={frameRef} title={`Prévia do convite em ${device}`} srcDoc={srcDoc} onLoad={prepareFrame} style={frameStyle} /></div>{frameDocument && createPortal(<div className={`invitation-preview-document browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>convite do casal</div><ExternalLink size={12} /></div>{children}</div>, frameDocument.getElementById('invitation-preview-root'))}</div>
+  return <div ref={viewportRef} className="invitation-preview-viewport" style={expanded ? undefined : { height: `${Math.max(Math.round(height), 120)}px`, minHeight: 0 }} aria-label={`Prévia do convite em ${device === 'mobile' ? 'celular' : device === 'tablet' ? 'tablet' : 'desktop'}`}><div className="invitation-preview-scaled-frame" style={{ width: `${width}px`, height: `${height}px` }}><iframe ref={frameRef} title={`Prévia do convite em ${device}`} srcDoc={srcDoc} onLoad={prepareFrame} style={frameStyle} /></div>{frameDocument && createPortal(<div className={`invitation-preview-document browser-frame device-${device}`}><div className="browser-bar"><span /><span /><span /><div>convite do casal</div><ExternalLink size={12} /></div>{children}</div>, frameDocument.getElementById('invitation-preview-root'))}</div>
 }
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFZgkIUFzXNjKhsH'
@@ -2401,6 +2401,25 @@ function CouplePanel({ notify, confirmAction }) {
     if (window.matchMedia('(max-width: 760px)').matches) mobileNavToggleRef.current?.focus()
   }
 
+  function reviewPhotoDescriptions() {
+    setError('')
+    selectPanelTab('site')
+    window.setTimeout(() => {
+      const contentTab = [...document.querySelectorAll('.customizer-wizard-nav [role="tab"]')].find((button) => /Recado/.test(button.textContent))
+      if (contentTab && contentTab.getAttribute('aria-selected') !== 'true') contentTab.click()
+      window.setTimeout(() => {
+        const section = [...document.querySelectorAll('details.customizer-extra-fields')].find((item) => /Descrições acessíveis/.test(item.textContent))
+        if (!section) return
+        section.open = true
+        const field = [...section.querySelectorAll('.customizer-photo-alt-field input')].find((input) => !input.value.trim())
+        if (field) {
+          field.scrollIntoView({ block: 'center' })
+          field.focus()
+        }
+      }, 200)
+    }, 200)
+  }
+
   function selectPanelTab(nextTab) {
     setTab(nextTab)
     closeMobileNav()
@@ -2474,8 +2493,9 @@ function CouplePanel({ notify, confirmAction }) {
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={activeEvents} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
 
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><BrandMark /><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a>{!isEditor && <button className="button-outline" type="button" onClick={() => { setOnboardingStep(0); setOnboardingOpen(true); selectPanelTab('site') }}>Tour do painel</button>}<button className="button-outline" onClick={() => selectPanelTab('site')}>Editar site</button>{sitePublishedAt && wedding?.slug && <a className="button-outline" href={`/casamento/${encodeURIComponent(wedding.slug)}`} target="_blank" rel="noreferrer">Ver convite publicado</a>}<button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
+    {error && /descrição acessível/i.test(error) && <p className="admin-form-error" role="alert">{error} <button type="button" className="button-outline" onClick={reviewPhotoDescriptions}>Revisar descrições</button></p>}
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
-    {error && <p className="admin-form-error" role="alert">{error}</p>}
+    {error && !/descrição acessível/i.test(error) && <p className="admin-form-error" role="alert">{error}</p>}
      {dataLoadError && dataReady && <p className="admin-form-error" role="alert">{dataLoadError} <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button></p>}
      {!dataReady && <section className="role-card" role={dataLoadError ? 'alert' : 'status'}><p>{dataLoadError || 'Carregando os dados deste casamento…'}</p>{dataLoadError && <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar novamente</button>}</section>}
     {dataReady && <>
@@ -2832,6 +2852,14 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [device, setDevice] = useState('desktop')
   const [previewPage, setPreviewPage] = useState('invitation')
   const [step, setStep] = useState('visual')
+  const [previewExpanded, setPreviewExpanded] = useState(false)
+  useEffect(() => {
+    if (!previewExpanded) return undefined
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setPreviewExpanded(false) }
+    window.addEventListener('keydown', closeOnEscape)
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', closeOnEscape); document.body.style.overflow = '' }
+  }, [previewExpanded])
   const [partnerOneName, setPartnerOneName] = useState(wedding?.partner_one_name || '')
   const [partnerTwoName, setPartnerTwoName] = useState(wedding?.partner_two_name || '')
   const [eventDate, setEventDate] = useState(wedding?.event_date || '')
@@ -3256,8 +3284,27 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     ...(previewPixEnabled ? [{ label: 'Presentear via Pix', href: pixDisplayMode === 'inline' ? '#pix' : '?pagina=pix', onSelect: pixDisplayMode === 'page' ? () => setPreviewPage('pix') : undefined }] : []),
   ]
 
+  const previewDocument = (
+        <WeddingInvitationDocument theme={theme.id} animationPreset={config.animationPreset} style={style} partnerOneName={partnerOneName || 'Nomes do casal'} partnerTwoName={partnerTwoName || 'seu par'} preview navigation={previewPage === 'invitation' ? <WeddingNavigation items={previewNavItems} givingOptions={previewGivingOptions} /> : <button type="button" className="button-outline" onClick={() => setPreviewPage('invitation')}>Voltar ao convite</button>}>
+          {previewPage === 'invitation' ? <>
+            <WeddingInvitationCover animationPreset={config.animationPreset} theme={theme.id} layout={coverLayout} composition={config.coverComposition} textAlign={config.coverTextAlign} textPosition={config.coverTextPosition} overlayOpacity={config.coverOverlayOpacity} imagePosition={coverImagePositionDesktop} mobileImagePosition={coverImagePositionMobile} photoAlt={imageAltText(config, previewCoverId, 'Foto escolhida pelo casal')} partnerOneName={partnerOneName} partnerTwoName={partnerTwoName} date={eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={eventTime} message={coverMessage} photoUrl={previewPhotoUrl} videoUrl={previewVideoUrl} showRsvp={(config.enabledSections || []).includes('Confirmação de presença')} preview carouselCount={config.coverCarouselEnabled ? (config.coverGallery || []).length : 0} carouselIndex={previewCoverIndex} />
+            <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} rsvpSection={(config.enabledSections || []).includes('Confirmação de presença') ? <WeddingInvitationRsvpPreview events={events} title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} /> : null} wallSection={(config.enabledSections || []).includes('Mural de recados') ? <WeddingWallSection preview title={getSiteSectionTitle(config, 'Mural de recados')} /> : null} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
+          </> : <WeddingDisplayPage kind={previewPage} weddingName={`${partnerOneName || 'Nomes do casal'} & ${partnerTwoName || 'seu par'}`} gifts={previewGifts.filter((gift) => gift.status === 'active')} presentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} imageAltTexts={config.imageAltTexts} pix={config.pix} preview onBack={() => setPreviewPage('invitation')} />}
+        </WeddingInvitationDocument>
+  )
+
   return <div className="customize-layout simplified-customizer">
     <div className="customize-controls">
+      <details className="customizer-wedding-data" open={!partnerOneName.trim() || !partnerTwoName.trim()}>
+        <summary><strong>Dados do casamento</strong><span>{partnerOneName.trim() || 'Nome'} &amp; {partnerTwoName.trim() || 'Nome'}{eventDate ? ` · ${new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}{eventTime ? ` · ${eventTime}` : ''}</span></summary>
+        <div className="customizer-wedding-data-fields">
+          <label>Primeiro nome<input autoComplete="off" maxLength="100" value={partnerOneName} onChange={(event) => setPartnerOneName(event.target.value)} /></label>
+          <label>Segundo nome<input autoComplete="off" maxLength="100" value={partnerTwoName} onChange={(event) => setPartnerTwoName(event.target.value)} /></label>
+          <label>Data do casamento<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
+          <label>Horário<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label>
+        </div>
+        <small>São os mesmos dados do cadastro e se atualizam no convite. Local e horários de cada cerimônia ficam na aba Eventos.</small>
+      </details>
       <div className="customizer-wizard-nav" role="tablist" aria-label="Etapas para personalizar o convite">
         <button type="button" role="tab" aria-selected={step === 'visual'} className={step === 'visual' ? 'active' : ''} onClick={() => setStep('visual')}><span>1</span> Aparência</button>
         <button type="button" role="tab" aria-selected={step === 'content'} className={step === 'content' ? 'active' : ''} onClick={() => setStep('content')}><span>2</span> Recado e detalhes</button>
@@ -3291,14 +3338,16 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     </div>
     <div className="customize-preview">
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>
+      <div className="preview-expand-row"><button type="button" className="button-outline" onClick={() => setPreviewExpanded(true)}>Expandir prévia</button></div>
       <InvitationPreviewWindow device={device} animationPreset={config.animationPreset}>
-        <WeddingInvitationDocument theme={theme.id} animationPreset={config.animationPreset} style={style} partnerOneName={partnerOneName || 'Nomes do casal'} partnerTwoName={partnerTwoName || 'seu par'} preview navigation={previewPage === 'invitation' ? <WeddingNavigation items={previewNavItems} givingOptions={previewGivingOptions} /> : <button type="button" className="button-outline" onClick={() => setPreviewPage('invitation')}>Voltar ao convite</button>}>
-          {previewPage === 'invitation' ? <>
-            <WeddingInvitationCover animationPreset={config.animationPreset} theme={theme.id} layout={coverLayout} composition={config.coverComposition} textAlign={config.coverTextAlign} textPosition={config.coverTextPosition} overlayOpacity={config.coverOverlayOpacity} imagePosition={coverImagePositionDesktop} mobileImagePosition={coverImagePositionMobile} photoAlt={imageAltText(config, previewCoverId, 'Foto escolhida pelo casal')} partnerOneName={partnerOneName} partnerTwoName={partnerTwoName} date={eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a confirmar'} time={eventTime} message={coverMessage} photoUrl={previewPhotoUrl} videoUrl={previewVideoUrl} showRsvp={(config.enabledSections || []).includes('Confirmação de presença')} preview carouselCount={config.coverCarouselEnabled ? (config.coverGallery || []).length : 0} carouselIndex={previewCoverIndex} />
-            <WeddingInvitationContent config={config} eventDate={eventDate} eventTime={eventTime} events={events} gifts={previewGifts} giftPresentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} timezone={wedding?.timezone} showGifts={previewHasGifts} showPix={previewPixEnabled} rsvpSection={(config.enabledSections || []).includes('Confirmação de presença') ? <WeddingInvitationRsvpPreview events={events} title={getSiteSectionTitle(config, EDITABLE_SITE_SECTION_TITLES[8][0])} /> : null} wallSection={(config.enabledSections || []).includes('Mural de recados') ? <WeddingWallSection preview title={getSiteSectionTitle(config, 'Mural de recados')} /> : null} preview onOpenGifts={() => setPreviewPage('gifts')} onOpenPix={() => setPreviewPage('pix')} onCopyPix={() => {}} />
-          </> : <WeddingDisplayPage kind={previewPage} weddingName={`${partnerOneName || 'Nomes do casal'} & ${partnerTwoName || 'seu par'}`} gifts={previewGifts.filter((gift) => gift.status === 'active')} presentation={giftPresentation} mediaUrl={(id) => mediaUrls[id] || ''} imageAltTexts={config.imageAltTexts} pix={config.pix} preview onBack={() => setPreviewPage('invitation')} />}
-        </WeddingInvitationDocument>
+        {previewDocument}
       </InvitationPreviewWindow>
+      {previewExpanded && createPortal(<div className="preview-expanded" role="dialog" aria-modal="true" aria-label="Prévia ampliada do convite">
+        <div className="preview-expanded-bar"><div className="preview-expanded-devices" role="group" aria-label="Tamanho da prévia">{[['desktop', 'Computador'], ['tablet', 'Tablet'], ['mobile', 'Celular']].map(([size, label]) => <button key={size} type="button" className={device === size ? 'active' : ''} aria-pressed={device === size} onClick={() => setDevice(size)}>{label}</button>)}</div><button type="button" className="button-primary" onClick={() => setPreviewExpanded(false)}>Fechar prévia</button></div>
+        <InvitationPreviewWindow device={device} animationPreset={config.animationPreset} expanded>
+          {previewDocument}
+        </InvitationPreviewWindow>
+      </div>, document.body)}
       <div className="preview-notice"><CircleHelp size={15} /> {!previewHasCover ? 'Sem foto ainda: a capa usa as cores do tema e mostra como o texto ficará.' : publishedAt ? `Última publicação: ${published}. As mudanças aparecem para os convidados depois de publicar.` : 'Esta prévia é privada até vocês publicarem o convite.'}</div>
     </div>
   </div>
