@@ -32,3 +32,23 @@ test('custom accents are retained when accessible and darkened when contrast req
   assert.equal(isValidCustomAccent('#aA00ff'), true)
   assert.equal(isValidCustomAccent('rebeccapurple'), false)
 })
+
+test('every theme offers six palettes of its own with readable contrast', async () => {
+  const { getThemePalettes, getThemePaletteNames, contrastRatio } = await import('../src/site-style.js')
+  const source = (await import('node:fs')).readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
+  const themes = [...source.matchAll(/\{ id: '(\w+)', name: '[^']+', note: '[^']+', colors: \['(#\w+)', '(#\w+)', '(#\w+)'\] \}/g)].map((match) => ({ id: match[1], colors: [match[2], match[3], match[4]] }))
+  assert.equal(themes.length, 8)
+  const signatures = new Set()
+  for (const theme of themes) {
+    const palettes = getThemePalettes(theme)
+    assert.equal(palettes.length, 6)
+    assert.equal(getThemePaletteNames(theme).length, 6)
+    assert.equal(new Set(palettes.map((palette) => palette.join())).size, 6)
+    for (const [ink, accent, paper] of palettes) {
+      assert.ok(contrastRatio(ink, paper) >= 4.5, `${theme.id} text ${ink} on ${paper}`)
+      assert.ok(contrastRatio(accent, paper) >= 4.5, `${theme.id} accent ${accent} on ${paper}`)
+    }
+    signatures.add(palettes.slice(1).map((palette) => palette.join()).join('|'))
+  }
+  assert.equal(signatures.size, 8)
+})
