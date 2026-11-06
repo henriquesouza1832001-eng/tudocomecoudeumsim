@@ -634,3 +634,14 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Os e-mails transacionais e os lembretes mensais de despesas usam um template responsivo compartilhado, com botão principal, link alternativo, aviso de expiração ou de pagamento direto e escape dos valores variáveis. A suíte verifica a estrutura e o escape.
 - Validação local em 05/11/2026: `node --test tests/*.test.js` (281 casos), ESLint pelo binário local, build Vite e prerender passaram. `pnpm run lint/build` neste ambiente tenta instalar dependências e falha porque o pnpm bloqueia o script de `esbuild`; o uso dos binários já instalados contornou esse bloqueio sem alterar permissões.
 - Permanecem pendentes a seleção real de fotos no navegador, fotos próprias/autorizadas e capturas do convite, testes autenticados em produção e revisão jurídica/operacional. A integração/publicação e o estado desses fluxos externos precisam ser verificados separadamente antes de declarar homologação integral.
+
+## 23. Auditoria do painel — 05/11/2026
+
+- Aplicadas as migrations 0021 a 0023 no D1 de produção (colunas `events.status` e `guest_rsvps.source`, tabela `signup_diagnostics`) após backup. Esta falta explicava erros de salvamento e carregamento. Próxima migration: `0024`.
+- Eventos arquivados saem da prévia, da checagem de publicação e dos seletores de confirmação manual, permissões e equipe. Contadores mostram convites e pessoas separadamente.
+- Editor: cartão Dados do casamento (nomes, data, horário), prévia ampliável em tela cheia, controles visuais de alinhamento e ponto focal da capa, catálogo de presentes com miniaturas, seletores sem identificadores internos, aviso de descrição acessível com ação para abrir o campo pendente.
+- Cada tema tem 6 paletas próprias com contraste validado em teste; Rústico e Praia deixaram de compartilhar o mesmo par de fontes.
+- Segurança: Content-Security-Policy, HSTS de um ano e isolamento de janela no middleware, com teste.
+- Landing: o visual novo vale apenas a partir de 901 px; celular e tablet mantêm o desenho anterior aprovado pelo dono. O fundo floral da landing e do painel foi mantido por decisão do dono.
+- Pendente de ação do dono: apagar no D1 de produção os registros de teste restantes (evento "TESTE AUDITORIA 04/11", despesas "AUDITORIA", convidado removido ligado a esse evento); a exclusão foi bloqueada pelo ambiente e exige aprovação.
+- Não validados de ponta a ponta: upload de fotos e vídeo, importação CSV, equipe, padrinhos, acompanhantes, moderação de recados, álbum e publicação com dados reais.

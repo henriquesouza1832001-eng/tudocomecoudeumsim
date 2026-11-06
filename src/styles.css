@@ -8323,3 +8323,8 @@ img { display: block; max-width: 100%; }
 :is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *) { min-height: 44px; padding: 0 36px 0 12px; border: 1px solid #ddd3c4; border-radius: 2px; background-color: #fffdf8; color: #2a2620; font: inherit; font-size: 15px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #2f3a30 50%), linear-gradient(135deg, #2f3a30 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
 :is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *):focus-visible { outline: 3px solid #9b4a32; outline-offset: 2px; }
 :is(.role-page, .app-shell, .signup-page) select:not(.public-wedding-page *, .invitation-preview-frame *, .customizer-preview *):disabled { opacity: .55; }
+
+.role-card .customizer-content-group, .role-card .customizer-extra-fields, .role-card fieldset, .role-card .role-card { border: 0; border-top: 1px solid #e6dfd2; border-radius: 0; background: transparent; box-shadow: none; }
+.role-card .customizer-content-group, .role-card fieldset { padding: 18px 0; }
+.role-card .customizer-extra-fields > summary { padding: 14px 0; font-weight: 600; cursor: pointer; }
+.role-card .customizer-section-toggles label, .role-card .customizer-carousel-toggle { border: 0; border-bottom: 1px solid #efe8da; border-radius: 0; background: transparent; }
