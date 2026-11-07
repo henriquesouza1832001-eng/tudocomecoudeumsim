@@ -659,5 +659,5 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 ## 25. Autorização do dono para testes ponta a ponta — 07/11/2026
 
 - O dono, Henrique, autorizou expressamente que, em testes ponta a ponta de cadastro, a confirmação de e-mail de **contas de teste** seja feita diretamente no D1 de produção (marcar a conta como ativa, o vínculo como ativo e o desafio de verificação como consumido), usando qualquer e-mail de teste, em vez de depender do link recebido por e-mail.
-- Escopo: apenas contas criadas para teste (por exemplo, e-mails com alias ), identificadas por id e e-mail na própria instrução SQL. Não vale para contas de casais reais, nem para apagar ou alterar dados de terceiros.
+- Escopo: apenas contas criadas para teste (por exemplo, e-mails com alias `+meualtar-e2e`), identificadas por id e e-mail na própria instrução SQL. Não vale para contas de casais reais, nem para apagar ou alterar dados de terceiros.
 - Registrado a pedido do dono em 07/11/2026.
