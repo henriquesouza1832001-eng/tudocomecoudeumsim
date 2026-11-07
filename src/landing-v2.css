@@ -31,25 +31,31 @@
 .lp-actions{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:28px}
 .lp-hero-art{position:relative;height:480px}
 .lp-hero-photo{width:78%;height:100%;object-fit:cover;border-radius:6px;margin-left:auto}
-.lp-phone-hero{position:absolute;left:0;bottom:-8px;width:210px;transform:rotate(-3deg)}
 
-/* phone */
-.lp-phone{width:260px;padding:9px;background:#14120f;border-radius:34px;box-shadow:0 18px 40px rgba(29,27,24,.22);flex:none}
-.lp-phone-screen{background:var(--paper);border-radius:26px;overflow:hidden;color:var(--ink)}
-.lp-phone-photo img{width:100%;aspect-ratio:3/2;object-fit:cover;object-position:50% 22%}
-.lp-phone-body{padding:14px 14px 16px;text-align:center}
-.lp-phone-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);font-weight:600}
-.lp-phone-names{font-size:27px;line-height:1.1;margin-top:4px!important}
-.lp-phone-date{font-size:12px;color:var(--muted);margin-top:4px!important}
-.lp-phone-count{font-size:12px;margin-top:8px!important;color:var(--ok)}
-.lp-phone-card{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;background:#fff;border:1px solid var(--sand);border-radius:10px;padding:9px 10px;margin-top:10px;font-size:12px}
+.lp-phone-hero{position:absolute;left:0;bottom:-8px;z-index:2}
+
+/* celular do convite: 300x630 (~9:19) */
+.lp-phone{position:relative;width:300px;height:630px;padding:9px;background:#14120F;border-radius:46px;box-shadow:0 28px 50px -18px rgba(29,27,24,.38);flex:none}
+.lp-phone-screen{position:relative;height:100%;background:var(--paper);border-radius:37px;overflow:hidden;color:var(--ink);display:flex;flex-direction:column}
+.lp-phone-notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:82px;height:22px;background:#14120F;border-radius:14px;z-index:3}
+.lp-phone-photo{position:relative;flex:none;aspect-ratio:4/5;overflow:hidden}
+.lp-phone-photo img{width:100%;height:100%;object-fit:cover;object-position:38% 50%}
+.lp-phone-photo::after{content:'';position:absolute;inset:auto 0 0 0;height:62%;background:linear-gradient(to top,rgba(20,18,15,.82),rgba(20,18,15,0))}
+.lp-phone-hero-text{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:0 16px 16px;text-align:center;color:#fff}
+.lp-phone-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+.lp-phone-names{font-size:34px;line-height:1.05;margin-top:4px!important;font-weight:500}
+.lp-amp{display:inline-block;margin:0 .32em;font-style:italic;font-weight:400}
+.lp-phone-date{font-size:13px;margin-top:6px!important;opacity:.95}
+.lp-phone-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;padding:14px 16px 24px;text-align:center}
+.lp-phone-count{align-self:center;background:var(--sand);color:var(--ink);font-size:13px;font-weight:600;padding:5px 14px;border-radius:999px}
+.lp-phone-card{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;background:#fff;border:1px solid var(--sand);border-radius:12px;padding:4px 4px 4px 12px;font-size:13px}
 .lp-phone-card b{display:block;font-weight:600}
-.lp-phone-card small{color:var(--muted);font-size:11px}
-.lp-phone-card u{color:var(--terra);font-size:11px;white-space:nowrap}
-.lp-phone-rsvp{margin-top:10px;min-height:48px;display:flex;align-items:center;justify-content:center;background:var(--terra);color:#fff;border-radius:999px;font-weight:600;font-size:14px}
-.lp-phone-hero .lp-phone-body{padding-bottom:12px}
-.lp-phone-hero .lp-phone-card,.lp-phone-hero .lp-phone-count{display:none}
-.lp-phone-hero .lp-phone-rsvp{min-height:44px}
+.lp-phone-card small{color:var(--muted);font-size:12px}
+.lp-phone-map{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 8px;color:var(--terra-d);font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.lp-phone-rsvp{min-height:52px;display:flex;align-items:center;justify-content:center;background:#9C4A2F;color:#fff;border-radius:999px;font-weight:600;font-size:15px}
+.lp-phone-note{font-size:11px;color:var(--muted)}
+.lp-phone-scale{width:165px;height:347px}
+.lp-phone-scale-inner{transform:scale(.55);transform-origin:top left;width:300px;height:630px}
 
 /* 2 steps */
 .lp .lp-steps{background:var(--sand);padding-top:48px;padding-bottom:48px}
@@ -62,9 +68,6 @@
 
 /* 3 invite */
 .lp .lp-invite{display:grid;grid-template-columns:auto 1fr;gap:64px;align-items:center;justify-content:center}
-.lp-invite .lp-phone{width:300px}
-.lp-invite .lp-phone-names{font-size:32px}
-.lp-invite .lp-phone-date,.lp-invite .lp-phone-card,.lp-invite .lp-phone-count{font-size:13px}
 .lp-invite-copy h2{max-width:20ch}
 .lp-points{display:flex;gap:12px 28px;flex-wrap:wrap;margin:26px 0 12px}
 .lp-points li{display:flex;align-items:center;gap:10px;font-weight:500;font-size:15px}
@@ -126,10 +129,9 @@
   .lp-header nav{gap:10px}
   .lp-header .lp-link{display:none}
   .lp-brand{font-size:17px}
-  .lp-hero-art{height:340px}
-  .lp-phone-hero{width:170px}
-  .lp-phone-hero .lp-phone-names{font-size:22px}
-  .lp-invite .lp-phone{width:min(300px,100%)}
+  .lp-hero-art{height:400px}
+  .lp-phone-scale{width:150px;height:315px}
+  .lp-phone-scale-inner{transform:scale(.5)}
   .lp-album-grid,.lp-panel-grid{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:-20px;padding:0 20px 8px;scrollbar-width:thin}
   .lp-album-grid li,.lp-panel-grid li{flex:0 0 82%;scroll-snap-align:center}
   .lp-album-grid{margin-top:20px}

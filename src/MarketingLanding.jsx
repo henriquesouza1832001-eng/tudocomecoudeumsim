@@ -28,20 +28,46 @@ const ICONS = {
   photo: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="m21 16-5-5-8 8" /></>,
 }
 
-function Phone({ className = '' }) {
-  return <div className={`lp-phone ${className}`} role="img" aria-label="Exemplo do convite aberto no celular: Lívia e Caio, faltam 42 dias, cerimônia e recepção na Casa das Oliveiras, botão Confirmar presença">
+const EVENT_HOUR = 17
+function nextEvent() {
+  // Data fixa do exemplo: 19 de dezembro, 17h. Se já passou, usa o mesmo dia do ano seguinte; nunca mostra data passada.
+  const now = new Date()
+  let d = new Date(now.getFullYear(), 11, 19, EVENT_HOUR)
+  if (d < now) d = new Date(now.getFullYear() + 1, 11, 19, EVENT_HOUR)
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000)
+  const text = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return { days, label: `${text.charAt(0).toUpperCase()}${text.slice(1)} · ${EVENT_HOUR}h` }
+}
+
+function PhoneCard() {
+  const { days, label } = nextEvent()
+  const count = days === 0 ? 'É hoje!' : days === 1 ? 'Falta 1 dia' : `Faltam ${days} dias`
+  return <div className="lp-phone" role="img" aria-label={`Exemplo do convite aberto no celular: Lívia e Caio, ${label}, ${count.toLowerCase()}, cerimônia e recepção na Casa das Oliveiras, botão Confirmar presença`}>
     <div className="lp-phone-screen" aria-hidden="true">
-      <div className="lp-phone-photo"><img src={PHOTOS.hero} alt="" width="880" height="1100" loading="lazy" decoding="async" /></div>
+      <span className="lp-phone-notch" />
+      <div className="lp-phone-photo">
+        <img src={PHOTOS.convidados} alt="" width="759" height="506" loading="lazy" decoding="async" />
+        <div className="lp-phone-hero-text">
+          <p className="lp-phone-kicker">Vamos casar</p>
+          <p className="lp-phone-names">Lívia<span className="lp-amp">&amp;</span>Caio</p>
+          <p className="lp-phone-date" suppressHydrationWarning>{label}</p>
+        </div>
+      </div>
       <div className="lp-phone-body">
-        <p className="lp-phone-kicker">Vamos casar</p>
-        <p className="lp-phone-names">Lívia &amp; Caio</p>
-        <p className="lp-phone-date">Sábado, 17 de outubro · 16h</p>
-        <p className="lp-phone-count"><strong>Faltam 42 dias</strong></p>
-        <div className="lp-phone-card"><span><b>Cerimônia e recepção</b><small>Casa das Oliveiras</small></span><u>Ver no mapa</u></div>
+        <p className="lp-phone-count"><span suppressHydrationWarning>{count}</span></p>
+        <div className="lp-phone-card"><span><b>Cerimônia e recepção</b><small>Casa das Oliveiras</small></span><span className="lp-phone-map">Ver no mapa</span></div>
         <div className="lp-phone-rsvp">Confirmar presença</div>
+        <p className="lp-phone-note">Abre direto pelo link, sem instalar nada</p>
       </div>
     </div>
   </div>
+}
+
+function Phone({ small = false }) {
+  return small
+    ? <div className="lp-phone-scale"><div className="lp-phone-scale-inner"><PhoneCard /></div></div>
+    : <PhoneCard />
 }
 
 const STEPS = [
@@ -92,7 +118,7 @@ export default function MarketingLanding() {
         </div>
         <div className="lp-hero-art">
           <img className="lp-hero-photo" src={PHOTOS.hero} alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" fetchpriority="high" decoding="async" />
-          <Phone className="lp-phone-hero" />
+          <div className="lp-phone-hero"><Phone small /></div>
         </div>
       </section>
 
