@@ -101,7 +101,7 @@ export default function MarketingLanding() {
   return <div className="lp">
     <a className="lp-skip" href="#conteudo">Ir para o conteúdo</a>
     <header className="lp-header">
-      <a className="lp-brand" href="/" aria-label={PRODUCT_NAME}>{PRODUCT_NAME}</a>
+      <a className="lp-brand" href="/" aria-label={PRODUCT_NAME}><img className="lp-brand-logo" src="/images/branding/logo-meu-altar.png" alt={PRODUCT_NAME} width="688" height="230" /></a>
       <nav aria-label="Principal">
         <a className="lp-link" href="#como-funciona">Como funciona</a>
         <a className="lp-link" href="/painel">Entrar</a>

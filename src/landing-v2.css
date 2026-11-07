@@ -13,6 +13,7 @@
 
 .lp-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 max(20px,calc((100% - 1120px)/2));height:64px;background:rgba(250,248,244,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--sand)}
 .lp-brand{font-size:20px;text-decoration:none;white-space:nowrap}
+.lp-brand-logo{width:172px;height:auto;object-fit:contain}
 .lp-header nav{display:flex;align-items:center;gap:20px}
 .lp-link{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:500;font-size:15px}
 .lp-underline{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
@@ -129,6 +130,7 @@
   .lp-header nav{gap:10px}
   .lp-header .lp-link{display:none}
   .lp-brand{font-size:17px}
+  .lp-brand-logo{width:142px}
   .lp-hero-art{height:400px}
   .lp-phone-scale{width:150px;height:315px}
   .lp-phone-scale-inner{transform:scale(.5)}

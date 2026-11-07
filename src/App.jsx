@@ -252,7 +252,7 @@ function GiftThumb({ photoId, title }) {
 }
 
 function BrandMark() {
-  return <svg className="brand-mark" viewBox="0 0 96 96" width="44" height="44" aria-hidden="true" focusable="false"><rect x="2" y="2" width="92" height="92" rx="24" fill="#FBF7F2" /><g fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M19 76V43a29 29 0 0 1 58 0v33" stroke="#592B3E" strokeWidth="2.8" /><path d="M14 76h68" stroke="#B99563" strokeWidth="2.8" /><circle cx="42" cy="55" r="10.5" stroke="#B99563" strokeWidth="2.5" /><circle cx="54" cy="55" r="10.5" stroke="#592B3E" strokeWidth="2.5" /></g><path d="m48 23 2.2 4.8L55 30l-4.8 2.2L48 37l-2.2-4.8L41 30l4.8-2.2L48 23Z" fill="#B99563" /></svg>
+  return <img className="brand-mark" src="/images/branding/marca-meu-altar.png" width="44" height="44" alt="" aria-hidden="true" />
 }
 
 function WeddingInvitationCover({ theme = 'garden', layout = 'full', composition = null, textAlign = 'left', textPosition = 'center', overlayOpacity = 45, imagePosition = 'center', mobileImagePosition = imagePosition, partnerOneName, partnerTwoName, date, time, message, photoUrl, photoAlt = 'Foto escolhida pelo casal', videoUrl, animationPreset = 'Elegante', showRsvp = true, preview = false, carouselCount = 0, carouselIndex = 0 }) {

@@ -110,7 +110,7 @@ Passos que dependem do painel Cloudflare e do registrador, a cargo do responsáv
 3. Com o domínio ativo e o HTTPS válido, criar em Bulk Redirects o redirecionamento permanente (301) de `tudocomecoudeumsim.pages.dev` para `https://meualtar.date`, preservando caminho e parâmetros de consulta. Não remover o `pages.dev` antes de validar.
 4. Adicionar `meualtar.date` aos hostnames do widget Turnstile (a API valida o hostname da requisição) e à aplicação do Cloudflare Access que protege `/superadmin`.
 5. Atualizar, nos provedores externos, os links de retorno e webhooks que apontam para o endereço antigo (Mercado Pago, remetente de e-mail e demais integrações).
-6. Logotipo: o símbolo está em `public/icons/` (`wedding.svg` e PNGs 180/192/512) e o logotipo completo em `public/icons/meu-altar-logo.svg`, vindos de `meu-altar-brand/`.
+6. Logotipo: a versão horizontal e o símbolo em PNG ficam em `public/images/branding/`; os ícones vetoriais ficam em `public/icons/`.
 
 Os nomes dos recursos Cloudflare (projeto, D1, R2) não foram renomeados.
 
