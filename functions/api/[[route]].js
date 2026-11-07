@@ -334,7 +334,14 @@ function validateSiteConfig(body) {
   return { theme: body.theme, paletteIndex: body.paletteIndex, customAccent: body.customAccent || null, coverLayout: body.coverLayout, coverComposition: body.coverComposition || null, coverTextAlign: body.coverTextAlign || 'left', coverTextPosition: body.coverTextPosition || 'center', coverOverlayOpacity: body.coverOverlayOpacity ?? 45, coverImagePosition: coverImagePositionDesktop, coverImagePositionDesktop, coverImagePositionMobile, imageAltTexts, giftDisplayMode: normalizedGiftDisplayMode(body), pixDisplayMode: normalizedPixDisplayMode(body), giftPreferences: body.giftPreferences || 'undecided', coverImage: 'none', coverPhotoId: body.coverPhotoId || null, coverCarouselEnabled: body.coverCarouselEnabled === true, fontScale: body.fontScale || 'medium', coverGallery: body.coverGallery || [], siteGallery: body.siteGallery || [], siteCarouselEnabled: body.siteCarouselEnabled === true, siteCarouselPhotos: body.siteCarouselPhotos || [], siteCarouselAutoplay: body.siteCarouselAutoplay === true, coverVideoId: body.coverVideoId || null, enabledSections: [...new Set(body.enabledSections)], animationPreset: body.animationPreset, fontPair: body.fontPair, language: 'pt-BR', coverMessages, storyMessages, shareMessage, timeline, godparents, giftPresentation, sectionContent, sectionLayouts, weddingDetails, guestCamera, pix }
 }
 
+function maskedPath(context) {
+  return String(context.req.path || '').replace(/[A-Za-z0-9_-]{20,}/g, ':id')
+}
+
+// Registra no log do Cloudflare (Workers Logs / wrangler tail) o que o usuário só vê como mensagem genérica.
 function jsonError(context, status, error) {
+  if (status >= 500) console.error('api_error', { status, error, method: context.req.method, path: maskedPath(context) })
+  else if (error === 'invalid_origin') console.warn('api_invalid_origin', { method: context.req.method, path: maskedPath(context), origin: context.req.header('Origin') || null })
   return context.json({ error }, status, { 'Cache-Control': 'no-store' })
 }
 
@@ -537,15 +544,26 @@ async function sendTransactionalEmail(context, { to, subject, text, html, layout
   const endpoint = isResend
     ? 'https://api.resend.com/emails'
     : `https://api.cloudflare.com/client/v4/accounts/${context.env.CLOUDFLARE_ACCOUNT_ID}/email/sending/send`
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: layout ? renderBrandedEmail({ preheader: subject, ...layout }) : brandedEmail(html, subject) }),
-  })
-  if (!response.ok) return false
+  let response
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: isResend ? [to] : to, from: context.env.EMAIL_FROM, subject, text, html: layout ? renderBrandedEmail({ preheader: subject, ...layout }) : brandedEmail(html, subject) }),
+    })
+  } catch (error) {
+    console.error('email_send_network_error', { provider, subject: String(subject).slice(0, 80), error: String(error?.message || error).slice(0, 200) })
+    throw error
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '')
+    console.error('email_send_failed', { provider, status: response.status, subject: String(subject).slice(0, 80), detail: detail.slice(0, 300) })
+    return false
+  }
   const result = await response.json().catch(() => null)
-  if (isResend) return typeof result?.id === 'string' && result.id.length > 0
-  return result?.success === true && !result.result?.permanent_bounces?.includes(to)
+  const accepted = isResend ? typeof result?.id === 'string' && result.id.length > 0 : result?.success === true && !result.result?.permanent_bounces?.includes(to)
+  if (!accepted) console.error('email_send_rejected', { provider, subject: String(subject).slice(0, 80), response: JSON.stringify(result || {}).slice(0, 300) })
+  return accepted
 }
 
 function emailEventDetails(couple, event, timezone) {
@@ -599,7 +617,10 @@ async function sendPasswordReset(context, email, token) {
 async function verifyTurnstile(context, token, expectedAction = 'account') {
   const secret = context.env.TURNSTILE_SECRET_KEY
   if (!secret) return { configured: false, verified: false }
-  if (typeof token !== 'string' || token.length < 1 || token.length > 2048) return { configured: true, verified: false }
+  if (typeof token !== 'string' || token.length < 1 || token.length > 2048) {
+    console.warn('turnstile_token_missing', { path: maskedPath(context), expectedAction })
+    return { configured: true, verified: false }
+  }
   const body = new URLSearchParams({ secret, response: token, idempotency_key: crypto.randomUUID() })
   const remoteIp = context.req.header('CF-Connecting-IP')
   if (remoteIp) body.set('remoteip', remoteIp)
@@ -607,8 +628,11 @@ async function verifyTurnstile(context, token, expectedAction = 'account') {
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body })
     const result = await response.json()
     const hostname = new URL(context.req.url).hostname
-    return { configured: true, verified: response.ok && result.success === true && result.action === expectedAction && result.hostname === hostname }
-  } catch {
+    const verified = response.ok && result.success === true && result.action === expectedAction && result.hostname === hostname
+    if (!verified) console.warn('turnstile_rejected', { path: maskedPath(context), status: response.status, success: result.success, codes: result['error-codes'], action: result.action, expectedAction, hostname: result.hostname, expectedHostname: hostname })
+    return { configured: true, verified }
+  } catch (error) {
+    console.error('turnstile_request_failed', { path: maskedPath(context), error: String(error?.message || error).slice(0, 200) })
     return { configured: true, verified: false }
   }
 }
@@ -988,12 +1012,21 @@ app.post('/api/auth/couple-signup', async (context) => {
     return jsonError(context, 500, 'signup_unavailable')
   }
   let sent = false
+  let sendFailure = 'provider_returned_failure'
   try {
     sent = await sendAccountVerification(context, email, token)
-  } catch {
+  } catch (error) {
     sent = false
+    sendFailure = String(error?.message || 'send_threw').slice(0, 200)
   }
   if (!sent) {
+    console.error('couple_signup_email_failed', { reason: sendFailure })
+    try {
+      await context.env.DB.prepare(`INSERT INTO signup_diagnostics (id, error_code, error_detail)
+        VALUES (?, 'verification_email_failed', ?)`).bind(crypto.randomUUID(), sendFailure).run()
+    } catch {
+      console.error('couple_signup_diagnostic_write_failed', { errorName: 'verification_email_failed' })
+    }
     await context.env.DB.batch([
       context.env.DB.prepare('DELETE FROM auth_challenges WHERE id = ?').bind(challengeId),
       context.env.DB.prepare('DELETE FROM wedding_memberships WHERE id = ?').bind(membershipId),
@@ -3783,6 +3816,12 @@ app.post('/api/superadmin/email-test', requireSession, requireSuperadmin, async 
 })
 
 app.notFound((context) => jsonError(context, 404, 'api_route_not_found'))
+
+app.onError((error, context) => {
+  const reference = crypto.randomUUID().slice(0, 8)
+  console.error('api_unhandled_error', { reference, method: context.req.method, path: maskedPath(context), errorName: error?.name || 'Error', message: String(error?.message || error).slice(0, 240) })
+  return context.json({ error: 'internal_error', reference }, 500, { 'Cache-Control': 'no-store' })
+})
 
 export { app }
 

@@ -578,6 +578,10 @@ function friendlyErrorMessage(error, fallback = 'Não foi possível concluir est
   if (!message || /^[a-z][a-z0-9_-]*$/i.test(message) || /^(not found|internal server error|bad gateway|service unavailable|failed to fetch|load failed|networkerror|unexpected token|unexpected end of json)/i.test(message) || /\b(400|401|403|404|409|422|429|500|502|503)\b/.test(message)) return fallback
   return message
 }
+// Deixa no console do navegador o código real do erro (a tela mostra só a mensagem amigável).
+function reportClientError(scope, error) {
+  console.error(`[Meu Altar] erro em ${scope}`, { codigo: String(error?.message || error).slice(0, 200), tipo: error?.name || typeof error })
+}
 let turnstileScriptPromise
 
 function loadTurnstileScript() {
@@ -1330,10 +1334,10 @@ function CoupleSignup() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, eventDate: eventDate || null, eventTime: eventTime || null, partnerOneName, partnerTwoName, slug: slug || null, siteConfig: config, turnstileToken }),
       })
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
       if (!response.ok) {
         const retryAfter = response.headers.get('Retry-After')
-        throw new Error(result.error === 'too_many_attempts' ? `too_many_attempts:${retryAfter || 3600}` : result.error || 'signup_failed')
+        throw new Error(result.error === 'too_many_attempts' ? `too_many_attempts:${retryAfter || 3600}` : result.error || `http_${response.status}`)
       }
       window.localStorage.removeItem(COUPLE_SIGNUP_DRAFT_KEY)
       if (publicDraft.siteConfig) window.localStorage.removeItem(PUBLIC_SITE_DRAFT_KEY)
@@ -1341,10 +1345,11 @@ function CoupleSignup() {
       setPassword('')
       setConfirmation('')
     } catch (cause) {
+      reportClientError('cadastro', cause)
       setError(cause.message === 'invalid_signup_email' ? 'Digite um e-mail válido.'
         : cause.message === 'invalid_signup_password' ? 'A senha precisa ter pelo menos 12 caracteres.'
           : cause.message === 'invalid_signup_slug' ? 'Confira o endereço curto escolhido.'
-            : cause.message === 'wedding_slug_unavailable' ? 'Este endereço já está sendo usado. Escolham outro e tentem novamente.'
+            : cause.message === 'wedding_slug_unavailable' ? `O endereço “${slug}${SIGNUP_ADDRESS_SUFFIX}” já pertence a outro casal. Troquem o endereço do site (por exemplo, “${slug}-2”); o e-mail não é o problema.`
               : cause.message === 'invalid_signup_event_date' ? 'Confira a data do casamento ou deixe o campo vazio.'
                 : cause.message === 'invalid_signup_event_time' ? 'Confira o horário do casamento ou deixe o campo vazio.'
                   : cause.message === 'invalid_signup_profile' ? 'Confira os nomes informados no convite.'
@@ -1352,11 +1357,14 @@ function CoupleSignup() {
                       : cause.message === 'email_service_unconfigured' ? 'O envio de e-mails ainda está sendo configurado. Tentem novamente em breve.'
                         : cause.message === 'turnstile_unavailable' ? 'A verificação de segurança ainda não foi configurada neste site.'
                           : cause.message === 'turnstile_verification_failed' ? 'Concluam novamente a verificação de segurança.'
-                            : cause.message === 'email_unavailable' ? 'Este e-mail já está cadastrado. Confiram os dados e tentem entrar.'
+                            : cause.message === 'email_unavailable' ? 'Já existe um cadastro com este e-mail. Se foram vocês, entrem com ele ou procurem o e-mail de confirmação (veja também o spam).'
                               : cause.message.startsWith('too_many_attempts:') ? `O limite de segurança foi atingido nesta rede. Tentem novamente em cerca de ${Math.max(1, Math.ceil(Number(cause.message.split(':')[1]) / 60))} minutos.`
                                 : cause.message === 'verification_email_failed' ? 'Não foi possível enviar o e-mail de confirmação. Confiram os dados e tentem novamente.'
                                   : cause.message === 'signup_unavailable' ? 'O cadastro não pôde ser salvo por um erro temporário. Tentem novamente em instantes.'
-                                    : 'Não foi possível criar o acesso. Confiram os campos e tentem novamente.')
+                                    : cause.message === 'invalid_origin' ? 'Acessem o site pelo endereço oficial (meualtar.date) e tentem novamente.'
+                                      : cause instanceof TypeError ? 'Sem conexão com o servidor. Verifiquem a internet e tentem novamente.'
+                                        : /^http_5\d\d$|^internal_error$/.test(cause.message) ? 'O servidor teve um problema temporário. Tentem novamente em instantes; se continuar, avisem o suporte.'
+                                          : 'Não foi possível criar o acesso. Confiram os campos e tentem novamente.')
     } finally {
       setTurnstileToken('')
       setTurnstileReset((current) => current + 1)
@@ -1802,6 +1810,7 @@ function CouplePanel({ notify, confirmAction }) {
       if (!silent) notify('Rascunho do site salvo')
       return true
     } catch (cause) {
+      reportClientError('salvar rascunho', cause)
       setError(cause.message === 'site_media_not_found' ? 'Uma foto do convite não está mais disponível. Remova-a ou envie novamente antes de salvar.' : cause.message === 'media_storage_unavailable' ? 'O armazenamento de fotos está indisponível no momento.' : 'Não foi possível salvar o rascunho do site. Tente novamente.')
       return false
     } finally {
@@ -1835,6 +1844,7 @@ function CouplePanel({ notify, confirmAction }) {
       setWeddings((current) => current.map((item) => item.id === weddingId ? { ...item, status: result.status } : item))
       notify('Site publicado para os convites individuais')
     } catch (cause) {
+      reportClientError('publicar convite', cause)
       setError(cause.message === 'wedding_profile_incomplete' ? 'Preencha os nomes do casal na etapa Aparência antes de publicar.' : cause.message === 'site_accessibility_incomplete' ? 'Preencha a descrição acessível das fotos usadas no convite antes de publicar.' : cause.message === 'wedding_not_publishable' ? 'Este casamento está encerrado e não pode ser publicado.' : cause.message === 'wedding_suspended' ? 'Este casamento está suspenso e não pode ser publicado.' : cause.message === 'site_media_not_found' ? 'Uma foto do convite não está mais disponível. Remova-a ou envie novamente antes de publicar.' : cause.message === 'invalid_site_config' ? 'Revise os dados do convite e tente publicar novamente.' : cause.message === 'media_storage_unavailable' ? 'O armazenamento de fotos está indisponível no momento.' : 'Não foi possível publicar o convite. Tente novamente.')
     } finally {
       setSiteConfigLoading(false)
