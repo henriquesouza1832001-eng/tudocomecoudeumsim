@@ -3296,7 +3296,7 @@ app.post('/api/invitation/rsvp', async (context) => {
   if (!body || typeof body.eventId !== 'string' || !['confirmed', 'declined'].includes(body.status) || body.partySize !== 1 || guest.party_size < 1 || (body.dietaryNotes && (typeof body.dietaryNotes !== 'string' || body.dietaryNotes.length > 1000))) return jsonError(context, 400, 'invalid_rsvp')
   const limit = await allowRsvpRequest(context, guest.id)
   if (!limit.allowed) return context.json({ error: 'too_many_requests' }, 429, { 'Retry-After': String(limit.retryAfter), 'Cache-Control': 'no-store' })
-  const challenge = await verifyTurnstile(context, body.turnstileToken)
+  const challenge = await verifyTurnstile(context, body.turnstileToken, 'rsvp')
   if (!challenge.configured) return jsonError(context, 503, 'turnstile_unavailable')
   if (!challenge.verified) return jsonError(context, 403, 'turnstile_verification_failed')
   const event = await guestCanAccessEvent(context, guest, body.eventId)
