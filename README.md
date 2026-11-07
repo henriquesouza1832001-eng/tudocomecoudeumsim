@@ -116,7 +116,7 @@ Os nomes dos recursos Cloudflare (projeto, D1, R2) não foram renomeados.
 
 ### Subdomínios dos casais (`casal.meualtar.date`)
 
-O Cloudflare Pages não aceita subdomínio curinga, então o site com subdomínios é servido pelo Worker de `wrangler.worker.jsonc` (rotas `meualtar.date/*` e `*.meualtar.date/*`). O caminho `/casamento/:slug` no domínio principal continua funcionando.
+O Cloudflare Pages não aceita subdomínio curinga, então o site com subdomínios é servido pelo Worker de `wrangler.worker.jsonc` (rota `*.meualtar.date/*`; o domínio principal continua no Pages). O caminho `/casamento/:slug` no domínio principal continua funcionando.
 
 1. Publicar o Worker com `npx wrangler deploy -c wrangler.worker.jsonc` depois de `npm run build`, ou apontar a integração Git para esse comando. Não use os dois destinos ao mesmo tempo no mesmo domínio.
 2. No DNS da zona, criar registros com proxy ligado para `@` e `*` (por exemplo AAAA `100::`), para o tráfego chegar às rotas do Worker. Remover o domínio de Custom domains do Pages se o apex passar para o Worker.

@@ -3,7 +3,6 @@
   "main": "./src/worker.js",
   "compatibility_date": "2026-10-12",
   "routes": [
-    { "pattern": "meualtar.date/*", "zone_name": "meualtar.date" },
     { "pattern": "*.meualtar.date/*", "zone_name": "meualtar.date" }
   ],
   "assets": {
