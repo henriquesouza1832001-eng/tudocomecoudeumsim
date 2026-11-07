@@ -1249,6 +1249,11 @@ function PasswordInput(props) {
 const COUPLE_SIGNUP_DRAFT_KEY = 'couple-signup-draft'
 const SIGNUP_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados']
 const SIGNUP_ADDRESS_SUFFIX = `.${PRODUCT_DOMAIN}`
+function slugSuggestions(slug, eventDate) {
+  const year = /^\d{4}/.test(eventDate || '') ? eventDate.slice(0, 4) : String(new Date().getFullYear() + 1)
+  const options = [`${slug}-2`, `${slug}-casamento`, `${slug}-${year}`].map((value) => value.slice(0, 30).replace(/-+$/, ''))
+  return [...new Set(options)].filter((value) => value.length >= 3 && value !== slug)
+}
 const SIGNUP_GIFT_PREFERENCES = { pix: 'Pix direto aos noivos', store: 'Links para lojas', both: 'Pix e links para lojas', undecided: 'Vamos decidir depois' }
 
 function readCoupleSignupDraft() {
@@ -1276,6 +1281,7 @@ function CoupleSignup() {
   const [confirmation, setConfirmation] = useState('')
   const [eventDate, setEventDate] = useState(savedDraft.eventDate || publicDraft.eventDate || '')
   const [eventTime, setEventTime] = useState(savedDraft.eventTime || publicDraft.eventTime || '')
+  const [takenSlug, setTakenSlug] = useState('')
   const [slug, setSlug] = useState(savedDraft.slug || coupleSignupSlug(publicDraft.partnerOneName || '', publicDraft.partnerTwoName || ''))
   const [slugEdited, setSlugEdited] = useState(savedDraft.slugEdited === true)
   const [siteConfig, setSiteConfig] = useState(initialConfig)
@@ -1346,6 +1352,13 @@ function CoupleSignup() {
       setConfirmation('')
     } catch (cause) {
       reportClientError('cadastro', cause)
+      if (cause.message === 'wedding_slug_unavailable') {
+        setTakenSlug(slug)
+        setError('')
+        setStep(2)
+        window.setTimeout(() => document.getElementById('su-slug')?.focus(), 80)
+        return
+      }
       setError(cause.message === 'invalid_signup_email' ? 'Digite um e-mail válido.'
         : cause.message === 'invalid_signup_password' ? 'A senha precisa ter pelo menos 12 caracteres.'
           : cause.message === 'invalid_signup_slug' ? 'Confira o endereço curto escolhido.'
@@ -1411,7 +1424,7 @@ function CoupleSignup() {
               <div className="su-row"><label className="su-field"><span className="su-label">Data do casamento <em>opcional</em></span><input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label className="su-field"><span className="su-label">Horário <em>opcional</em></span><input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
             </div>}
             {step === 2 && <div className="su-fields">
-              <div className="su-field"><label className="su-label" htmlFor="su-slug">Endereço curto <em>opcional</em></label><div className="su-slug"><input id="su-slug" autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="su-slug-help" /><span className="su-prefix">{SIGNUP_ADDRESS_SUFFIX}</span></div><small id="su-slug-help" className="su-help">Deixem em branco para gerar um automaticamente.</small></div>
+              <div className="su-field"><label className="su-label" htmlFor="su-slug">Endereço curto <em>opcional</em></label><div className="su-slug"><input id="su-slug" autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby={takenSlug && takenSlug === slug ? 'su-slug-help su-slug-taken' : 'su-slug-help'} aria-invalid={takenSlug && takenSlug === slug ? true : undefined} /><span className="su-prefix">{SIGNUP_ADDRESS_SUFFIX}</span></div><small id="su-slug-help" className="su-help">Deixem em branco para gerar um automaticamente.</small>{takenSlug && takenSlug === slug && <div id="su-slug-taken" className="su-slug-taken" role="alert"><p>O endereço “{slug}{SIGNUP_ADDRESS_SUFFIX}” já pertence a outro casal. O e-mail não é o problema: escolham outro endereço.</p><div className="su-slug-suggestions"><span>Sugestões:</span>{slugSuggestions(slug, eventDate).map((option) => <button type="button" key={option} onClick={() => { setSlug(option); setSlugEdited(true) }}>{option}</button>)}</div></div>}</div>
               <fieldset className="su-group"><legend className="su-label">Quais áreas querem no convite?</legend><div className="su-chips">{SIGNUP_SECTIONS.map((section) => <label key={section} className="su-chip"><input type="checkbox" checked={enabledAreas.includes(section)} onChange={(event) => updateSignupSection(section, event.target.checked)} /><span>{section}</span></label>)}</div></fieldset>
               <fieldset className="su-group"><legend className="su-label">Como preferem receber presentes?</legend><div className="su-segment">{Object.keys(SIGNUP_GIFT_PREFERENCES).map((value) => <label key={value}><input type="radio" name="gift-preference" checked={giftPreference === value} onChange={() => { setGiftPreference(value); setSiteConfig((current) => ({ ...current, giftPreferences: value, ...(value === 'store' || value === 'both' ? { giftDisplayMode: 'inline' } : {}), ...(value !== 'undecided' ? { enabledSections: [...new Set([...(current.enabledSections || []), 'Lista de presentes'])] } : {}) })) }} /><span>{giftShort[value]}</span></label>)}</div><p className="su-help">Nenhum pagamento passa pela plataforma.</p></fieldset>
             </div>}

@@ -8380,3 +8380,8 @@ img { display: block; max-width: 100%; }
   .couple-role-page .customizer-photo-alt-field { grid-template-columns: minmax(0, 1fr); }
   .photo-alt-thumb { width: 120px; height: 90px; }
 }
+
+.su-slug-taken { margin-top: 8px; padding: 10px 12px; display: grid; gap: 8px; border: 1px solid #c9776f; border-radius: 4px; color: #7a2c25; background: #fbeceb; font-size: 14px; line-height: 1.5; }
+.su-slug-taken p { margin: 0; }
+.su-slug-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.su-slug-suggestions button { min-height: 44px; padding: 0 14px; border: 1px solid #9c4640; border-radius: 4px; color: #7a2c25; background: #fffefa; font: inherit; font-size: 14px; cursor: pointer; }
