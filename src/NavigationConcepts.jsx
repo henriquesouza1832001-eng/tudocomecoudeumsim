@@ -58,6 +58,6 @@ export default function NavigationConcepts() {
     <header className="nav-concepts-header"><a href="/"><span>e&t</span><strong>{PRODUCT_NAME}</strong></a><span>Estudo local · não é a tela publicada</span></header>
     <section className="nav-concepts-intro"><span className="nav-concept-eyebrow">NAVEGAÇÃO E PRIMEIROS PASSOS</span><h1>Menos procura. Mais clareza.</h1><p>Dois caminhos possíveis para encurtar a navegação, manter a identidade de casamento e ajudar o casal a retomar o planejamento sem preencher tudo de uma vez.</p></section>
     <div className="nav-concepts-options"><SidebarOption /><StagesOption /></div>
-    <footer className="nav-concepts-footer"><span>As informações e os nomes são apenas exemplos de interface.</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
+    <footer className="nav-concepts-footer"><span>As informações e os nomes são apenas exemplos de interface.</span></footer>
   </main>
 }

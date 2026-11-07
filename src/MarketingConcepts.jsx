@@ -73,6 +73,6 @@ export default function MarketingConcepts() {
       <div><span className="concept-overline">PIX DIRETO OU LINK DE LOJA</span><h2 id="concept-flow-title">O presente vai ao casal ou à loja escolhida.</h2><p>O convidado faz a transferência no aplicativo do próprio banco ou conclui a compra no site da loja. A plataforma não recebe nem confirma pagamentos de presentes.</p></div>
       <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>O casal escolhe a opção</strong><small>Chave Pix ou produto de loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>O convidado conclui</strong><small>No aplicativo do banco ou na loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Link size={19} /></span><strong>O pagamento é externo</strong><small>Direto ao casal ou à loja</small></div></div>
     </section>
-    <footer className="concept-footer"><span>{PRODUCT_NAME}</span><span>Prévia ilustrativa; não representa dados de um casal</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com</a></footer>
+    <footer className="concept-footer"><span>{PRODUCT_NAME}</span><span>Prévia ilustrativa; não representa dados de um casal</span></footer>
   </main>
 }
