@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 const mediaId = '11111111-1111-4111-8111-111111111111'
 
 function database({ role = 'couple_admin', draftConfig = {}, publishedConfig = {}, invitationConfig } = {}) {

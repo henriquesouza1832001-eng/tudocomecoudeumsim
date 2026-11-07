@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import worker, { weddingSlug } from '../src/worker.js'
+import worker from '../src/worker.js'
+import { weddingSlug } from '../src/wedding-host.js'
 
 test('wedding hostname resolves only a valid subdomain of the configured base domain', () => {
   assert.equal(weddingSlug('ana-e-rafa.casamentos.com.br', 'casamentos.com.br'), 'ana-e-rafa')
@@ -38,4 +39,14 @@ test('public site lookup returns only events visible to every guest', async () =
   assert.deepEqual(body.events.map((event) => event.id), ['public-event'])
   assert.equal(body.wedding.slug, 'ana-e-rafa')
   assert.equal(body.siteConfig.theme, 'garden')
+})
+
+test('default domain resolves couple subdomains and www redirects to the apex', async () => {
+  assert.equal(weddingSlug('ana-e-rafa.meualtar.date'), 'ana-e-rafa')
+  assert.equal(weddingSlug('meualtar.date'), null)
+  assert.equal(weddingSlug('www.meualtar.date'), null)
+  assert.equal(weddingSlug('ana-e-rafa.tudocomecoudeumsim.pages.dev'), null)
+  const response = await worker.fetch(new Request('https://www.meualtar.date/cadastro?x=1'), { BASE_DOMAIN: 'meualtar.date' }, {})
+  assert.equal(response.status, 301)
+  assert.equal(response.headers.get('Location'), 'https://meualtar.date/cadastro?x=1')
 })

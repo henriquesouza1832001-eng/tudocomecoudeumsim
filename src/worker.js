@@ -1,16 +1,6 @@
 import { app } from '../functions/api/[[route]].js'
 import { protectedPath, verifyAccessAssertion } from '../functions/_middleware.js'
-
-const reservedSlugs = new Set(['www', 'app', 'api', 'admin', 'painel', 'status', 'mail'])
-
-function weddingSlug(hostname, baseDomain) {
-  const domain = baseDomain?.trim().toLowerCase().replace(/^\.+|\.+$/g, '')
-  const host = hostname.toLowerCase().replace(/:\d+$/, '')
-  if (!domain || host === domain || !host.endsWith(`.${domain}`)) return null
-  const slug = host.slice(0, -(domain.length + 1))
-  if (!/^[a-z0-9-]{3,30}$/.test(slug) || slug.startsWith('-') || slug.endsWith('-') || reservedSlugs.has(slug)) return null
-  return slug
-}
+import { weddingSlug } from './wedding-host.js'
 
 async function publicSite(request, env, slug) {
   if (!env.DB) return Response.json({ error: 'site_unavailable' }, { status: 503 })
@@ -54,6 +44,10 @@ export default {
   async fetch(request, env, executionContext) {
     const url = new URL(request.url)
     let response
+    const baseDomain = env.BASE_DOMAIN?.trim().toLowerCase()
+    if (baseDomain && url.hostname.toLowerCase() === `www.${baseDomain}`) {
+      return Response.redirect(`https://${baseDomain}${url.pathname}${url.search}`, 301)
+    }
     if (protectedPath(url.pathname)) {
       const assertion = request.headers.get('Cf-Access-Jwt-Assertion')
       if (!assertion || !await verifyAccessAssertion(assertion, env)) {
@@ -70,4 +64,4 @@ export default {
   },
 }
 
-export { weddingSlug }
+

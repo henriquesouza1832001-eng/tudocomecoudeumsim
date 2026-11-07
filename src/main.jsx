@@ -1,4 +1,5 @@
 import React, { lazy, Suspense } from 'react'
+import { weddingSlug } from './wedding-host.js'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-500.css'
@@ -27,7 +28,7 @@ const isMarketingConcepts = window.location.pathname === '/estudo-identidade'
 const isGiftConcepts = window.location.pathname === '/estudo-presentes'
 const isNavigationConcepts = import.meta.env.DEV && window.location.pathname === '/estudo-navegacao'
 const isDeviceExperienceConcepts = import.meta.env.DEV && window.location.pathname === '/estudo-dispositivos'
-const isMarketingLanding = window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
+const isMarketingLanding = !weddingSlug(window.location.hostname) && window.location.pathname === '/' && !window.location.hash.startsWith('#convite/') && !window.location.hash.startsWith('#confirmar-email/') && !window.location.hash.startsWith('#redefinir-senha/')
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

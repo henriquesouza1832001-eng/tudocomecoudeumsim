@@ -5,7 +5,8 @@ import InvitePhone from './InvitePhone.jsx'
 import './signup-v2.css'
 import './redesign-panel.css'
 import './redesign-invite.css'
-import { PRODUCT_NAME } from './product-config.js'
+import { PRODUCT_DOMAIN, PRODUCT_NAME } from './product-config.js'
+import { weddingSiteUrl, weddingSlug } from './wedding-host.js'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
@@ -251,7 +252,7 @@ function GiftThumb({ photoId, title }) {
 }
 
 function BrandMark() {
-  return <svg className="brand-mark" viewBox="0 0 64 64" width="44" height="44" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#2f3a30" /><circle cx="25" cy="34" r="14" fill="none" stroke="#f3ebdd" strokeWidth="4" /><circle cx="39" cy="34" r="14" fill="none" stroke="#d98466" strokeWidth="4" /></svg>
+  return <svg className="brand-mark" viewBox="0 0 96 96" width="44" height="44" aria-hidden="true" focusable="false"><rect x="2" y="2" width="92" height="92" rx="24" fill="#FBF7F2" /><g fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M19 76V43a29 29 0 0 1 58 0v33" stroke="#592B3E" strokeWidth="2.8" /><path d="M14 76h68" stroke="#B99563" strokeWidth="2.8" /><circle cx="42" cy="55" r="10.5" stroke="#B99563" strokeWidth="2.5" /><circle cx="54" cy="55" r="10.5" stroke="#592B3E" strokeWidth="2.5" /></g><path d="m48 23 2.2 4.8L55 30l-4.8 2.2L48 37l-2.2-4.8L41 30l4.8-2.2L48 23Z" fill="#B99563" /></svg>
 }
 
 function WeddingInvitationCover({ theme = 'garden', layout = 'full', composition = null, textAlign = 'left', textPosition = 'center', overlayOpacity = 45, imagePosition = 'center', mobileImagePosition = imagePosition, partnerOneName, partnerTwoName, date, time, message, photoUrl, photoAlt = 'Foto escolhida pelo casal', videoUrl, animationPreset = 'Elegante', showRsvp = true, preview = false, carouselCount = 0, carouselIndex = 0 }) {
@@ -1028,7 +1029,7 @@ function resolveCurrentView() {
   if (path === '/painel/demo' || path === '/site-casal-demo') return 'not-found'
   if (path === '/confirmar-email' || window.location.hash.startsWith('#confirmar-email/')) return 'email-confirmation'
   if (path === '/confirmar-presenca') return 'attendance-request'
-  if (path.startsWith('/casamento/')) return 'public-wedding'
+  if (path.startsWith('/casamento/') || (path === '/' && weddingSlug(window.location.hostname))) return 'public-wedding'
   if (path === '/recuperar-senha') return 'password-reset-request'
   if (path === '/redefinir-senha' || window.location.hash.startsWith('#redefinir-senha/')) return 'password-reset'
   if (path === '/painel') return 'dashboard'
@@ -1242,7 +1243,7 @@ function PasswordInput(props) {
 
 const COUPLE_SIGNUP_DRAFT_KEY = 'couple-signup-draft'
 const SIGNUP_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados']
-const SIGNUP_ADDRESS_PREFIX = 'tudocomecoudeumsim.pages.dev/'
+const SIGNUP_ADDRESS_SUFFIX = `.${PRODUCT_DOMAIN}`
 const SIGNUP_GIFT_PREFERENCES = { pix: 'Pix direto aos noivos', store: 'Links para lojas', both: 'Pix e links para lojas', undecided: 'Vamos decidir depois' }
 
 function readCoupleSignupDraft() {
@@ -1374,7 +1375,7 @@ function CoupleSignup() {
   const reviewRows = [
     ['Casal', `${partnerOneName || 'Nome a definir'} & ${partnerTwoName || 'nome a definir'}`, 1, 'Editar'],
     ['Data e horário', eventDate ? `${displayDate}${eventTime ? ` · ${eventTime}` : ''}` : 'A definir', 1, eventDate ? 'Editar' : 'Adicionar'],
-    ['Endereço curto', slug ? `${SIGNUP_ADDRESS_PREFIX}${slug}` : 'Gerado automaticamente', 2, 'Editar'],
+    ['Endereço curto', slug ? `${slug}${SIGNUP_ADDRESS_SUFFIX}` : 'Gerado automaticamente', 2, 'Editar'],
     ['Áreas do convite', enabledAreas.length ? enabledAreas.join(', ') : 'Nenhuma selecionada', 2, 'Editar'],
     ['Presentes', SIGNUP_GIFT_PREFERENCES[giftPreference], 2, 'Editar'],
   ]
@@ -1401,7 +1402,7 @@ function CoupleSignup() {
               <div className="su-row"><label className="su-field"><span className="su-label">Data do casamento <em>opcional</em></span><input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label className="su-field"><span className="su-label">Horário <em>opcional</em></span><input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
             </div>}
             {step === 2 && <div className="su-fields">
-              <div className="su-field"><label className="su-label" htmlFor="su-slug">Endereço curto <em>opcional</em></label><div className="su-slug"><span className="su-prefix">{SIGNUP_ADDRESS_PREFIX}</span><input id="su-slug" autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="su-slug-help" /></div><small id="su-slug-help" className="su-help">Deixem em branco para gerar um automaticamente.</small></div>
+              <div className="su-field"><label className="su-label" htmlFor="su-slug">Endereço curto <em>opcional</em></label><div className="su-slug"><input id="su-slug" autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="su-slug-help" /><span className="su-prefix">{SIGNUP_ADDRESS_SUFFIX}</span></div><small id="su-slug-help" className="su-help">Deixem em branco para gerar um automaticamente.</small></div>
               <fieldset className="su-group"><legend className="su-label">Quais áreas querem no convite?</legend><div className="su-chips">{SIGNUP_SECTIONS.map((section) => <label key={section} className="su-chip"><input type="checkbox" checked={enabledAreas.includes(section)} onChange={(event) => updateSignupSection(section, event.target.checked)} /><span>{section}</span></label>)}</div></fieldset>
               <fieldset className="su-group"><legend className="su-label">Como preferem receber presentes?</legend><div className="su-segment">{Object.keys(SIGNUP_GIFT_PREFERENCES).map((value) => <label key={value}><input type="radio" name="gift-preference" checked={giftPreference === value} onChange={() => { setGiftPreference(value); setSiteConfig((current) => ({ ...current, giftPreferences: value, ...(value === 'store' || value === 'both' ? { giftDisplayMode: 'inline' } : {}), ...(value !== 'undecided' ? { enabledSections: [...new Set([...(current.enabledSections || []), 'Lista de presentes'])] } : {}) })) }} /><span>{giftShort[value]}</span></label>)}</div><p className="su-help">Nenhum pagamento passa pela plataforma.</p></fieldset>
             </div>}
@@ -3463,7 +3464,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   </div>
 }
 function PublishedInviteShare({ wedding, profile, config, update, publishedAt, notify }) {
-  const url = wedding?.slug ? `${window.location.origin}/casamento/${encodeURIComponent(wedding.slug)}` : ''
+  const url = wedding?.slug ? weddingSiteUrl(wedding.slug) : ''
   if (!publishedAt || !url) return null
   const names = [profile.partnerOneName, profile.partnerTwoName].map((name) => name?.trim()).filter(Boolean).join(' & ')
   const date = profile.eventDate ? new Date(`${profile.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
@@ -3618,9 +3619,10 @@ function TeamInvitationAcceptance() {
 }
 
 function GeneralWeddingSite({ notify }) {
-  const slug = decodeURIComponent(window.location.pathname.split('/')[2] || '')
+  const hostSlug = weddingSlug(window.location.hostname)
+  const slug = hostSlug || decodeURIComponent(window.location.pathname.split('/')[2] || '')
   const requestedPage = new URLSearchParams(window.location.search).get('pagina')
-  const weddingUrl = `/casamento/${encodeURIComponent(slug)}`
+  const weddingUrl = hostSlug ? '/' : `/casamento/${encodeURIComponent(slug)}`
   const [data, setData] = useState(null)
   const [coverIndex, setCoverIndex] = useState(0)
   const [loading, setLoading] = useState(true)

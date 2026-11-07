@@ -3,7 +3,7 @@ import { generateKeyPairSync, verify } from 'node:crypto'
 import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 const token = 'a'.repeat(43)
 const events = [
   { id: 'event-public', name: 'Cerimônia', group_ids: [], starts_at: '2027-05-10T16:00:00-03:00', venue_name: 'Jardim' },

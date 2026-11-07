@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 const apiSource = readFileSync(new URL('../functions/api/[[route]].js', import.meta.url), 'utf8')
 const routeDefinitions = [...apiSource.matchAll(/app\.(get|post|put|patch|delete)\('([^']+)'/g)].map((match) => ({ method: match[1].toUpperCase(), path: match[2] }))
 

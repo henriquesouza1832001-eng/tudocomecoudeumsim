@@ -3,7 +3,7 @@ import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 import { SITE_MEDIA_LIMITS } from '../src/site-media-config.js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 const siteConfig = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Nosso convite', en: 'Our invitation', es: 'Nuestra invitación' }, siteGallery: ['a'.repeat(36)], guestCamera: { enabled: true, photoLimit: 200 } }
 const publishedEvent = { id: 'event-published', name: 'Cerimônia', event_type: 'ceremony', starts_at: null, venue_name: 'Jardim', address: null, group_ids: [] }
 const restrictedEvent = { id: 'event-restricted', name: 'Ensaio', event_type: 'rehearsal', starts_at: null, venue_name: 'Salão', address: null, group_ids: ['group-private'] }

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { onRequest } from '../functions/api/[[route]].js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 
 test('unknown API routes return a consistent JSON error', async () => {
   const response = await onRequest({ request: new Request(`${origin}/api/unknown-resource`), env: {} })

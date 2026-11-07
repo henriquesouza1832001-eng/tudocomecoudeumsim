@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { onRequest } from '../functions/api/[[route]].js'
 
-const origin = 'https://tudocomecoudeumsim.pages.dev'
+const origin = 'https://meualtar.date'
 const eventId = '11111111-1111-4111-8111-111111111111'
 const mediaId = '22222222-2222-4222-8222-222222222222'
 const siteConfig = {
@@ -245,7 +245,7 @@ test('general RSVP fails closed when Turnstile is not configured', async () => {
 
 test('public RSVP confirms the principal, issues a recoverable individual QR, and leaves companions pending', async () => {
   const originalFetch = globalThis.fetch
-  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, action: 'rsvp', hostname: 'tudocomecoudeumsim.pages.dev' }), { status: 200 })
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, action: 'rsvp', hostname: 'meualtar.date' }), { status: 200 })
   try {
     const { response, batches } = await call('/api/public/weddings/ana-e-bia/rsvp', {
       method: 'POST',

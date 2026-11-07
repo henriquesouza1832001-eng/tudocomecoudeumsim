@@ -19,10 +19,10 @@ test('test preference uses the fixed BRL amount and sandbox checkout URL', async
   const reference = '11111111-1111-4111-8111-111111111111'
   const result = await createMercadoPagoTestPreference('test-token', {
     amountCents: 9000,
-    productName: 'Tudo começou de um sim',
+    productName: 'Meu Altar',
     reference,
-    baseUrl: 'https://tudocomecoudeumsim.pages.dev',
-    notificationUrl: 'https://tudocomecoudeumsim.pages.dev/api/webhooks/mercadopago/test',
+    baseUrl: 'https://meualtar.date',
+    notificationUrl: 'https://meualtar.date/api/webhooks/mercadopago/test',
   }, async (url, options) => {
     request = { url, options }
     return Response.json({ id: 'preference-1', sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=preference-1' })
@@ -30,8 +30,8 @@ test('test preference uses the fixed BRL amount and sandbox checkout URL', async
   assert.equal(request.url, 'https://api.mercadopago.com/checkout/preferences')
   assert.equal(request.options.headers['X-Idempotency-Key'], reference)
   const body = JSON.parse(request.options.body)
-  assert.deepEqual(body.items, [{ id: 'platform-access-test', title: 'Tudo começou de um sim — acesso de teste', quantity: 1, currency_id: 'BRL', unit_price: 90 }])
-  assert.equal(body.notification_url, 'https://tudocomecoudeumsim.pages.dev/api/webhooks/mercadopago/test')
+  assert.deepEqual(body.items, [{ id: 'platform-access-test', title: 'Meu Altar — acesso de teste', quantity: 1, currency_id: 'BRL', unit_price: 90 }])
+  assert.equal(body.notification_url, 'https://meualtar.date/api/webhooks/mercadopago/test')
   assert.equal(result.checkoutUrl, 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=preference-1')
   assert.equal(result.reference, reference)
 })
@@ -70,7 +70,7 @@ test('Mercado Pago errors do not leak provider response bodies', async () => {
 })
 
 test('Mercado Pago test endpoints require a signed-in session', async () => {
-  const request = new Request('https://tudocomecoudeumsim.pages.dev/api/superadmin/mercadopago/test/connection', {
+  const request = new Request('https://meualtar.date/api/superadmin/mercadopago/test/connection', {
     headers: { Cookie: '__Host-wedding-session=invalid-session' },
   })
   const response = await onRequest({
@@ -101,7 +101,7 @@ test('Mercado Pago webhook validates the signed manifest and rejects tampering',
 })
 
 test('Mercado Pago webhook accepts server-to-server requests only after signature validation', async () => {
-  const request = new Request('https://tudocomecoudeumsim.pages.dev/api/webhooks/mercadopago/test?data.id=12345', {
+  const request = new Request('https://meualtar.date/api/webhooks/mercadopago/test?data.id=12345', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'payment', data: { id: '12345' } }),

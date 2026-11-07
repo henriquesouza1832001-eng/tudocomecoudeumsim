@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2f3a30"/><circle cx="25" cy="34" r="14" fill="none" stroke="#f3ebdd" stroke-width="4"/><circle cx="39" cy="34" r="14" fill="none" stroke="#d98466" stroke-width="4"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Símbolo Meu Altar</title>
+  <rect x="2" y="2" width="92" height="92" rx="24" fill="#FBF7F2"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 76V43a29 29 0 0 1 58 0v33" stroke="#592B3E" stroke-width="2.8"/>
+    <path d="M14 76h68" stroke="#B99563" stroke-width="2.8"/>
+    <circle cx="42" cy="55" r="10.5" stroke="#B99563" stroke-width="2.5"/>
+    <circle cx="54" cy="55" r="10.5" stroke="#592B3E" stroke-width="2.5"/>
+  </g>
+  <path d="m48 23 2.2 4.8L55 30l-4.8 2.2L48 37l-2.2-4.8L41 30l4.8-2.2L48 23Z" fill="#B99563"/>
+</svg>

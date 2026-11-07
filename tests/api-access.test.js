@@ -3,7 +3,7 @@ import test from 'node:test'
 import { onRequest as apiRequest } from '../functions/api/[[route]].js'
 import { onRequest as accessMiddleware } from '../functions/_middleware.js'
 
-const base = 'https://tudocomecoudeumsim.pages.dev'
+const base = 'https://meualtar.date'
 
 function database() {
   return {
@@ -338,7 +338,7 @@ test('the retired legal draft route returns a private 404 for path variants', as
   for (const path of ['/documentos-legais/rascunho', '/documentos-legais/rascunho/', '/documentos-legais/rascunho/?origem=convite']) {
     let nextCalled = false
     const response = await accessMiddleware({
-      request: new Request(`https://tudocomecoudeumsim.pages.dev${path}`),
+      request: new Request(`https://meualtar.date${path}`),
       env: {},
       next: async () => { nextCalled = true; return new Response('draft') },
     })

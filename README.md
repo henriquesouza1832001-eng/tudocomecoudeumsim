@@ -1,4 +1,4 @@
-# Tudo começou de um sim
+# Meu Altar
 
 Plataforma responsiva para casais criarem o site do casamento e organizarem convites, convidados, eventos e detalhes da celebração. O modelo comercial aprovado é um pagamento único de R$ 90,00 pelo acesso; o checkout ainda está em sandbox e não libera acesso automaticamente. Presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas; a plataforma não recebe nem movimenta esse dinheiro.
 
@@ -89,7 +89,7 @@ npm test
 
 ## Dados e configuração Cloudflare
 
-O binding D1 `DB` e o bucket R2 `GUEST_PHOTOS` estão declarados nos arquivos Wrangler. O domínio base dos subdomínios continua em aberto no Worker, em `BASE_DOMAIN`; preencha quando o domínio for definido. Credenciais e chaves privadas devem ficar nas variáveis e secrets do Cloudflare, nunca no repositório.
+O binding D1 `DB` e o bucket R2 `GUEST_PHOTOS` estão declarados nos arquivos Wrangler. O domínio base dos subdomínios é `meualtar.date`, em `BASE_DOMAIN` de `wrangler.worker.jsonc`. Credenciais e chaves privadas devem ficar nas variáveis e secrets do Cloudflare, nunca no repositório.
 
 Entre os nomes de configuração usados pelo Worker estão `ACCESS_TEAM_DOMAIN`, `ACCESS_APPLICATION_AUD`, `SUPERADMIN_EMAIL`, `TURNSTILE_SECRET_KEY`, `GUEST_CREDENTIALS_ENCRYPTION_KEY`, `MFA_ENCRYPTION_KEY`, `RESEND_API_KEY` e as credenciais dos recursos Google Wallet e Apple Wallet. Confira o código e os bindings antes de criar ou alterar secrets; não use os exemplos de demonstração como credenciais.
 
@@ -98,3 +98,28 @@ O preço de acesso fica centralizado em `src/product-config.js`. O Mercado Pago 
 Antes de aplicar uma migração, confira no D1 correto quais versões já foram executadas e revise a ordem dos arquivos em `migrations/`. O histórico deste projeto contém dois arquivos com prefixo `0014`; não deduza o estado do banco apenas pela numeração do nome.
 
 As consultas da API devem validar sessão, papel e escopo do casamento no servidor. Registros ligados a um casamento precisam ser filtrados pelo `wedding_id`. Respostas públicas não incluem a lista privada de convidados.
+
+## Domínio meualtar.date
+
+O endereço canônico é `https://meualtar.date`, definido em `src/product-config.js` (`PRODUCT_NAME` e `PRODUCT_BASE_URL`). O deploy continua pela integração Git do Cloudflare Pages; build: `npm run build`.
+
+Passos que dependem do painel Cloudflare e do registrador, a cargo do responsável:
+
+1. Ter acesso ao domínio e adicioná-lo como zona na mesma conta Cloudflare do projeto Pages. Se o DNS ainda não for da Cloudflare, trocar os nameservers no registrador, antes preservando os registros existentes, principalmente e-mail (MX, SPF, DKIM e DMARC).
+2. Em Workers & Pages, no projeto, abrir Custom domains e adicionar `meualtar.date` e `www.meualtar.date`. Redirecionar `www` para o domínio raiz com redirecionamento permanente.
+3. Com o domínio ativo e o HTTPS válido, criar em Bulk Redirects o redirecionamento permanente (301) de `tudocomecoudeumsim.pages.dev` para `https://meualtar.date`, preservando caminho e parâmetros de consulta. Não remover o `pages.dev` antes de validar.
+4. Adicionar `meualtar.date` aos hostnames do widget Turnstile (a API valida o hostname da requisição) e à aplicação do Cloudflare Access que protege `/superadmin`.
+5. Atualizar, nos provedores externos, os links de retorno e webhooks que apontam para o endereço antigo (Mercado Pago, remetente de e-mail e demais integrações).
+6. Logotipo: o símbolo está em `public/icons/` (`wedding.svg` e PNGs 180/192/512) e o logotipo completo em `public/icons/meu-altar-logo.svg`, vindos de `meu-altar-brand/`.
+
+Os nomes dos recursos Cloudflare (projeto, D1, R2) não foram renomeados.
+
+### Subdomínios dos casais (`casal.meualtar.date`)
+
+O Cloudflare Pages não aceita subdomínio curinga, então o site com subdomínios é servido pelo Worker de `wrangler.worker.jsonc` (rotas `meualtar.date/*` e `*.meualtar.date/*`). O caminho `/casamento/:slug` no domínio principal continua funcionando.
+
+1. Publicar o Worker com `npx wrangler deploy -c wrangler.worker.jsonc` depois de `npm run build`, ou apontar a integração Git para esse comando. Não use os dois destinos ao mesmo tempo no mesmo domínio.
+2. No DNS da zona, criar registros com proxy ligado para `@` e `*` (por exemplo AAAA `100::`), para o tráfego chegar às rotas do Worker. Remover o domínio de Custom domains do Pages se o apex passar para o Worker.
+3. Cobertura HTTPS: o certificado universal da Cloudflare cobre `*.meualtar.date` de primeiro nível; subníveis mais profundos exigem Advanced Certificate.
+4. Nomes de 3 a 30 caracteres (letras minúsculas, números e hífen); `www`, `app`, `api`, `admin`, `painel`, `status` e `mail` são reservados. `www.meualtar.date` redireciona em 301 para o domínio principal.
+5. O painel dos noivos, o cadastro e o superadmin ficam no domínio principal. Incluir `*.meualtar.date` no Turnstile se o formulário de confirmação de presença rodar nos subdomínios.
