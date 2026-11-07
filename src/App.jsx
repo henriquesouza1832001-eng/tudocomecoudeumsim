@@ -16,7 +16,8 @@ import { SITE_SECTION_LAYOUT_OPTIONS } from './site-section-layouts.js'
 import { shouldAutoplayWeddingCoverVideo } from './site-motion.js'
 import { getThemePaletteNames, getThemePalettes, isValidCustomAccent } from './site-style.js'
 import { extractPhotoColorSuggestions } from './photo-palette.js'
-import { checkSitePublication } from './site-publication-check.js'
+import { checkSitePublication, missingPhotoAltIds, referencedPhotoIds } from './site-publication-check.js'
+import { DECORATIVE_ALT, buildDefaultAltText, fillEmptyAltTexts, isDecorativeAlt, resolveImageAlt } from './photo-alt.js'
 import { isValidPixKey } from './pix-key.js'
 import { createSiteDraftHistory, recordSiteDraftChange, redoSiteDraft, undoSiteDraft } from './site-draft-history.js'
 import { EDITABLE_SITE_SECTION_TITLES, getSiteSectionTitle, safeHttpsLink, safeStoreLink, setSiteSectionBody, setSiteSectionTitle } from './site-section-content.js'
@@ -109,7 +110,7 @@ function SiteAccentPicker({ value, appliedValue, onChange }) {
 }
 const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 function imageAltText(config, id, fallback) {
-  return config?.imageAltTexts?.[id]?.[config?.language || 'pt-BR']?.trim() || fallback
+  return resolveImageAlt(config?.imageAltTexts?.[id]?.[config?.language || 'pt-BR'], fallback)
 }
 
 function siteSectionTitle(section) {
@@ -171,13 +172,13 @@ function WeddingCountdown({ date, time, timezone, title }) {
 function WeddingTimelineSection({ items = [], mediaUrl = () => '', imageAltTexts = {}, title }) {
   const visibleItems = items.filter((item) => item.title?.trim())
   if (!visibleItems.length) return null
-  return <section className="public-wedding-timeline" id="historia-marcos"><span className="eyebrow">Nossa história</span><h2>{title || 'Alguns capítulos de nós'}</h2><div>{visibleItems.map((item) => <article key={item.id}>{item.photoId && mediaUrl(item.photoId) && <img src={mediaUrl(item.photoId)} alt={imageAltTexts[item.photoId]?.['pt-BR'] || `Foto de ${item.title}`} /> }<div>{item.date && <time dateTime={item.date}>{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</time>}<h3>{item.title}</h3>{item.description && <p>{item.description}</p>}</div></article>)}</div></section>
+  return <section className="public-wedding-timeline" id="historia-marcos"><span className="eyebrow">Nossa história</span><h2>{title || 'Alguns capítulos de nós'}</h2><div>{visibleItems.map((item) => <article key={item.id}>{item.photoId && mediaUrl(item.photoId) && <img src={mediaUrl(item.photoId)} alt={resolveImageAlt(imageAltTexts[item.photoId]?.['pt-BR'], `Foto de ${item.title}`)} /> }<div>{item.date && <time dateTime={item.date}>{new Date(`${item.date}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</time>}<h3>{item.title}</h3>{item.description && <p>{item.description}</p>}</div></article>)}</div></section>
 }
 
 function WeddingGodparentsSection({ people = [], mediaUrl = () => '', imageAltTexts = {}, title }) {
   const visiblePeople = people.filter((person) => person.name?.trim() && person.photoId && mediaUrl(person.photoId))
   if (!visiblePeople.length) return null
-  return <section className="public-wedding-godparents" id="padrinhos"><span className="eyebrow">PADRINHOS E MADRINHAS</span><h2>{title}</h2><div>{visiblePeople.map((person) => <article key={person.id}><img src={mediaUrl(person.photoId)} alt={imageAltTexts[person.photoId]?.['pt-BR'] || `Foto de ${person.name}`} /><h3>{person.name}</h3>{person.message && <p>{person.message}</p>}</article>)}</div></section>
+  return <section className="public-wedding-godparents" id="padrinhos"><span className="eyebrow">PADRINHOS E MADRINHAS</span><h2>{title}</h2><div>{visiblePeople.map((person) => <article key={person.id}><img src={mediaUrl(person.photoId)} alt={resolveImageAlt(imageAltTexts[person.photoId]?.['pt-BR'], `Foto de ${person.name}`)} /><h3>{person.name}</h3>{person.message && <p>{person.message}</p>}</article>)}</div></section>
 }
 
 function WeddingEditorialSection({ id, label, title, body }) {
@@ -464,7 +465,7 @@ function WeddingPhotoCarousel({ photos, mediaUrl, autoplay, imageAltTexts = {}, 
     <span className="eyebrow">FOTOS DO CASAL</span>
     <h2>{title || 'Alguns instantes nossos'}</h2>
     <div className="public-wedding-photo-carousel-stage" aria-live="off">
-      <img key={activePhoto} src={activePhotoUrl} alt={imageAltTexts[activePhoto]?.['pt-BR'] || `Foto ${index + 1} de ${slideCount}`} draggable="false" />
+      <img key={activePhoto} src={activePhotoUrl} alt={resolveImageAlt(imageAltTexts[activePhoto]?.['pt-BR'], `Foto ${index + 1} de ${slideCount}`)} draggable="false" />
       {slideCount > 1 && <><button className="public-wedding-photo-carousel-arrow is-previous" type="button" aria-label="Foto anterior" onClick={() => { pauseForInteraction(); moveTo(index - 1) }}><ArrowLeft size={19} /></button><button className="public-wedding-photo-carousel-arrow is-next" type="button" aria-label="Próxima foto" onClick={() => { pauseForInteraction(); moveTo(index + 1) }}><ArrowRight size={19} /></button></>}
     </div>
     {slideCount > 1 && <div className="public-wedding-photo-carousel-indicators" role="group" aria-label="Escolher foto">{photos.map((photo, photoIndex) => <button key={photo} type="button" className={photoIndex === index ? 'active' : ''} aria-label={`Mostrar foto ${photoIndex + 1}`} aria-current={photoIndex === index ? 'true' : undefined} onClick={() => { pauseForInteraction(); moveTo(photoIndex) }} />)}</div>}
@@ -486,7 +487,7 @@ function WeddingGiftsSection({ gifts, presentation = {}, mediaUrl = () => '', im
   const categoryFor = (gift) => presentation[gift.id]?.category || 'Outros'
   const categories = [...new Set(activeGifts.map(categoryFor))]
   const visibleGifts = selectedCategory === 'Todas' ? activeGifts : activeGifts.filter((gift) => categoryFor(gift) === selectedCategory)
-  return <section className="public-wedding-gifts" id="presentes"><span className="eyebrow">Com carinho</span><h2>{title || 'Um carinho para os noivos'}</h2>{categories.length > 1 && <div className="public-gift-filters" role="group" aria-label="Filtrar presentes por categoria"><button type="button" className={selectedCategory === 'Todas' ? 'active' : ''} aria-pressed={selectedCategory === 'Todas'} onClick={() => setSelectedCategory('Todas')}>Todas</button>{categories.map((category) => <button type="button" key={category} className={selectedCategory === category ? 'active' : ''} aria-pressed={selectedCategory === category} onClick={() => setSelectedCategory(category)}>{category}</button>)}</div>}<div className="public-gift-grid">{visibleGifts.map((gift) => { const photoId = presentation[gift.id]?.photoId; const image = photoId ? mediaUrl(photoId) : ''; return <article key={gift.id}>{image ? <img className="public-gift-photo" src={image} alt={imageAltTexts[photoId]?.['pt-BR'] || `Foto do presente: ${gift.title}`} /> : <div className="public-gift-monogram" aria-hidden="true"><Gift size={23} /></div>}<div><small className="public-gift-category">{categoryFor(gift)}</small><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}{gift.fulfillment_type === 'store_link' && <small>A compra e a entrega são concluídas com a loja.</small>}</div>{gift.fulfillment_type === 'store_link' && safeStoreLink(gift.store_url) ? preview ? <span>Ver presente <ArrowRight size={14} /></span> : <a href={safeStoreLink(gift.store_url)} target="_blank" rel="noopener noreferrer">Ver presente <ExternalLink size={14} /></a> : <span>{gift.gift_type === 'custom' ? 'Valor livre' : `Sugestão: ${formatBrlCents(gift.amount_cents)}`}</span>}</article> })}</div></section>
+  return <section className="public-wedding-gifts" id="presentes"><span className="eyebrow">Com carinho</span><h2>{title || 'Um carinho para os noivos'}</h2>{categories.length > 1 && <div className="public-gift-filters" role="group" aria-label="Filtrar presentes por categoria"><button type="button" className={selectedCategory === 'Todas' ? 'active' : ''} aria-pressed={selectedCategory === 'Todas'} onClick={() => setSelectedCategory('Todas')}>Todas</button>{categories.map((category) => <button type="button" key={category} className={selectedCategory === category ? 'active' : ''} aria-pressed={selectedCategory === category} onClick={() => setSelectedCategory(category)}>{category}</button>)}</div>}<div className="public-gift-grid">{visibleGifts.map((gift) => { const photoId = presentation[gift.id]?.photoId; const image = photoId ? mediaUrl(photoId) : ''; return <article key={gift.id}>{image ? <img className="public-gift-photo" src={image} alt={resolveImageAlt(imageAltTexts[photoId]?.['pt-BR'], `Foto do presente: ${gift.title}`)} /> : <div className="public-gift-monogram" aria-hidden="true"><Gift size={23} /></div>}<div><small className="public-gift-category">{categoryFor(gift)}</small><h3>{gift.title}</h3>{gift.description && <p>{gift.description}</p>}{gift.fulfillment_type === 'store_link' && <small>A compra e a entrega são concluídas com a loja.</small>}</div>{gift.fulfillment_type === 'store_link' && safeStoreLink(gift.store_url) ? preview ? <span>Ver presente <ArrowRight size={14} /></span> : <a href={safeStoreLink(gift.store_url)} target="_blank" rel="noopener noreferrer">Ver presente <ExternalLink size={14} /></a> : <span>{gift.gift_type === 'custom' ? 'Valor livre' : `Sugestão: ${formatBrlCents(gift.amount_cents)}`}</span>}</article> })}</div></section>
 }
 
 function WeddingPixSection({ pix, title, preview = false, onCopy }) {
@@ -1545,6 +1546,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [sessionRestoreFailed, setSessionRestoreFailed] = useState(false)
+  const [photoReviewSignal, setPhotoReviewSignal] = useState(0)
   const [weddings, setWeddings] = useState([])
   const [weddingId, setWeddingId] = useState('')
   const [loadedWeddingId, setLoadedWeddingId] = useState('')
@@ -2515,21 +2517,12 @@ function CouplePanel({ notify, confirmAction }) {
   function reviewPhotoDescriptions() {
     setError('')
     selectPanelTab('site')
-    window.setTimeout(() => {
-      const contentTab = [...document.querySelectorAll('.customizer-wizard-nav [role="tab"]')].find((button) => /Recado/.test(button.textContent))
-      if (contentTab && contentTab.getAttribute('aria-selected') !== 'true') contentTab.click()
-      window.setTimeout(() => {
-        const section = [...document.querySelectorAll('details.customizer-extra-fields')].find((item) => /Descrições acessíveis/.test(item.textContent))
-        if (!section) return
-        section.open = true
-        const field = [...section.querySelectorAll('.customizer-photo-alt-field input')].find((input) => !input.value.trim())
-        if (field) {
-          field.scrollIntoView({ block: 'center' })
-          field.focus()
-        }
-      }, 200)
-    }, 200)
+    setPhotoReviewSignal((value) => value + 1)
   }
+
+  useEffect(() => {
+    if (/descrição acessível/i.test(error) && !missingPhotoAltIds(siteConfig).length) setError('')
+  }, [error, siteConfig])
 
   function selectPanelTab(nextTab) {
     setTab(nextTab)
@@ -2604,7 +2597,7 @@ function CouplePanel({ notify, confirmAction }) {
   if (isReader) return <PublishedOnlyDashboard account={account} wedding={wedding} config={siteConfig} events={activeEvents} publishedAt={sitePublishedAt} onLogout={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }} />
 
   return <div className={`role-page couple-role-page${rsvpPrintActive ? ' couple-print-rsvps' : ''}`}><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><BrandMark /><strong>{PRODUCT_NAME} | Painel dos noivos</strong></a><div className="couple-header-actions"><span className="role-preview">{account?.email}</span><a className="button-outline couple-header-help" href="/ajuda">Ajuda</a>{!isEditor && <button className="button-outline" type="button" onClick={() => { setOnboardingStep(0); setOnboardingOpen(true); selectPanelTab('site') }}>Tour do painel</button>}<button className="button-outline" onClick={() => selectPanelTab('site')}>Editar site</button>{sitePublishedAt && wedding?.slug && <a className="button-outline" href={`/casamento/${encodeURIComponent(wedding.slug)}`} target="_blank" rel="noreferrer">Ver convite publicado</a>}<button className="button-outline" onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('/') }}>Sair</button></div></header><main className={`role-main${tab === 'site' ? ' couple-customizing' : ''}`}><div className="role-intro"><span className="role-icon"><Settings2 size={19} /></span><span className="eyebrow">{isEditor ? 'EDITOR DO CASAMENTO' : 'ÁREA DOS NOIVOS'}</span><h1>{wedding ? `${wedding.partner_one_name} & ${wedding.partner_two_name}` : 'Seu casamento'}</h1><p>{isEditor ? 'Você pode alterar o site e os eventos deste casamento.' : 'Convidados e respostas ficam limitados ao casamento autorizado nesta sessão.'}</p></div>
-    {error && /descrição acessível/i.test(error) && <p className="admin-form-error" role="alert">{error} <button type="button" className="button-outline" onClick={reviewPhotoDescriptions}>Revisar descrições</button></p>}
+    {error && /descrição acessível/i.test(error) && <div className="photo-alt-banner" role="alert"><p>{error}</p><button type="button" className="button-outline" onClick={reviewPhotoDescriptions}>Revisar descrições</button></div>}
     {weddings.length > 1 && <label className="staff-event-select">Casamento<select value={weddingId} onChange={(event) => { setWeddingId(event.target.value); setTab('site') }}>{weddings.map((item) => <option key={item.id} value={item.id}>{item.partner_one_name} & {item.partner_two_name}</option>)}</select></label>}
     {error && !/descrição acessível/i.test(error) && <p className="admin-form-error" role="alert">{error}</p>}
      {dataLoadError && dataReady && <p className="admin-form-error" role="alert">{dataLoadError} <button type="button" className="button-outline" onClick={() => loadWeddingData(weddingId).catch(() => {})}>Tentar carregar novamente</button></p>}
@@ -2672,7 +2665,7 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
     {tab === 'expenses' && !isReader && !isEditor && <WeddingExpenseManager weddingId={weddingId} expenses={expenses} onReload={() => refreshAfterConfirmedMutation(weddingId)} />}
-    {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={activeEvents} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} />}
+    {tab === 'site' && <CoupleSiteEditor key={weddingId} wedding={wedding} events={activeEvents} gifts={gifts} config={siteConfig} savedConfig={savedSiteConfig} publishedConfig={publishedSiteConfig} publishedAt={sitePublishedAt} setConfig={setSiteConfig} onSave={saveSiteDraft} onPublish={publishSite} saving={siteConfigLoading} confirmAction={confirmAction} notify={notify} reviewSignal={photoReviewSignal} onReviewConsumed={() => setPhotoReviewSignal(0)} />}
    </div>
      </>}</main>{onboardingOpen && <div className="couple-tour-backdrop"><section className="couple-tour-dialog" role="dialog" aria-modal="true" aria-labelledby="couple-tour-title"><span className="eyebrow">PASSO {onboardingStep + 1} DE {onboardingSteps.length}</span><h2 id="couple-tour-title">{onboardingSteps[onboardingStep].title}</h2><p>{onboardingSteps[onboardingStep].description}</p><div className="couple-tour-actions">{onboardingStep > 0 && <button className="button-outline" type="button" onClick={() => { const previous = onboardingStep - 1; setOnboardingStep(previous); selectPanelTab(onboardingSteps[previous].tab) }}>Voltar</button>}<button className="button-outline" type="button" onClick={finishOnboarding}>Pular tour</button><button className="button-primary" type="button" onClick={() => { if (onboardingStep === onboardingSteps.length - 1) { finishOnboarding(); return } const next = onboardingStep + 1; setOnboardingStep(next); selectPanelTab(onboardingSteps[next].tab) }}>{onboardingStep === onboardingSteps.length - 1 ? 'Concluir' : 'Próximo'}</button></div></section></div>}<footer className="role-footer"><span>Área dos noivos</span></footer></div>
 }
@@ -2959,7 +2952,7 @@ function SitePhotoLibrary({ images, totalImages = images.length, mediaUrls, medi
   </section>
 }
 
-function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving, confirmAction, notify }) {
+function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfig, publishedConfig, publishedAt, setConfig, onSave, onPublish, saving, confirmAction, notify, reviewSignal = 0, onReviewConsumed }) {
   const [device, setDevice] = useState('desktop')
   const [previewPage, setPreviewPage] = useState('invitation')
   const [step, setStep] = useState('visual')
@@ -2987,6 +2980,12 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const [previewCoverIndex, setPreviewCoverIndex] = useState(0)
   const [draftHistory, setDraftHistory] = useState(() => createSiteDraftHistory({ config, profile: { partnerOneName, partnerTwoName, eventDate, eventTime } }))
   const [autosaveStatus, setAutosaveStatus] = useState('saved')
+  const [altOpen, setAltOpen] = useState(false)
+  const [altBanner, setAltBanner] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkText, setBulkText] = useState('Foto do casal {nomeCasal}')
+  const [reviewTick, setReviewTick] = useState(0)
+  const altSectionRef = useRef(null)
   const photoInput = useRef(null)
   const videoInput = useRef(null)
   const autosaveTimer = useRef(null)
@@ -3085,6 +3084,62 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const previewVideoUrl = mediaUrls[config.coverVideoId]
   const previewHasCover = Boolean(previewVideoUrl || previewPhotoUrl)
   const uploadedImages = siteMedia.filter((item) => item.mediaType === 'image')
+  const altUsedIds = [...referencedPhotoIds(config)]
+  const altMissing = missingPhotoAltIds(config)
+  const altFilled = altUsedIds.length - altMissing.length
+  const altUsedSet = new Set(altUsedIds)
+  const altRowIds = [...altUsedIds, ...uploadedImages.map((item) => item.id).filter((id) => !altUsedSet.has(id))]
+
+  function reviewAlt() {
+    setStep('visual')
+    setAltOpen(true)
+    setReviewTick((value) => value + 1)
+  }
+
+  function setAltText(id, value) {
+    update({ imageAltTexts: { ...config.imageAltTexts, [id]: { 'pt-BR': value } } })
+  }
+
+  function applyBulkAlt() {
+    const coupleName = [partnerOneName.trim(), partnerTwoName.trim()].filter(Boolean).join(' e ')
+    const text = buildDefaultAltText(bulkText, coupleName)
+    if (!text) {
+      notify('Escreva um texto descritivo. O nome do arquivo não serve como descrição.')
+      return
+    }
+    update({ imageAltTexts: fillEmptyAltTexts(config.imageAltTexts, altMissing, text) })
+    notify(`Descrição padrão aplicada a ${altMissing.length} foto(s). Você pode editar cada uma.`)
+  }
+
+  function handlePublish() {
+    if (altMissing.length) {
+      setAltBanner(true)
+      reviewAlt()
+      return
+    }
+    onPublish(profile, config)
+  }
+
+  useEffect(() => {
+    if (!reviewSignal) return
+    reviewAlt()
+    onReviewConsumed?.()
+  }, [reviewSignal])
+
+  useEffect(() => {
+    if (!reviewTick) return
+    const section = altSectionRef.current
+    if (!section) return
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    section.scrollIntoView({ behavior, block: 'start' })
+    const field = section.querySelector('.customizer-photo-alt-field.is-pending input[type="text"]')
+    if (!field) return
+    field.focus({ preventScroll: true })
+    window.setTimeout(() => {
+      const box = field.getBoundingClientRect()
+      if (box.top < 90 || box.bottom > window.innerHeight - 24) field.scrollIntoView({ behavior, block: 'center' })
+    }, 400)
+  }, [reviewTick])
   const siteGallery = config.siteGallery || []
   const godparents = config.godparents || []
   const nonGiftMediaIds = new Set([config.coverPhotoId, ...(config.coverGallery || []), ...siteGallery, ...siteCarouselPhotos, ...(config.timeline || []).map((item) => item.photoId), ...godparents.map((item) => item.photoId)].filter(Boolean))
@@ -3416,6 +3471,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         </div>
         <small>São os mesmos dados do cadastro e se atualizam no convite. Local e horários de cada cerimônia ficam na aba Eventos.</small>
       </details>
+      {altBanner && altMissing.length > 0 && <div className="photo-alt-banner" role="alert"><p>Preencha a descrição acessível de {altMissing.length} foto(s) usada(s) no convite. {altFilled} de {altUsedIds.length} descrições preenchidas.</p><button type="button" className="button-outline" onClick={reviewAlt}>Revisar descrições</button></div>}
       <div className="customizer-wizard-nav" role="tablist" aria-label="Etapas para personalizar o convite">
         <button type="button" role="tab" aria-selected={step === 'visual'} className={step === 'visual' ? 'active' : ''} onClick={() => setStep('visual')}><span>1</span> Aparência</button>
         <button type="button" role="tab" aria-selected={step === 'content'} className={step === 'content' ? 'active' : ''} onClick={() => setStep('content')}><span>2</span> Recado e detalhes</button>
@@ -3423,7 +3479,23 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       {step === 'visual' ? <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO UM</span><h3>Comecem pela foto</h3></div></div>
         <SitePhotoLibrary images={customizerImages} totalImages={uploadedImages.length} mediaUrls={mediaUrls} mediaLoadErrors={mediaLoadErrors} coverPhotoId={config.coverPhotoId} coverGallery={config.coverGallery || []} siteGallery={siteGallery} siteCarouselPhotos={siteCarouselPhotos} siteCarouselEnabled={config.siteCarouselEnabled || false} siteCarouselAutoplay={config.siteCarouselAutoplay || false} coverCarouselEnabled={config.coverCarouselEnabled || false} mediaBusy={mediaBusy} mediaUploadProgress={mediaUploadProgress} mediaError={mediaError} failedPhotoUpload={failedPhotoUpload} onRetryUpload={retryPhotoUpload} remaining={remainingPhotoSlots} coverInput={photoInput} onUpload={handlePhotoUpload} onCoverSelect={selectCoverPhoto} onCarouselToggle={toggleCoverCarousel} onCarouselPhotoToggle={toggleCarouselPhoto} onSitePhotoToggle={toggleSitePhoto} onSiteCarouselToggle={toggleSiteCarousel} onSiteCarouselPhotoToggle={toggleSiteCarouselPhoto} onReorderSiteCarousel={reorderSiteCarouselPhoto} onSiteCarouselAutoplayToggle={(enabled) => update({ siteCarouselAutoplay: enabled && siteCarouselPhotos.length > 1 })} onImageError={(id) => setMediaLoadErrors((current) => [...new Set([...current, id])])} onDelete={deleteSiteMedia} />
-        <details className="customizer-extra-fields"><summary>Descrições acessíveis das fotos</summary><div><p>Descrevam cada imagem para que leitores de tela expliquem o que aparece nela. Para publicar uma foto usada no convite, preencham a descrição acessível. Fotos fora das seções ativas não bloqueiam a publicação.</p>{uploadedImages.map((item) => <label className="font-pair-label customizer-photo-alt-field" key={item.id}>{mediaUrls[item.id] && <img src={mediaUrls[item.id]} alt="" />}Descrição desta foto<input maxLength={250} value={config.imageAltTexts?.[item.id]?.['pt-BR'] || ''} placeholder="Ex.: O casal caminhando no jardim" onChange={(event) => update({ imageAltTexts: { ...config.imageAltTexts, [item.id]: { 'pt-BR': event.target.value } } })} />{!config.imageAltTexts?.[item.id]?.['pt-BR']?.trim() && <small>Necessária para publicar se esta foto aparecer no convite.</small>}</label>)}</div></details>
+        <details className="customizer-extra-fields photo-alt-section" ref={altSectionRef} open={altOpen} onToggle={(event) => setAltOpen(event.currentTarget.open)}><summary>Descrições acessíveis das fotos<span className={`photo-alt-progress ${altMissing.length ? 'is-pending' : 'is-done'}`}>{altFilled} de {altUsedIds.length} preenchidas</span></summary><div><p>Descrevam cada imagem para que leitores de tela expliquem o que aparece nela. Para publicar uma foto usada no convite, preencham a descrição ou marquem como decorativa. Fotos fora das seções ativas não bloqueiam a publicação.</p><p className="photo-alt-hint">Fotos do casal normalmente devem ter descrição. Use “decorativa” só para imagens que não acrescentam informação.</p><div className="photo-alt-tools"><button type="button" className="button-outline" aria-expanded={bulkOpen} onClick={() => setBulkOpen((value) => !value)}>Usar descrição padrão nas fotos vazias</button>{bulkOpen && <div className="photo-alt-bulk"><label>Texto base<input type="text" maxLength={250} value={bulkText} onChange={(event) => setBulkText(event.target.value)} /></label><small>Use {'{nomeCasal}'} para inserir os nomes. Só as fotos vazias usadas no convite são preenchidas, sem sobrescrever o que já foi escrito.</small><button type="button" className="button-primary" onClick={applyBulkAlt} disabled={!altMissing.length}>{altMissing.length ? `Preencher ${altMissing.length} foto(s) vazia(s)` : 'Nenhuma foto vazia'}</button></div>}</div>{altRowIds.map((id) => {
+          const stored = config.imageAltTexts?.[id]?.['pt-BR'] || ''
+          const decorative = isDecorativeAlt(stored)
+          const used = altUsedSet.has(id)
+          const pending = used && !stored.trim()
+          const url = mediaUrls[id]
+          const status = decorative ? 'Decorativa' : stored.trim() ? 'Ok' : used ? 'Pendente' : 'Não usada no convite'
+          return <div className={`customizer-photo-alt-field${pending ? ' is-pending' : ''}${decorative ? ' is-decorative' : ''}`} key={id}>
+            <div className="photo-alt-thumb">{url ? <img src={url} alt="" /> : <span>Foto indisponível</span>}</div>
+            <div className="photo-alt-body">
+              <div className="photo-alt-head"><label htmlFor={`photo-alt-${id}`}>Descrição desta foto</label><span className={`photo-alt-status ${pending ? 'is-pending' : stored.trim() ? 'is-ok' : ''}`}>{status}</span></div>
+              <input id={`photo-alt-${id}`} type="text" maxLength={250} disabled={decorative} value={decorative ? '' : stored} placeholder="Ex.: O casal caminhando no jardim" aria-invalid={pending || undefined} aria-describedby={pending ? `photo-alt-err-${id}` : undefined} onChange={(event) => setAltText(id, event.target.value)} />
+              <div className="photo-alt-meta"><small id={`photo-alt-err-${id}`} className="photo-alt-error">{pending ? 'Descreva esta foto em uma frase curta' : ''}</small><small>{decorative ? 0 : stored.length}/250</small></div>
+              <label className="photo-alt-decorative"><input type="checkbox" checked={decorative} onChange={(event) => setAltText(id, event.target.checked ? DECORATIVE_ALT : '')} /> Foto decorativa (sem descrição)</label>
+            </div>
+          </div>
+        })}</div></details>
         <p>O tema define as cores e as letras. A prévia acompanha cada escolha.</p>
         <ThemePicker theme={theme.id} setTheme={selectTheme} compact limit={4} partnerOneName={wedding.partner_one_name || 'Seus nomes'} partnerTwoName={wedding.partner_two_name || 'seu par'} />
         <div className="palette-picker"><div className="palette-heading"><strong>Paleta</strong><small>{paletteNames[config.paletteIndex] || paletteNames[0]}</small></div><div className="palette-swatches">{palettes.map((colors, index) => <button type="button" className={config.paletteIndex === index ? 'active' : ''} key={index} onClick={() => update({ paletteIndex: index })} aria-label={`Paleta ${paletteNames[index]}`} aria-pressed={config.paletteIndex === index}>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</button>)}</div>{photoAccentSuggestions.length > 0 && <div className="photo-palette-suggestions"><strong>Paletas inspiradas na foto de capa</strong><div>{photoAccentSuggestions.map((color, index) => { const suggestedPalette = getThemePalettes(theme, color)[config.paletteIndex] || selectedPalette; return <button type="button" key={color} onClick={() => update({ customAccent: color })} aria-label={`Usar paleta inspirada na foto ${index + 1}`} aria-pressed={config.customAccent === color} title={`Paleta sugerida ${index + 1}`}><span aria-hidden="true">{suggestedPalette.map((tokenColor) => <i key={tokenColor} style={{ backgroundColor: tokenColor }} />)}</span></button> })}</div><small>Extraídas neste dispositivo. A cor de destaque é ajustada para manter o contraste.</small></div>}<SiteAccentPicker value={config.customAccent} appliedValue={selectedPalette[1]} onChange={(customAccent) => update({ customAccent })} /></div>
@@ -3445,7 +3517,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
       </section>}
       <PublishedInviteShare wedding={wedding} profile={profile} config={config} update={update} publishedAt={publishedAt} notify={notify} />
       <div className="site-draft-toolbar"><span role="status" aria-live="polite">{autosaveStatus === 'saving' || saving ? 'Salvando rascunho…' : autosaveStatus === 'waiting' ? 'Alterações aguardando salvamento' : autosaveStatus === 'error' ? 'Não foi possível salvar. Tentem novamente.' : 'Rascunho salvo automaticamente'}</span><div><button type="button" className="button-outline" onClick={undoDraftChange} disabled={!draftHistory.past.length || saving} aria-label="Desfazer alteração"><Undo2 size={16} /> Desfazer</button><button type="button" className="button-outline" onClick={redoDraftChange} disabled={!draftHistory.future.length || saving} aria-label="Refazer alteração"><Redo2 size={16} /> Refazer</button></div></div>
-      <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile, config)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho agora'} <Check size={15} /></button><button type="button" className="button-outline" onClick={() => onPublish(profile, config)} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
+      <div className="site-editor-actions"><button type="button" className="button-primary save-customize" onClick={() => onSave(profile, config)} disabled={saving || (!draftChanged && !profileChanged)}>{saving ? 'Salvando…' : 'Salvar rascunho agora'} <Check size={15} /></button><button type="button" className="button-outline" onClick={handlePublish} disabled={saving || !partnerOneName.trim() || !partnerTwoName.trim()}>{saving ? 'Publicando…' : publishedAt ? 'Publicar alterações' : 'Publicar convite'}</button></div>
     </div>
     <div className="customize-preview">
       <div className="preview-sticky-label"><span><span className="status-dot" /> {publishedAt && !draftChanged && JSON.stringify(config) === JSON.stringify(publishedConfig) ? 'PUBLICADO' : 'PRÉVIA AO VIVO'}</span><div className="preview-device-switch"><button type="button" className={device === 'desktop' ? 'active' : ''} aria-label="Prévia em desktop" onClick={() => setDevice('desktop')}><Monitor size={14} /></button><button type="button" className={device === 'tablet' ? 'active' : ''} aria-label="Prévia em tablet" onClick={() => setDevice('tablet')}><Tablet size={14} /></button><button type="button" className={device === 'mobile' ? 'active' : ''} aria-label="Prévia em celular" onClick={() => setDevice('mobile')}><Smartphone size={14} /></button></div></div>

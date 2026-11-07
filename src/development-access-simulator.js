@@ -5,6 +5,10 @@ const sampleWedding = { id: weddingId, slug: 'ana-e-caio', partner_one_name: 'An
 const sampleEvent = { id: eventId, name: 'Cerimônia e recepção', event_type: 'ceremony', starts_at: '2027-10-16T16:00:00-03:00', venue_name: 'Jardim das Flores', address: 'Belo Horizonte, MG', group_ids: ['demo-group'], role: 'checkin_staff' }
 const sampleGuest = { id: guestId, name: 'Marina Almeida', email: 'marina@example.test', phone: '', group_id: 'demo-group', group_name: 'Família', party_size: 2, guest_type: 'guest', dietary_notes: '', status: 'active', invitation_token: 'sample-invitation-token' }
 const sampleConfig = { theme: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tema')) || 'garden', paletteIndex: 0, coverLayout: 'full', coverComposition: 'overlay', coverTextAlign: 'center', coverTextPosition: 'center', coverOverlayOpacity: 35, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'inline', pixDisplayMode: 'inline', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': 'Nossa história começou com uma conversa que virou planos para a vida toda.' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: 'Cerimônia às 16h e recepção às 18h.', menu: 'Jantar servido após a cerimônia.', dressCode: 'Esporte fino' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: true, key: 'ana.caio@example.test', holderName: 'Ana e Caio' } }
+const demoPhotos = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('fotos-demo')
+const demoPhotoIds = Array.from({ length: 6 }, (_, index) => `00000000-0000-4000-8000-00000000000${index + 1}`)
+const demoPhotoSvg = (id) => `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="hsl(${Number(id.slice(-1)) * 50}, 35%, 62%)"/></svg>`
+const withDemoPhotos = (config) => demoPhotos ? { ...config, coverPhotoId: demoPhotoIds[0], siteGallery: demoPhotoIds.slice(1), imageAltTexts: { [demoPhotoIds[0]]: { 'pt-BR': 'Ana e Caio no jardim' }, [demoPhotoIds[1]]: { 'pt-BR': '[decorativa]' } } } : config
 const sampleGift = { id: 'demo-gift', title: 'Jogo de jantar', description: 'Para a casa nova', fulfillment_type: 'store_link', store_url: 'https://example.com/presente', status: 'active' }
 const sampleRsvp = { id: 'demo-rsvp', guest_id: guestId, guest_name: 'Marina Almeida', event_id: eventId, event_name: sampleEvent.name, attendance_status: 'confirmed', party_size: 2, dietary_notes: '', review_status: 'approved', created_at: '2026-10-01T12:00:00.000Z' }
 const sampleExpense = { id: 'demo-expense', supplier_name: 'Jardim das Flores', supplier_contact: '', category: 'Espaço', description: 'Cerimônia e recepção', total_amount_cents: 850000, paid_amount_cents: 250000, due_date: '2027-01-15', reminder_enabled: false, status: 'active', payments: [{ id: 'demo-payment', amount_cents: 250000, paid_at: '2026-09-01', notes: 'Sinal demonstrativo' }] }
@@ -31,13 +35,13 @@ function routeData(path) {
   if (path === `/api/couple/weddings/${weddingId}/members`) return { members: [{ id: 'demo-member', email: 'equipe@example.test', display_name: 'Equipe de cerimônia', role: 'event_staff', status: 'active' }] }
   if (path === `/api/couple/weddings/${weddingId}/event-assignments`) return { assignments: [] }
   if (path === `/api/couple/weddings/${weddingId}/godparent-tasks`) return { tasks: [sampleTask] }
-  if (path === `/api/couple/weddings/${weddingId}/site-config`) return { draft: sampleConfig, published: sampleConfig, publishedAt: '2026-10-01T12:00:00.000Z' }
+  if (path === `/api/couple/weddings/${weddingId}/site-config`) return { draft: withDemoPhotos(sampleConfig), published: sampleConfig, publishedAt: '2026-10-01T12:00:00.000Z' }
   if (path === `/api/couple/weddings/${weddingId}/guest-policy`) return { policy: { companionsAllowed: true, maxCompanions: 1 } }
   if (path === `/api/couple/weddings/${weddingId}/attendance-requests`) return { requests: [], companions: [] }
   if (path === `/api/couple/weddings/${weddingId}/guest-authorizations`) return { authorizations: [] }
   if (path === `/api/couple/weddings/${weddingId}/published`) return { siteConfig: sampleConfig, events: [sampleEvent], publishedAt: '2026-10-01T12:00:00.000Z' }
   if (path === `/api/couple/weddings/${weddingId}/photos`) return { photos: [] }
-  if (path === `/api/couple/weddings/${weddingId}/site-media`) return { media: [] }
+  if (path === `/api/couple/weddings/${weddingId}/site-media`) return { media: demoPhotos ? demoPhotoIds.map((id) => ({ id, mediaType: 'image', contentType: 'image/svg+xml', originalName: 'IMG_0001.jpg' })) : [] }
   if (path === '/api/invitation') return sampleInvitation
   if (path === '/api/invitation/companions') return { companions: [] }
   if (path === '/api/invitation/photos') return { photos: [], limit: 200, remaining: 200 }
@@ -61,8 +65,10 @@ export function installDevelopmentAccessSimulator() {
     if (!url.pathname.startsWith('/api/')) return originalFetch(input, init)
     const path = url.pathname
     const method = String(init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase()
+    if (method === 'PUT' && path === `/api/couple/weddings/${weddingId}/site-config` && typeof init.body === 'string') return json({ draft: JSON.parse(init.body) })
     const data = routeData(path)
     if (data) return json(data)
+    if (demoPhotos && path.startsWith('/api/site-media/')) return new Response(demoPhotoSvg(path.slice('/api/site-media/'.length)), { headers: { 'Content-Type': 'image/svg+xml' } })
     if (path === '/api/site-media/' || path.startsWith('/api/site-media/')) return new Response(null, { status: 404 })
     if (method !== 'GET' && method !== 'HEAD') return json({ ok: true, demo: true })
     return json({})

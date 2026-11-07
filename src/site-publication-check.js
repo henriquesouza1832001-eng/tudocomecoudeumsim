@@ -1,7 +1,7 @@
 import { safeHttpsLink } from './site-section-content.js'
 import { isValidPixKey } from './pix-key.js'
 
-const referencedPhotoIds = (config = {}) => {
+export const referencedPhotoIds = (config = {}) => {
   const enabled = new Set(config.enabledSections || [])
   const galleryEnabled = enabled.has('Galeria de fotos') || config.siteCarouselEnabled
   const giftMode = ['inline', 'page'].includes(config.giftDisplayMode)
@@ -17,8 +17,10 @@ const referencedPhotoIds = (config = {}) => {
   ].filter(Boolean))
 }
 
+export const missingPhotoAltIds = (config = {}) => [...referencedPhotoIds(config)].filter((id) => !config.imageAltTexts?.[id]?.['pt-BR']?.trim())
+
 export function checkSitePublication(config = {}, events = []) {
-  const missingAlt = [...referencedPhotoIds(config)].filter((id) => !config.imageAltTexts?.[id]?.['pt-BR']?.trim())
+  const missingAlt = missingPhotoAltIds(config)
   const warnings = []
   const enabled = new Set(config.enabledSections || [])
   if (enabled.has('Nossa história') && !config.storyMessages?.['pt-BR']?.trim()) warnings.push('A seção Nossa história está ativa, mas ainda não tem texto.')
