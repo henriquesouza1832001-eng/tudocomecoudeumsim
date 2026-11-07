@@ -1,4 +1,8 @@
 import './styles.css'
+import '@fontsource-variable/fraunces'
+import '@fontsource-variable/inter'
+import InvitePhone from './InvitePhone.jsx'
+import './signup-v2.css'
 import './redesign-panel.css'
 import './redesign-invite.css'
 import { PRODUCT_NAME } from './product-config.js'
@@ -1238,6 +1242,7 @@ function PasswordInput(props) {
 
 const COUPLE_SIGNUP_DRAFT_KEY = 'couple-signup-draft'
 const SIGNUP_SECTIONS = ['Nossa história', 'Linha do tempo', 'Eventos', 'Dress code', 'Padrinhos e madrinhas', 'Lista de presentes', 'Confirmação de presença', 'Galeria de fotos', 'Mural de recados']
+const SIGNUP_ADDRESS_PREFIX = 'tudocomecoudeumsim.pages.dev/'
 const SIGNUP_GIFT_PREFERENCES = { pix: 'Pix direto aos noivos', store: 'Links para lojas', both: 'Pix e links para lojas', undecided: 'Vamos decidir depois' }
 
 function readCoupleSignupDraft() {
@@ -1359,18 +1364,71 @@ function CoupleSignup() {
 
   const displayDate = eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR') : 'A definir'
   const stepTitles = ['O casal e a data', 'Convite e preferências', 'Acesso e revisão']
-  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={submitted ? 'Confira seu e-mail.' : stepTitles[step - 1]} description={submitted ? 'Enviamos um link de confirmação para ' + email + '. Ele vale por 24 horas.' : 'Avancem no seu ritmo. Os dados opcionais ficam salvos neste navegador para vocês continuarem depois.'} secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-page">
-    {submitted ? <section className="role-card admin-login-form"><p>Depois de confirmar o e-mail, vocês poderão abrir o painel. O rascunho, as preferências e o endereço escolhidos já estarão salvos no casamento.</p><a className="button-primary signup-submit" href="/painel">Ir para o painel <ArrowRight size={15} /></a><p><a href="/cadastro">Usar outro e-mail</a></p></section> : <>
-      <nav className="signup-progress" aria-label="Etapas do cadastro">{stepTitles.map((title, index) => <button type="button" key={title} className={step === index + 1 ? 'active' : step > index + 1 ? 'complete' : ''} aria-current={step === index + 1 ? 'step' : undefined} onClick={() => { if (index + 1 < step) continueTo(index + 1) }} disabled={index + 1 >= step}><span>{index + 1}</span>{title}</button>)}</nav>
-      <form className="role-card admin-login-form signup-form" onSubmit={signup}>
-        {step === 1 && <div className="signup-step-content"><span className="eyebrow">PRIMEIRO, O BÁSICO</span><p className="team-access-note">Preencham o que já sabem. Podem deixar qualquer campo em branco e completar depois nas configurações do casamento.</p><div className="customizer-name-fields signup-couple-names"><label>Nome do primeiro noivo<input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => updatePartnerNames(event.target.value, partnerTwoName)} /></label><label>Nome do segundo noivo<input autoComplete="additional-name" maxLength="100" value={partnerTwoName} onChange={(event) => updatePartnerNames(partnerOneName, event.target.value)} /></label></div><div className="wedding-profile-date-grid"><label>Data do casamento, opcional<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label>Horário, opcional<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div></div>}
-        {step === 2 && <div className="signup-step-content"><span className="eyebrow">MONTEM O RASCUNHO</span><label>Endereço curto, opcional<input autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="signup-slug-help" /></label><small id="signup-slug-help">O endereço completo será mostrado no painel. Deixem em branco para gerar um automaticamente.</small><fieldset className="signup-sections"><legend>Quais áreas querem no convite?</legend>{SIGNUP_SECTIONS.map((section) => <label key={section}><input type="checkbox" checked={(siteConfig.enabledSections || []).includes(section)} onChange={(event) => updateSignupSection(section, event.target.checked)} /><span>{section}</span></label>)}</fieldset><fieldset className="signup-gift-preference"><legend>Como preferem receber presentes?</legend>{Object.entries(SIGNUP_GIFT_PREFERENCES).map(([value, label]) => <label key={value}><input type="radio" name="gift-preference" checked={giftPreference === value} onChange={() => { setGiftPreference(value); setSiteConfig((current) => ({ ...current, giftPreferences: value, ...(value === 'store' || value === 'both' ? { giftDisplayMode: 'inline' } : {}), ...(value !== 'undecided' ? { enabledSections: [...new Set([...(current.enabledSections || []), 'Lista de presentes'])] } : {}) })) }} /><span>{label}</span></label>)}<small>A chave Pix e os itens de loja são configurados mais tarde, no painel. Nenhum pagamento passa pela plataforma.</small></fieldset></div>}
-        {step === 3 && <div className="signup-step-content"><span className="eyebrow">CRIEM O ACESSO</span><label>E-mail<input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Crie uma senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><label>Confirme a senha<PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></label><small>A senha e a verificação de segurança não ficam no rascunho. Se fecharem esta página, será preciso digitá-las de novo.</small><section className="signup-review" aria-labelledby="signup-review-title"><span className="eyebrow">CONFIRMEM ANTES DE CRIAR</span><h2 id="signup-review-title">Revisão do casamento</h2><dl><div><dt>Casal</dt><dd>{partnerOneName || 'Nome a definir'} &amp; {partnerTwoName || 'nome a definir'}</dd></div><div><dt>Data e horário</dt><dd>{displayDate}{eventTime ? ` · ${eventTime}` : ''}</dd></div><div><dt>Endereço curto</dt><dd>{slug || 'Gerado automaticamente'}</dd></div><div><dt>Áreas escolhidas</dt><dd>{siteConfig.enabledSections?.length ? siteConfig.enabledSections.join(', ') : 'Nenhuma selecionada'}</dd></div><div><dt>Presentes</dt><dd>{SIGNUP_GIFT_PREFERENCES[giftPreference]}</dd></div></dl></section><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{!TURNSTILE_SITE_KEY && <p className="admin-form-error signup-security-unavailable" role="status">O cadastro está temporariamente indisponível porque a verificação de segurança ainda não foi configurada.</p>}</div>}
-        {error && <p className="admin-form-error" role="alert">{error}</p>}
-        <div className="signup-wizard-actions">{step > 1 && <button type="button" className="button-outline" onClick={() => { setError(''); setStep(step - 1) }} disabled={busy}><ArrowLeft size={15} /> Voltar</button>}{step === 1 && <button type="button" className="button-outline" onClick={() => continueTo(2)}>Pular por enquanto</button>}{step === 2 && <button type="button" className="button-outline" onClick={() => continueTo(3)}>Pular personalização</button>}{step < 3 ? <button type="button" className="button-primary" onClick={() => continueTo(step + 1)}>Continuar <ArrowRight size={15} /></button> : <button className="button-primary signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando acesso…' : 'Criar acesso'} <ArrowRight size={15} /></button>}</div>
-        <p className="signup-login-link">Já têm uma conta? <a href="/painel">Entrar no painel</a></p>
-      </form>
-    </>}
+  const stepSupport = ['Preencham o que já sabem. O resto pode ficar para depois.', 'Escolham o que aparece no convite. Dá para mudar depois no painel.', 'Criem o acesso e confiram os dados antes de finalizar.']
+  const giftShort = { pix: 'Pix direto', store: 'Links de lojas', both: 'Pix e lojas', undecided: 'Decidir depois' }
+  const enabledAreas = siteConfig.enabledSections || []
+  const passwordStrength = password.length === 0 ? '' : password.length < 12 ? `Muito curta: faltam ${12 - password.length} caracteres.` : (/[a-z]/.test(password) + /[A-Z]/.test(password) + /\d/.test(password) + /[^A-Za-z0-9]/.test(password)) >= 3 ? 'Senha forte.' : 'Senha aceitável. Misture letras, números e símbolos para reforçar.'
+  const passwordMismatch = confirmation.length > 0 && confirmation !== password
+  const previewDate = eventDate ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Data a definir'
+  const previewNames = partnerOneName.trim() || partnerTwoName.trim() ? `${partnerOneName.trim() || '…'} & ${partnerTwoName.trim() || '…'}` : 'Lívia & Caio'
+  const reviewRows = [
+    ['Casal', `${partnerOneName || 'Nome a definir'} & ${partnerTwoName || 'nome a definir'}`, 1, 'Editar'],
+    ['Data e horário', eventDate ? `${displayDate}${eventTime ? ` · ${eventTime}` : ''}` : 'A definir', 1, eventDate ? 'Editar' : 'Adicionar'],
+    ['Endereço curto', slug ? `${SIGNUP_ADDRESS_PREFIX}${slug}` : 'Gerado automaticamente', 2, 'Editar'],
+    ['Áreas do convite', enabledAreas.length ? enabledAreas.join(', ') : 'Nenhuma selecionada', 2, 'Editar'],
+    ['Presentes', SIGNUP_GIFT_PREFERENCES[giftPreference], 2, 'Editar'],
+  ]
+  return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={stepTitles[step - 1]} compactIntro secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-v2">
+    <div className="su-layout">
+      <aside className="su-aside" aria-label="Prévia do convite">
+        <img className="su-photo" src="/images/fotos/hero-casal.webp" alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" loading="lazy" decoding="async" />
+        <div className="su-strip-text" aria-hidden="true"><strong>{previewNames}</strong><span>{previewDate}</span></div>
+        <div className="su-phone"><InvitePhone scale={0.72} live names={[partnerOneName, partnerTwoName]} date={eventDate} time={eventTime} areas={enabledAreas} gifts={giftShort[giftPreference]} /></div>
+      </aside>
+      <div className="su-main">
+        {submitted ? <section className="su-card" aria-labelledby="su-title">
+          <h2 id="su-title" className="su-title">Confira seu e-mail.</h2>
+          <p className="su-support">Enviamos um link de confirmação para {email}. Ele vale por 24 horas.</p>
+          <p className="su-support">Depois de confirmar, vocês poderão abrir o painel. O rascunho e o endereço escolhidos já estarão salvos.</p>
+          <div className="su-actions"><a className="su-btn" href="/painel">Ir para o painel</a><a className="su-textbtn" href="/cadastro">Usar outro e-mail</a></div>
+        </section> : <>
+          <ol className="su-steps" aria-label="Etapas do cadastro">{stepTitles.map((title, index) => <li key={title}>{index + 1 < step ? <button type="button" className="su-step su-step-done" aria-label={`Voltar à etapa ${index + 1}: ${title}`} onClick={() => continueTo(index + 1)}>{`0${index + 1}`}</button> : <span className={`su-step${index + 1 === step ? ' su-step-active' : ''}`} aria-current={index + 1 === step ? 'step' : undefined} aria-label={`Etapa ${index + 1} de 3: ${title}`}>{`0${index + 1}`}</span>}</li>)}</ol>
+          <h2 className="su-title">{stepTitles[step - 1]}</h2>
+          <p className="su-support">{stepSupport[step - 1]}</p>
+          <form className="su-card signup-form" onSubmit={signup}>
+            {step === 1 && <div className="su-fields">
+              <div className="su-row"><label className="su-field"><span className="su-label">Nome do primeiro noivo</span><input autoComplete="given-name" maxLength="100" value={partnerOneName} onChange={(event) => updatePartnerNames(event.target.value, partnerTwoName)} /></label><label className="su-field"><span className="su-label">Nome do segundo noivo</span><input autoComplete="additional-name" maxLength="100" value={partnerTwoName} onChange={(event) => updatePartnerNames(partnerOneName, event.target.value)} /></label></div>
+              <div className="su-row"><label className="su-field"><span className="su-label">Data do casamento <em>opcional</em></span><input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label><label className="su-field"><span className="su-label">Horário <em>opcional</em></span><input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} /></label></div>
+            </div>}
+            {step === 2 && <div className="su-fields">
+              <div className="su-field"><label className="su-label" htmlFor="su-slug">Endereço curto <em>opcional</em></label><div className="su-slug"><span className="su-prefix">{SIGNUP_ADDRESS_PREFIX}</span><input id="su-slug" autoComplete="off" inputMode="url" maxLength="30" minLength="3" value={slug} onChange={(event) => { setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30)); setSlugEdited(true) }} aria-describedby="su-slug-help" /></div><small id="su-slug-help" className="su-help">Deixem em branco para gerar um automaticamente.</small></div>
+              <fieldset className="su-group"><legend className="su-label">Quais áreas querem no convite?</legend><div className="su-chips">{SIGNUP_SECTIONS.map((section) => <label key={section} className="su-chip"><input type="checkbox" checked={enabledAreas.includes(section)} onChange={(event) => updateSignupSection(section, event.target.checked)} /><span>{section}</span></label>)}</div></fieldset>
+              <fieldset className="su-group"><legend className="su-label">Como preferem receber presentes?</legend><div className="su-segment">{Object.keys(SIGNUP_GIFT_PREFERENCES).map((value) => <label key={value}><input type="radio" name="gift-preference" checked={giftPreference === value} onChange={() => { setGiftPreference(value); setSiteConfig((current) => ({ ...current, giftPreferences: value, ...(value === 'store' || value === 'both' ? { giftDisplayMode: 'inline' } : {}), ...(value !== 'undecided' ? { enabledSections: [...new Set([...(current.enabledSections || []), 'Lista de presentes'])] } : {}) })) }} /><span>{giftShort[value]}</span></label>)}</div><p className="su-help">Nenhum pagamento passa pela plataforma.</p></fieldset>
+            </div>}
+            {step === 3 && <div className="su-fields">
+              <label className="su-field"><span className="su-label">E-mail</span><input type="email" autoComplete="email" maxLength="254" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+              <label className="su-field"><span className="su-label">Crie uma senha <em>mínimo de 12 caracteres</em></span><PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={password} onChange={(event) => setPassword(event.target.value)} aria-describedby="su-strength" required /></label>
+              <p id="su-strength" className="su-help" role="status" aria-live="polite">{passwordStrength}</p>
+              <label className="su-field"><span className="su-label">Confirme a senha</span><PasswordInput autoComplete="new-password" minLength="12" maxLength="1024" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} aria-invalid={passwordMismatch || undefined} aria-describedby={passwordMismatch ? 'su-mismatch' : undefined} required /></label>
+              {passwordMismatch && <p id="su-mismatch" className="su-error" role="alert">As senhas não são iguais.</p>}
+              <section className="su-review" aria-labelledby="su-review-title"><h3 id="su-review-title">Revisão do casamento</h3><dl>{reviewRows.map(([label, value, target, action]) => <div key={label}><dt>{label}</dt><dd>{value}</dd><dd className="su-edit"><button type="button" className="su-textbtn" onClick={() => { setError(''); setStep(target) }}>{action}<span className="sr-only"> {label.toLowerCase()}</span></button></dd></div>)}</dl></section>
+              <div className="su-security" role="group" aria-labelledby="su-security-label"><p id="su-security-label" className="su-label">Verificação de segurança</p><TurnstileChallenge onToken={setTurnstileToken} resetKey={turnstileReset} />{!TURNSTILE_SITE_KEY && <p className="su-error" role="status">O cadastro está indisponível porque a verificação de segurança não foi configurada.</p>}</div>
+              <p className="su-help">A senha e a verificação não ficam no rascunho. Se fecharem a página, será preciso digitá-las de novo.</p>
+            </div>}
+            {error && <p className="su-error" role="alert">{error}</p>}
+            <div className="su-actions">
+              {step < 3 ? <button type="button" className="su-btn" onClick={() => continueTo(step + 1)}>Continuar</button> : <button className="su-btn signup-submit" type="submit" disabled={busy || !TURNSTILE_SITE_KEY || !turnstileToken}>{busy ? 'Criando…' : 'Criar meu site'}</button>}
+              <div className="su-links">
+                {step > 1 && <button type="button" className="su-textbtn" onClick={() => { setError(''); setStep(step - 1) }} disabled={busy}>Voltar</button>}
+                {step === 1 && <button type="button" className="su-textbtn" onClick={() => continueTo(2)}>Pular por enquanto</button>}
+                {step === 2 && <button type="button" className="su-textbtn" onClick={() => continueTo(3)}>Pular personalização</button>}
+              </div>
+            </div>
+          </form>
+          <p className="su-login">Já têm uma conta? <a className="su-textbtn" href="/painel">Entrar no painel</a></p>
+        </>}
+      </div>
+    </div>
   </RoleFrame>
 }
 function CoupleEmailConfirmation() {
