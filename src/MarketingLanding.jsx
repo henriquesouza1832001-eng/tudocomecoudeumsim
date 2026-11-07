@@ -1,79 +1,159 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, CalendarDays, Camera, Check, CircleHelp, ClipboardList, ExternalLink, Flower2, Heart, Link, Printer, QrCode, ShieldCheck, Users, Wallet } from 'lucide-react'
-import './MarketingLanding.css'
-import './redesign-landing.css'
-import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_NAME } from './product-config.js'
+import '@fontsource-variable/fraunces'
+import '@fontsource-variable/inter'
+import './landing-v2.css'
+import { PRODUCT_NAME } from './product-config.js'
 
-const platformAccessPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(PLATFORM_ACCESS_PRICE_CENTS / 100)
+/*
+ * Créditos das fotos (licença Unsplash — uso comercial livre, atribuição opcional).
+ * Arquivos em /images/fotos/*.webp; lista em /creditos.html.
+ * Os nomes dos fotógrafos não puderam ser confirmados automaticamente (Unsplash bloqueia robôs).
+ */
 
-function MarketingProductPreview({ variant = 'invitation' }) {
-  return <div className={`marketing-product-preview marketing-product-preview-${variant}`} aria-label="Demonstração da interface do convite">
-    <div className="marketing-preview-topbar"><span>{PRODUCT_NAME}</span><span>DEMONSTRAÇÃO</span></div>
-    {variant === 'editor' ? <div className="marketing-preview-editor"><aside><span>PERSONALIZAR</span><strong>Aparência</strong><i /><i /><i /><span>SEÇÕES</span><i /><i /><i /></aside><div className="marketing-preview-editor-screen"><span>PRÉVIA DO CONVITE</span><div className="marketing-preview-cover"><small>CONVITE</small><strong>Nome do casal</strong><span>Uma data para celebrar</span></div><div className="marketing-preview-event"><span>O DIA</span><strong>Data, local e programação</strong><small>Conteúdo demonstrativo</small></div></div></div> : variant === 'album' ? <div className="marketing-preview-album"><div><span>ÁLBUM DO CASAL</span><strong>Fotos enviadas pelos convidados</strong><small>Demonstração da lista privada de fotos</small></div><div className="marketing-preview-album-grid"><article><Camera size={22} /><span>Foto do evento</span><small>Recebida no convite</small></article><article><Camera size={22} /><span>Foto do evento</span><small>Recebida no convite</small></article><article><Camera size={22} /><span>Foto do evento</span><small>Recebida no convite</small></article></div></div> : variant === 'access' ? <div className="marketing-preview-access"><span>CONVITE INDIVIDUAL</span><strong>Link privado do convidado</strong><div><Link size={17} /><span>convite-do-casal / convidado</span></div><p>O QR individual aparece para entrada após a confirmação aprovada.</p></div> : <div className="marketing-preview-invitation"><div className="marketing-preview-cover"><small>CONVITE · EXEMPLO</small><strong>Nome do casal</strong><span>15 de outubro · 16h</span><span className="marketing-preview-cover-note">Foto escolhida pelo casal</span></div><div className="marketing-preview-event"><span>PROGRAMAÇÃO</span><strong>Cerimônia e recepção</strong><small>Horários e endereço publicados pelo casal</small></div><div className="marketing-preview-rsvp"><Check size={16} /><span>Confirmação de presença por evento</span></div></div>}
+const PHOTOS = {
+  hero: '/images/fotos/hero-casal.webp',
+  convite: '/images/fotos/convite-casal.webp',
+  buque: '/images/fotos/album-buque.webp',
+  cerimonia: '/images/fotos/album-cerimonia.webp',
+  mesa: '/images/fotos/album-mesa.webp',
+  convidados: '/images/fotos/painel-convidados.webp',
+  presentes: '/images/fotos/painel-presentes.webp',
+  entrada: '/images/fotos/painel-entrada.webp',
+  fechamento: '/images/fotos/fechamento.webp',
+}
+
+const Icon = ({ d }) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{d}</svg>
+const ICONS = {
+  text: <><path d="M4 7V5h16v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>,
+  tap: <><path d="M9 11V5a2 2 0 0 1 4 0v6" /><path d="M13 10.5a2 2 0 0 1 4 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-3l-1.5-3a1.6 1.6 0 0 1 2.7-1.7L9 14" /></>,
+  photo: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="m21 16-5-5-8 8" /></>,
+}
+
+function Phone({ className = '' }) {
+  return <div className={`lp-phone ${className}`} role="img" aria-label="Exemplo do convite aberto no celular: Lívia e Caio, faltam 42 dias, cerimônia e recepção na Casa das Oliveiras, botão Confirmar presença">
+    <div className="lp-phone-screen" aria-hidden="true">
+      <div className="lp-phone-photo"><img src={PHOTOS.hero} alt="" width="880" height="1100" loading="lazy" decoding="async" /></div>
+      <div className="lp-phone-body">
+        <p className="lp-phone-kicker">Vamos casar</p>
+        <p className="lp-phone-names">Lívia &amp; Caio</p>
+        <p className="lp-phone-date">Sábado, 17 de outubro · 16h</p>
+        <p className="lp-phone-count"><strong>Faltam 42 dias</strong></p>
+        <div className="lp-phone-card"><span><b>Cerimônia e recepção</b><small>Casa das Oliveiras</small></span><u>Ver no mapa</u></div>
+        <div className="lp-phone-rsvp">Confirmar presença</div>
+      </div>
+    </div>
   </div>
 }
 
-function FloralMark({ className = '' }) {
-  return <span className={`marketing-flower-mark ${className}`} aria-hidden="true"><Flower2 /></span>
-}
+const STEPS = [
+  ['1', 'Escolham a foto e o texto', 'Nomes, data, local e programação num só lugar.'],
+  ['2', 'Enviem o link a cada convidado', 'Cada pessoa abre o próprio convite, sem instalar nada.'],
+  ['3', 'Acompanhem as respostas', 'Quem vem, quantos são e o que comem, no painel.'],
+]
+
+const PANEL = [
+  ['Convidados', PHOTOS.convidados, 'Pessoas reunidas em torno de uma mesa de casamento', 'Lista por família, acompanhantes e restrições alimentares, com as respostas por evento.'],
+  ['Presentes', PHOTOS.presentes, 'Presente embrulhado com laço', 'Pix direto, sem taxa para convidados. O valor vai para a chave dos noivos.'],
+  ['Controle de entrada', PHOTOS.entrada, 'Convite de papel sobre uma mesa', 'A equipe lê o QR do convite pelo celular e registra quem chegou, mesmo com sinal fraco.'],
+]
+
+const ALBUM = [
+  [PHOTOS.buque, 'Buquê de flores', 'O buquê'],
+  [PHOTOS.cerimonia, 'Duas cadeiras decoradas com flores num gramado, de frente para o lago', 'O lugar da cerimônia'],
+  [PHOTOS.mesa, 'Mesa de celebração posta com flores', 'A mesa da celebração'],
+]
+
+const FAQ = [
+  ['Os convidados precisam instalar um aplicativo?', 'Não. O convite abre direto pelo link, no navegador do celular.'],
+  ['Como funciona o Pix dos presentes?', 'O casal publica uma chave Pix. O convidado transfere pelo próprio banco, direto aos noivos. A plataforma não recebe nem confirma o pagamento.'],
+  ['Posso indicar uma loja para um presente físico?', 'Sim. O link abre o produto na loja para o convidado concluir a compra e combinar a entrega.'],
+  ['Como compartilho o convite?', 'Depois de publicar, enviem o link individual de cada convidado por mensagem.'],
+  ['A equipe consegue conferir a entrada?', 'Sim. A equipe usa o leitor de QR, registra entradas manuais e consulta a lista do evento.'],
+  ['Também posso organizar os pagamentos do casamento?', 'Sim. Registrem fornecedores, despesas e vencimentos no painel do casal.'],
+]
 
 export default function MarketingLanding() {
-  const [headerVisible, setHeaderVisible] = useState(true)
-  const headerRef = useRef(null)
-  const lastScrollY = useRef(0)
-
-  useEffect(() => {
-    let frame = 0
-    function handleScroll() {
-      if (frame) return
-      frame = window.requestAnimationFrame(() => {
-        const currentScrollY = window.scrollY
-        const scrollDelta = currentScrollY - lastScrollY.current
-        const headerHasFocus = headerRef.current?.contains(document.activeElement)
-        if (currentScrollY < 80 || headerHasFocus || scrollDelta < -8) setHeaderVisible(true)
-        else if (currentScrollY > 160 && scrollDelta > 8) setHeaderVisible(false)
-        lastScrollY.current = currentScrollY
-        frame = 0
-      })
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.cancelAnimationFrame(frame)
-    }
-  }, [])
-
-  return <div className="marketing-page">
-    <header className={`marketing-header${headerVisible ? '' : ' marketing-header-hidden'}`} id="marketing-header" ref={headerRef} aria-hidden={!headerVisible} inert={headerVisible ? undefined : ''}>
-      <a className="marketing-brand" href="/" aria-label={PRODUCT_NAME}><svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#2f3a30" /><circle cx="25" cy="34" r="14" fill="none" stroke="#f3ebdd" strokeWidth="4" /><circle cx="39" cy="34" r="14" fill="none" stroke="#d98466" strokeWidth="4" /></svg><span>{PRODUCT_NAME}</span></a>
-      <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#convite">O convite</a><a href="#presentes">Presentes</a><a href="#planejamento">Planejamento</a><a href="#entrada">Entrada</a><a className="marketing-login" href="/painel">Entrar</a></nav>
-      <a className="marketing-header-cta" href="/cadastro">Criar acesso <ArrowRight size={17} /></a>
+  return <div className="lp">
+    <a className="lp-skip" href="#conteudo">Ir para o conteúdo</a>
+    <header className="lp-header">
+      <a className="lp-brand" href="/" aria-label={PRODUCT_NAME}>{PRODUCT_NAME}</a>
+      <nav aria-label="Principal">
+        <a className="lp-link" href="#como-funciona">Como funciona</a>
+        <a className="lp-link" href="/painel">Entrar</a>
+        <a className="lp-btn" href="/cadastro">Criar meu site</a>
+      </nav>
     </header>
-    <main>
-      <section className="marketing-hero" aria-labelledby="marketing-title">
-        <div className="marketing-hero-photo"><MarketingProductPreview /></div>
-        <div className="marketing-hero-copy"><span className="marketing-kicker">Site, convite e organização do casamento</span><h1 id="marketing-title">Um convite com a história de vocês e os detalhes do dia.</h1><p>Data, local, confirmação de presença e programação ficam no mesmo endereço, pronto para abrir no celular.</p><div className="marketing-hero-actions"><a className="marketing-primary" href="/cadastro">Criar meu site <ArrowRight size={18} /></a><a className="marketing-text-link" href="#como-funciona">Ver como funciona</a></div><div className="marketing-hero-detail"><Flower2 size={21} strokeWidth={1.4} /><span>As informações do casal também identificam o convite usado na entrada.</span></div></div>
+    <main id="conteudo">
+      <section className="lp-hero" aria-labelledby="t-hero">
+        <div className="lp-hero-copy">
+          <p className="lp-eyebrow">Site e convite de casamento</p>
+          <h1 id="t-hero">Um convite com a história de vocês e os detalhes do dia.</h1>
+          <p className="lp-lead">Data, local e confirmação de presença no mesmo endereço, prontos para abrir no celular.</p>
+          <div className="lp-actions"><a className="lp-btn" href="/cadastro">Criar meu site</a><a className="lp-link lp-underline" href="#como-funciona">Ver como funciona</a></div>
+        </div>
+        <div className="lp-hero-art">
+          <img className="lp-hero-photo" src={PHOTOS.hero} alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" fetchpriority="high" decoding="async" />
+          <Phone className="lp-phone-hero" />
+        </div>
       </section>
-      <section className="marketing-steps" id="como-funciona" aria-label="Como o site funciona"><div className="marketing-steps-intro"><span className="marketing-kicker">Como o convite chega aos convidados</span><h2>Uma página para contar a história e responder às dúvidas do dia.</h2><p>Vocês escolhem o que mostrar. Os convidados encontram data, local, programação e confirmação de presença pelo link que receberam.</p></div>
-        <article><span className="marketing-step-icon"><Heart size={25} /></span><span className="marketing-step-label">O site do casal</span><h3>Escolham o que querem contar</h3><p>Adicionem fotos, história, data, local e programação. A prévia acompanha as escolhas de vocês.</p></article>
-        <article><span className="marketing-step-icon"><Users size={25} /></span><span className="marketing-step-label">As confirmações</span><h3>Saibam quem vai à celebração</h3><p>Organizem convidados e eventos. Cada pessoa confirma presença pelo próprio convite.</p></article>
-        <article><span className="marketing-step-icon"><Link size={25} /></span><span className="marketing-step-label">O compartilhamento</span><h3>Enviem o convite por link individual</h3><p>O link abre no navegador. O QR code individual é usado pela equipe para conferir a entrada.</p></article>
+
+      <section className="lp-steps" id="como-funciona" aria-labelledby="t-steps">
+        <h2 id="t-steps">Como funciona</h2>
+        <ol>{STEPS.map(([n, t, p]) => <li key={n}><span className="lp-num" aria-hidden="true">{n}</span><div><h3>{t}</h3><p>{p}</p></div></li>)}</ol>
       </section>
-      <section className="marketing-showcase" id="convite">
-        <div className="marketing-showcase-photo"><MarketingProductPreview variant="editor" /><FloralMark className="marketing-flower-showcase" /></div>
-        <div className="marketing-showcase-copy"><span className="marketing-kicker">Um convite com a cara de vocês</span><h2>Escolham a foto, o tema e o texto. A prévia mostra o resultado.</h2><p>Partam de um tema pronto e adaptem a experiência ao estilo do casamento. A prévia mostra o convite em celular, tablet e computador enquanto vocês personalizam.</p><ul><li><Check size={19} /> Temas, paletas e pares de fontes</li><li><Check size={19} /> História, fotos, data, local e programação</li><li><Check size={19} /> Seções que vocês podem escolher e organizar</li><li><Check size={19} /> Prévia antes de publicar as alterações</li></ul><a className="marketing-text-link" href="/criar-site">Experimentar temas e ver a prévia <ArrowRight size={17} /></a><a className="marketing-text-link" href="/cadastro">Criar o site do casal <ArrowRight size={17} /></a></div>
+
+      <section className="lp-invite" id="convite" aria-labelledby="t-invite">
+        <Phone />
+        <div className="lp-invite-copy">
+          <p className="lp-eyebrow">No celular</p>
+          <h2 id="t-invite">O convite que cada convidado abre no próprio celular.</h2>
+          <p className="lp-lead">Abre direto pelo link, sem instalar nada. Vocês escolhem tema, foto e texto e veem a prévia antes de publicar.</p>
+          <ul className="lp-points">
+            <li><Icon d={ICONS.text} /><span>Texto legível</span></li>
+            <li><Icon d={ICONS.tap} /><span>Botões fáceis de tocar</span></li>
+            <li><Icon d={ICONS.photo} /><span>Fotos bem enquadradas</span></li>
+          </ul>
+          <a className="lp-link lp-underline" href="/criar-site">Experimentar temas e ver a prévia</a>
+        </div>
       </section>
-      <section className="marketing-photo-story" aria-labelledby="marketing-photo-story-title"><div className="marketing-photo-story-copy"><span className="marketing-kicker">Um álbum feito por quem estava lá</span><h2 id="marketing-photo-story-title">As fotos da celebração, reunidas pelo convite.</h2><p>Os convidados autorizados podem enviar fotos com a câmera do convite. O casal define o limite e consulta as imagens identificadas no painel.</p><a className="marketing-text-link" href="/cadastro">Conhecer o álbum do casal <ArrowRight size={17} /></a></div><div className="marketing-photo-story-art"><MarketingProductPreview variant="album" /></div></section>
-      <section className="marketing-feature-band" id="confirmacoes"><div className="marketing-feature-band-intro"><span className="marketing-kicker">Confirmações que ajudam a planejar</span><h2>Saibam quem vai celebrar com vocês.</h2><p>Convidados respondem pelo próprio convite. O painel mostra as respostas por pessoa e por evento e ajuda a preparar a lista do buffet.</p><a className="marketing-text-link" href="/cadastro">Organizar convidados <ArrowRight size={17} /></a></div><div className="marketing-feature-cards"><article><Users size={23} /><h3>Lista organizada</h3><p>Importem convidados, agrupem famílias, indiquem acompanhantes e registrem observações alimentares.</p></article><article><CalendarDays size={23} /><h3>Eventos separados</h3><p>Publiquem cerimônia, recepção e outras celebrações. Cada pessoa recebe as informações do seu convite.</p></article><article><Check size={23} /><h3>Retornos por evento</h3><p>Confiram quem respondeu, quantas pessoas irão e as restrições registradas para cada celebração.</p></article></div></section>
-      <section className="marketing-gifts-section" id="presentes" aria-labelledby="marketing-gifts-title"><div className="marketing-gifts-copy"><span className="marketing-kicker">Presentes no convite</span><h2 id="marketing-gifts-title">Uma lista feita para a viagem e a vida a dois.</h2><p>A lista fica no convite. O Pix vai direto à chave dos noivos; os links levam às lojas para concluir a compra e combinar a entrega.</p><div className="marketing-gift-flow"><article><span>Para quem presenteia</span><strong>Escolhe como presentear</strong><p>Transfere pelo próprio banco ou conclui a compra na loja.</p></article><ArrowRight size={20} /><article><span>Para o casal</span><strong>Recebe diretamente</strong><p>Compartilha uma chave Pix ou os links dos presentes escolhidos.</p></article></div><div className="marketing-free-note"><ShieldCheck size={21} /><p><strong>A plataforma não cobra taxa dos convidados.</strong> O valor enviado por Pix vai diretamente aos noivos. Compras em lojas são concluídas fora da plataforma.</p></div><a className="marketing-primary" href="/cadastro">Montar meu convite <ArrowRight size={17} /></a></div><aside className="marketing-gifts-card"><span className="marketing-gifts-card-icon"><Wallet size={24} /></span><span className="marketing-kicker">Exemplos para a lista</span><h3>O casal escolhe os presentes.</h3><div className="marketing-gift-line"><span>Contribuição para a viagem</span><strong>Pix direto aos noivos</strong></div><div className="marketing-gift-line"><span>Utensílio para a casa</span><strong>Link da loja escolhida</strong></div><div className="marketing-gift-line"><span>Contribuição livre</span><strong>Valor escolhido pelo convidado</strong></div><div className="marketing-gifts-total"><span>Transferência e compra fora da plataforma</span><Check size={17} /></div></aside></section>
-      <section className="marketing-invitation-print"><div className="marketing-print-copy"><span className="marketing-kicker">Um convite para cada pessoa</span><h2>Compartilhem por link individual.</h2><p>Cada convidado recebe um link privado para consultar os detalhes e responder por evento. Depois da aprovação, o QR individual de entrada fica disponível no próprio convite.</p><div className="marketing-print-options"><article><Link size={22} /><strong>Link individual</strong><span>Acesso restrito ao convite da pessoa.</span></article><article><Users size={22} /><strong>Resposta por evento</strong><span>O casal acompanha as confirmações no painel.</span></article><article><QrCode size={22} /><strong>QR de entrada</strong><span>Usado pela equipe para registrar a chegada.</span></article></div><a className="marketing-text-link" href="/cadastro">Criar meu site <ArrowRight size={17} /></a></div><div className="marketing-print-photo"><MarketingProductPreview variant="access" /></div></section>
-      <section className="marketing-checkin-section" id="entrada"><div className="marketing-checkin-heading"><span className="marketing-kicker">Controle da entrada</span><h2>A equipe confere o convite e registra quem chegou.</h2><p>O leitor usa a câmera do celular. Se alguém aparecer sem o convite, a equipe registra a entrada e os acompanhantes para atualizar a lista do buffet.</p></div><div className="marketing-checkin-grid"><article className="marketing-checkin-device"><div className="marketing-device-top"><span>Exemplo de registro</span><ShieldCheck size={19} /></div><div className="marketing-device-person"><span>OK</span><div><strong>Convite conferido</strong><small>Acesso válido para o evento</small></div></div><div className="marketing-device-success"><Check size={18} /> Entrada registrada</div><p>O mesmo convite não pode ser usado para registrar entradas duplicadas.</p></article><div className="marketing-checkin-details"><article><QrCode size={21} /><div><h3>Leitor rápido, mesmo com sinal fraco</h3><p>A equipe pode baixar a lista antes da festa. Os registros sincronizam quando a conexão retorna.</p></div></article><article><ClipboardList size={21} /><div><h3>A equipe consulta os nomes dos convidados</h3><p>Cada pessoa da equipe acessa somente a lista dos eventos atribuídos. Telefones e e-mails ficam restritos ao casal.</p></div></article><article><Users size={21} /><div><h3>Entrada manual para convidados de última hora</h3><p>A equipe de entrada pode registrar a pessoa, acompanhantes e observações para o buffet.</p></div></article><article><Printer size={21} /><div><h3>Relatório do evento</h3><p>Os responsáveis consultam e exportam a lista e as entradas registradas.</p></div></article></div></div></section>
-      <section className="marketing-planning-section" id="planejamento"><div className="marketing-planning-copy"><span className="marketing-kicker">Despesas do casamento</span><h2>Fornecedores, pagamentos e vencimentos organizados.</h2><p>Registrem o valor combinado, o que já foi pago e a próxima data. Assim, vocês consultam o orçamento sem procurar em mensagens e planilhas diferentes.</p><div className="marketing-planning-list"><div><Check size={18} /><span>Despesas por fornecedor e categoria</span></div><div><Check size={18} /><span>Valores pagos e parcelas pendentes</span></div><div><Check size={18} /><span>Vencimentos organizados por fornecedor</span></div><div><Check size={18} /><span>Visão do orçamento e do saldo a pagar</span></div></div><a className="marketing-text-link" href="/cadastro">Começar a organizar o casamento</a></div><div className="marketing-budget-card"><div className="marketing-budget-heading"><span><ClipboardList size={19} /> Exemplo de despesas</span><span>Painel do casal</span></div><div className="marketing-budget-total"><small>Um registro pode incluir</small><strong>Fornecedor e vencimento</strong><span>O casal informa os valores e acompanha cada pagamento.</span></div><div className="marketing-budget-row"><span><i className="paid" /> Pago</span><strong>Valor registrado pelo casal</strong></div><div className="marketing-budget-row"><span><i className="pending" /> A pagar</span><strong>Próxima data de vencimento</strong></div></div></section>
-      <section className="marketing-pwa-section"><div className="marketing-pwa-art"><div className="marketing-pwa-phone"><span className="marketing-phone-camera" /><MarketingProductPreview /></div><span className="marketing-pwa-flower"><Flower2 /></span></div><div className="marketing-pwa-copy"><span className="marketing-kicker">O convite acompanha o convidado</span><h2>Data, endereço e confirmação sempre à mão.</h2><p>O convite abre no navegador do celular. Cada pessoa acompanha os detalhes e responde usando seu acesso individual.</p><div className="marketing-pwa-points"><span><Check size={17} /> Abre pelo link, sem instalar aplicativo</span><span><Check size={17} /> Respostas organizadas por evento</span><span><Camera size={17} /> Câmera opcional para enviar fotos ao álbum do casal</span></div><a className="marketing-text-link" href="/cadastro">Criar meu site</a></div></section>
-      <section className="marketing-faq" aria-labelledby="marketing-faq-title"><div className="marketing-faq-heading"><span className="marketing-kicker">Antes de começar</span><h2 id="marketing-faq-title">Dúvidas comuns, respostas diretas.</h2></div><div className="marketing-faq-list"><details><summary><span><CircleHelp size={18} /> Quanto custa a plataforma?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>O acesso custa {platformAccessPrice} em pagamento único. Não há mensalidade e os convidados não pagam para abrir o convite ou confirmar presença.</p></details><details><summary><span><CircleHelp size={18} /> Como funciona o Pix dos presentes?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>O casal publica uma chave Pix. O convidado copia e transfere pelo próprio aplicativo do banco, diretamente aos noivos. A plataforma não recebe nem confirma o pagamento.</p></details><details><summary><span><CircleHelp size={18} /> Posso indicar uma loja para um presente físico?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>Sim. O link abre a página do produto na loja para o convidado concluir a compra e combinar a entrega.</p></details><details><summary><span><CircleHelp size={18} /> Como compartilho o convite?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>Depois de publicar o convite, compartilhem o link individual. O QR code individual é usado para registrar a entrada no evento.</p></details><details><summary><span><CircleHelp size={18} /> A equipe consegue conferir a entrada?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>Sim. A equipe usa o leitor de QR code, registra entradas manuais e consulta ou exporta a lista do evento.</p></details><details><summary><span><CircleHelp size={18} /> Também posso organizar os pagamentos do casamento?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>Sim. Registre fornecedores, despesas e vencimentos para acompanhar os pagamentos.</p></details><details><summary><span><CircleHelp size={18} /> Os convidados precisam instalar um aplicativo?</span><span className="marketing-faq-symbol" aria-hidden="true">+</span></summary><p>Não. O convite abre no navegador. Quem quiser pode instalar o site como aplicativo no celular.</p></details></div></section>
-      <section className="marketing-final"><span className="marketing-kicker">Uma história de cada vez</span><h2>Vamos começar a preparar o convite de vocês?</h2><a className="marketing-primary" href="/cadastro">Criar meu site <ArrowRight size={18} /></a><span className="marketing-final-note">Acesso único de {platformAccessPrice}, sem mensalidade.</span><a className="marketing-final-login" href="/painel">Já tenho uma conta</a></section>
+
+      <section className="lp-album" id="album" aria-labelledby="t-album">
+        <p className="lp-eyebrow">Álbum do casal</p>
+        <h2 id="t-album">As fotos também contam a história do dia.</h2>
+        <p className="lp-lead">Os convidados enviam fotos pela câmera do convite; o casal reúne tudo no painel.</p>
+        <ul className="lp-album-grid">
+          {ALBUM.map(([src, alt, cap]) => <li key={cap}><figure><img src={src} alt={alt} width="900" height="600" loading="lazy" decoding="async" /><figcaption>{cap}</figcaption></figure></li>)}
+        </ul>
+        <p className="lp-note">Galeria com fotos reais, sem miniaturas vazias ou repetidas.</p>
+      </section>
+
+      <section className="lp-panel" id="painel" aria-labelledby="t-panel">
+        <h2 id="t-panel">O painel do casal, do convite à entrada.</h2>
+        <ul className="lp-panel-grid">{PANEL.map(([t, src, alt, p]) => <li key={t}><img src={src} alt={alt} width="600" height="400" loading="lazy" decoding="async" /><div><h3>{t}</h3><p>{p}</p></div></li>)}</ul>
+      </section>
+
+      <section className="lp-faq" id="duvidas" aria-labelledby="t-faq">
+        <h2 id="t-faq">Dúvidas comuns</h2>
+        <div>{FAQ.map(([q, a]) => <details key={q} name="faq"><summary>{q}</summary><p>{a}</p></details>)}</div>
+      </section>
+
+      <section className="lp-closing" aria-labelledby="t-close">
+        <img src={PHOTOS.fechamento} alt="Casal de noivos diante de uma paisagem aberta" width="1800" height="900" loading="lazy" decoding="async" />
+        <div className="lp-closing-copy">
+          <h2 id="t-close">Vamos preparar o convite de vocês?</h2>
+          <a className="lp-btn" href="/cadastro">Criar meu site</a>
+          <a className="lp-link lp-underline" href="/painel">Já tenho uma conta</a>
+        </div>
+      </section>
     </main>
-    <footer className="marketing-footer" id="contato"><div className="marketing-footer-content"><div className="marketing-footer-about"><span className="marketing-footer-brand">{PRODUCT_NAME}</span><h2>Um convite para reunir tudo o que importa.</h2><p>Sites de casamento responsivos, com a história do casal, informações da celebração e caminhos simples para cada convidado.</p></div><div className="marketing-footer-links"><h3>Comece por aqui</h3><a href="/cadastro">Criar meu site</a><a href="/ajuda">Central de ajuda</a><a href="#como-funciona">Como funciona</a><a href="#confirmacoes">Confirmação de presença</a><a href="#planejamento">Planejamento</a><a href="#entrada">Controle de entrada</a><a href="/painel">Entrar no painel</a></div><div className="marketing-footer-contact"><h3>Fale com a gente</h3><a href="https://wa.me/5531988924409">WhatsApp: (31) 98892-4409</a><a href="mailto:henriquesouza1832001@gmail.com">henriquesouza1832001@gmail.com</a><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">henriquesouzas.com <ExternalLink size={14} /></a></div></div><div className="marketing-footer-bottom"><span>{PRODUCT_NAME}</span><a href="https://henriquesouzas.com" target="_blank" rel="noreferrer">Desenvolvido por henriquesouzas.com</a></div></footer>
+    <footer className="lp-footer">
+      <span className="lp-brand-foot">{PRODUCT_NAME}</span>
+      <nav aria-label="Rodapé">
+        <a href="/cadastro">Criar meu site</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="/ajuda">Central de ajuda</a>
+        <a href="/creditos.html">Créditos das fotos</a>
+      </nav>
+      <a className="lp-contact" href="/ajuda">Fale com a gente pela central de ajuda</a>
+    </footer>
   </div>
 }
