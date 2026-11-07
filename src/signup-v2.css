@@ -1,0 +1,135 @@
+/* Cadastro dos noivos: mesmo sistema visual da landing (tinta, terracota, papel, areia; Fraunces no título, Inter no resto). */
+.role-page.signup-v2{--ink:#1D1B18;--terra:#9C4A2F;--terra-d:#7F3B24;--paper:#FAF8F4;--sand:#E9DFD0;--line:#D8CDBB;--field:#8A7F70;--muted:#5C564E;--err:#B3261E;
+  --forest:#1D1B18;--accent:#9C4A2F;
+  background:var(--paper);background-image:none;color:var(--ink);font-family:'Inter Variable',Inter,system-ui,sans-serif;font-size:16px;line-height:1.5}
+.signup-v2 *{box-sizing:border-box}
+.signup-v2 :focus-visible{outline:3px solid var(--terra);outline-offset:2px;border-radius:6px}
+
+/* cabeçalho e rodapé (conteúdo e contato inalterados; só o visual) */
+.signup-v2 .role-header{background:var(--paper);border-bottom:1px solid var(--line);min-height:64px;padding:0 max(20px,calc((100% - 1120px)/2))}
+.signup-v2 .role-brand strong{font-family:'Inter Variable',Inter,sans-serif;font-size:16px;font-weight:600;color:var(--ink)}
+.signup-v2 .role-brand .brand-mark{filter:grayscale(1) contrast(1.1)}
+.signup-v2 .role-preview{font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.signup-v2 .role-preview i{background:var(--terra)}
+.signup-v2 .role-footer{background:var(--paper);border-top:1px solid var(--line);min-height:64px;padding:0 max(20px,calc((100% - 1120px)/2));font-size:14px;color:var(--muted)}
+.signup-v2 .role-footer > span:first-child{font-family:'Inter Variable',Inter,sans-serif;font-size:14px;color:var(--muted)}
+.signup-v2 .role-footer a{color:var(--ink);text-decoration:underline;text-underline-offset:4px;display:inline-flex;align-items:center;min-height:44px}
+.signup-v2 .role-main{width:100%;max-width:none;margin:0;padding:0}
+
+/* layout em duas colunas */
+.su-layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;grid-template-areas:'main aside';gap:56px;width:min(1120px,92%);margin:0 auto;padding:40px 0 72px;align-items:start}
+.su-main{grid-area:main;min-width:0;max-width:600px}
+.su-aside{grid-area:aside;position:sticky;top:24px;margin-bottom:24px}
+.su-photo{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;background:var(--sand)}
+.su-phone{position:absolute;left:-28px;bottom:-24px}
+.su-strip-text{display:none}
+
+/* indicador de etapas */
+.su-steps{display:flex;align-items:center;list-style:none;margin:0 0 18px;padding:0}
+.su-steps li{display:flex;align-items:center}
+.su-steps li + li::before{content:'';width:44px;height:1px;background:var(--field);margin:0 6px}
+.su-step{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:15px;font-weight:500;color:var(--muted);letter-spacing:.04em;background:none;border:0;padding:0}
+.su-step-active{color:var(--terra);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px}
+.su-step-done{color:var(--ink);cursor:pointer;text-decoration:underline;text-underline-offset:4px;font-family:inherit}
+
+.su-title{font-family:'Fraunces Variable',Fraunces,Georgia,serif;font-weight:500;font-size:clamp(32px,4vw,40px);line-height:1.12;letter-spacing:-.01em;margin:0;color:var(--ink)}
+.su-support{margin:10px 0 0;color:var(--muted);font-size:16px;max-width:46ch}
+
+/* cartão do formulário */
+.su-card{margin-top:24px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:clamp(20px,3vw,32px)}
+.su-fields{display:flex;flex-direction:column;gap:20px}
+.su-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.su-field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.su-label{display:block;font-size:15px;font-weight:600;color:var(--ink);padding:0}
+.su-label em{font-style:normal;font-weight:400;font-size:13px;color:var(--muted);margin-left:8px}
+.su-card input:not([type=checkbox]):not([type=radio]){width:100%;min-height:52px;padding:0 14px;border:1px solid var(--field);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:16px}
+.su-card input:not([type=checkbox]):not([type=radio]):focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+.su-help{margin:0;font-size:14px;color:var(--muted);line-height:1.45}
+.su-error{margin:0;font-size:14px;font-weight:600;color:var(--err)}
+fieldset.su-group{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:10px}
+fieldset.su-group legend{padding:0;margin-bottom:10px}
+
+/* endereço com prefixo fixo */
+.su-slug{display:flex;border:1px solid var(--field);border-radius:10px;overflow:hidden;background:#fff}
+.su-slug:focus-within{outline:3px solid var(--terra);outline-offset:2px}
+.su-prefix{display:flex;align-items:center;padding:0 12px;background:var(--sand);color:var(--ink);font-size:14px;white-space:nowrap}
+.su-card .su-slug input:not([type=checkbox]){border:0;border-radius:0;min-width:0;flex:1;outline:0!important}
+
+/* chips de áreas */
+.su-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.su-chip{position:relative;display:flex}
+.su-chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.su-chip span{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:6px 10px;border:1px solid var(--field);border-radius:999px;background:#fff;color:var(--ink);font-size:14px;line-height:1.2;text-align:center}
+.su-chip input:checked + span{background:var(--terra);border-color:var(--terra);color:#fff;font-weight:600}
+.su-chip input:checked + span::before{content:'✓'}
+.su-chip input:focus-visible + span{outline:3px solid var(--terra);outline-offset:2px}
+
+/* presentes: segmented control */
+.su-segment{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--field);border:1px solid var(--field);border-radius:12px;overflow:hidden}
+.su-segment label{position:relative;display:flex;background:#fff}
+.su-segment input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.su-segment span{flex:1;display:flex;align-items:center;justify-content:center;min-height:48px;padding:6px 8px;font-size:14px;text-align:center;line-height:1.2}
+.su-segment input:checked + span{background:var(--terra);color:#fff;font-weight:600}
+.su-segment input:focus-visible + span{outline:3px solid var(--ink);outline-offset:-3px}
+
+/* senha */
+.su-card .password-input-wrap{position:relative;display:block}
+.su-card .password-input-wrap input{padding-right:56px}
+.su-card .password-visibility-toggle{position:absolute;top:4px;right:4px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer}
+.su-card .password-capslock{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+
+/* revisão */
+.su-review{border:1px solid var(--line);border-radius:14px;padding:16px 18px 6px;background:#fff}
+.su-review h3{margin:0 0 4px;font-family:'Fraunces Variable',Fraunces,Georgia,serif;font-weight:500;font-size:20px}
+.su-review dl{margin:0}
+.su-review dl > div{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:4px 12px;padding:6px 0;border-bottom:1px solid #EEE6D8}
+.su-review dl > div:last-child{border-bottom:0}
+.su-review dt{font-size:14px;color:var(--muted)}
+.su-review dd{margin:0;font-size:15px;text-align:right;overflow-wrap:anywhere}
+.su-review dd.su-edit{text-align:right}
+.su-security{display:flex;flex-direction:column;gap:8px;min-height:100px}
+
+/* botões */
+.su-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 20px;margin-top:28px}
+.su-links{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}
+.su-btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 32px;border:0;border-radius:999px;background:#9C4A2F;color:#fff;font:inherit;font-size:16px;font-weight:600;text-decoration:none;cursor:pointer}
+.su-btn:hover:not(:disabled){background:var(--terra-d)}
+.su-btn:disabled{opacity:.55;cursor:not-allowed}
+.signup-v2 .su-textbtn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 6px;background:none;border:0;color:var(--ink);font:inherit;font-size:15px;font-weight:500;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.signup-v2 .su-textbtn:hover{color:var(--terra)}
+.su-login{margin:18px 0 0;font-size:15px;color:var(--muted)}
+
+@media (max-width:900px){
+  .su-layout{grid-template-columns:minmax(0,1fr);grid-template-areas:'aside' 'main';gap:24px;padding:0 0 48px;width:100%}
+  .su-aside{position:relative;top:0;height:190px;margin:0;overflow:hidden}
+  .su-photo{height:100%;aspect-ratio:auto;border-radius:0;object-position:50% 22%}
+  .su-aside::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(29,27,24,.8),rgba(29,27,24,.1) 70%)}
+  .su-phone{left:auto;right:16px;top:8px;bottom:auto;transform:scale(.38);transform-origin:top right;z-index:2}
+  .su-strip-text{display:flex;flex-direction:column;position:absolute;left:20px;bottom:18px;z-index:3;color:#fff;max-width:55%}
+  .su-strip-text strong{font-family:'Fraunces Variable',Fraunces,Georgia,serif;font-weight:500;font-size:24px;line-height:1.1}
+  .su-strip-text span{font-size:13px;margin-top:4px}
+  .su-main{padding:0 20px;max-width:none}
+}
+@media (max-width:560px){
+  .su-row{grid-template-columns:1fr}
+  .su-chips{grid-template-columns:repeat(2,1fr)}
+  .su-segment{grid-template-columns:repeat(2,1fr)}
+  .su-slug{flex-wrap:wrap}
+  .su-prefix{width:100%;min-height:38px}
+  .su-card .su-slug input:not([type=checkbox]){flex:1 1 100%;border-top:1px solid var(--line)}
+  .su-review dl > div{grid-template-columns:1fr auto}
+  .su-review dt{grid-column:1}
+  .su-review dd{grid-column:1;text-align:left}
+  .su-review dd.su-edit{grid-column:2;grid-row:1 / span 2;text-align:right}
+  .su-btn{width:100%}
+  .su-actions{flex-direction:column;align-items:stretch}
+  .su-links{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){.signup-v2 *{transition:none!important;scroll-behavior:auto!important}}
+
+/* a regra global de styles.css força DM Sans em todo texto das páginas "role"; aqui valem Inter e Fraunces */
+.role-page.signup-v2.signup-v2 :is(h1,h2,h3,h4,p,span,a,strong,small,label,legend,li,button,input,dt,dd,em,b,u){font-family:'Inter Variable',Inter,system-ui,sans-serif}
+.role-page.signup-v2.signup-v2 :is(.su-title,.su-review h3,.lp-phone-names,.lp-phone-names span,.su-strip-text strong){font-family:'Fraunces Variable',Fraunces,Georgia,serif}
+.role-page.signup-v2.signup-v2 .su-card input:not([type=checkbox]):not([type=radio]){border-radius:10px}
+#su-strength:empty{margin:-20px 0 0;height:0}
+.su-security{min-height:0}
