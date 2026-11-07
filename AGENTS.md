@@ -655,3 +655,9 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Regras do novo visual: sem cartões coloridos como estrutura, sem rótulos acima de títulos, sem ícones decorativos em círculo, sem barra colorida lateral em item ativo, sem sombras decorativas, fundo de papel liso no desktop.
 - O fundo de folhas saiu da interface do produto em todas as larguras e permanece no tema Floral do convite; a retirada segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
 - Pendentes: revisar a capa e os temas do convite com a mesma disciplina e decidir sobre fotografias reais.
+
+## 25. Autorização do dono para testes ponta a ponta — 07/11/2026
+
+- O dono, Henrique, autorizou expressamente que, em testes ponta a ponta de cadastro, a confirmação de e-mail de **contas de teste** seja feita diretamente no D1 de produção (marcar a conta como ativa, o vínculo como ativo e o desafio de verificação como consumido), usando qualquer e-mail de teste, em vez de depender do link recebido por e-mail.
+- Escopo: apenas contas criadas para teste (por exemplo, e-mails com alias ), identificadas por id e e-mail na própria instrução SQL. Não vale para contas de casais reais, nem para apagar ou alterar dados de terceiros.
+- Registrado a pedido do dono em 07/11/2026.
