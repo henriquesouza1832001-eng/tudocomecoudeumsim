@@ -64,7 +64,7 @@ export async function verifyAccessAssertion(assertion, env) {
   }
 }
 
-const CONTENT_SECURITY_POLICY = ["default-src 'self'", "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob:", "font-src 'self' data:", "connect-src 'self' https://cloudflareinsights.com", "frame-src https://challenges.cloudflare.com", "worker-src 'self'", "manifest-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", 'upgrade-insecure-requests'].join('; ')
+export const CONTENT_SECURITY_POLICY = ["default-src 'self'", "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob:", "font-src 'self' data:", "connect-src 'self' https://cloudflareinsights.com", "frame-src https://challenges.cloudflare.com", "worker-src 'self'", "manifest-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", 'upgrade-insecure-requests'].join('; ')
 
 export async function onRequest(context) {
   const requestUrl = new URL(context.request.url)

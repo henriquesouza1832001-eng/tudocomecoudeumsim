@@ -1,5 +1,5 @@
 import { app } from '../functions/api/[[route]].js'
-import { protectedPath, verifyAccessAssertion } from '../functions/_middleware.js'
+import { CONTENT_SECURITY_POLICY, protectedPath, verifyAccessAssertion } from '../functions/_middleware.js'
 import { weddingSlug } from './wedding-host.js'
 
 async function publicSite(request, env, slug) {
@@ -36,7 +36,10 @@ function withSecurityHeaders(response) {
   headers.set('X-Frame-Options', 'DENY')
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
-  headers.set('Strict-Transport-Security', 'max-age=15552000')
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  headers.set('Content-Security-Policy', CONTENT_SECURITY_POLICY)
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+  headers.set('X-Permitted-Cross-Domain-Policies', 'none')
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
