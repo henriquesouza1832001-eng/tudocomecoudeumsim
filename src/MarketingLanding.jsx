@@ -5,7 +5,7 @@ import { PRODUCT_NAME } from './product-config.js'
 
 /*
  * Créditos das fotos (licença Unsplash — uso comercial livre, atribuição opcional).
- * Arquivos em /images/fotos/*.webp; lista em /creditos.html.
+ * Arquivos em /images/fotos/*.webp; IDs conhecidos: 1519741497674-611481863552, 1522673607200-164d1b6ce486, 1537633552985-df8429e8048b.
  * Os nomes dos fotógrafos não puderam ser confirmados automaticamente (Unsplash bloqueia robôs).
  */
 
@@ -150,10 +150,7 @@ export default function MarketingLanding() {
       <nav aria-label="Rodapé">
         <a href="/cadastro">Criar meu site</a>
         <a href="#como-funciona">Como funciona</a>
-        <a href="/ajuda">Central de ajuda</a>
-        <a href="/creditos.html">Créditos das fotos</a>
       </nav>
-      <a className="lp-contact" href="/ajuda">Fale com a gente pela central de ajuda</a>
     </footer>
   </div>
 }
