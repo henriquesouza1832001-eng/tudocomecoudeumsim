@@ -1,8 +1,7 @@
 import { ArrowRight, CalendarDays, Check, Flower2, Gift, Heart, Link, QrCode, Users, Wallet } from 'lucide-react'
 import './MarketingConcepts.css'
-import { PLATFORM_ACCESS_PRICE_CENTS, PRODUCT_NAME } from './product-config.js'
+import { PRODUCT_NAME } from './product-config.js'
 
-const accessPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(PLATFORM_ACCESS_PRICE_CENTS / 100)
 
 function ConceptPreview() {
   return <div className="concept-product-preview" aria-label="Demonstração ilustrativa da interface do convite">
@@ -47,7 +46,7 @@ export default function MarketingConcepts() {
               <h3>Do planejamento ao grande dia, tudo começa com vocês.</h3>
               <p>Organizem o convite, os eventos e as confirmações em um endereço para compartilhar com cada pessoa.</p>
               <a className="concept-cta" href="/criar-site">Conhecer a plataforma <ArrowRight size={17} /></a>
-              <span className="concept-free-note">Acesso em pagamento único de {accessPrice}. Presentes são transferidos ou comprados fora da plataforma.</span>
+              <span className="concept-free-note">Presentes são transferidos ou comprados fora da plataforma.</span>
             </div>
           </div>
           <div className="concept-quick-links" aria-label="Recursos demonstrados"><span><Heart size={16} /> História do casal</span><span><Users size={16} /> Confirmação por evento</span><span><QrCode size={16} /> QR para entrada</span></div>
