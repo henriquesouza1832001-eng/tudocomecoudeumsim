@@ -1,7 +1,6 @@
 import '@fontsource-variable/fraunces'
 import '@fontsource-variable/inter'
 import './landing-v2.css'
-import InvitePhone from './InvitePhone.jsx'
 import { PRODUCT_NAME } from './product-config.js'
 
 /*
@@ -27,6 +26,48 @@ const ICONS = {
   text: <><path d="M4 7V5h16v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>,
   tap: <><path d="M9 11V5a2 2 0 0 1 4 0v6" /><path d="M13 10.5a2 2 0 0 1 4 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-3l-1.5-3a1.6 1.6 0 0 1 2.7-1.7L9 14" /></>,
   photo: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="m21 16-5-5-8 8" /></>,
+}
+
+const EVENT_HOUR = 17
+function nextEvent() {
+  // Data fixa do exemplo: 19 de dezembro, 17h. Se já passou, usa o mesmo dia do ano seguinte; nunca mostra data passada.
+  const now = new Date()
+  let d = new Date(now.getFullYear(), 11, 19, EVENT_HOUR)
+  if (d < now) d = new Date(now.getFullYear() + 1, 11, 19, EVENT_HOUR)
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000)
+  const text = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return { days, label: `${text.charAt(0).toUpperCase()}${text.slice(1)} · ${EVENT_HOUR}h` }
+}
+
+function PhoneCard() {
+  const { days, label } = nextEvent()
+  const count = days === 0 ? 'É hoje!' : days === 1 ? 'Falta 1 dia' : `Faltam ${days} dias`
+  return <div className="lp-phone" role="img" aria-label={`Exemplo do convite aberto no celular: Lívia e Caio, ${label}, ${count.toLowerCase()}, cerimônia e recepção na Casa das Oliveiras, botão Confirmar presença`}>
+    <div className="lp-phone-screen" aria-hidden="true">
+      <span className="lp-phone-notch" />
+      <div className="lp-phone-photo">
+        <img src={PHOTOS.convidados} alt="" width="759" height="506" loading="lazy" decoding="async" />
+        <div className="lp-phone-hero-text">
+          <p className="lp-phone-kicker">Vamos casar</p>
+          <p className="lp-phone-names">Lívia<span className="lp-amp">&amp;</span>Caio</p>
+          <p className="lp-phone-date" suppressHydrationWarning>{label}</p>
+        </div>
+      </div>
+      <div className="lp-phone-body">
+        <p className="lp-phone-count"><span suppressHydrationWarning>{count}</span></p>
+        <div className="lp-phone-card"><span><b>Cerimônia e recepção</b><small>Casa das Oliveiras</small></span><span className="lp-phone-map">Ver no mapa</span></div>
+        <div className="lp-phone-rsvp">Confirmar presença</div>
+        <p className="lp-phone-note">Abre direto pelo link, sem instalar nada</p>
+      </div>
+    </div>
+  </div>
+}
+
+function Phone({ small = false }) {
+  return small
+    ? <div className="lp-phone-scale"><div className="lp-phone-scale-inner"><PhoneCard /></div></div>
+    : <PhoneCard />
 }
 
 const STEPS = [
@@ -77,7 +118,7 @@ export default function MarketingLanding() {
         </div>
         <div className="lp-hero-art">
           <img className="lp-hero-photo" src={PHOTOS.hero} alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" fetchpriority="high" decoding="async" />
-          <div className="lp-phone-hero"><InvitePhone scale={0.55} /></div>
+          <div className="lp-phone-hero"><Phone small /></div>
         </div>
       </section>
 
@@ -87,7 +128,7 @@ export default function MarketingLanding() {
       </section>
 
       <section className="lp-invite" id="convite" aria-labelledby="t-invite">
-        <InvitePhone />
+        <Phone />
         <div className="lp-invite-copy">
           <p className="lp-eyebrow">No celular</p>
           <h2 id="t-invite">O convite que cada convidado abre no próprio celular.</h2>

@@ -132,3 +132,4 @@ fieldset.su-group legend{padding:0;margin-bottom:10px}
 .role-page.signup-v2.signup-v2 :is(.su-title,.su-review h3,.lp-phone-names,.lp-phone-names span,.su-strip-text strong){font-family:'Fraunces Variable',Fraunces,Georgia,serif}
 .role-page.signup-v2.signup-v2 .su-card input:not([type=checkbox]):not([type=radio]){border-radius:10px}
 #su-strength:empty{margin:-20px 0 0;height:0}
+.su-security{min-height:0}
