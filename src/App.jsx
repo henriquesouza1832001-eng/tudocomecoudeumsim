@@ -17,7 +17,7 @@ import { shouldAutoplayWeddingCoverVideo } from './site-motion.js'
 import { getThemePaletteNames, getThemePalettes, isValidCustomAccent } from './site-style.js'
 import { extractPhotoColorSuggestions } from './photo-palette.js'
 import { COVER_ZOOM_MAX, COVER_ZOOM_MIN, coverImageStyle, resolveCoverFraming } from './cover-framing.js'
-import { SITE_FONT_CHOICES, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, TEXT_SIZE_MIN, resolveSiteFonts, resolveTextSize, textScaleValue } from './site-fonts.js'
+import { HEADING_PT_DEFAULT, HEADING_PT_OPTIONS, SITE_FONT_CHOICES, TEXT_PT_DEFAULT, TEXT_PT_OPTIONS, headingScaleValue, resolveHeadingPt, resolveSiteFonts, resolveTextPt, textScaleValue } from './site-fonts.js'
 import { checkSitePublication, missingPhotoAltIds, referencedPhotoIds } from './site-publication-check.js'
 import { DECORATIVE_ALT, buildDefaultAltText, fillEmptyAltTexts, isDecorativeAlt, resolveImageAlt } from './photo-alt.js'
 import { isValidPixKey } from './pix-key.js'
@@ -101,21 +101,36 @@ const SITE_FONT_PAIRS = {
   'Rústico acolhedor': ["'Libre Baskerville', Georgia, serif", "'Lora', Georgia, serif"],
   'Caligráfico bordado': ["'Pinyon Script', 'Great Vibes', cursive", "'Lora', Georgia, serif"],
 }
-const FONT_SIZE_PRESETS = [['Compacto', 90], ['Padrão', 100], ['Ampliado', 115], ['Grande', 125]]
+function stepPt(options, value, direction) {
+  const index = options.indexOf(value)
+  const next = Math.min(options.length - 1, Math.max(0, (index < 0 ? 0 : index) + direction))
+  return options[next]
+}
+function PtSizeControl({ label, options, value, onChange }) {
+  return <div className="pt-size-control" role="group" aria-label={label}>
+    <select value={value} aria-label={label} onChange={(event) => onChange(Number(event.target.value))}>{options.map((option) => <option key={option} value={option}>{option} pt</option>)}</select>
+    <button type="button" aria-label={`Aumentar ${label.toLowerCase()}`} title="Aumentar" disabled={value === options[options.length - 1]} onClick={() => onChange(stepPt(options, value, 1))}>A<sup>+</sup></button>
+    <button type="button" aria-label={`Diminuir ${label.toLowerCase()}`} title="Diminuir" disabled={value === options[0]} onClick={() => onChange(stepPt(options, value, -1))}>A<sup>−</sup></button>
+  </div>
+}
 function FontStylePicker({ config, onChange }) {
-  const size = resolveTextSize(config)
+  const headingPt = resolveHeadingPt(config)
+  const textPt = resolveTextPt(config)
   const [headingCss, bodyCss] = resolveSiteFonts(config, SITE_FONT_PAIRS, config.fontPair || 'Clássico editorial')
-  const customized = Boolean(config.headingFont || config.bodyFont || size !== TEXT_SIZE_DEFAULT)
-  return <div className="font-style-picker" role="group" aria-label="Fonte e tamanho do texto do convite">
-    <span className="font-style-title">Fonte e tamanho do texto</span>
-    <div className="font-style-selects">
-      <label>Fonte dos títulos<select value={config.headingFont || ''} onChange={(event) => onChange({ headingFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.map((font) => <option key={font.id} value={font.id}>{font.id}{font.script ? ' (caligráfica)' : ''}</option>)}</select></label>
-      <label>Fonte do texto<select value={config.bodyFont || ''} onChange={(event) => onChange({ bodyFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.filter((font) => !font.script).map((font) => <option key={font.id} value={font.id}>{font.id}</option>)}</select></label>
+  const customized = Boolean(config.headingFont || config.bodyFont || headingPt !== HEADING_PT_DEFAULT || textPt !== TEXT_PT_DEFAULT)
+  return <div className="font-style-picker" role="group" aria-label="Fonte e tamanho da letra do convite">
+    <span className="font-style-title">Fonte e tamanho da letra</span>
+    <div className="font-style-row">
+      <label>Títulos (nomes e seções)<select value={config.headingFont || ''} onChange={(event) => onChange({ headingFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.map((font) => <option key={font.id} value={font.id}>{font.id}{font.script ? ' (caligráfica)' : ''}</option>)}</select></label>
+      <PtSizeControl label="Tamanho dos títulos" options={HEADING_PT_OPTIONS} value={headingPt} onChange={(value) => onChange({ headingPt: value })} />
     </div>
-    <div className="font-style-sample" aria-live="polite"><strong style={{ fontFamily: headingCss, fontSize: `calc(30px * ${size / 100})` }}>Ana &amp; Caio</strong><p style={{ fontFamily: bodyCss, fontSize: `calc(15px * ${size / 100})` }}>Sábado, 19 de dezembro, às 17h. Cerimônia e recepção no jardim.</p></div>
-    <label className="font-style-size"><span>Tamanho do texto: <strong>{size}%</strong></span><input type="range" min={TEXT_SIZE_MIN} max={TEXT_SIZE_MAX} step="5" value={size} onChange={(event) => onChange({ textSize: Number(event.target.value) })} aria-valuetext={`${size} por cento`} /></label>
-    <div className="font-style-presets">{FONT_SIZE_PRESETS.map(([label, value]) => <button type="button" key={value} className={size === value ? 'active' : ''} aria-pressed={size === value} onClick={() => onChange({ textSize: value })}>{label}</button>)}</div>
-    {customized && <button type="button" className="font-style-reset" onClick={() => onChange({ headingFont: null, bodyFont: null, textSize: TEXT_SIZE_DEFAULT })}>Voltar ao padrão do tema</button>}
+    <div className="font-style-row">
+      <label>Texto (datas, locais e mensagens)<select value={config.bodyFont || ''} onChange={(event) => onChange({ bodyFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.filter((font) => !font.script).map((font) => <option key={font.id} value={font.id}>{font.id}</option>)}</select></label>
+      <PtSizeControl label="Tamanho do texto" options={TEXT_PT_OPTIONS} value={textPt} onChange={(value) => onChange({ textPt: value })} />
+    </div>
+    <div className="font-style-sample" aria-label="Exemplo das fontes escolhidas"><strong style={{ fontFamily: headingCss }}>Ana &amp; Caio</strong><p style={{ fontFamily: bodyCss }}>Sábado, 19 de dezembro, às 17h.</p></div>
+    <small className="customizer-control-help">O tamanho muda no convite e na prévia ao lado. O exemplo acima só mostra as fontes.</small>
+    {customized && <button type="button" className="font-style-reset" onClick={() => onChange({ headingFont: null, bodyFont: null, headingPt: HEADING_PT_DEFAULT, textPt: TEXT_PT_DEFAULT, textSize: null })}>Voltar ao padrão do tema</button>}
   </div>
 }
 function CoverFramingPicker({ config, onChange }) {
@@ -141,7 +156,7 @@ function SiteAccentPicker({ value, appliedValue, onChange }) {
   const adjusted = Boolean(customAccent && customAccent.toLowerCase() !== appliedValue.toLowerCase())
   return <div className="site-accent-picker"><label>Cor de destaque personalizada<input type="color" value={customAccent || appliedValue} onChange={(event) => onChange(event.target.value)} /></label><small>Opcional. O sistema ajusta a cor quando necessário para manter contraste com o fundo.</small>{adjusted && <small role="status">A cor foi escurecida para manter o contraste mínimo.</small>}{customAccent && <button type="button" className="button-outline" onClick={() => onChange(null)}>Usar cor da paleta</button>}</div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', headingFont: null, bodyFont: null, textSize: 100, coverFit: 'cover', coverZoom: 100, coverFocusX: null, coverFocusY: null, enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', headingFont: null, bodyFont: null, textSize: 100, textPt: 12, headingPt: 36, coverFit: 'cover', coverZoom: 100, coverFocusX: null, coverFocusY: null, enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 function imageAltText(config, id, fallback) {
   return resolveImageAlt(config?.imageAltTexts?.[id]?.[config?.language || 'pt-BR'], fallback)
 }
@@ -3311,6 +3326,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     '--font-heading': selectedFonts[0],
     '--font-body': selectedFonts[1],
     '--site-text-scale': textScaleValue(config),
+    '--site-heading-scale': headingScaleValue(config),
   }
 
   useEffect(() => {
@@ -3773,7 +3789,7 @@ function GeneralWeddingSite({ notify }) {
   const sitePalettes = siteTheme ? getThemePalettes(siteTheme, data?.siteConfig?.customAccent) : []
   const activePalette = sitePalettes[data?.siteConfig?.paletteIndex] || sitePalettes[0]
   const siteFonts = resolveSiteFonts(data?.siteConfig, SITE_FONT_PAIRS, 'Clássico editorial')
-  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(data?.siteConfig) } : undefined
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(data?.siteConfig), '--site-heading-scale': headingScaleValue(data?.siteConfig) } : undefined
   const config = data?.siteConfig
   const eventList = data?.events || []
   const giftList = data?.gifts || []
@@ -4068,7 +4084,7 @@ function GuestPortal({ notify, setView }) {
   const sitePalettes = siteTheme ? getThemePalettes(siteTheme, invitation?.siteConfig?.customAccent) : []
   const activePalette = sitePalettes[invitation?.siteConfig?.paletteIndex] || sitePalettes[0]
   const siteFonts = resolveSiteFonts(invitation?.siteConfig, SITE_FONT_PAIRS, 'Clássico editorial');
-  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(invitation?.siteConfig) } : undefined
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(invitation?.siteConfig), '--site-heading-scale': headingScaleValue(invitation?.siteConfig) } : undefined
   const coverLayout = invitation?.siteConfig?.coverVideoId ? 'video' : ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
   const coverComposition = ['side', 'overlay', 'editorial'].includes(invitation?.siteConfig?.coverComposition) ? invitation.siteConfig.coverComposition : invitation?.siteConfig?.coverLayout === 'split' ? 'side' : invitation?.siteConfig?.coverLayout === 'full' ? 'overlay' : null
   const coverTextAlign = ['left', 'center', 'right'].includes(invitation?.siteConfig?.coverTextAlign) ? invitation.siteConfig.coverTextAlign : 'left'

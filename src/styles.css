@@ -8418,3 +8418,15 @@ img { display: block; max-width: 100%; }
 .cover-framing-picker input[type="range"]:disabled { opacity: .45; }
 .cover-framing-picker .font-style-size strong { color: #7a2c25; }
 .public-wedding-cover-media, .guest-invitation-cover { overflow: hidden; }
+
+/* Seletor de fonte e tamanho no estilo do Word + escala dos títulos */
+.font-style-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.pt-size-control { display: flex; gap: 6px; align-items: center; }
+.pt-size-control select { min-width: 84px; }
+.pt-size-control button { min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid #9aa798; border-radius: 4px; color: #263b31; background: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.pt-size-control button:disabled { opacity: .4; cursor: default; }
+.pt-size-control sup { font-size: 11px; }
+.font-style-sample strong { font-size: 30px; }
+.font-style-sample p { font-size: 15px; }
+@media (max-width: 560px) { .font-style-row { grid-template-columns: minmax(0, 1fr); } }
+.public-wedding-cover-copy h1, .public-wedding-page h2, .public-wedding-story h2, .guest-invitation-cover h1, .guest-invitation-page h2 { zoom: var(--site-heading-scale, 1); }
