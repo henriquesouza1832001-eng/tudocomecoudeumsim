@@ -1,6 +1,6 @@
 import './invite-phone.css'
 
-const PHOTO = '/images/fotos/painel-convidados.webp'
+const PHOTO = '/images/ilustracoes/hero-noivos.svg'
 const EVENT_HOUR = 17
 
 function formatDate(d, hourLabel) {

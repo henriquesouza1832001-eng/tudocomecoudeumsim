@@ -1404,7 +1404,7 @@ function CoupleSignup() {
   return <RoleFrame icon={Heart} eyebrow="ESPAÇO DOS NOIVOS" title={stepTitles[step - 1]} compactIntro secure secureName="Cadastro dos noivos" secureFooter="Acesso individual" className="signup-v2">
     <div className="su-layout">
       <aside className="su-aside" aria-label="Prévia do convite">
-        <img className="su-photo" src="/images/fotos/hero-casal.webp" alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" loading="lazy" decoding="async" />
+        <img className="su-photo" src="/images/ilustracoes/hero-noivos.svg" alt="Ilustração de um arco de flores com duas cadeiras decoradas" width="880" height="1100" loading="lazy" decoding="async" />
         <div className="su-strip-text" aria-hidden="true"><strong>{previewNames}</strong><span>{previewDate}</span></div>
         <div className="su-phone"><InvitePhone scale={0.72} live names={[partnerOneName, partnerTwoName]} date={eventDate} time={eventTime} areas={enabledAreas} gifts={giftShort[giftPreference]} /></div>
       </aside>
@@ -5090,7 +5090,7 @@ function SuperAdminPanel({ notify, promptAction }) {
 
 function SuperAdminAccessFrame({ title, description, children, eyebrow = 'CONTROLE DA PLATAFORMA', brand = 'Administração da plataforma', couple = false }) {
   if (couple) return <div className="role-page signup-v2"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><BrandMark /><strong>{PRODUCT_NAME} | {brand}</strong></a><span className="role-preview"><LockKeyhole size={13} /> ÁREA PROTEGIDA</span></header><main className="role-main"><div className="su-layout">
-    <aside className="su-aside" aria-label="Exemplo de convite"><img className="su-photo" src="/images/fotos/hero-casal.webp" alt="Casal de noivos caminhando ao ar livre" width="880" height="1100" loading="lazy" decoding="async" /><div className="su-strip-text" aria-hidden="true"><strong>Lívia &amp; Caio</strong><span>Exemplo de convite</span></div><div className="su-phone"><InvitePhone scale={0.72} /></div></aside>
+    <aside className="su-aside" aria-label="Exemplo de convite"><img className="su-photo" src="/images/ilustracoes/hero-noivos.svg" alt="Ilustração de um arco de flores com duas cadeiras decoradas" width="880" height="1100" loading="lazy" decoding="async" /><div className="su-strip-text" aria-hidden="true"><strong>Lívia &amp; Caio</strong><span>Exemplo de convite</span></div><div className="su-phone"><InvitePhone scale={0.72} /></div></aside>
     <div className="su-main"><h1 className="su-title">{title}</h1><p className="su-support">{description}</p>{children}</div>
   </div></main><footer className="role-footer"><span>{brand}</span></footer></div>
   return <div className="role-page"><header className="role-header"><a className="role-brand" href="/" aria-label={PRODUCT_NAME}><BrandMark /><strong>{PRODUCT_NAME} | {brand}</strong></a><span className="role-preview"><LockKeyhole size={13} /> ÁREA PROTEGIDA</span></header><main className="role-main admin-auth-main"><div className="role-intro"><span className="role-icon"><Shield size={19} /></span><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{children}</main><footer className="role-footer"><span>{brand}</span></footer></div>

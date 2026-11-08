@@ -13,7 +13,7 @@
   --paper: #f7f5ef;
   --line: rgba(48, 55, 47, .12);
   --serif: 'Playfair Display', Georgia, serif;
-  --watercolor-floral-background: linear-gradient(rgba(246,244,239,.78), rgba(246,244,239,.78)), url('/images/floral-watercolor-overlay.png');
+  --watercolor-floral-background: linear-gradient(rgba(246,244,239,.78), rgba(246,244,239,.78)), url('/images/floral-overlay.svg');
 }
 
 * { box-sizing: border-box; }
@@ -2952,7 +2952,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 600px) { .customizer-section-toggles, .guest-public-gifts { grid-template-columns: 1fr; } .guest-public-gift { padding: 14px 0; } }
 
 .app-shell, .guest-page, .role-page, .checkin-page { background-image: var(--watercolor-floral-background); background-position: center top; background-size: 100% 100vh; background-repeat: no-repeat; background-attachment: fixed; }
-.checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-watercolor-overlay.png'); }
+.checkin-page { --watercolor-floral-background: linear-gradient(rgba(32,44,38,.78), rgba(32,44,38,.78)), url('/images/floral-overlay.svg'); }
 @media (max-width: 600px) { .app-shell, .guest-page, .role-page, .checkin-page, .marketing-page { background-size: 100vw 100svh; } }
 @media (max-width: 760px) { .couple-role-page .customizer-workspace { grid-template-columns: 1fr; } .couple-role-page .customize-preview { position: static; } .couple-role-page .customizer-upload-panel .customizer-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .guest-full-site-heading { align-items: flex-start; flex-direction: column; } .guest-full-site-heading .button-outline { width: 100%; justify-content: center; } }
 @media (max-width: 480px) { .guest-invitation-actions { grid-template-columns: 1fr; } .couple-role-page .customizer-layout-options > div { grid-template-columns: 1fr; } .guest-pix-copy-row { grid-template-columns: 1fr; } }
@@ -3996,7 +3996,7 @@ img { display: block; max-width: 100%; }
 .public-cover-theme-garden .public-wedding-cover-ornament::before {
   inset: 0;
   opacity: .2;
-  background: url('/images/floral-watercolor-overlay.png') no-repeat right center / auto 100%;
+  background: url('/images/floral-overlay.svg') no-repeat right center / auto 100%;
 }
 
 .theme-editorial {
@@ -4043,12 +4043,12 @@ img { display: block; max-width: 100%; }
 .public-cover-theme-floral .public-wedding-cover-ornament::before {
   inset: 0;
   opacity: .36;
-  background: url('/images/floral-watercolor-overlay.png') no-repeat center / 100% 100%;
+  background: url('/images/floral-overlay.svg') no-repeat center / 100% 100%;
 }
 
 .theme-floral .public-wedding-story,
 .theme-floral .public-wedding-display-cta {
-  background-image: url('/images/floral-watercolor-overlay.png');
+  background-image: url('/images/floral-overlay.svg');
   background-repeat: no-repeat;
   background-position: center;
   background-size: min(100%, 820px) auto;
@@ -7286,7 +7286,7 @@ img { display: block; max-width: 100%; }
   align-content: center;
   min-height: clamp(340px, 36vw, 480px);
   padding: clamp(64px, 8vw, 96px) clamp(72px, 12vw, 180px);
-  background-image: linear-gradient(90deg, transparent 0%, transparent 17%, color-mix(in srgb, var(--paper) 76%, transparent) 28%, var(--paper) 38%, var(--paper) 62%, color-mix(in srgb, var(--paper) 76%, transparent) 72%, transparent 83%, transparent 100%), url('/images/floral-watercolor-overlay.png');
+  background-image: linear-gradient(90deg, transparent 0%, transparent 17%, color-mix(in srgb, var(--paper) 76%, transparent) 28%, var(--paper) 38%, var(--paper) 62%, color-mix(in srgb, var(--paper) 76%, transparent) 72%, transparent 83%, transparent 100%), url('/images/floral-overlay.svg');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%, min(100%, 900px) auto;
@@ -7417,7 +7417,7 @@ img { display: block; max-width: 100%; }
   .theme-floral .public-wedding-story {
     min-height: 320px;
     padding: 54px clamp(70px, 18vw, 88px);
-    background-image: linear-gradient(90deg, transparent 0%, transparent 8%, color-mix(in srgb, var(--paper) 82%, transparent) 18%, var(--paper) 30%, var(--paper) 70%, color-mix(in srgb, var(--paper) 82%, transparent) 82%, transparent 92%, transparent 100%), url('/images/floral-watercolor-overlay.png');
+    background-image: linear-gradient(90deg, transparent 0%, transparent 8%, color-mix(in srgb, var(--paper) 82%, transparent) 18%, var(--paper) 30%, var(--paper) 70%, color-mix(in srgb, var(--paper) 82%, transparent) 82%, transparent 92%, transparent 100%), url('/images/floral-overlay.svg');
     background-size: 100% 100%, 560px auto;
   }
 

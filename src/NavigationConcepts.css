@@ -1,7 +1,7 @@
 .nav-concepts-page {
   min-height: 100vh;
   color: #263d31;
-  background: #f6f3ed url('/images/floral-watercolor-overlay.png') center top / min(100%, 1180px) auto repeat-y;
+  background: #f6f3ed url('/images/floral-overlay.svg') center top / min(100%, 1180px) auto repeat-y;
   font-family: 'DM Sans', sans-serif;
 }
 
