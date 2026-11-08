@@ -655,6 +655,7 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Regras do novo visual: sem cartões coloridos como estrutura, sem rótulos acima de títulos, sem ícones decorativos em círculo, sem barra colorida lateral em item ativo, sem sombras decorativas, fundo de papel liso no desktop.
 - O fundo de folhas saiu da interface do produto em todas as larguras e permanece no tema Floral do convite; a retirada segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
 - Em 08/11/2026, foram escolhidas fotos do Pexels para a landing de marketing e a tela de acesso do painel dos noivos, com créditos aos fotógrafos. São imagens ilustrativas; a prévia real do convite continua sem foto até o casal escolher a própria.
+- Em 08/11/2026, as fotos escolhidas pelo casal passaram a caber por inteiro na capa, nas galerias e nas demais áreas visuais do convite e das prévias, sem recorte.
 - Pendente: revisar a capa e os temas do convite com a mesma disciplina.
 
 ## 25. Autorização do dono para testes ponta a ponta — 07/11/2026
