@@ -91,6 +91,7 @@ export default function GiftHub({ gifts, pix, pixEnabled, pixValid, displayLabel
   }
 
   return <section className="gift-hub" aria-labelledby="gift-hub-title">
+    <ol className="gift-steps" aria-label="Como funciona"><li className={pixEnabled ? 'done' : ''}><b>1</b> Informe a chave Pix</li><li className={active.length ? 'done' : ''}><b>2</b> Adicione os presentes</li><li><b>3</b> Publique o convite</li></ol>
     <div className="gift-hub-top">
       <article className="gift-hero">
         <span className="gift-hero-icon" aria-hidden="true"><Gift size={22} /></span>
@@ -108,7 +109,7 @@ export default function GiftHub({ gifts, pix, pixEnabled, pixValid, displayLabel
         <button type="button" className="gift-summary-button" disabled={saving || !pixValid} onClick={onSavePix}>{saving ? 'Salvando…' : pixEnabled ? 'Salvar e publicar' : 'Ativar Pix e publicar'}</button>
       </aside>
     </div>
-    <ul className="gift-hub-actions">{actions.map((action) => <li key={action.id}><button type="button" className="gift-action-card" onClick={action.run} disabled={busy}><span className={`gift-action-icon gift-action-icon-${action.id}`} aria-hidden="true"><action.icon size={30} strokeWidth={1.6} /></span><span className="gift-action-label">{action.label}</span><span className="gift-action-plus" aria-hidden="true"><Plus size={22} /></span></button></li>)}</ul>
+    <ul className="gift-hub-actions">{actions.map((action) => <li key={action.id}><button type="button" id={`gift-open-${action.id}`} className="gift-action-card" onClick={action.run} disabled={busy}><span className={`gift-action-icon gift-action-icon-${action.id}`} aria-hidden="true"><action.icon size={30} strokeWidth={1.6} /></span><span className="gift-action-label">{action.label}</span><span className="gift-action-plus" aria-hidden="true"><Plus size={22} /></span></button></li>)}</ul>
     {presetOpen && <PresetDialog activeCount={active.length} busy={busy} onClose={() => setPresetOpen(false)} onAdd={addPreset} />}
     {catalogOpen && <CatalogDialog gifts={gifts} busy={busy} onClose={() => setCatalogOpen(false)} onAdd={onAddPreset} />}
   </section>

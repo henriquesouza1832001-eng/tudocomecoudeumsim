@@ -87,3 +87,17 @@
 .gift-catalog-info { width: 100%; box-sizing: border-box; }
 .gift-catalog-info small { white-space: nowrap; }
 .gift-catalog-card { display: block; } .gift-catalog-open { justify-self: stretch; }
+
+.gift-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 15px; color: #38453c; }
+.gift-steps li { display: flex; align-items: center; gap: 8px; }
+.gift-steps b { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #8a8f87; font-size: 14px; }
+.gift-steps li.done b { background: #3f6455; }
+.gift-empty { display: grid; justify-items: center; gap: 10px; padding: 32px 20px; text-align: center; border: 1px dashed #c9d1c6; border-radius: 16px; background: #fff; color: #38453c; }
+.gift-empty h3 { margin: 0; font-size: 1.3rem; }
+.gift-empty p { margin: 0; max-width: 520px; line-height: 1.5; }
+.gift-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.gift-list-overview { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px; }
+.gift-list-overview label:last-child { flex: 1 1 220px; }
+.gift-list-overview input[type="search"] { width: 100%; }
+.gift-advanced > summary { min-height: 56px; padding: 14px 18px; display: grid; gap: 2px; cursor: pointer; border: 1px solid #d8ddd5; border-radius: 14px; background: #fffefa; color: #263b31; }
+.gift-advanced[open] > summary { margin-bottom: 12px; }
