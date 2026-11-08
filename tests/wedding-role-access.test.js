@@ -210,24 +210,24 @@ test('couple site config saves the chosen public godparent profiles and rejects 
   assert.equal(invalidResponse.status, 400)
 })
 
-test('couple can save a HTTPS store link for a physical gift', async () => {
+test('couple gifts save as direct Pix contributions and reject store links', async () => {
   const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
     method: 'POST',
-    body: { title: 'Vasos de cerâmica', description: 'Conjunto para a casa', giftType: 'fixed', fulfillmentType: 'store_link', storeUrl: 'https://loja.example/produtos/vasos', amountCents: 15990 },
+    body: { title: 'Vasos de cerâmica', description: 'Conjunto para a casa', giftType: 'fixed', fulfillmentType: 'pix_direct', amountCents: 15990 },
   })
   assert.equal(response.status, 201)
   const result = await response.json()
-  assert.equal(result.gift.fulfillment_type, 'store_link')
-  assert.equal(result.gift.store_url, 'https://loja.example/produtos/vasos')
+  assert.equal(result.gift.fulfillment_type, 'pix_direct')
+  assert.equal(result.gift.store_url, null)
 })
 
-test('couple gift links reject non-HTTPS destinations', async () => {
+test('couple cannot add a gift that redirects guests to a store', async () => {
   const response = await call('/api/couple/weddings/wedding-1/gifts', 'couple_admin', {
     method: 'POST',
-    body: { title: 'Vaso', giftType: 'fixed', fulfillmentType: 'store_link', storeUrl: 'http://loja.example/produtos/vaso', amountCents: 15990 },
+    body: { title: 'Vaso', giftType: 'fixed', fulfillmentType: 'store_link', storeUrl: 'https://loja.example/produtos/vaso', amountCents: 15990 },
   })
   assert.equal(response.status, 400)
-  assert.deepEqual(await response.json(), { error: 'invalid_store_url' })
+  assert.deepEqual(await response.json(), { error: 'gift_store_link_unavailable' })
 })
 
 test('editors can delete an event with no linked records', async () => {

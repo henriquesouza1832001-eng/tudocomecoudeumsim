@@ -6,7 +6,7 @@ Uma plataforma para organizar o casamento com um site personalizado, convites, c
 
 - Criem um site de casamento com temas, cores, fotos, história do casal, eventos e orientações aos convidados.
 - Organizem convidados, famílias, acompanhantes, convites individuais e confirmações por evento.
-- Cadastrem presentes por Pix direto ou links de lojas externas. A plataforma não cobra comissão sobre os presentes.
+- Montem uma lista paga por Pix diretamente aos noivos. A plataforma não cobra comissão sobre os presentes.
 - Planejem despesas, fornecedores, valores e vencimentos.
 - Preparem o controle de entrada por QR code para a equipe do evento.
 
@@ -14,8 +14,7 @@ Uma plataforma para organizar o casamento com um site personalizado, convites, c
 
 - Acessem o convite pelo link ou QR code, sem precisar instalar um aplicativo.
 - Consultem informações do casamento e confirmem presença no convite individual.
-- Transfiram presentes por Pix diretamente aos noivos. A plataforma não recebe, processa ou repassa esse valor.
-- Para presentes de loja, abram o link do produto e concluam compra e entrega fora da plataforma.
+- Escolham presentes, confiram o total e transfiram via Pix diretamente aos noivos pelo próprio banco. A plataforma não recebe, processa, confirma ou repassa esse valor.
 
 ## Contato
 

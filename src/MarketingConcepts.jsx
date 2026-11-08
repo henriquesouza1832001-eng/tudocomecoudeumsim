@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Check, Flower2, Gift, Heart, Link, QrCode, Users, Wallet } from 'lucide-react'
+import { ArrowRight, CalendarDays, Check, Flower2, Gift, Heart, QrCode, Users, Wallet } from 'lucide-react'
 import './MarketingConcepts.css'
 import { PRODUCT_NAME } from './product-config.js'
 
@@ -66,12 +66,12 @@ export default function MarketingConcepts() {
         <article><span><CalendarDays size={20} /></span><h3>Gerenciar eventos</h3><p>Publicar datas, horários, locais e a programação da celebração.</p></article>
         <article><span><QrCode size={20} /></span><h3>Conferir a entrada</h3><p>A equipe valida o QR individual ou registra a chegada manualmente no evento.</p></article>
         <article><span><Wallet size={20} /></span><h3>Acompanhar despesas</h3><p>Registrar fornecedores, valores, pagamentos e vencimentos no painel do casal.</p></article>
-        <article><span><Gift size={20} /></span><h3>Compartilhar presentes</h3><p>Exibir uma chave Pix direta aos noivos ou links para lojas escolhidas pelo casal.</p></article>
+        <article><span><Gift size={20} /></span><h3>Compartilhar presentes</h3><p>Montar a lista e receber o valor total diretamente na chave Pix dos noivos.</p></article>
       </div>
     </section>
     <section className="concept-flow" id="presentes" aria-labelledby="concept-flow-title">
-      <div><span className="concept-overline">PIX DIRETO OU LINK DE LOJA</span><h2 id="concept-flow-title">O presente vai ao casal ou à loja escolhida.</h2><p>O convidado faz a transferência no aplicativo do próprio banco ou conclui a compra no site da loja. A plataforma não recebe nem confirma pagamentos de presentes.</p></div>
-      <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>O casal escolhe a opção</strong><small>Chave Pix ou produto de loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>O convidado conclui</strong><small>No aplicativo do banco ou na loja</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Link size={19} /></span><strong>O pagamento é externo</strong><small>Direto ao casal ou à loja</small></div></div>
+      <div><span className="concept-overline">PIX DIRETO AOS NOIVOS</span><h2 id="concept-flow-title">O presente vai direto para o casal.</h2><p>O convidado escolhe os itens, confere o total e faz a transferência pelo aplicativo do próprio banco. A plataforma não recebe nem confirma o pagamento.</p></div>
+      <div className="concept-flow-card"><div><span><Gift size={19} /></span><strong>O casal monta a lista</strong><small>Itens e valores sugeridos</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>O convidado confere</strong><small>Itens e valor total no convite</small></div><ArrowRight className="concept-flow-arrow" /><div><span><Wallet size={19} /></span><strong>A transferência é direta</strong><small>Para a chave Pix dos noivos</small></div></div>
     </section>
     <footer className="concept-footer"><span>{PRODUCT_NAME}</span><span>Prévia ilustrativa; não representa dados de um casal</span></footer>
   </main>

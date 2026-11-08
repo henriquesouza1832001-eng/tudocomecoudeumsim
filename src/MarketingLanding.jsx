@@ -97,7 +97,7 @@ const ALBUM = [
 const FAQ = [
   ['Os convidados precisam instalar um aplicativo?', 'Não. O convite abre direto pelo link, no navegador do celular.'],
   ['Como funciona o Pix dos presentes?', 'O casal publica uma chave Pix. O convidado transfere pelo próprio banco, direto aos noivos. A plataforma não recebe nem confirma o pagamento.'],
-  ['Posso indicar uma loja para um presente físico?', 'Sim. O link abre o produto na loja para o convidado concluir a compra e combinar a entrega.'],
+  ['Como os convidados pagam os presentes?', 'Eles escolhem os presentes e transferem o total diretamente para a chave Pix do casal, pelo aplicativo do próprio banco. A plataforma não recebe nem confirma a transferência.'],
   ['Como compartilho o convite?', 'Depois de publicar, enviem o link individual de cada convidado por mensagem.'],
   ['A equipe consegue conferir a entrada?', 'Sim. A equipe usa o leitor de QR, registra entradas manuais e consulta a lista do evento.'],
   ['Também posso organizar os pagamentos do casamento?', 'Sim. Registrem fornecedores, despesas e vencimentos no painel do casal.'],

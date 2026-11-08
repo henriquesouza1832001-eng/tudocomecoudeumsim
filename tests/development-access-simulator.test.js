@@ -53,7 +53,7 @@ test('the local simulator provides published wedding content for the public invi
   const result = await get('/api/public/weddings/ana-e-caio')
   assert.equal(result.body.siteConfig.theme, 'garden')
   assert.equal(result.body.events[0].id, 'demo-event')
-  assert.equal(result.body.gifts[0].fulfillment_type, 'store_link')
+  assert.equal(result.body.gifts[0].fulfillment_type, 'pix_direct')
 })
 
 test('the local simulator supplies only the assigned event roster to the staff screen', async () => {

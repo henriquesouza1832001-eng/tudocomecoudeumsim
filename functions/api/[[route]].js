@@ -1,4 +1,3 @@
-import { safeStoreLink } from '../../src/site-section-content.js'
 import { Hono } from 'hono'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import { zipSync, zlibSync } from 'fflate'
@@ -2514,13 +2513,9 @@ app.post('/api/couple/weddings/:weddingId/gifts', requireSession, async (context
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
-  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
-  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
-  let safeStoreUrl = null
-  if (fulfillmentType === 'store_link') {
-    safeStoreUrl = safeStoreLink(storeUrl)
-    if (!safeStoreUrl) return jsonError(context, 400, 'invalid_store_url')
-  }
+  if (body?.fulfillmentType === 'store_link') return jsonError(context, 400, 'gift_store_link_unavailable')
+  const fulfillmentType = 'pix_direct'
+  const safeStoreUrl = null
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -2550,13 +2545,9 @@ app.patch('/api/couple/weddings/:weddingId/gifts/:giftId', requireSession, async
   const body = await context.req.json().catch(() => null)
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const description = typeof body?.description === 'string' ? body.description.trim() : ''
-  const fulfillmentType = body?.fulfillmentType === 'store_link' ? 'store_link' : 'pix_direct'
-  const storeUrl = typeof body?.storeUrl === 'string' ? body.storeUrl.trim() : ''
-  let safeStoreUrl = null
-  if (fulfillmentType === 'store_link') {
-    safeStoreUrl = safeStoreLink(storeUrl)
-    if (!safeStoreUrl) return jsonError(context, 400, 'invalid_store_url')
-  }
+  if (body?.fulfillmentType === 'store_link') return jsonError(context, 400, 'gift_store_link_unavailable')
+  const fulfillmentType = 'pix_direct'
+  const safeStoreUrl = null
   const amountCents = body?.giftType === 'custom' ? null : body?.amountCents
   const goalCents = body?.goalCents === '' || body?.goalCents === undefined ? null : body?.goalCents
   const validInteger = (value) => Number.isSafeInteger(value) && value > 0
@@ -2815,6 +2806,7 @@ app.get('/api/public/weddings/:slug', async (context) => {
     ? await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, title, description, amount_cents, goal_cents
       FROM gifts WHERE wedding_id = ? AND status = 'active' ORDER BY display_order, created_at`).bind(wedding.id).all()
     : { results: [] }
+  const publicGifts = gifts.results.map((gift) => ({ ...gift, fulfillment_type: 'pix_direct' }))
   const siteConfig = publicSiteConfig(parsedConfig, gifts.results.length > 0)
   const wallMessages = parsedConfig.enabledSections.includes('Mural de recados')
     ? await context.env.DB.prepare("SELECT id, author_name AS authorName, message, created_at AS createdAt FROM guest_wall_messages WHERE wedding_id = ? AND status = 'approved' ORDER BY created_at DESC LIMIT 100").bind(wedding.id).all()
@@ -2823,7 +2815,7 @@ app.get('/api/public/weddings/:slug', async (context) => {
     wedding: { slug: wedding.slug, partnerOneName: wedding.partner_one_name, partnerTwoName: wedding.partner_two_name, eventDate: wedding.event_date, eventTime: wedding.event_time, timezone: wedding.timezone },
     siteConfig,
     events: publicWeddingEvents(wedding),
-    gifts: gifts.results,
+    gifts: publicGifts,
     wallMessages: wallMessages.results,
     guestPolicy: { companionsAllowed: Boolean(policy?.companions_allowed), maxCompanions: policy?.max_companions || 0 },
   }, 200, { 'Cache-Control': 'public, max-age=60' })
@@ -3150,7 +3142,7 @@ app.get('/api/invitation', async (context) => {
       return { ...publicEvent, rsvp: rsvps.results.find((rsvp) => rsvp.event_id === event.id) || null }
     }),
     guestPolicy: { companionsAllowed: Boolean(guestPolicy?.companions_allowed), maxCompanions: guestPolicy?.max_companions || 0 },
-    gifts: gifts.results,
+    gifts: gifts.results.map((gift) => ({ ...gift, fulfillment_type: 'pix_direct' })),
     wallets: { apple: walletReady(context.env, 'apple'), google: walletReady(context.env, 'google') },
   })
 })

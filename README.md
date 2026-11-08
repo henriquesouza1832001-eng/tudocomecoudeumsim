@@ -1,6 +1,6 @@
 # Meu Altar
 
-Plataforma responsiva para casais criarem o site do casamento e organizarem convites, convidados, eventos e detalhes da celebração. O modelo comercial aprovado é um pagamento único de R$ 90,00 pelo acesso; o checkout ainda está em sandbox e não libera acesso automaticamente. Presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas; a plataforma não recebe nem movimenta esse dinheiro.
+Plataforma responsiva para casais criarem o site do casamento e organizarem convites, convidados, eventos e detalhes da celebração. O modelo comercial aprovado é um pagamento único de R$ 90,00 pelo acesso; o checkout ainda está em sandbox e não libera acesso automaticamente. Os presentes são pagos diretamente aos noivos por Pix; a plataforma não recebe nem movimenta esse dinheiro.
 
 ## Como a plataforma funciona
 
@@ -11,7 +11,7 @@ Plataforma responsiva para casais criarem o site do casamento e organizarem conv
 - **Superadmin:** administra a plataforma em uma área protegida por Cloudflare Access e autenticação de dois fatores.
 - **Site público:** mostra a versão publicada. O rascunho do casal só aparece aos convidados depois da publicação.
 
-O editor oferece temas e escolhas visuais curadas, prévia em celular, tablet e computador, biblioteca de seções e mídia do casal. O convite pode continuar sem foto. A lista de presentes pode exibir uma chave Pix dos noivos ou encaminhar o convidado para uma loja externa. Valores de fornecedores são anotações privadas do casal; lembretes mensais dependem da configuração do Worker de despesas.
+O editor oferece temas e escolhas visuais curadas, prévia em celular, tablet e computador, biblioteca de seções e mídia do casal. O convite pode continuar sem foto. A lista de presentes permite montar um carrinho; o convidado transfere o total para a chave Pix do casal pelo aplicativo do próprio banco. Valores de fornecedores são anotações privadas do casal; lembretes mensais dependem da configuração do Worker de despesas.
 
 O jogo ainda não tem API nem persistência. O controle de quiz foi removido da demonstração `/painel/demo` porque só alterava estado local e não registrava respostas ou ranking. O fluxo de cobrança do acesso também permanece em sandbox: os endpoints de teste do Mercado Pago não liberam acesso automaticamente.
 

@@ -109,20 +109,21 @@ test('migrated SQLite persists couple, invitation, expense and event staff opera
   assert.equal(sqlite.prepare('SELECT status FROM wedding_expenses WHERE id=?').get(expense.result.id).status, 'archived')
   assert.equal((await call(`${base}/expenses/${expense.result.id}`, { method: 'PATCH', body: { status: 'active' } })).status, 200)
   assert.equal(sqlite.prepare('SELECT status FROM wedding_expenses WHERE id=?').get(expense.result.id).status, 'active')
-  const gift = await call(`${base}/gifts`, { method: 'POST', body: { title: 'Jogo de pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl: 'https://example.com/pratos' } })
+  const gift = await call(`${base}/gifts`, { method: 'POST', body: { title: 'Jogo de pratos', giftType: 'custom', fulfillmentType: 'pix_direct' } })
   assert.equal(gift.status, 201)
-  assert.equal((await call(`${base}/gifts`)).result.gifts[0].store_url, 'https://example.com/pratos')
+  assert.equal((await call(`${base}/gifts`)).result.gifts[0].fulfillment_type, 'pix_direct')
+  assert.equal(sqlite.prepare('SELECT store_url FROM gifts WHERE id=?').get(gift.result.gift.id).store_url, null)
   const giftPath = `${base}/gifts/${gift.result.gift.id}`
-  const giftFields = { title: 'Jogo de pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl: 'https://example.com/pratos' }
+  const giftFields = { title: 'Jogo de pratos', giftType: 'custom', fulfillmentType: 'pix_direct' }
   assert.equal((await call(giftPath, { method: 'PATCH', body: { ...giftFields, status: 'archived' } })).status, 200)
   assert.equal((await call(giftPath, { method: 'PATCH', body: { ...giftFields, status: 'active' } })).status, 200)
   assert.equal(sqlite.prepare('SELECT status FROM gifts WHERE id=?').get(gift.result.gift.id).status, 'active')
-  for (const storeUrl of ['https://localhost/item', 'https://127.0.0.1/item', 'https://192.168.1.1/item', 'https://[::1]/item', 'https://printer.local/item', 'https://user:password@example.com/item', 'javascript:alert(1)']) {
-    const invalidGift = await call(`${base}/gifts`, { method: 'POST', body: { title: 'Pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl } })
-    assert.equal(invalidGift.status, 400, storeUrl)
-    assert.equal(invalidGift.result.error, 'invalid_store_url')
-    assert.equal((await call(`${base}/gifts/${gift.result.gift.id}`, { method: 'PATCH', body: { title: 'Pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl, status: 'active' } })).status, 400)
-  }
+  const storeGift = await call(`${base}/gifts`, { method: 'POST', body: { title: 'Pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl: 'https://example.com/pratos' } })
+  assert.equal(storeGift.status, 400)
+  assert.equal(storeGift.result.error, 'gift_store_link_unavailable')
+  const storeGiftUpdate = await call(`${giftPath}`, { method: 'PATCH', body: { title: 'Jogo de pratos', giftType: 'custom', fulfillmentType: 'store_link', storeUrl: 'https://example.com/pratos', status: 'active' } })
+  assert.equal(storeGiftUpdate.status, 400)
+  assert.equal(storeGiftUpdate.result.error, 'gift_store_link_unavailable')
   const config = { theme: 'garden', paletteIndex: 0, coverLayout: 'full', enabledSections: ['Eventos'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR' }
   const savedDraft = await call(`${base}/site-config`, { method: 'PUT', body: config })
   assert.equal(savedDraft.status, 200, JSON.stringify(savedDraft.result))

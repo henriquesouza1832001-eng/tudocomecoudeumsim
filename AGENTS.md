@@ -4,7 +4,7 @@ Este arquivo é a fonte de verdade para o agente. Siga exatamente o que está es
 
 ## 1. Visão
 
-Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. O casal paga uma única vez pelo acesso à plataforma; o valor e as condições ficam centralizados em configuração. Presentes são pagos diretamente aos noivos por Pix ou comprados em lojas externas acessadas por links do casal. A plataforma não recebe nem processa valores de presentes.
+Plataforma em que casais criam um site de casamento personalizável, com lista de presentes, confirmação de presença, notificações, controle de entrada por QR code e um jogo diário opcional. O casal paga uma única vez pelo acesso à plataforma; o valor e as condições ficam centralizados em configuração. Todos os presentes são pagos diretamente aos noivos por Pix. A plataforma não recebe nem processa valores de presentes.
 
 Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única constante de configuração, nunca espalhado pelo código.
 
@@ -40,13 +40,13 @@ Nome do produto: usar o nome já definido no Codex. Manter o nome em uma única 
 8. Lista de presença (RSVP).
 9. Notificação push 30 dias antes do casamento, com mensagem personalizada pelos noivos, oferecendo adicionar o evento ao calendário. O sistema pergunta qual calendário o convidado usa: Google, Outlook ou Apple.
 10. Site dos noivos totalmente personalizável dentro de limites definidos. Personalização curada, nunca infinita.
-11. Presentes por Pix direto aos noivos ou links externos de loja. A plataforma apenas exibe o Pix ou encaminha o convidado à loja; não inicia compras, cobra, processa, guarda ou repassa dinheiro.
+11. Presentes por Pix direto aos noivos. O convidado monta o carrinho, confere o total e transfere pelo próprio banco; a plataforma não redireciona para lojas nem recebe, processa, guarda ou repassa dinheiro.
 12. Modo de controle de entrada: parte do app dedicada a ler QR code no dia do evento, substituindo a lista física.
 13. Jogo diário, uma partida por dia por convidado, com ranking entre convidados. Opcional: os noivos ligam ou desligam.
 14. Idioma do piloto: somente português brasileiro (pt-BR). Suporte multilíngue é uma evolução futura que depende de autorização do dono.
 15. Cada casal tem seu subdomínio.
 16. Cobrar uma única vez pelo acesso do casal à plataforma, conforme preço centralizado em configuração. Não cobrar taxa por presente, nem processar valores de presentes.
-17. A lista pode conter Pix direto aos noivos e links de produtos em lojas externas. O link apenas encaminha para a loja; compra e entrega ocorrem fora da plataforma. A cobrança pelo acesso da plataforma é uma transação separada.
+17. A lista contém sugestões de presentes pagas via Pix direto aos noivos. O convidado escolhe os itens e transfere o total pelo próprio banco. A cobrança pelo acesso à plataforma é uma transação separada.
 18. O preço único e as condições de reembolso do acesso podem ser comunicados claramente; não sugerir que a plataforma processa presentes ou cobra convidados.
 19. O painel apresenta o planejamento de despesas com fornecedores, registro de valores e vencimentos e lembretes mensais por e-mail ou push como parte da experiência da plataforma.
 20. Convites físicos e digitais usam a identidade do site. O casal pode preparar arquivos de impressão em formatos definidos e qualidade adequada, e adicionar o convite à carteira digital quando o recurso estiver implementado.
@@ -246,7 +246,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 ### 7.20 Entrega por fase
 
 - Fase 1: assistente inicial, temas, cores, fontes, capa, biblioteca de seções (ligar, desligar, reordenar, variações), eventos, idioma pt-BR, imagens com ponto focal, pré-visualização ao vivo, rascunho e publicação, verificador básico, presets simples de animação.
-- Fase 2: personalização dos presentes, chave Pix direta dos noivos e links HTTPS de lojas externas.
+- Fase 2: personalização dos presentes, carrinho e chave Pix direta dos noivos.
 - Fase 3: mensagem dos 30 dias com variáveis, título do calendário, monograma e ícone do PWA, prévia de compartilhamento, QR estilizado e arte para impressão, envelope animado e confete.
 - Fase 5: personalização do quiz (perguntas, prêmio e encerramento).
 - Antes da fase 6: visibilidade por grupo refinada, histórico de versões, colaboradores e modo agradecimento, se não tiverem entrado antes por necessidade.
@@ -261,7 +261,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 
 - Convidados: cadastro manual, importação por planilha CSV, grupos e famílias, acompanhantes, restrições alimentares.
 - Presença: status por convidado, relatório e exportação.
-- Presentes: catálogo de itens com Pix direto ou link de loja externa. Não registrar recebimentos nem taxas.
+- Presentes: catálogo de itens, carrinho e transferência Pix direta aos noivos. Não redirecionar para lojas nem registrar recebimentos ou taxas.
 - Convites: link curto, QR code, subdomínio, link de acesso individual ou por grupo.
 - Mensagem da notificação dos 30 dias em pt-BR.
 - Controle de entrada: lista de quem já entrou, em tempo real.
@@ -281,7 +281,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Todas as consultas e mutações de dados verificam conta, papel, casamento e evento no servidor. O cliente nunca escolhe livremente o identificador do casamento autorizado.
 - Convidados e padrinhos usam token individual armazenado apenas como hash; o servidor limita eventos pelo grupo autorizado. Padrinhos só consultam e atualizam tarefas ligadas ao próprio convite.
 - Equipe do evento e equipe de entrada só consultam eventos atribuídos por `membership_event_access`. A lista da equipe não inclui e-mail ou telefone; somente `checkin_staff` pode registrar entradas e acompanhantes de última hora.
-- A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando trilha de auditoria e, se existirem, registros históricos legados de presentes. O fluxo atual de Pix direto e links de loja não cria registros financeiros. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
+- A exclusão administrativa remove ou anonimiza dados pessoais de convidados conforme política de retenção, preservando trilha de auditoria e, se existirem, registros históricos legados de presentes. O fluxo atual de Pix direto não cria registros financeiros. Operações irreversíveis exigem reautenticação, confirmação explícita e registro de auditoria.
 - Nenhuma tela do casal ou superadmin deve sugerir que a plataforma recebe ou repassa valores de presentes. A cobrança única de acesso é uma transação separada, identificada como pagamento à plataforma.
 
 ## 9. Notificações push (VAPID)
@@ -303,13 +303,12 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 - Apple e demais: arquivo .ics gerado pelo Worker.
 - Guardar a escolha do convidado para não perguntar de novo.
 
-## 11. Presentes por Pix direto e links de loja
+## 11. Presentes por Pix direto
 
 - A plataforma não recebe, processa, guarda ou repassa dinheiro dos presentes. Não criar checkout, split, comissão, ledger financeiro ou confirmação automática de pagamento para este fluxo.
-- O casal pode cadastrar uma chave Pix e instruções curtas. O convidado usa o app bancário dele para pagar diretamente ao casal. A interface informa que a confirmação ocorre fora da plataforma.
-- O casal pode cadastrar presente físico com nome, descrição, imagem opcional e URL de uma loja. O botão abre a página externa para o convidado concluir a compra e combinar a entrega. A plataforma não vende o item nem promete disponibilidade ou preço.
-- Validar URLs como HTTPS e mostrar claramente quando o convidado sairá do site. Rejeitar esquemas de script, URLs locais e protocolos que não sejam HTTP(S).
-- Não expor endereços residenciais ou dados privados de entrega em páginas públicas; orientar a combinação direta entre convidado e casal.
+- O casal cadastra uma chave Pix. O convidado escolhe presentes, confere o total e transfere pelo aplicativo do próprio banco diretamente ao casal. A plataforma mostra instruções e copia a chave; a confirmação fica fora do site.
+- Todos os itens da lista representam sugestões de valor para uma contribuição Pix. A experiência pública mantém o convidado no convite até exibir a chave Pix; não abre lojas externas.
+- A lista só fica disponível aos convidados quando a chave Pix está ativa e publicada.
 - Não cobrar taxa por presente. A cobrança única pelo acesso da plataforma é separada da lista de presentes.
 - A lista pública mostra somente formas habilitadas pelo casal e dados explicitamente marcados como públicos.
 
@@ -378,7 +377,7 @@ Opções por seção, sempre em listas fechadas: fundo (cor da paleta, imagem ou
 3. Entrada: leitor de QR para a equipe, funcionamento offline, registro manual de última hora, buffet e exportação de entradas.
 4. Despesas: fornecedores, orçamento, pagamentos, vencimentos e lembretes por e-mail ou push.
 5. Convites físicos e digitais: formatos de impressão em alta resolução, QR estilizado e integração de carteira digital.
-6. Presentes: lista pública com Pix direto aos noivos e/ou links externos de loja; sem checkout, ledger financeiro, split ou repasse pela plataforma. Esta etapa vem depois do controle de despesas.
+6. Presentes: lista pública com carrinho e Pix direto aos noivos; sem redirecionamento para loja, checkout, ledger financeiro, split ou repasse pela plataforma. Esta etapa vem depois do controle de despesas.
 7. PWA, notificações e calendários: instalação, lembrete personalizado e escolha de calendário em pt-BR.
 8. Quiz diário.
 9. Empacotamento para as lojas.
@@ -663,3 +662,11 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - O dono, Henrique, autorizou expressamente que, em testes ponta a ponta de cadastro, a confirmação de e-mail de **contas de teste** seja feita diretamente no D1 de produção (marcar a conta como ativa, o vínculo como ativo e o desafio de verificação como consumido), usando qualquer e-mail de teste, em vez de depender do link recebido por e-mail.
 - Escopo: apenas contas criadas para teste (por exemplo, e-mails com alias `+meualtar-e2e`), identificadas por id e e-mail na própria instrução SQL. Não vale para contas de casais reais, nem para apagar ou alterar dados de terceiros.
 - Registrado a pedido do dono em 07/11/2026.
+
+## 26. Decisão atual sobre presentes — 08/11/2026
+
+- O dono definiu que todos os presentes são pagos via Pix diretamente aos noivos. A lista mantém seu layout com banner, atalhos, resumo e cartões; a mudança no convite é oferecer o carrinho e mostrar o Pix do casal ao final.
+- O convidado escolhe itens, confere o total e faz a transferência no próprio banco. O site não abre loja, inicia ou confirma transferência, recebe ou movimenta dinheiro.
+- A lista pública exige uma chave Pix ativa e publicada. O valor total e a chave são apresentados no convite, com cópia manual da chave e titular.
+- Novos presentes são gravados como `pix_direct`. A API rejeita criação e edição com `store_link`, e respostas públicas não expõem URLs de loja. Registros antigos de loja podem ser editados/restaurados como Pix; nunca devem abrir redirecionamento externo.
+- Esta decisão substitui as instruções anteriores que permitiam presentes por links de lojas. As anotações datadas permanecem como histórico, não como comportamento atual.

@@ -182,7 +182,31 @@ test('published gift lists include catalog items and expose Pix when the standal
   assert.equal(response.status, 200)
   assert.deepEqual(body.gifts.map((gift) => gift.id), ['gift-pix', 'gift-store'])
   assert.equal('store_url' in body.gifts[1], false)
+  assert.equal(body.gifts[1].fulfillment_type, 'pix_direct')
   assert.deepEqual(body.siteConfig.pix, config.pix)
+})
+
+test('individual invitation uses the couple Pix key for gifts without exposing legacy store links', async () => {
+  const token = 'a'.repeat(43)
+  const gift = { id: 'gift-store', gift_type: 'fixed', fulfillment_type: 'store_link', title: 'Vaso', description: '', amount_cents: 8000, goal_cents: null }
+  const pix = { enabled: true, key: 'noivos@example.com', holderName: 'Noivos' }
+  const publishedConfig = { ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix }
+  const guest = {
+    id: 'guest-1', wedding_id: 'wedding-1', group_id: null, name: 'Convidada', party_size: 1, guest_type: 'guest',
+    source: 'individual', wedding_status: 'active', site_published_at: '2026-10-18T12:00:00.000Z',
+    published_site_config_json: JSON.stringify(publishedConfig), published_events_json: '[]', partner_one_name: 'Ana',
+    partner_two_name: 'Bia', event_date: '2027-09-18', event_time: '16:00', timezone: 'America/Sao_Paulo',
+  }
+  const { response } = await call('/api/invitation', {
+    headers: { Authorization: `Bearer ${token}` },
+    first(query) { return query.includes('FROM guests g JOIN weddings w') ? guest : undefined },
+    all(query) { return query.includes('FROM gifts') ? { results: [gift] } : { results: [] } },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.siteConfig.pix, pix)
+  assert.equal(body.gifts[0].fulfillment_type, 'pix_direct')
+  assert.equal('store_url' in body.gifts[0], false)
 })
 
 test('published invitation does not query or expose gifts when their display mode is hidden', async () => {
