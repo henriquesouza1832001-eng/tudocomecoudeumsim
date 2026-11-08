@@ -21,6 +21,8 @@
 .su-main{grid-area:main;min-width:0;max-width:600px}
 .su-aside{grid-area:aside;position:sticky;top:24px;margin-bottom:24px}
 .su-photo{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;background:var(--sand)}
+.su-photo-credit{position:absolute;top:12px;right:12px;z-index:4;padding:6px 8px;color:#fff;background:rgba(31,28,24,.72);font-size:11px;line-height:1.4}
+.su-photo-credit a{color:#fff;text-decoration:underline;text-underline-offset:2px}
 .su-phone{position:absolute;left:-28px;bottom:-24px}
 .su-strip-text{display:none}
 
@@ -104,6 +106,7 @@ fieldset.su-group legend{padding:0;margin-bottom:10px}
   .su-aside{position:relative;top:0;height:190px;margin:0;overflow:hidden}
   .su-photo{height:100%;aspect-ratio:auto;border-radius:0;object-position:50% 22%}
   .su-aside::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(29,27,24,.8),rgba(29,27,24,.1) 70%)}
+  .su-photo-credit{left:12px;right:auto;top:10px}
   .su-phone{left:auto;right:16px;top:8px;bottom:auto;transform:scale(.38);transform-origin:top right;z-index:2}
   .su-strip-text{display:flex;flex-direction:column;position:absolute;left:20px;bottom:18px;z-index:3;color:#fff;max-width:55%}
   .su-strip-text strong{font-family:'Fraunces Variable',Fraunces,Georgia,serif;font-weight:500;font-size:24px;line-height:1.1}

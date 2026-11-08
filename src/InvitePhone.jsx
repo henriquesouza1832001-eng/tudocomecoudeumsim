@@ -25,7 +25,7 @@ function countText(days) {
 
 /* Convite de exemplo. Sem `live`: data fixa de 19 de dezembro, 17h (se já passou, usa o ano seguinte; nunca mostra data passada).
    Com `live`: reflete nomes, data, áreas e presentes informados no cadastro. */
-export function InvitePhoneCard({ live = false, names = ['', ''], date = '', time = '', areas = [], gifts = '' }) {
+export function InvitePhoneCard({ live = false, names = ['', ''], date = '', time = '', areas = [], gifts = '', photoSrc = PHOTO }) {
   let label, count, title = 'Lívia', second = 'Caio'
   if (live) {
     const [a, b] = names.map((n) => (n || '').trim())
@@ -45,7 +45,7 @@ export function InvitePhoneCard({ live = false, names = ['', ''], date = '', tim
     <div className="lp-phone-screen" aria-hidden="true">
       <span className="lp-phone-notch" />
       <div className="lp-phone-photo">
-        <img src={PHOTO} alt="" width="759" height="506" loading="lazy" decoding="async" />
+        <img src={photoSrc} alt="" width="759" height="506" loading="lazy" decoding="async" />
         <div className="lp-phone-hero-text">
           <p className="lp-phone-kicker">Vamos casar</p>
           <p className="lp-phone-names">{title}<span className="lp-amp">&amp;</span>{second}</p>
