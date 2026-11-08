@@ -1,0 +1,63 @@
+.gift-hero { background-image: linear-gradient(110deg, rgba(27, 34, 28, .82), rgba(27, 34, 28, .25)), url('/images/fotos/painel-presentes.webp'); }
+.gift-summary { border-radius: 16px; }
+.gift-list-card { overflow: hidden; }
+.gift-list-overview { margin: 4px 0 16px; padding: 12px 16px; display: grid; grid-template-columns: minmax(120px, 1fr) minmax(110px, 1fr) minmax(130px, .8fr) minmax(140px, .9fr) minmax(170px, 1.25fr); align-items: center; gap: 14px; border-radius: 14px; background: #fff; }
+.gift-list-overview > div { min-width: 0; display: grid; gap: 3px; }
+.gift-list-overview > div + div { padding-left: 14px; border-left: 1px solid #e4dfd6; }
+.gift-list-overview > div span { color: #716c64; font-size: 12px; }
+.gift-list-overview > div strong { color: #2a2620; font-size: 14px; }
+.gift-list-overview > label { min-width: 0; display: grid; grid-template-columns: auto minmax(90px, 1fr); align-items: center; gap: 8px; color: #716c64; font-size: 12px; }
+.gift-list-overview > label input, .gift-list-overview > label select { min-width: 0; width: 100%; min-height: 38px; }
+.couple-role-page .couple-gift-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.couple-role-page .couple-gift-list > .couple-gift-card { min-width: 0; padding: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e8e0d5; border-radius: 14px; background: #fff; }
+.couple-gift-card-photo { position: relative; }
+.couple-role-page .gift-list-thumb { width: 100%; height: auto; aspect-ratio: 1.65; border-radius: 0; background: #ece9e1; }
+.couple-gift-card-photo > .admin-state { position: absolute; left: 10px; top: 10px; padding: 5px 8px; border-radius: 99px; background: rgba(255, 255, 255, .94); }
+.couple-gift-card-photo > .button-outline { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .96); }
+.couple-gift-card-content { min-width: 0; padding: 12px; display: grid; gap: 6px; }
+.couple-role-page .couple-gift-card-content > strong { overflow: hidden; color: #36342f; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.couple-role-page .couple-gift-card-content > small { color: #77736a; font-size: 11px; line-height: 1.4; }
+.couple-role-page .couple-gift-card-content > p { margin: 0; color: #77736a; font-size: 12px; line-height: 1.45; }
+.couple-gift-card-footer { margin-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.couple-gift-card-footer > strong { color: #303c34; font-size: 13px; }
+.couple-gift-card-footer > button { min-height: 34px; padding: 5px 12px; border-radius: 99px; color: #c94c49; }
+.gift-catalog-preview { padding: 16px; display: grid; gap: 8px; border: 1px solid #e8e0d5; background: #f8f6f1; }
+.gift-catalog-preview span { color: #6b6258; font-size: 14px; line-height: 1.5; }
+.gift-catalog-preview b { color: #365b4d; }
+.public-wedding-gifts .gift-cart-intro { margin: 0 0 18px; color: color-mix(in srgb, var(--forest) 78%, #333); line-height: 1.6; }
+.public-gift-grid > .gift-cart-card { min-width: 0; overflow: hidden; align-content: start; }
+.gift-cart-card > .public-gift-photo, .gift-cart-card > .public-gift-monogram { width: 100%; aspect-ratio: 1.4; height: auto; object-fit: cover; }
+.gift-cart-card-content { padding: 16px; display: grid; align-content: start; gap: 9px; }
+.gift-cart-card-content h3 { margin: 0; }
+.gift-cart-card-content p { margin: 0; }
+.gift-cart-price { color: var(--forest); font-size: 15px; }
+.gift-cart-custom-amount { display: grid; gap: 6px; color: color-mix(in srgb, var(--forest) 82%, #333); font-size: 13px; }
+.gift-cart-custom-amount input, .gift-cart-summary input, .gift-cart-pix-payment input { min-width: 0; min-height: 42px; width: 100%; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--forest) 25%, #fff); border-radius: 5px; background: #fff; color: #292722; font: inherit; }
+.gift-cart-add { min-height: 43px; padding: 8px 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 99px; background: var(--forest); color: #fff; font: inherit; cursor: pointer; }
+.gift-cart-add:disabled { opacity: .56; cursor: default; }
+.gift-cart-summary { margin-top: 22px; padding: clamp(16px, 3vw, 24px); border: 1px solid color-mix(in srgb, var(--forest) 18%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--paper, #f8f5ee) 78%, white); }
+.gift-cart-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.gift-cart-summary-heading h3 { margin: 4px 0 0; color: var(--forest); font: 400 25px/1.2 var(--font-heading, Georgia, serif); }
+.gift-cart-summary ul { margin: 14px 0 0; padding: 0; list-style: none; }
+.gift-cart-summary li { padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid color-mix(in srgb, var(--forest) 13%, transparent); }
+.gift-cart-summary li > div:first-child { min-width: 0; display: grid; gap: 6px; }
+.gift-cart-summary li label { display: flex; align-items: center; gap: 8px; color: #6b6258; font-size: 13px; }
+.gift-cart-summary li label input { width: 105px; min-height: 36px; }
+.gift-cart-line-actions { display: flex; align-items: center; gap: 12px; }
+.gift-cart-line-actions > label { display: flex; gap: 6px; }
+.gift-cart-line-actions > label input { width: 62px; min-height: 36px; }
+.gift-cart-remove { padding: 7px 10px; border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent); border-radius: 99px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; }
+.gift-cart-total { padding-top: 14px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-top: 1px solid color-mix(in srgb, var(--forest) 20%, transparent); color: var(--forest); }
+.gift-cart-total strong { font-size: 20px; }
+.gift-cart-summary > p { margin: 12px 0; color: #68655f; font-size: 13px; line-height: 1.5; }
+.gift-cart-continue { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.gift-cart-pix-payment { margin-top: 16px; padding: 18px; display: grid; gap: 10px; border: 1px solid color-mix(in srgb, var(--forest) 18%, transparent); background: #fff; }
+.gift-cart-pix-payment h4 { margin: 0; color: var(--forest); font: 400 23px/1.2 var(--font-heading, Georgia, serif); }
+.gift-cart-pix-payment p { margin: 0; color: #65635d; line-height: 1.55; }
+.gift-cart-pix-payment > label { display: grid; gap: 6px; color: #65635d; font-size: 13px; }
+.gift-cart-pix-payment > button { min-height: 43px; width: fit-content; }
+.gift-cart-holder { color: var(--forest); }
+.gift-cart-error { margin-top: 12px; }
+@media (max-width: 760px) { .gift-list-overview { grid-template-columns: minmax(72px, .9fr) minmax(68px, .8fr) minmax(104px, 1fr) minmax(124px, 1.15fr); gap: 8px; padding: 10px; } .gift-list-overview > label { grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: 11px; } .gift-list-overview > label:last-child { grid-column: 1 / -1; } .gift-list-overview > div + div { padding-left: 8px; } .couple-role-page .couple-gift-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } .couple-role-page .couple-gift-card-content { padding: 10px; } }
+@media (max-width: 560px) { .gift-list-overview { grid-template-columns: minmax(0, 1fr); } .gift-list-overview > div + div { padding: 0; border: 0; } .gift-list-overview > label { grid-template-columns: minmax(0, 1fr); } .gift-list-overview > label:last-child { grid-column: auto; } .couple-role-page .couple-gift-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gift-cart-summary li { align-items: flex-start; flex-direction: column; } .gift-cart-line-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; } }
+@media (max-width: 420px) { .couple-role-page .couple-gift-list { grid-template-columns: minmax(0, 1fr); } }

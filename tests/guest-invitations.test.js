@@ -169,25 +169,39 @@ test('published invitation preserves the event name and venue details', async ()
   assert.equal(body.events[0].address, address)
 })
 
-test('published invitation shows only the catalog entries allowed by its gift and Pix settings', async () => {
+test('published gift lists include catalog items and expose Pix when the standalone Pix section is hidden', async () => {
   const pixGift = { id: 'gift-pix', gift_type: 'fixed', fulfillment_type: 'pix_direct', title: 'Jantar', description: '', amount_cents: 12000, goal_cents: null }
-  const storeGift = { id: 'gift-store', gift_type: 'fixed', fulfillment_type: 'store_link', store_url: 'https://shop.example/item', title: 'Vaso', description: '', amount_cents: 8000, goal_cents: null }
+  const catalogGift = { id: 'gift-store', gift_type: 'fixed', fulfillment_type: 'store_link', title: 'Vaso', description: '', amount_cents: 8000, goal_cents: null }
   const config = { ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'noivos@example.com', holderName: 'Noivos' } }
   const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify(config) }
   const { response } = await call('/api/public/weddings/ana-e-bia', {
     publishedWedding: configuredWedding,
-    all(query, values) { return query.includes('FROM gifts') ? { results: values[1] ? [pixGift, storeGift] : [storeGift] } : { results: [] } },
+    all(query) { return query.includes('FROM gifts') ? { results: [pixGift, catalogGift] } : { results: [] } },
   })
   const body = await response.json()
   assert.equal(response.status, 200)
-  assert.deepEqual(body.gifts.map((gift) => gift.id), ['gift-store'])
-  assert.equal(body.gifts[0].store_url, 'https://shop.example/item')
-  assert.deepEqual(body.siteConfig.pix, { enabled: false, key: '', holderName: '' })
+  assert.deepEqual(body.gifts.map((gift) => gift.id), ['gift-pix', 'gift-store'])
+  assert.equal('store_url' in body.gifts[1], false)
+  assert.deepEqual(body.siteConfig.pix, config.pix)
 })
 
 test('published invitation does not query or expose gifts when their display mode is hidden', async () => {
   let giftsQueried = false
   const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', pix: { enabled: true, key: 'noivos@example.com' } }) }
+  const { response } = await call('/api/public/weddings/ana-e-bia', {
+    publishedWedding: configuredWedding,
+    all(query) { if (query.includes('FROM gifts')) giftsQueried = true; return { results: [] } },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.deepEqual(body.gifts, [])
+  assert.deepEqual(body.siteConfig.pix, { enabled: false, key: '', holderName: '' })
+  assert.equal(giftsQueried, false)
+})
+
+test('published gifts stay hidden until the couple activates a Pix key', async () => {
+  let giftsQueried = false
+  const configuredWedding = { ...wedding, published_site_config_json: JSON.stringify({ ...siteConfig, giftDisplayMode: 'page', pixDisplayMode: 'hidden', pix: { enabled: false, key: '' } }) }
   const { response } = await call('/api/public/weddings/ana-e-bia', {
     publishedWedding: configuredWedding,
     all(query) { if (query.includes('FROM gifts')) giftsQueried = true; return { results: [] } },

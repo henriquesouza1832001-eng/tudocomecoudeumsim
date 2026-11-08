@@ -118,7 +118,7 @@ test('publication warns about repeated cover text and timeline dates out of orde
 test('gifts without an active Pix key produce a warning, never a blocker', () => {
   const gifts = [{ id: 'g', status: 'active' }]
   assert.equal(giftsWithoutPix({ pix: { enabled: false, key: '' } }, gifts), true)
-  assert.equal(giftsWithoutPix({ pix: { enabled: true, key: 'a@b.co' }, pixDisplayMode: 'hidden' }, gifts), true)
+  assert.equal(giftsWithoutPix({ pix: { enabled: true, key: 'a@b.co' }, pixDisplayMode: 'hidden' }, gifts), false)
   assert.equal(giftsWithoutPix({ pix: { enabled: true, key: 'a@b.co' } }, gifts), false)
   assert.equal(giftsWithoutPix({ pix: { enabled: false, key: '' } }, []), false)
   assert.equal(giftsWithoutPix({ giftDisplayMode: 'hidden', pix: { enabled: false } }, gifts), false)

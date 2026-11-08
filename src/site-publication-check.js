@@ -19,11 +19,10 @@ export const referencedPhotoIds = (config = {}) => {
 
 export const missingPhotoAltIds = (config = {}) => [...referencedPhotoIds(config)].filter((id) => !config.imageAltTexts?.[id]?.['pt-BR']?.trim())
 
-// Presentes são pagos só por Pix: sem chave ativa (ou com o Pix oculto) o convidado não tem como pagar.
 export function giftsWithoutPix(config = {}, gifts = []) {
   const hasActiveGifts = gifts.some((gift) => !gift.status || gift.status === 'active')
   if (!hasActiveGifts || config.giftDisplayMode === 'hidden') return false
-  const pixReady = Boolean(config.pix?.enabled && config.pix.key?.trim() && config.pixDisplayMode !== 'hidden')
+  const pixReady = Boolean(config.pix?.enabled && config.pix.key?.trim())
   return !pixReady
 }
 

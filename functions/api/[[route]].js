@@ -60,12 +60,13 @@ function validPixSettings(pix, strict = false) {
   return { enabled: pix.enabled, key, holderName }
 }
 
-function publicSiteConfig(config) {
+function publicSiteConfig(config, giftCartEnabled = false) {
   if (!config) return config
-  const pixEnabled = config.pix?.enabled && config.pixDisplayMode !== 'hidden'
+  const pixEnabledForPage = config.pix?.enabled && config.pixDisplayMode !== 'hidden'
+  const pixEnabledForGiftCart = giftCartEnabled && config.pix?.enabled && config.pix.key?.trim()
   const publicConfig = { ...config }
   delete publicConfig.shareMessage
-  return { ...publicConfig, godparents: config.enabledSections.includes('Padrinhos e madrinhas') ? (config.godparents || []).filter((person) => person.name?.trim() && person.photoId) : [], pix: pixEnabled ? config.pix : { enabled: false, key: '', holderName: '' } }
+  return { ...publicConfig, godparents: config.enabledSections.includes('Padrinhos e madrinhas') ? (config.godparents || []).filter((person) => person.name?.trim() && person.photoId) : [], pix: pixEnabledForPage || pixEnabledForGiftCart ? config.pix : { enabled: false, key: '', holderName: '' } }
 }
 
 function validShareMessage(message) {
@@ -2808,13 +2809,13 @@ app.get('/api/public/weddings/:slug', async (context) => {
   if (!wedding) return jsonError(context, 404, 'published_site_not_found')
   const policy = await context.env.DB.prepare('SELECT companions_allowed, max_companions FROM wedding_guest_policies WHERE wedding_id = ?').bind(wedding.id).first()
   const parsedConfig = parseSiteConfig(wedding.published_site_config_json)
-  const siteConfig = publicSiteConfig(parsedConfig)
   const giftDisplayMode = normalizedGiftDisplayMode(parsedConfig)
-  const showPix = parsedConfig?.pix?.enabled && normalizedPixDisplayMode(parsedConfig) !== 'hidden'
-  const gifts = giftDisplayMode !== 'hidden'
-    ? await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents
-      FROM gifts WHERE wedding_id = ? AND status = 'active' AND (? = 1 OR fulfillment_type = 'store_link') ORDER BY display_order, created_at`).bind(wedding.id, showPix ? 1 : 0).all()
+  const giftPixAvailable = Boolean(parsedConfig?.pix?.enabled && parsedConfig.pix.key?.trim())
+  const gifts = giftDisplayMode !== 'hidden' && giftPixAvailable
+    ? await context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, title, description, amount_cents, goal_cents
+      FROM gifts WHERE wedding_id = ? AND status = 'active' ORDER BY display_order, created_at`).bind(wedding.id).all()
     : { results: [] }
+  const siteConfig = publicSiteConfig(parsedConfig, gifts.results.length > 0)
   const wallMessages = parsedConfig.enabledSections.includes('Mural de recados')
     ? await context.env.DB.prepare("SELECT id, author_name AS authorName, message, created_at AS createdAt FROM guest_wall_messages WHERE wedding_id = ? AND status = 'approved' ORDER BY created_at DESC LIMIT 100").bind(wedding.id).all()
     : { results: [] }
@@ -3129,12 +3130,11 @@ app.get('/api/invitation', async (context) => {
   if (guest.wedding_status !== 'active' || !guest.site_published_at) return jsonError(context, 409, 'invitation_not_published')
   const publishedEvents = JSON.parse(guest.published_events_json || '[]')
   const invitationConfig = parseSiteConfig(guest.published_site_config_json)
-  const invitationShowsGifts = normalizedGiftDisplayMode(invitationConfig) !== 'hidden'
-  const invitationShowsPix = Boolean(invitationConfig?.pix?.enabled && invitationConfig.pix.key?.trim() && normalizedPixDisplayMode(invitationConfig) !== 'hidden')
+  const invitationShowsGifts = normalizedGiftDisplayMode(invitationConfig) !== 'hidden' && Boolean(invitationConfig?.pix?.enabled && invitationConfig.pix.key?.trim())
   const [rsvps, gifts, authorizations, guestPolicy] = await Promise.all([
     context.env.DB.prepare('SELECT event_id, status, party_size, dietary_notes FROM guest_rsvps WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
-    context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, store_url, title, description, amount_cents, goal_cents
-      FROM gifts WHERE wedding_id = ? AND status = 'active' AND (? = 1) AND (? = 1 OR fulfillment_type = 'store_link') ORDER BY display_order, created_at`).bind(guest.wedding_id, invitationShowsGifts ? 1 : 0, invitationShowsPix ? 1 : 0).all(),
+    context.env.DB.prepare(`SELECT id, gift_type, fulfillment_type, title, description, amount_cents, goal_cents
+      FROM gifts WHERE wedding_id = ? AND status = 'active' AND (? = 1) ORDER BY display_order, created_at`).bind(guest.wedding_id, invitationShowsGifts ? 1 : 0).all(),
     context.env.DB.prepare('SELECT event_id, status FROM guest_event_authorizations WHERE wedding_id = ? AND guest_id = ?').bind(guest.wedding_id, guest.id).all(),
     context.env.DB.prepare('SELECT companions_allowed, max_companions FROM wedding_guest_policies WHERE wedding_id = ?').bind(guest.wedding_id).first(),
   ])
@@ -3143,7 +3143,7 @@ app.get('/api/invitation', async (context) => {
   return context.json({
     guest: { id: guest.id, name: guest.name, partySize: guest.party_size, guestType: guest.guest_type },
     wedding: { partnerOneName: guest.partner_one_name, partnerTwoName: guest.partner_two_name, eventDate: guest.event_date, eventTime: guest.event_time, timezone: guest.timezone },
-    siteConfig: publicSiteConfig(invitationConfig),
+    siteConfig: publicSiteConfig(invitationConfig, gifts.results.length > 0),
     events: guestEvents.map((event) => {
       const publicEvent = { ...event }
       delete publicEvent.group_ids
