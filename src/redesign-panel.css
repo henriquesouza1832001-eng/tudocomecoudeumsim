@@ -73,3 +73,23 @@
   .couple-role-page .couple-panel-content > .guest-import-card { order: 5; }
   .couple-role-page .couple-panel-content > .guest-wall-moderation { order: 9; }
 }
+.couple-role-page .panel-list-toolbar { margin: 0 0 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 220px); align-items: end; gap: 12px; }
+.couple-role-page .panel-list-toolbar label, .couple-role-page .panel-list-filter { display: grid; gap: 6px; color: var(--r-muted); font-size: 14px; }
+.couple-role-page .panel-list-toolbar input, .couple-role-page .panel-list-toolbar select, .couple-role-page .panel-list-filter select { min-height: 44px; width: 100%; padding: 8px 10px; border: 1px solid var(--r-rule); border-radius: 0; background: var(--r-surface); color: var(--r-ink); font: inherit; }
+.couple-role-page .panel-list-filter { width: min(260px, 100%); margin: 0 0 12px auto; }
+.couple-role-page .expense-form-details > summary, .couple-role-page .guest-wall-review > summary, .couple-role-page .guest-import-card > summary, .couple-role-page .team-event-permissions > summary { min-height: 48px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--r-ink); font-weight: 600; }
+.couple-role-page .expense-form-details > summary::marker, .couple-role-page .guest-wall-review > summary::marker, .couple-role-page .guest-import-card > summary::marker, .couple-role-page .team-event-permissions > summary::marker { color: var(--r-accent); }
+.couple-role-page .expense-form-card .expense-form-details[open] > summary { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--r-rule); }
+.couple-role-page .guest-wall-review { margin-bottom: 16px; border-bottom: 1px solid var(--r-rule); }
+.couple-role-page .guest-wall-review[open] { padding-bottom: 12px; }
+.couple-role-page .guest-wall-review .role-card { margin-top: 8px; }
+.couple-role-page .guest-import-card .guest-import-content { padding-top: 12px; }
+.couple-role-page .team-event-permissions[open] { width: 100%; }
+.couple-role-page .team-event-permissions .team-assignment-list { margin-top: 14px; }
+.couple-role-page .photo-album-heading-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.couple-role-page .album-load-error p { margin-top: 0; }
+@media (max-width: 600px) {
+  .couple-role-page .panel-list-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .couple-role-page .panel-list-filter { margin-left: 0; }
+  .couple-role-page .photo-album-heading-actions { width: 100%; justify-content: space-between; }
+}
