@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react'
 import { weddingSlug } from './wedding-host.js'
 import { createRoot, hydrateRoot } from 'react-dom/client'
+import './script-fonts.css'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-500.css'
 import '@fontsource/dm-sans/latin-600.css'

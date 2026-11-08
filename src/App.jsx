@@ -16,6 +16,7 @@ import { SITE_SECTION_LAYOUT_OPTIONS } from './site-section-layouts.js'
 import { shouldAutoplayWeddingCoverVideo } from './site-motion.js'
 import { getThemePaletteNames, getThemePalettes, isValidCustomAccent } from './site-style.js'
 import { extractPhotoColorSuggestions } from './photo-palette.js'
+import { SITE_FONT_CHOICES, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, TEXT_SIZE_MIN, resolveSiteFonts, resolveTextSize, textScaleValue } from './site-fonts.js'
 import { checkSitePublication, missingPhotoAltIds, referencedPhotoIds } from './site-publication-check.js'
 import { DECORATIVE_ALT, buildDefaultAltText, fillEmptyAltTexts, isDecorativeAlt, resolveImageAlt } from './photo-alt.js'
 import { isValidPixKey } from './pix-key.js'
@@ -75,6 +76,7 @@ const THEMES = [
   { id: 'beach', name: 'Praia', note: 'Claro e sereno', colors: ['#3d6970', '#c68e68', '#f4f7f4'] },
   { id: 'tropical', name: 'Festa no jardim', note: 'Cor, música e movimento', colors: ['#4f6040', '#d38a68', '#f5f3e9'] },
   { id: 'night', name: 'Rock & romance', note: 'Vinho, carvão e cobre', colors: ['#302b31', '#b84b55', '#f1e9e5'] },
+  { id: 'bordado', name: 'Bordado', note: 'Marsala, creme e flores bordadas', colors: ['#2f4466', '#a33a45', '#fbf4ea'] },
 ]
 const THEME_PRESETS = {
   garden: { fontPair: 'Clássico editorial', coverLayout: 'split', coverComposition: 'side' },
@@ -85,6 +87,7 @@ const THEME_PRESETS = {
   beach: { fontPair: 'Romântico leve', coverLayout: 'full', coverComposition: 'overlay' },
   tropical: { fontPair: 'Contemporâneo humanista', coverLayout: 'full', coverComposition: 'editorial' },
   night: { fontPair: 'Moderno sem serifa', coverLayout: 'full', coverComposition: 'overlay' },
+  bordado: { fontPair: 'Caligráfico bordado', coverLayout: 'full', coverComposition: 'editorial' },
 }
 const SITE_FONT_PAIRS = {
   'Clássico editorial': ["'Playfair Display', Georgia, serif", "'DM Sans', Arial, sans-serif"],
@@ -95,12 +98,23 @@ const SITE_FONT_PAIRS = {
   'Floral delicado': ["'Lora', Georgia, serif", "'Raleway', Arial, sans-serif"],
   'Minimalista geométrico': ["'Montserrat', Arial, sans-serif", "'Manrope', Arial, sans-serif"],
   'Rústico acolhedor': ["'Libre Baskerville', Georgia, serif", "'Lora', Georgia, serif"],
+  'Caligráfico bordado': ["'Pinyon Script', 'Great Vibes', cursive", "'Lora', Georgia, serif"],
 }
-const FONT_SCALE_OPTIONS = [{ id: 'small', label: 'Compacto' }, { id: 'medium', label: 'Padrão' }, { id: 'large', label: 'Ampliado' }]
-function FontScalePicker({ value = 'medium', onChange }) {
-  return <div className="font-scale-picker" role="group" aria-label="Tamanho do texto do convite">
-    <span>Tamanho do texto</span>
-    <div>{FONT_SCALE_OPTIONS.map((option) => <button type="button" key={option.id} className={value === option.id ? 'active' : ''} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>{option.label}</button>)}</div>
+const FONT_SIZE_PRESETS = [['Compacto', 90], ['Padrão', 100], ['Ampliado', 115], ['Grande', 125]]
+function FontStylePicker({ config, onChange }) {
+  const size = resolveTextSize(config)
+  const [headingCss, bodyCss] = resolveSiteFonts(config, SITE_FONT_PAIRS, config.fontPair || 'Clássico editorial')
+  const customized = Boolean(config.headingFont || config.bodyFont || size !== TEXT_SIZE_DEFAULT)
+  return <div className="font-style-picker" role="group" aria-label="Fonte e tamanho do texto do convite">
+    <span className="font-style-title">Fonte e tamanho do texto</span>
+    <div className="font-style-selects">
+      <label>Fonte dos títulos<select value={config.headingFont || ''} onChange={(event) => onChange({ headingFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.map((font) => <option key={font.id} value={font.id}>{font.id}{font.script ? ' (caligráfica)' : ''}</option>)}</select></label>
+      <label>Fonte do texto<select value={config.bodyFont || ''} onChange={(event) => onChange({ bodyFont: event.target.value || null })}><option value="">Padrão do tema</option>{SITE_FONT_CHOICES.filter((font) => !font.script).map((font) => <option key={font.id} value={font.id}>{font.id}</option>)}</select></label>
+    </div>
+    <div className="font-style-sample" aria-live="polite"><strong style={{ fontFamily: headingCss, fontSize: `calc(30px * ${size / 100})` }}>Ana &amp; Caio</strong><p style={{ fontFamily: bodyCss, fontSize: `calc(15px * ${size / 100})` }}>Sábado, 19 de dezembro, às 17h. Cerimônia e recepção no jardim.</p></div>
+    <label className="font-style-size"><span>Tamanho do texto: <strong>{size}%</strong></span><input type="range" min={TEXT_SIZE_MIN} max={TEXT_SIZE_MAX} step="5" value={size} onChange={(event) => onChange({ textSize: Number(event.target.value) })} aria-valuetext={`${size} por cento`} /></label>
+    <div className="font-style-presets">{FONT_SIZE_PRESETS.map(([label, value]) => <button type="button" key={value} className={size === value ? 'active' : ''} aria-pressed={size === value} onClick={() => onChange({ textSize: value })}>{label}</button>)}</div>
+    {customized && <button type="button" className="font-style-reset" onClick={() => onChange({ headingFont: null, bodyFont: null, textSize: TEXT_SIZE_DEFAULT })}>Voltar ao padrão do tema</button>}
   </div>
 }
 function SiteAccentPicker({ value, appliedValue, onChange }) {
@@ -108,7 +122,7 @@ function SiteAccentPicker({ value, appliedValue, onChange }) {
   const adjusted = Boolean(customAccent && customAccent.toLowerCase() !== appliedValue.toLowerCase())
   return <div className="site-accent-picker"><label>Cor de destaque personalizada<input type="color" value={customAccent || appliedValue} onChange={(event) => onChange(event.target.value)} /></label><small>Opcional. O sistema ajusta a cor quando necessário para manter contraste com o fundo.</small>{adjusted && <small role="status">A cor foi escurecida para manter o contraste mínimo.</small>}{customAccent && <button type="button" className="button-outline" onClick={() => onChange(null)}>Usar cor da paleta</button>}</div>
 }
-const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
+const DEFAULT_SITE_CONFIG = { theme: 'garden', paletteIndex: 0, customAccent: null, coverLayout: 'full', coverComposition: null, coverTextAlign: 'left', coverTextPosition: 'center', coverOverlayOpacity: 45, coverImagePosition: 'center', coverImagePositionDesktop: 'center', coverImagePositionMobile: 'center', giftDisplayMode: 'hidden', pixDisplayMode: 'hidden', giftPreferences: 'undecided', coverImage: 'none', coverPhotoId: null, coverCarouselEnabled: false, coverGallery: [], siteGallery: [], imageAltTexts: {}, siteCarouselEnabled: false, siteCarouselPhotos: [], siteCarouselAutoplay: false, fontScale: 'medium', headingFont: null, bodyFont: null, textSize: 100, enabledSections: ['Nossa história', 'Eventos', 'Confirmação de presença'], animationPreset: 'Elegante', fontPair: 'Clássico editorial', language: 'pt-BR', coverMessages: { 'pt-BR': 'Com alegria, convidamos você.' }, storyMessages: { 'pt-BR': '' }, shareMessage: '', timeline: [], godparents: [], giftPresentation: {}, sectionContent: {}, sectionLayouts: {}, weddingDetails: { schedule: '', menu: '', dressCode: '' }, guestCamera: { enabled: false, photoLimit: 200 }, pix: { enabled: false, key: '', holderName: '' } }
 function imageAltText(config, id, fallback) {
   return resolveImageAlt(config?.imageAltTexts?.[id]?.[config?.language || 'pt-BR'], fallback)
 }
@@ -1066,7 +1080,7 @@ function ThemePicker({ theme, setTheme, compact = false, limit = THEMES.length, 
   const visibleThemes = showAll ? THEMES : THEMES.slice(0, limit)
   return (
     <div className={`theme-picker ${compact ? 'theme-picker-compact' : ''}`} aria-label="Escolha uma opção visual">
-      {!compact && <div className="theme-picker-intro"><span className="eyebrow">OITO TEMAS DE PARTIDA</span><span className="theme-picker-caption">A estrutura é a mesma; cores, tipografia e detalhes mudam.</span></div>}
+      {!compact && <div className="theme-picker-intro"><span className="eyebrow">NOVE TEMAS DE PARTIDA</span><span className="theme-picker-caption">A estrutura é a mesma; cores, tipografia e detalhes mudam.</span></div>}
       <div className="theme-options">
         {visibleThemes.map((item, index) => (
           <button className={`theme-option ${theme === item.id ? 'active' : ''}`} key={item.id} onClick={() => setTheme(item.id)} aria-pressed={theme === item.id}>
@@ -1145,7 +1159,7 @@ function PublicSiteCustomizer() {
   const palettes = getThemePalettes(theme, draft.siteConfig.customAccent)
   const paletteNames = getThemePaletteNames(theme)
   const selectedPalette = palettes[draft.siteConfig.paletteIndex] || palettes[0]
-  const fontPair = SITE_FONT_PAIRS[draft.siteConfig.fontPair] || SITE_FONT_PAIRS['Clássico editorial']
+  const fontPair = resolveSiteFonts(draft.siteConfig, SITE_FONT_PAIRS, 'Clássico editorial')
   const coverMessage = draft.siteConfig.coverMessages?.['pt-BR'] || ''
   const storyMessage = draft.siteConfig.storyMessages?.['pt-BR'] || ''
   const dateLabel = draft.eventDate ? new Date(`${draft.eventDate}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data a definir'
@@ -1159,7 +1173,7 @@ function PublicSiteCustomizer() {
     '--customizer-paper': selectedPalette[2],
     '--customizer-font-heading': fontPair[0],
     '--customizer-font-body': fontPair[1],
-    '--customizer-text-scale': draft.siteConfig.fontScale === 'small' ? '.92' : draft.siteConfig.fontScale === 'large' ? '1.1' : '1',
+    '--customizer-text-scale': textScaleValue(draft.siteConfig),
   }
 
   useEffect(() => {
@@ -1185,7 +1199,7 @@ function PublicSiteCustomizer() {
 
   function selectTheme(themeId) {
     const preset = THEME_PRESETS[themeId] || THEME_PRESETS.garden
-    setDraft((current) => ({ ...current, siteConfig: { ...current.siteConfig, theme: themeId, paletteIndex: 0, fontPair: preset.fontPair, coverLayout: preset.coverLayout, coverComposition: preset.coverComposition } }))
+    setDraft((current) => ({ ...current, siteConfig: { ...current.siteConfig, theme: themeId, paletteIndex: 0, fontPair: preset.fontPair, headingFont: null, bodyFont: null, coverLayout: preset.coverLayout, coverComposition: preset.coverComposition } }))
   }
 
   function goToWizardStep(step) {
@@ -1203,7 +1217,7 @@ function PublicSiteCustomizer() {
             <div className="customizer-step" id="customizer-couple"><span>Quem vai celebrar?</span><div className="customizer-name-fields"><label>Primeiro nome<input autoComplete="given-name" maxLength="100" value={draft.partnerOneName} onChange={(event) => updateDraft('partnerOneName', event.target.value)} placeholder="Nome" /></label><label>Segundo nome<input autoComplete="additional-name" maxLength="100" value={draft.partnerTwoName} onChange={(event) => updateDraft('partnerTwoName', event.target.value)} placeholder="Nome" /></label></div><label>Data do casamento<input type="date" value={draft.eventDate} onChange={(event) => updateDraft('eventDate', event.target.value)} /></label></div>
             <div className="customizer-step" id="customizer-style"><span>Escolham a identidade</span><p className="customizer-control-help">O tema e a paleta mudam as cores e as letras do convite.</p><div className="customizer-theme-grid" role="group" aria-label="Temas do convite">{visibleThemes.map((item) => <button type="button" className={'customizer-theme-option' + (theme.id === item.id ? ' active' : '')} key={item.id} onClick={() => selectTheme(item.id)} aria-pressed={theme.id === item.id}><span className={`customizer-theme-mini mini-${item.id}`} style={{ '--theme-ink': item.colors[0], '--theme-accent': item.colors[1], '--theme-paper': item.colors[2], '--theme-font-heading': SITE_FONT_PAIRS[THEME_PRESETS[item.id]?.fontPair]?.[0] || SITE_FONT_PAIRS['Clássico editorial'][0] }}><b>{coupleMonogram(draft.partnerOneName, draft.partnerTwoName)}</b><em /></span><strong>{item.name}</strong></button>)}</div>{!showAllThemes && <button className="customizer-more-themes" type="button" onClick={() => setShowAllThemes(true)}>Ver outros estilos</button>}</div>
             <div className="customizer-choice-group customizer-public-palettes"><strong>Paleta de cores</strong><div className="customizer-palette-options">{palettes.map((colors, index) => <button type="button" className={draft.siteConfig.paletteIndex === index ? 'active' : ''} key={paletteNames[index]} onClick={() => updateConfig('paletteIndex', index)} aria-label={`Paleta ${paletteNames[index]}`} aria-pressed={draft.siteConfig.paletteIndex === index}><span>{colors.map((color) => <i key={color} style={{ backgroundColor: color }} />)}</span><small>{paletteNames[index]}</small></button>)}</div><SiteAccentPicker value={draft.siteConfig.customAccent} appliedValue={selectedPalette[1]} onChange={(value) => updateConfig('customAccent', value)} /></div>
-            <FontScalePicker value={draft.siteConfig.fontScale} onChange={(value) => updateConfig('fontScale', value)} />
+            <FontStylePicker config={draft.siteConfig} onChange={(patch) => setDraft((current) => ({ ...current, siteConfig: { ...current.siteConfig, ...patch } }))} />
             <div className="customizer-wizard-actions"><button type="button" className="customizer-back" onClick={() => goToWizardStep('invite')}><ArrowLeft size={16} /> Voltar à foto</button><a className="customizer-next customizer-continue" href="/cadastro" onClick={() => window.localStorage.setItem(PUBLIC_SITE_DRAFT_KEY, JSON.stringify(draft))}>Guardar e criar acesso <ArrowRight size={16} /></a></div>
           </section> : <section className="customizer-wizard-panel customizer-invite-panel" aria-labelledby="customizer-wizard-title"><h2 className="customizer-wizard-title" id="customizer-wizard-title">Deixem com a cara de vocês</h2>
             <div className="customizer-step" id="customizer-cover"><span>Foto do casal</span><div className="customizer-photo-placeholder"><Camera size={23} /><strong>A foto principal será de vocês.</strong><p>Depois de criar o acesso, enviem a foto escolhida no painel. Não usamos fotos de modelo no convite.</p></div><div className="customizer-layout-options" role="group" aria-label="Composição da foto"><span>Como a foto aparece</span><div>{layoutOptions.map((layout) => <button type="button" className={draft.siteConfig.coverLayout === layout.id ? 'active' : ''} key={layout.id} onClick={() => updateConfig('coverLayout', layout.id)} aria-pressed={draft.siteConfig.coverLayout === layout.id}>{layout.label}</button>)}</div></div></div>
@@ -3019,7 +3033,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   const palettes = getThemePalettes(theme, config.customAccent)
   const paletteNames = getThemePaletteNames(theme)
   const selectedPalette = palettes[config.paletteIndex] || palettes[0]
-  const selectedFonts = SITE_FONT_PAIRS[config.fontPair] || SITE_FONT_PAIRS[THEME_PRESETS[theme.id]?.fontPair] || SITE_FONT_PAIRS['Clássico editorial']
+  const selectedFonts = resolveSiteFonts(config, SITE_FONT_PAIRS, THEME_PRESETS[theme.id]?.fontPair || 'Clássico editorial')
   const coverLayouts = [{ id: 'side', label: 'Lado a lado' }, { id: 'overlay', label: 'Sobre a foto' }, { id: 'editorial', label: 'Editorial' }]
   const coverLayout = coverLayouts.some((item) => item.id === config.coverLayout) ? config.coverLayout : 'full'
   const coverComposition = ['side', 'overlay', 'editorial'].includes(config.coverComposition) ? config.coverComposition : config.coverLayout === 'split' ? 'side' : config.coverLayout === 'full' ? 'overlay' : null
@@ -3206,7 +3220,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
   }, [previewPhotoUrl])
   const selectTheme = (themeId) => {
     const preset = THEME_PRESETS[themeId] || THEME_PRESETS.garden
-    update({ theme: themeId, paletteIndex: 0, fontPair: preset.fontPair, coverLayout: preset.coverLayout, coverComposition: preset.coverComposition })
+    update({ theme: themeId, paletteIndex: 0, fontPair: preset.fontPair, headingFont: null, bodyFont: null, coverLayout: preset.coverLayout, coverComposition: preset.coverComposition })
   }
   const toggleSection = (section, enabled) => setConfig((current) => {
     const sections = current.enabledSections || []
@@ -3277,7 +3291,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
     '--deep': selectedPalette[0],
     '--font-heading': selectedFonts[0],
     '--font-body': selectedFonts[1],
-    '--site-text-scale': config.fontScale === 'small' ? '.92' : config.fontScale === 'large' ? '1.1' : '1',
+    '--site-text-scale': textScaleValue(config),
   }
 
   useEffect(() => {
@@ -3525,7 +3539,7 @@ function CoupleSiteEditor({ wedding, events = [], gifts = [], config, savedConfi
         <div className="customizer-upload-panel customizer-video-panel"><div><strong>Vídeo de abertura <span>Opcional</span></strong><p>Vídeo MP4 curto, sem som automático, com uma foto de reserva para conexões lentas.</p></div><input ref={videoInput} type="file" accept="video/mp4" hidden onChange={(event) => { uploadSiteMedia(event.target.files?.[0], 'video'); event.target.value = '' }} /><button type="button" className="button-outline" onClick={() => videoInput.current?.click()} disabled={mediaBusy || siteMedia.some((item) => item.mediaType === 'video')}><Video size={16} /> {config.coverVideoId ? 'Vídeo adicionado' : 'Escolher vídeo MP4'}</button></div>
         <div className="customizer-layout-options" role="group" aria-label="Composição da capa"><span>Composição da capa</span><div>{coverLayouts.map((layout) => <button type="button" key={layout.id} className={`customizer-layout-choice ${coverComposition === layout.id ? 'active' : ''}`} onClick={() => update({ coverComposition: layout.id })} aria-pressed={coverComposition === layout.id}><span className={`customizer-layout-thumb layout-thumb-${layout.id}`} aria-hidden="true"><i /><b /><em /></span><span>{layout.label}</span>{coverComposition === layout.id && <Check size={18} aria-hidden="true" />}</button>)}</div></div>
         <div className="cover-tuning-controls"><ChoiceButtons glyph="align" label="Alinhamento do texto" value={config.coverTextAlign || 'left'} options={[['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']]} onChange={(coverTextAlign) => update({ coverTextAlign })} /><ChoiceButtons glyph="position" label="Posição do texto na capa" value={config.coverTextPosition || 'center'} options={[['top', 'Acima'], ['center', 'Meio'], ['bottom', 'Abaixo']]} onChange={(coverTextPosition) => update({ coverTextPosition })} /><FocalPicker label="Enquadramento da foto no computador" value={coverImagePositionDesktop} onChange={(position) => update({ coverImagePosition: position, coverImagePositionDesktop: position })} /><FocalPicker label="Enquadramento da foto no celular" value={coverImagePositionMobile} onChange={(position) => update({ coverImagePositionMobile: position })} /><label className="font-pair-label cover-overlay-control">Sobreposição escura <span>{config.coverOverlayOpacity ?? 45}%</span><input type="range" min="10" max="75" step="5" value={config.coverOverlayOpacity ?? 45} onChange={(event) => update({ coverOverlayOpacity: Number(event.target.value) })} /><small>Ajuda a manter o texto legível sobre a fotografia.</small></label></div>
-        <FontScalePicker value={config.fontScale} onChange={(fontScale) => update({ fontScale })} />
+        <FontStylePicker config={config} onChange={(patch) => update(patch)} />
       </section> : <section className="dash-card customize-card customizer-step-card">
         <div className="card-heading"><div><span className="eyebrow">PASSO DOIS</span><h3>Textos do convite</h3></div></div>
         <div className="customizer-content-group"><div className="customizer-content-heading"><span>01</span><div><strong>Mensagem do convite</strong><small>Escrevam um recado breve para os convidados.</small></div></div><label className="font-pair-label">Mensagem para os convidados<textarea rows="3" maxLength="140" value={coverMessage} onChange={(event) => updateCoverMessage(event.target.value)} placeholder="Ex.: Vai ser uma alegria celebrar com você." /><small>{coverMessage.length}/140 caracteres</small></label></div>
@@ -3738,8 +3752,8 @@ function GeneralWeddingSite({ notify }) {
   const siteTheme = THEMES.find((item) => item.id === data?.siteConfig?.theme)
   const sitePalettes = siteTheme ? getThemePalettes(siteTheme, data?.siteConfig?.customAccent) : []
   const activePalette = sitePalettes[data?.siteConfig?.paletteIndex] || sitePalettes[0]
-  const siteFonts = SITE_FONT_PAIRS[data?.siteConfig?.fontPair] || SITE_FONT_PAIRS['Clássico editorial']
-  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': data?.siteConfig?.fontScale === 'small' ? '.92' : data?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
+  const siteFonts = resolveSiteFonts(data?.siteConfig, SITE_FONT_PAIRS, 'Clássico editorial')
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(data?.siteConfig) } : undefined
   const config = data?.siteConfig
   const eventList = data?.events || []
   const giftList = data?.gifts || []
@@ -4033,8 +4047,8 @@ function GuestPortal({ notify, setView }) {
   const siteTheme = THEMES.find((item) => item.id === invitation?.siteConfig?.theme)
   const sitePalettes = siteTheme ? getThemePalettes(siteTheme, invitation?.siteConfig?.customAccent) : []
   const activePalette = sitePalettes[invitation?.siteConfig?.paletteIndex] || sitePalettes[0]
-  const siteFonts = SITE_FONT_PAIRS[invitation?.siteConfig?.fontPair] || SITE_FONT_PAIRS['Clássico editorial'];
-  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': invitation?.siteConfig?.fontScale === 'small' ? '.92' : invitation?.siteConfig?.fontScale === 'large' ? '1.1' : '1' } : undefined
+  const siteFonts = resolveSiteFonts(invitation?.siteConfig, SITE_FONT_PAIRS, 'Clássico editorial');
+  const siteStyle = activePalette ? { '--forest': activePalette[0], '--ink': activePalette[0], '--accent': activePalette[1], '--paper': activePalette[2], '--font-heading': siteFonts[0], '--font-body': siteFonts[1], '--site-text-scale': textScaleValue(invitation?.siteConfig) } : undefined
   const coverLayout = invitation?.siteConfig?.coverVideoId ? 'video' : ['full', 'split', 'arch'].includes(invitation?.siteConfig?.coverLayout) ? invitation.siteConfig.coverLayout : 'full'
   const coverComposition = ['side', 'overlay', 'editorial'].includes(invitation?.siteConfig?.coverComposition) ? invitation.siteConfig.coverComposition : invitation?.siteConfig?.coverLayout === 'split' ? 'side' : invitation?.siteConfig?.coverLayout === 'full' ? 'overlay' : null
   const coverTextAlign = ['left', 'center', 'right'].includes(invitation?.siteConfig?.coverTextAlign) ? invitation.siteConfig.coverTextAlign : 'left'

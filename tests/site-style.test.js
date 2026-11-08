@@ -11,6 +11,7 @@ const themes = [
   ['#3d6970', '#c68e68', '#f4f7f4'],
   ['#637455', '#d38a68', '#f5f3e9'],
   ['#302b31', '#b84b55', '#f1e9e5'],
+  ['#2f4466', '#a33a45', '#fbf4ea'],
 ]
 
 test('all curated theme palettes keep their accent at WCAG AA contrast against paper', () => {
@@ -37,7 +38,7 @@ test('every theme offers six palettes of its own with readable contrast', async 
   const { getThemePalettes, getThemePaletteNames, contrastRatio } = await import('../src/site-style.js')
   const source = (await import('node:fs')).readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
   const themes = [...source.matchAll(/\{ id: '(\w+)', name: '[^']+', note: '[^']+', colors: \['(#\w+)', '(#\w+)', '(#\w+)'\] \}/g)].map((match) => ({ id: match[1], colors: [match[2], match[3], match[4]] }))
-  assert.equal(themes.length, 8)
+  assert.equal(themes.length, 9)
   const signatures = new Set()
   for (const theme of themes) {
     const palettes = getThemePalettes(theme)
@@ -50,5 +51,5 @@ test('every theme offers six palettes of its own with readable contrast', async 
     }
     signatures.add(palettes.slice(1).map((palette) => palette.join()).join('|'))
   }
-  assert.equal(signatures.size, 8)
+  assert.equal(signatures.size, 9)
 })

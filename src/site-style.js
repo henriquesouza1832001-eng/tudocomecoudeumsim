@@ -88,6 +88,13 @@ const THEME_EXTRA_PALETTES = {
     ['Cajá', ['#6a3d1f', '#a35a2c', '#fbefe2']],
     ['Lima', ['#3f5a2a', '#5d7830', '#f1f5e2']],
   ],
+  bordado: [
+    ['Marsala', ['#4a1f2b', '#8c2f3f', '#f8efe8']],
+    ['Bordô', ['#3a1620', '#6e1f2f', '#f6ece6']],
+    ['Vermelho sangue', ['#4a1a1f', '#a3262f', '#fbf0ea']],
+    ['Azul bordado', ['#27405f', '#4f7a8a', '#f3f1ea']],
+    ['Pêssego e azul', ['#2f4466', '#b4584a', '#fbf1e6']],
+  ],
   night: [
     ['Vinho', ['#4a1f2b', '#a8374a', '#f4e9eb']],
     ['Cobre', ['#33261f', '#9d5835', '#f3e9e1']],

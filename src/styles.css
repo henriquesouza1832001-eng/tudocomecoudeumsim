@@ -8385,3 +8385,28 @@ img { display: block; max-width: 100%; }
 .su-slug-taken p { margin: 0; }
 .su-slug-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .su-slug-suggestions button { min-height: 44px; padding: 0 14px; border: 1px solid #9c4640; border-radius: 4px; color: #7a2c25; background: #fffefa; font: inherit; font-size: 14px; cursor: pointer; }
+
+/* Seletor de fonte e tamanho do texto */
+.font-style-picker { display: grid; gap: 12px; padding: 14px; border: 1px solid #d8ddd5; background: #fffefa; }
+.font-style-title { color: #263b31; font-size: 15px; font-weight: 700; }
+.font-style-selects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.font-style-picker label { display: grid; gap: 6px; color: #38453c; font-size: 14px; font-weight: 600; }
+.font-style-picker select { min-height: 44px; padding: 0 10px; border: 1px solid #aab4a8; border-radius: 4px; background: #fff; font: inherit; font-weight: 400; }
+.font-style-sample { padding: 14px 16px; border: 1px dashed #b9c2b6; background: var(--customizer-paper, #fbf8f1); color: var(--customizer-ink, #263b31); }
+.font-style-sample strong { display: block; font-weight: 400; line-height: 1.15; }
+.font-style-sample p { margin: 6px 0 0; line-height: 1.5; }
+.font-style-size strong { color: #7a2c25; }
+.font-style-size input[type="range"] { width: 100%; min-height: 44px; accent-color: #7a2c25; }
+.font-style-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.font-style-presets button, .font-style-reset { min-height: 44px; padding: 0 14px; border: 1px solid #9aa798; border-radius: 4px; color: #263b31; background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+.font-style-presets button.active { color: #fff; background: #263b31; border-color: #263b31; }
+.font-style-reset { justify-self: start; }
+@media (max-width: 560px) { .font-style-selects { grid-template-columns: minmax(0, 1fr); } }
+
+/* Tema Bordado: inspirado em convite físico (creme, marsala, flores bordadas, moldura dupla) */
+.theme-bordado { --forest: #2f4466; --deep: #1f2e47; --accent: #a33a45; --sand: #f0e3d2; --paper: #fbf4ea; --theme-heading-tracking: 0; --theme-section-divider: color-mix(in srgb, #a33a45 40%, transparent); }
+.theme-bordado .public-wedding-cover-copy h1 { font-weight: 400; letter-spacing: 0; line-height: 1.05; }
+.theme-bordado .public-wedding-cover-kicker { color: #a33a45; }
+.theme-bordado .public-wedding-story { position: relative; border: 1px solid color-mix(in srgb, #a33a45 45%, transparent); outline: 1px solid color-mix(in srgb, #a33a45 28%, transparent); outline-offset: -9px; padding-inline: clamp(28px, 13vw, 150px); background: url('/images/temas/bordado-canto.svg') no-repeat left top / min(30%, 170px) auto, url('/images/temas/bordado-canto-inf.svg') no-repeat right bottom / min(30%, 170px) auto, var(--paper); }
+.theme-bordado .public-wedding-story h2::after, .theme-bordado .public-wedding-timeline h2::after, .theme-bordado .public-wedding-gifts h2::after { content: ''; display: block; width: 160px; height: 20px; margin: 10px auto 0; background: url('/images/temas/bordado-divisor.svg') no-repeat center / contain; }
+.mini-bordado::before, .preview-bordado::before { top: 7px; right: 9px; left: 9px; bottom: 7px; width: auto; height: auto; border: 1px solid var(--theme-accent); border-radius: 2px; background: radial-gradient(circle at 18% 22%, var(--theme-accent) 0 5px, transparent 5.5px), radial-gradient(circle at 84% 80%, var(--theme-accent) 0 5px, transparent 5.5px); opacity: .85; transform: none; }
