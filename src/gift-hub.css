@@ -47,3 +47,43 @@
 @media (max-width: 1100px) { .gift-hub-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .gift-hub-top { grid-template-columns: minmax(0, 1fr); } .gift-hero { min-height: 260px; } }
 @media (max-width: 560px) { .gift-hub-actions { grid-template-columns: minmax(0, 1fr); } .gift-preset-options { grid-template-columns: minmax(0, 1fr); } .gift-hero { padding: 22px; } }
+
+.gift-pix-field { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: #38453c; }
+.gift-pix-field input { min-height: 44px; padding: 0 12px; border: 1px solid #c9d1c6; border-radius: 10px; font: inherit; background: #fffefa; }
+.gift-summary p { margin: 0; font-size: 14px; line-height: 1.5; color: #5c564e; text-align: center; }
+.gift-summary-button:disabled { opacity: .5; cursor: default; }
+.gift-catalog-view { width: min(980px, 100%); }
+.gift-catalog-heading { display: flex; align-items: center; gap: 10px; }
+.gift-preset-back { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #c9d1c6; border-radius: 50%; background: #fff; color: #263b31; cursor: pointer; }
+.gift-catalog-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(38, 59, 49, .08); }
+.gift-catalog-tabs button { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: #5c564e; font: inherit; font-size: 15px; cursor: pointer; }
+.gift-catalog-tabs button.active { color: #263b31; font-weight: 700; border-bottom-color: #3f6455; }
+.gift-catalog-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.gift-catalog-card { position: relative; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(38, 59, 49, .1); }
+.gift-catalog-open { width: 100%; padding: 0; display: block; border: 0; background: none; font: inherit; text-align: left; color: #263b31; cursor: pointer; }
+.gift-preset-cover { display: grid; place-items: center; height: 124px; color: #fff; background: #3f6455; }
+.gift-cover-lua-de-mel { background: linear-gradient(135deg, #2f6f8f, #8cc4d6); }
+.gift-cover-viagem-praia { background: linear-gradient(135deg, #c8742a, #e8b84f); }
+.gift-cover-viagem-internacional { background: linear-gradient(135deg, #4b4f93, #8a90d6); }
+.gift-cover-casa-nova { background: linear-gradient(135deg, #3f6455, #7fa893); }
+.gift-cover-cozinha { background: linear-gradient(135deg, #a8472f, #d98a5e); }
+.gift-cover-area-gourmet { background: linear-gradient(135deg, #7a2c25, #b8645c); }
+.gift-cover-quarto-do-casal { background: linear-gradient(135deg, #6b5b8f, #a595c9); }
+.gift-cover-experiencias { background: linear-gradient(135deg, #a33a62, #d3799c); }
+.gift-cover-ate-200 { background: linear-gradient(135deg, #5c7a3a, #94b36a); }
+.gift-cover-favoritos { background: linear-gradient(135deg, #b0393f, #d8777c); }
+.gift-catalog-info { display: grid; gap: 6px; padding: 10px 14px 12px; }
+.gift-catalog-info strong { font-size: 15px; }
+.gift-catalog-info > span { display: flex; justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 2px solid #ece7dc; }
+.gift-catalog-info small { font-size: 13px; color: #5c564e; }
+.gift-catalog-add { position: absolute; top: 10px; right: 10px; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: #fff; color: #2f6455; font: inherit; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .2); cursor: pointer; }
+.gift-catalog-add:disabled { opacity: .5; cursor: default; }
+.gift-preset-items li span { display: grid; gap: 2px; }
+.gift-preset-items li small { color: #5c564e; font-size: 13px; }
+@media (max-width: 860px) { .gift-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .gift-catalog-grid { grid-template-columns: minmax(0, 1fr); } }
+.gift-catalog-open { display: flex; flex-direction: column; align-items: stretch; min-height: 0; }
+.gift-preset-cover { width: 100%; box-sizing: border-box; }
+.gift-catalog-info { width: 100%; box-sizing: border-box; }
+.gift-catalog-info small { white-space: nowrap; }
+.gift-catalog-card { display: block; } .gift-catalog-open { justify-self: stretch; }

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { GIFT_PRESETS, presetTotalCents } from '../src/gift-presets.js'
+import { GIFT_PRESETS, PRESET_CATEGORIES, presetTotalCents } from '../src/gift-presets.js'
 
 test('every preset item respects the API limits for a Pix gift', () => {
   const ids = new Set()
@@ -19,4 +19,8 @@ test('every preset item respects the API limits for a Pix gift', () => {
 
 test('presets never exceed the 60 active gifts limit alone', () => {
   assert.ok(GIFT_PRESETS.every((preset) => preset.items.length <= 60))
+})
+
+test('every preset belongs to a listed category', () => {
+  for (const preset of GIFT_PRESETS) assert.ok(PRESET_CATEGORIES.includes(preset.category) && preset.category !== 'Todas', preset.id)
 })
