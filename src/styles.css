@@ -527,6 +527,9 @@ img { display: block; max-width: 100%; }
 .customizer-layout-editor select { min-height: 44px; }
 .customizer-section-order { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
 .customizer-section-order li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 5px 8px 5px 12px; border: 1px solid #e3e4dc; background: #fffefa; }
+.customizer-section-order li.is-dragging { opacity: .45; }
+.customizer-section-order li.is-drop-target { border-color: var(--accent); background: #f7f8f3; }
+.customizer-section-order .section-drag-handle { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border: 1px solid #e6e9e3; border-radius: 6px; user-select: none; }
 .customizer-section-order .section-reorder-controls button { width: 36px; height: 36px; }
 .toggle-switch { width: 29px; height: 16px; padding: 2px; display: flex; align-items: center; border: 0; border-radius: 99px; background: #dfe3dc; transition: .2s ease; }
 .toggle-switch i { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: transform .2s ease; }
