@@ -2,14 +2,14 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { checkSitePublication } from '../src/site-publication-check.js'
 
-test('site publication blocks photos used in the invitation without accessible descriptions', () => {
+test('site publication does not block photos without manually written descriptions', () => {
   const result = checkSitePublication({
     coverPhotoId: 'cover',
     siteCarouselEnabled: true,
     siteCarouselPhotos: ['carousel'],
     imageAltTexts: { cover: { 'pt-BR': 'Casal no jardim' } },
   })
-  assert.deepEqual(result.blockers, ['Preencha a descrição acessível de 1 foto(s) usada(s) no convite.'])
+  assert.deepEqual(result.blockers, [])
 })
 
 test('site publication warns about incomplete event details without blocking', () => {
@@ -44,13 +44,13 @@ test('site publication warns when enabled story, timeline, or gallery sections a
   ])
 })
 
-test('site publication checks godparent portraits and accessible descriptions', () => {
+test('site publication checks godparent portraits without requiring written descriptions', () => {
   const result = checkSitePublication({
     enabledSections: ['Padrinhos e madrinhas'],
     godparents: [{ name: 'Joana', photoId: 'portrait' }],
     imageAltTexts: {},
   })
-  assert.deepEqual(result.blockers, ['Preencha a descrição acessível de 1 foto(s) usada(s) no convite.'])
+  assert.deepEqual(result.blockers, [])
   assert.deepEqual(result.warnings, [])
   const empty = checkSitePublication({ enabledSections: ['Padrinhos e madrinhas'], godparents: [] })
   assert.deepEqual(empty.warnings, ['A seção Padrinhos e madrinhas está ativa, mas precisa de uma pessoa com nome e foto.'])

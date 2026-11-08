@@ -20,7 +20,6 @@ export const referencedPhotoIds = (config = {}) => {
 export const missingPhotoAltIds = (config = {}) => [...referencedPhotoIds(config)].filter((id) => !config.imageAltTexts?.[id]?.['pt-BR']?.trim())
 
 export function checkSitePublication(config = {}, events = []) {
-  const missingAlt = missingPhotoAltIds(config)
   const warnings = []
   const enabled = new Set(config.enabledSections || [])
   if (enabled.has('Nossa história') && !config.storyMessages?.['pt-BR']?.trim()) warnings.push('A seção Nossa história está ativa, mas ainda não tem texto.')
@@ -46,7 +45,7 @@ export function checkSitePublication(config = {}, events = []) {
     if (!events.length) warnings.push('A seção de eventos está ativa, mas ainda não há eventos cadastrados.')
     if (events.some((event) => !event.address?.trim())) warnings.push('Há evento sem endereço. Confira se os convidados terão como localizar o local.')
   }
-  const blockers = [...(missingAlt.length ? [`Preencha a descrição acessível de ${missingAlt.length} foto(s) usada(s) no convite.`] : [])]
+  const blockers = []
   if (invalidPix) blockers.push('Corrija a chave Pix antes de publicar o convite.')
   return { blockers, warnings }
 }

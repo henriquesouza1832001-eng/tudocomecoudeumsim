@@ -1658,7 +1658,7 @@ app.post('/api/couple/weddings/:weddingId/site-config/publish', requireSession, 
     (SELECT json_group_array(x.group_id) FROM event_group_access x WHERE x.event_id = e.id) AS group_ids_json
     FROM events e WHERE e.wedding_id = ? AND e.status = 'active' ORDER BY e.starts_at`).bind(weddingId).all()
   const publishedEvents = eventsResult.results.map((event) => ({ ...event, group_ids: JSON.parse(event.group_ids_json || '[]') }))
-  if (checkSitePublication(config, publishedEvents).blockers.length) return jsonError(context, 409, 'site_accessibility_incomplete')
+  if (checkSitePublication(config, publishedEvents).blockers.length) return jsonError(context, 409, 'invalid_site_config')
   const publishedAt = new Date().toISOString()
   await context.env.DB.batch([
     context.env.DB.prepare(`UPDATE weddings SET published_site_config_json = ?, published_events_json = ?, published_partner_one_name = ?, published_partner_two_name = ?, published_event_date = ?, published_event_time = ?, site_published_at = ?, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
