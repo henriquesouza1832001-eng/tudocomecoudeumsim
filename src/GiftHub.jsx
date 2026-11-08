@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Gift, Link2, ListChecks, PencilLine, PiggyBank, Plus, X } from 'lucide-react'
+import { Gift, ListChecks, PencilLine, PiggyBank, Plus, Wallet, X } from 'lucide-react'
 import { GIFT_PRESETS, presetTotalCents } from './gift-presets.js'
 import './gift-hub.css'
 
@@ -40,9 +40,9 @@ export default function GiftHub({ gifts, pixEnabled, displayLabel, busy, onStart
   const fixedTotal = active.reduce((sum, gift) => sum + (gift.gift_type === 'fixed' && gift.amount_cents ? gift.amount_cents : 0), 0)
   const actions = [
     { id: 'preset', icon: ListChecks, label: 'Adicionar lista pré-pronta', run: () => setPresetOpen(true) },
-    { id: 'store', icon: Link2, label: 'Adicionar presente de uma loja', run: () => onStart('store') },
-    { id: 'fixed', icon: PencilLine, label: 'Crie presente do seu jeito', run: () => onStart('fixed') },
-    { id: 'free', icon: PiggyBank, label: 'Receber contribuição livre', run: () => onStart('free') },
+    { id: 'fixed', icon: PencilLine, label: 'Presente genérico com valor', run: () => onStart('fixed') },
+    { id: 'free', icon: PiggyBank, label: 'Contribuição de valor livre', run: () => onStart('free') },
+    { id: 'pix', icon: Wallet, label: pixEnabled ? 'Chave Pix do casal' : 'Configurar a chave Pix', run: onShowPix },
   ]
 
   async function addPreset(preset) {
@@ -55,7 +55,7 @@ export default function GiftHub({ gifts, pixEnabled, displayLabel, busy, onStart
         <span className="gift-hero-icon" aria-hidden="true"><Gift size={22} /></span>
         <h2 id="gift-hub-title">Lista de presentes</h2>
         <p className="gift-hero-status">{active.length} de {GIFT_LIMIT} presentes ativos · Pix {pixEnabled ? 'configurado' : 'ainda não configurado'}</p>
-        <p className="gift-hero-text">O Pix vai direto para a chave de vocês. Para um presente físico, adicionem o link da loja; a compra e a entrega são combinadas fora do site.</p>
+        <p className="gift-hero-text">Todos os presentes são pagos por Pix, direto para a chave de vocês. Escolham presentes genéricos com valor ou deixem o valor livre; a plataforma não recebe nem repassa o dinheiro.</p>
         <div className="gift-hero-actions"><button type="button" className="gift-hero-primary" onClick={() => onStart('fixed')}>Adicionar presente</button><button type="button" className="gift-hero-link" onClick={onShowList}>Ver itens cadastrados</button></div>
       </article>
       <aside className="gift-summary" aria-labelledby="gift-summary-title">
@@ -69,6 +69,7 @@ export default function GiftHub({ gifts, pixEnabled, displayLabel, busy, onStart
         <button type="button" className="gift-summary-button" onClick={onShowPix}>{pixEnabled ? 'Rever chave Pix' : 'Configurar chave Pix'}</button>
       </aside>
     </div>
+    {!pixEnabled && <p className="gift-hub-alert" role="alert"><span>Antes de publicar, configurem a chave Pix: todos os pagamentos vão para ela e, sem ela, os convidados não conseguem pagar.</span><button type="button" onClick={onShowPix}>Configurar chave Pix</button></p>}
     <ul className="gift-hub-actions">{actions.map((action) => <li key={action.id}><button type="button" className="gift-action-card" onClick={action.run} disabled={busy}><span className={`gift-action-icon gift-action-icon-${action.id}`} aria-hidden="true"><action.icon size={30} strokeWidth={1.6} /></span><span className="gift-action-label">{action.label}</span><span className="gift-action-plus" aria-hidden="true"><Plus size={22} /></span></button></li>)}</ul>
     {presetOpen && <PresetDialog activeCount={active.length} busy={busy} onClose={() => setPresetOpen(false)} onAdd={addPreset} />}
   </section>

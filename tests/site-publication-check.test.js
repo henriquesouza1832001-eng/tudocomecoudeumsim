@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { checkSitePublication } from '../src/site-publication-check.js'
+import { checkSitePublication, giftsWithoutPix } from '../src/site-publication-check.js'
 
 test('site publication does not block photos without manually written descriptions', () => {
   const result = checkSitePublication({
@@ -113,4 +113,16 @@ test('publication warns about repeated cover text and timeline dates out of orde
   assert.ok(warnings.some((text) => text.includes('ordem cronológica')))
   const ordered = checkSitePublication({ ...config, storyMessages: { 'pt-BR': 'Nossa história' }, timeline: config.timeline.slice(0, 2) }, [])
   assert.ok(!ordered.warnings.some((text) => text.includes('são iguais') || text.includes('ordem cronológica')))
+})
+
+test('gifts without an active Pix key produce a warning, never a blocker', () => {
+  const gifts = [{ id: 'g', status: 'active' }]
+  assert.equal(giftsWithoutPix({ pix: { enabled: false, key: '' } }, gifts), true)
+  assert.equal(giftsWithoutPix({ pix: { enabled: true, key: 'a@b.co' }, pixDisplayMode: 'hidden' }, gifts), true)
+  assert.equal(giftsWithoutPix({ pix: { enabled: true, key: 'a@b.co' } }, gifts), false)
+  assert.equal(giftsWithoutPix({ pix: { enabled: false, key: '' } }, []), false)
+  assert.equal(giftsWithoutPix({ giftDisplayMode: 'hidden', pix: { enabled: false } }, gifts), false)
+  const result = checkSitePublication({ pix: { enabled: false, key: '' } }, [], gifts)
+  assert.ok(result.warnings.some((text) => /chave Pix/.test(text)))
+  assert.equal(result.blockers.length, 0)
 })

@@ -19,7 +19,15 @@ export const referencedPhotoIds = (config = {}) => {
 
 export const missingPhotoAltIds = (config = {}) => [...referencedPhotoIds(config)].filter((id) => !config.imageAltTexts?.[id]?.['pt-BR']?.trim())
 
-export function checkSitePublication(config = {}, events = []) {
+// Presentes são pagos só por Pix: sem chave ativa (ou com o Pix oculto) o convidado não tem como pagar.
+export function giftsWithoutPix(config = {}, gifts = []) {
+  const hasActiveGifts = gifts.some((gift) => !gift.status || gift.status === 'active')
+  if (!hasActiveGifts || config.giftDisplayMode === 'hidden') return false
+  const pixReady = Boolean(config.pix?.enabled && config.pix.key?.trim() && config.pixDisplayMode !== 'hidden')
+  return !pixReady
+}
+
+export function checkSitePublication(config = {}, events = [], gifts = []) {
   const warnings = []
   const enabled = new Set(config.enabledSections || [])
   if (enabled.has('Nossa história') && !config.storyMessages?.['pt-BR']?.trim()) warnings.push('A seção Nossa história está ativa, mas ainda não tem texto.')
@@ -47,5 +55,6 @@ export function checkSitePublication(config = {}, events = []) {
   }
   const blockers = []
   if (invalidPix) blockers.push('Corrija a chave Pix antes de publicar o convite.')
+  if (giftsWithoutPix(config, gifts)) warnings.push('Há presentes na lista, mas a chave Pix ainda não está ativa. Sem ela, os convidados não conseguem pagar.')
   return { blockers, warnings }
 }

@@ -47,3 +47,7 @@
 @media (max-width: 1100px) { .gift-hub-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .gift-hub-top { grid-template-columns: minmax(0, 1fr); } .gift-hero { min-height: 260px; } }
 @media (max-width: 560px) { .gift-hub-actions { grid-template-columns: minmax(0, 1fr); } .gift-preset-options { grid-template-columns: minmax(0, 1fr); } .gift-hero { padding: 22px; } }
+
+.gift-action-icon-pix { color: #5b4a8f; background: #ebe7f5; }
+.gift-hub-alert { margin: 0; padding: 14px 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 1px solid #c9776f; border-radius: 14px; color: #7a2c25; background: #fbeceb; font-size: 15px; line-height: 1.5; }
+.gift-hub-alert button { min-height: 44px; padding: 0 18px; border: 1px solid #9c4640; border-radius: 999px; color: #7a2c25; background: #fffefa; font: inherit; font-weight: 700; cursor: pointer; }
