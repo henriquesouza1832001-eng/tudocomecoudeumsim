@@ -1681,6 +1681,7 @@ function CouplePanel({ notify, confirmAction }) {
   const [guestPartySize, setGuestPartySize] = useState('1')
   const [guestType, setGuestType] = useState('guest')
   const [guestDietaryNotes, setGuestDietaryNotes] = useState('')
+  const [godparentCandidateId, setGodparentCandidateId] = useState('')
   const [taskGuestId, setTaskGuestId] = useState('')
   const [editingGodparentTask, setEditingGodparentTask] = useState(null)
   const [taskTitle, setTaskTitle] = useState('')
@@ -1703,6 +1704,8 @@ function CouplePanel({ notify, confirmAction }) {
   const isReader = wedding?.role === 'reader'
   const isEditor = wedding?.role === 'editor'
   const selectedManualEvent = events.find((item) => item.id === manualEventId)
+  const godparentCandidates = guests.filter((guest) => guest.guest_type === 'guest')
+  const godparentGuests = guests.filter((guest) => guest.guest_type === 'godparent')
   const availableManualGuests = guests.filter((guest) => {
     const allowedGroups = selectedManualEvent?.group_ids || []
     const eventAllowsGuest = !allowedGroups.length || allowedGroups.includes(guest.group_id)
@@ -2548,6 +2551,27 @@ function CouplePanel({ notify, confirmAction }) {
     }
   }
 
+  async function addGuestAsGodparent(event) {
+    event.preventDefault()
+    const candidate = godparentCandidates.find((guest) => guest.id === godparentCandidateId)
+    if (!candidate) return
+    setBusy(true)
+    setError('')
+    try {
+      await request(`/api/couple/weddings/${weddingId}/guests/${candidate.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ guestType: 'godparent' }),
+      })
+      setGodparentCandidateId('')
+      await refreshAfterConfirmedMutation(weddingId)
+      notify(`${candidate.name} agora pode receber orientações como padrinho ou madrinha.`)
+    } catch {
+      setError('Não foi possível atualizar o perfil desta pessoa. Tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function editGodparentTask(task) {
     setEditingGodparentTask(task)
     setTaskGuestId(task.guest_id)
@@ -2720,7 +2744,8 @@ function CouplePanel({ notify, confirmAction }) {
     </>}
     {tab === 'godparents' && <>
       <section className="role-card godparent-welcome"><span className="eyebrow">PADRINHOS E MADRINHAS</span><h2>Padrinhos e madrinhas</h2><p>Compartilhem orientações e tarefas com cada pessoa. O convite individual mostra apenas o que foi enviado a ela, sem expor a lista de convidados.</p><a href="#godparent-task-form">Preparar uma orientação <ArrowRight size={17} /></a></section>
-      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>{editingGodparentTask ? 'Editar orientação' : 'Atribuir tarefa a um padrinho'}</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite ou grupo</option><optgroup label="Padrinhos individuais">{guests.filter((guest) => guest.guest_type === 'godparent').map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</optgroup><optgroup label="Grupos de padrinhos">{groups.filter((group) => guests.some((guest) => guest.guest_type === 'godparent' && guest.group_id === group.id)).map((group) => <option value={`group:${group.id}`} key={`group:${group.id}`}>{group.name}</option>)}</optgroup></select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !guests.some((guest) => guest.guest_type === 'godparent')} type="submit">{editingGodparentTask ? 'Salvar alterações' : 'Atribuir orientação'} <Heart size={15} /></button>{editingGodparentTask && <button className="button-outline" type="button" disabled={busy} onClick={cancelGodparentTaskEdit}>Cancelar</button>}</form><p className="team-access-note">Cada padrinho selecionado recebe uma cópia privada no próprio convite. O sistema ainda não envia e-mail ou WhatsApp; compartilhe o link individual diretamente.</p>{!guests.some((guest) => guest.guest_type === 'godparent') && <p className="buffet-empty">Cadastre um convidado com perfil de padrinho para atribuir tarefas.</p>}</section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">LISTA DE PADRINHOS</span><h2>Adicionar padrinho ou madrinha</h2></div></div><p className="team-access-note">Escolha uma pessoa já cadastrada para liberar o perfil de padrinho e permitir o envio de orientações pelo convite dela.</p>{godparentCandidates.length ? <form className="couple-guest-form godparent-candidate-form" onSubmit={addGuestAsGodparent}><label>Pessoa convidada<select value={godparentCandidateId} onChange={(event) => setGodparentCandidateId(event.target.value)} required><option value="">Selecione uma pessoa</option>{godparentCandidates.map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</select></label><button className="button-primary" type="submit" disabled={busy || !godparentCandidateId}>Adicionar como padrinho ou madrinha <Heart size={15} /></button></form> : guests.length > 0 && godparentGuests.length === guests.length ? <p className="buffet-empty">Todos os convites já estão com perfil de padrinho ou madrinha.</p> : <div><p className="buffet-empty">{guests.length ? 'Não há convites comuns disponíveis. Confira os perfis na área de convidados.' : 'Cadastre primeiro um convite para poder selecionar a pessoa aqui.'}</p><button className="button-outline" type="button" onClick={() => selectPanelTab('guests')}>Abrir convidados <ArrowRight size={15} /></button></div>}</section>
+      <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">ORIENTAÇÕES INDIVIDUAIS</span><h2>{editingGodparentTask ? 'Editar orientação' : 'Atribuir tarefa a um padrinho'}</h2></div></div><form className="godparent-task-form" id="godparent-task-form" onSubmit={createGodparentTask}><label>Padrinho ou madrinha<select value={taskGuestId} onChange={(event) => setTaskGuestId(event.target.value)} required><option value="">Selecione um convite ou grupo</option><optgroup label="Padrinhos individuais">{godparentGuests.map((guest) => <option value={guest.id} key={guest.id}>{guest.name}</option>)}</optgroup><optgroup label="Grupos de padrinhos">{groups.filter((group) => godparentGuests.some((guest) => guest.group_id === group.id)).map((group) => <option value={`group:${group.id}`} key={`group:${group.id}`}>{group.name}</option>)}</optgroup></select></label><label>Tarefa<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength="160" required /></label><label>Prazo<input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} /></label><label className="godparent-task-wide">Detalhes<textarea value={taskDetails} onChange={(event) => setTaskDetails(event.target.value)} maxLength="2000" rows="3" /></label><button className="button-primary" disabled={busy || !godparentGuests.length} type="submit">{editingGodparentTask ? 'Salvar alterações' : 'Atribuir orientação'} <Heart size={15} /></button>{editingGodparentTask && <button className="button-outline" type="button" disabled={busy} onClick={cancelGodparentTaskEdit}>Cancelar</button>}</form><p className="team-access-note">Cada padrinho selecionado recebe uma cópia privada no próprio convite. O sistema ainda não envia e-mail ou WhatsApp; compartilhe o link individual diretamente.</p>{!godparentGuests.length && <p className="buffet-empty">Adicione um padrinho ou madrinha na lista acima para liberar a atribuição de tarefas.</p>}</section>
       <section className="role-card"><div className="role-card-heading"><div><span className="eyebrow">TAREFAS ENVIADAS</span><h2>Orientações por convite</h2></div><span className="task-count">{godparentTasks.length} tarefas</span></div><div className="godparent-admin-task-list">{godparentTasks.map((task) => <article key={task.id}><div><strong>{task.title}</strong><small>{task.guest_name} · {task.due_at ? new Date(task.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small>{task.details && <p>{task.details}</p>}</div><div className="godparent-task-actions"><span className={`admin-state ${task.status === 'done' ? 'admin-state-active' : ''}`}>{task.status === 'done' ? 'Concluída' : 'Pendente'}</span><button type="button" className="button-outline" disabled={busy} onClick={() => editGodparentTask(task)}>Editar</button><button type="button" className="button-outline guest-remove-button" disabled={busy} onClick={() => deleteGodparentTask(task)}>Excluir</button></div></article>)}{!godparentTasks.length && <p className="buffet-empty">As tarefas atribuídas aparecerão aqui.</p>}</div></section>
     </>}
     {tab === 'memories' && <GuestPhotoAlbum weddingId={weddingId} notify={notify} confirmAction={confirmAction} />}
