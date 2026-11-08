@@ -239,7 +239,7 @@ function FocalPicker({ label, value, onChange }) {
   return <div className="choice-buttons focal-picker" role="radiogroup" aria-label={label}>
     <span className="choice-buttons-label">{label}</span>
     <div className="focal-picker-grid">{cells.flat().map((id, index) => id ? <button key={id} type="button" role="radio" aria-checked={value === id} aria-label={'Priorizar ' + names[id]} className={value === id ? 'selected' : ''} onClick={() => onChange(id)}><i /></button> : <span key={'empty-' + index} aria-hidden="true" />)}</div>
-    <small>Toque no ponto da foto que não pode ser cortado.</small>
+    <small>A capa preenche toda a área. Escolha qual parte da foto deve ficar visível.</small>
   </div>
 }
 

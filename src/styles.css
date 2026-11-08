@@ -7754,8 +7754,8 @@ img { display: block; max-width: 100%; }
 }
 
 @keyframes wedding-carousel-enter {
-  from { opacity: .45; }
-  to { opacity: 1; }
+  from { opacity: .45; transform: scale(1.012); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @media (max-width: 600px) {
@@ -8410,58 +8410,3 @@ img { display: block; max-width: 100%; }
 .theme-bordado .public-wedding-story { position: relative; border: 1px solid color-mix(in srgb, #a33a45 45%, transparent); outline: 1px solid color-mix(in srgb, #a33a45 28%, transparent); outline-offset: -9px; padding-inline: clamp(28px, 13vw, 150px); background: url('/images/temas/bordado-canto.svg') no-repeat left top / min(30%, 170px) auto, url('/images/temas/bordado-canto-inf.svg') no-repeat right bottom / min(30%, 170px) auto, var(--paper); }
 .theme-bordado .public-wedding-story h2::after, .theme-bordado .public-wedding-timeline h2::after, .theme-bordado .public-wedding-gifts h2::after { content: ''; display: block; width: 160px; height: 20px; margin: 10px auto 0; background: url('/images/temas/bordado-divisor.svg') no-repeat center / contain; }
 .mini-bordado::before, .preview-bordado::before { top: 7px; right: 9px; left: 9px; bottom: 7px; width: auto; height: auto; border: 1px solid var(--theme-accent); border-radius: 2px; background: radial-gradient(circle at 18% 22%, var(--theme-accent) 0 5px, transparent 5.5px), radial-gradient(circle at 84% 80%, var(--theme-accent) 0 5px, transparent 5.5px); opacity: .85; transform: none; }
-
-.public-wedding-page .public-wedding-cover-media > img,
-.public-wedding-page .public-wedding-photo-carousel-stage > img,
-.public-wedding-page .public-wedding-gallery img,
-.public-wedding-page .public-wedding-timeline article img,
-.public-wedding-page .public-wedding-godparents img,
-.public-wedding-page .public-gift-photo,
-.public-wedding-page .gift-list-thumb img,
-.guest-invitation-page .guest-invitation-cover > img,
-.guest-invitation-page .guest-site-gallery-public img,
-.guest-invitation-page .guest-photo-grid figure > img,
-.guest-invitation-page .gift-list-thumb img,
-.couple-role-page .customizer-collage-pair img,
-.couple-role-page .browser-collage-pair img,
-.couple-role-page .customizer-photo-carousel-order img,
-.couple-role-page .gift-presentation-preview-image,
-.couple-role-page .browser-site-gallery-preview img,
-.couple-role-page .guest-couple-gallery img,
-.couple-role-page .guest-photo-grid figure > img,
-.couple-role-page .photo-alt-thumb img,
-.couple-role-page .customizer-photo-library-item > img,
-.couple-role-page .customizer-photo-options img,
-.couple-role-page .customizer-preview-gallery img,
-.couple-role-page .customizer-upload-grid img,
-.couple-role-page .customizer-photo-alt-field > img,
-.couple-role-page .gift-catalog-thumb img,
-.couple-role-page .gift-photo-thumb img,
-.couple-role-page .gift-list-thumb img,
-.couple-role-page .customize-preview .browser-content > img,
-.public-customizer .customizer-collage-pair img,
-.public-customizer .browser-collage-pair img,
-.public-customizer .customizer-photo-carousel-order img,
-.public-customizer .customizer-photo-library-item > img,
-.public-customizer .customizer-photo-options img,
-.public-customizer .customizer-preview-gallery img,
-.public-customizer .customizer-upload-grid img,
-.public-customizer .customizer-photo-alt-field > img,
-.public-customizer .browser-site-gallery-preview img,
-.public-customizer .guest-couple-gallery img,
-.public-customizer .photo-alt-thumb img,
-.public-customizer .gift-presentation-preview-image,
-.public-customizer .gift-catalog-thumb img,
-.public-customizer .gift-photo-thumb img,
-.public-customizer .gift-list-thumb img,
-.public-customizer .customize-preview .browser-content > img,
-.public-customizer .customizer-live-cover > img {
-  object-fit: contain;
-}
-
-.couple-role-page .customizer-cover-video .customizer-live-cover > img,
-.public-customizer .customizer-cover-video .customizer-live-cover > img,
-.couple-role-page .customize-preview .browser-content.cover-video > img,
-.public-customizer .customize-preview .browser-content.cover-video > img {
-  animation: none;
-}
