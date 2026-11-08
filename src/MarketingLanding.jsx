@@ -3,20 +3,29 @@ import '@fontsource-variable/inter'
 import './landing-v2.css'
 import { PRODUCT_NAME } from './product-config.js'
 
-/*
- * Imagens: ilustrações originais do Meu Altar (public/images/ilustracoes/*.svg), sem fotos de terceiros e sem pessoas reais.
- */
-
 const PHOTOS = {
-  hero: '/images/ilustracoes/hero-noivos.svg',
-  buque: '/images/ilustracoes/album-buque.svg',
-  cerimonia: '/images/ilustracoes/album-cerimonia.svg',
-  mesa: '/images/ilustracoes/album-mesa.svg',
-  convidados: '/images/ilustracoes/painel-convidados.svg',
-  presentes: '/images/ilustracoes/painel-presentes.svg',
-  entrada: '/images/ilustracoes/painel-entrada.svg',
-  fechamento: '/images/ilustracoes/fechamento.svg',
+  hero: '/images/fotos/hero-casal.webp',
+  convite: '/images/fotos/convite-casal.webp',
+  buque: '/images/fotos/album-buque.webp',
+  cerimonia: '/images/fotos/album-cerimonia.webp',
+  mesa: '/images/fotos/album-mesa.webp',
+  convidados: '/images/fotos/painel-convidados.webp',
+  presentes: '/images/fotos/painel-presentes.webp',
+  entrada: '/images/fotos/painel-entrada.webp',
+  fechamento: '/images/fotos/fechamento.webp',
 }
+
+const PHOTO_CREDITS = [
+  ['Albino Sambo', 'https://www.pexels.com/pt-br/foto/cerimonia-de-casamento-elegante-ao-ar-livre-com-um-casal-feliz-40144234/'],
+  ['Pavel Danilyuk', 'https://www.pexels.com/photo/bride-and-groom-kissing-passionately-7119190/'],
+  ['Melike B', 'https://www.pexels.com/photo/beautiful-wedding-bouquet-10074782/'],
+  ['Alexander Mass', 'https://www.pexels.com/photo/romantic-outdoor-wedding-ceremony-under-floral-arch-37710821/'],
+  ['Key Notez', 'https://www.pexels.com/photo/forman-table-setting-in-a-reception-12317806/'],
+  ['Kawê Rodrigues', 'https://www.pexels.com/photo/newlyweds-and-guests-smiling-together-17529931/'],
+  ['Letícia Alvares', 'https://www.pexels.com/photo/elegant-wedding-gift-wrapped-in-soft-ribbon-30151961/'],
+  ['Taylor Thompson', 'https://www.pexels.com/photo/elegant-wedding-flat-lay-with-invitations-34579982/'],
+  ['Jonathan Borba', 'https://www.pexels.com/photo/newlyweds-holding-hands-and-walking-together-19841050/'],
+]
 
 const Icon = ({ d }) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{d}</svg>
 const ICONS = {
@@ -44,7 +53,7 @@ function PhoneCard() {
     <div className="lp-phone-screen" aria-hidden="true">
       <span className="lp-phone-notch" />
       <div className="lp-phone-photo">
-        <img src={PHOTOS.hero} alt="" width="759" height="506" loading="lazy" decoding="async" />
+        <img src={PHOTOS.convite} alt="" width="750" height="1124" loading="lazy" decoding="async" />
         <div className="lp-phone-hero-text">
           <p className="lp-phone-kicker">Vamos casar</p>
           <p className="lp-phone-names">Lívia<span className="lp-amp">&amp;</span>Caio</p>
@@ -74,15 +83,15 @@ const STEPS = [
 ]
 
 const PANEL = [
-  ['Convidados', PHOTOS.convidados, 'Ilustração de uma mesa redonda de convidados ao lado de uma lista de confirmações', 'Lista por família, acompanhantes e restrições alimentares, com as respostas por evento.'],
-  ['Presentes', PHOTOS.presentes, 'Ilustração de um presente embrulhado com laço', 'Pix direto, sem taxa para convidados. O valor vai para a chave dos noivos.'],
-  ['Controle de entrada', PHOTOS.entrada, 'Ilustração de um convite com QR code e um celular confirmando a entrada', 'A equipe lê o QR do convite pelo celular e registra quem chegou, mesmo com sinal fraco.'],
+  ['Convidados', PHOTOS.convidados, 'Noivos e convidados reunidos e sorrindo durante a celebração', 'Lista por família, acompanhantes e restrições alimentares, com as respostas por evento.'],
+  ['Presentes', PHOTOS.presentes, 'Presente de casamento embrulhado com fita delicada', 'Pix direto, sem taxa para convidados. O valor vai para a chave dos noivos.'],
+  ['Controle de entrada', PHOTOS.entrada, 'Convites de casamento e acessórios organizados sobre uma mesa', 'A equipe lê o QR do convite pelo celular e registra quem chegou, mesmo com sinal fraco.'],
 ]
 
 const ALBUM = [
-  [PHOTOS.buque, 'Ilustração de um buquê de flores', 'O buquê'],
-  [PHOTOS.cerimonia, 'Ilustração de duas cadeiras decoradas com flores num gramado, de frente para o lago', 'O lugar da cerimônia'],
-  [PHOTOS.mesa, 'Ilustração de uma mesa de celebração posta com velas e flores', 'A mesa da celebração'],
+  [PHOTOS.buque, 'Buquê de flores da noiva', 'O buquê'],
+  [PHOTOS.cerimonia, 'Noivos trocando votos sob um arco floral em uma cerimônia ao ar livre', 'O lugar da cerimônia'],
+  [PHOTOS.mesa, 'Mesa de recepção de casamento decorada com flores e velas', 'A mesa da celebração'],
 ]
 
 const FAQ = [
@@ -114,7 +123,7 @@ export default function MarketingLanding() {
           <div className="lp-actions"><a className="lp-btn" href="/cadastro">Criar meu site</a><a className="lp-link lp-underline" href="#como-funciona">Ver como funciona</a></div>
         </div>
         <div className="lp-hero-art">
-          <img className="lp-hero-photo" src={PHOTOS.hero} alt="Ilustração de um arco de flores com duas cadeiras decoradas" width="880" height="1100" fetchpriority="high" decoding="async" />
+          <img className="lp-hero-photo" src={PHOTOS.hero} alt="Noivos sorrindo juntos em um jardim durante o casamento" width="880" height="1173" fetchpriority="high" decoding="async" />
           <div className="lp-phone-hero"><Phone small /></div>
         </div>
       </section>
@@ -146,7 +155,11 @@ export default function MarketingLanding() {
         <ul className="lp-album-grid">
           {ALBUM.map(([src, alt, cap]) => <li key={cap}><figure><img src={src} alt={alt} width="900" height="600" loading="lazy" decoding="async" /><figcaption>{cap}</figcaption></figure></li>)}
         </ul>
-        <p className="lp-note">Galeria organizada, sem miniaturas vazias ou repetidas.</p>
+        <p className="lp-note">Fotos ilustrativas do Pexels; cada casal escolhe suas próprias imagens.</p>
+        <details className="lp-photo-credits">
+          <summary>Créditos das fotografias</summary>
+          <p>Fotos: {PHOTO_CREDITS.map(([name, href], index) => <span key={name}><a href={href} target="_blank" rel="noreferrer">{name}</a>{index < PHOTO_CREDITS.length - 1 ? ', ' : ''}</span>)} · via <a href="https://www.pexels.com/pt-br/" target="_blank" rel="noreferrer">Pexels</a></p>
+        </details>
       </section>
 
       <section className="lp-panel" id="painel" aria-labelledby="t-panel">
@@ -160,7 +173,7 @@ export default function MarketingLanding() {
       </section>
 
       <section className="lp-closing" aria-labelledby="t-close">
-        <img src={PHOTOS.fechamento} alt="Ilustração de um arco de flores diante de um lago ao pôr do sol" width="1800" height="900" loading="lazy" decoding="async" />
+        <img src={PHOTOS.fechamento} alt="Casal de recém-casados caminhando de mãos dadas após a cerimônia" width="1800" height="1200" loading="lazy" decoding="async" />
         <div className="lp-closing-copy">
           <h2 id="t-close">Vamos preparar o convite de vocês?</h2>
           <a className="lp-btn" href="/cadastro">Criar meu site</a>

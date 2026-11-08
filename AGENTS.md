@@ -654,7 +654,8 @@ Registro histórico atualizado em 17/10/2026. Esta seção preserva o pedido e o
 - Implementado em `src/redesign-landing.css` e `src/redesign-panel.css`. A aparência (papel, fontes, rótulos, botões, cartões planos) vale em todas as larguras e em landing, painel, cadastro, convidado, equipe, superadmin e ajuda; a composição (hero em duas colunas, abas no topo, linhas de convidados) vale só a partir de 901 px. O layout do celular e do tablet não foi alterado. O convite temático do casal e a tela de entrada da equipe (escura) ficam fora.
 - Regras do novo visual: sem cartões coloridos como estrutura, sem rótulos acima de títulos, sem ícones decorativos em círculo, sem barra colorida lateral em item ativo, sem sombras decorativas, fundo de papel liso no desktop.
 - O fundo de folhas saiu da interface do produto em todas as larguras e permanece no tema Floral do convite; a retirada segue o estudo aprovado e é reversível removendo os dois arquivos de estilo.
-- Pendentes: revisar a capa e os temas do convite com a mesma disciplina e decidir sobre fotografias reais.
+- Em 08/11/2026, foram escolhidas fotos do Pexels para a landing de marketing, com créditos aos fotógrafos. São imagens ilustrativas; a prévia real do convite continua sem foto até o casal escolher a própria.
+- Pendente: revisar a capa e os temas do convite com a mesma disciplina.
 
 ## 25. Autorização do dono para testes ponta a ponta — 07/11/2026
 
